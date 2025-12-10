@@ -1,0 +1,1801 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>France Relocation Assistant | US → France Immigration Guide</title>
+    <meta name="description" content="Comprehensive guide for Americans relocating to France. Information on visas, property purchase, healthcare, taxes, and more.">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🇫🇷</text></svg>">
+    <style>
+        :root {
+            --fra-primary: #1e3a5f;
+            --fra-accent: #c9a227;
+            --fra-bg: #f8f9fa;
+            --fra-card-bg: #ffffff;
+            --fra-text: #2c3e50;
+            --fra-text-light: #6c757d;
+            --fra-border: #e1e5e9;
+            --fra-success: #28a745;
+            --fra-warning: #ffc107;
+            --fra-danger: #dc3545;
+            --fra-france: #0055a4;
+            --fra-us: #b22234;
+            --fra-other: #6c757d;
+            --fra-radius: 12px;
+            --fra-max-width: 900px;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: var(--fra-bg);
+            color: var(--fra-text);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        
+        .fra-container {
+            max-width: var(--fra-max-width);
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        /* Header */
+        .fra-header {
+            text-align: center;
+            padding: 30px 20px;
+            background: linear-gradient(135deg, var(--fra-primary) 0%, #2c5282 100%);
+            color: white;
+            border-radius: var(--fra-radius);
+            margin-bottom: 20px;
+        }
+        
+        .fra-header-icon {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+        
+        .fra-header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        
+        .fra-header p {
+            opacity: 0.9;
+            font-size: 1rem;
+        }
+        
+        /* Introduction */
+        .fra-intro {
+            background: var(--fra-card-bg);
+            border-radius: var(--fra-radius);
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid var(--fra-border);
+        }
+        
+        .fra-intro p {
+            margin-bottom: 10px;
+        }
+        
+        .fra-badge {
+            display: inline-block;
+            background: var(--fra-accent);
+            color: var(--fra-primary);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        /* Categories */
+        .fra-categories {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        @media (max-width: 600px) {
+            .fra-categories {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        .fra-category-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            padding: 15px 10px;
+            background: var(--fra-card-bg);
+            border: 2px solid var(--fra-border);
+            border-radius: var(--fra-radius);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.85rem;
+            color: var(--fra-text);
+        }
+        
+        .fra-category-btn:hover {
+            border-color: var(--fra-accent);
+            transform: translateY(-2px);
+        }
+        
+        .fra-category-btn.active {
+            border-color: var(--fra-primary);
+            background: rgba(30, 58, 95, 0.05);
+        }
+        
+        .fra-category-icon {
+            font-size: 1.5rem;
+        }
+        
+        /* Toolbar */
+        .fra-toolbar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .fra-toolbar button {
+            padding: 10px 16px;
+            border: 1px solid var(--fra-border);
+            background: var(--fra-card-bg);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        
+        .fra-toolbar button:hover {
+            background: var(--fra-bg);
+        }
+        
+        .fra-toolbar button.active {
+            background: var(--fra-primary);
+            color: white;
+            border-color: var(--fra-primary);
+        }
+        
+        #fra-print-all,
+        #fra-clear-screen,
+        #fra-clear-confirm {
+            display: none;
+        }
+        
+        #fra-clear-confirm {
+            gap: 5px;
+        }
+        
+        #fra-clear-confirm button {
+            padding: 8px 12px;
+            font-size: 0.85rem;
+        }
+        
+        #fra-clear-yes {
+            background: var(--fra-danger);
+            color: white;
+            border-color: var(--fra-danger);
+        }
+        
+        /* Chat Area */
+        .fra-chat-area {
+            background: var(--fra-card-bg);
+            border-radius: var(--fra-radius);
+            border: 1px solid var(--fra-border);
+            overflow: hidden;
+        }
+        
+        .fra-welcome {
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .fra-welcome h3 {
+            color: var(--fra-primary);
+            margin-bottom: 20px;
+        }
+        
+        .fra-suggested {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+        
+        .fra-suggested-btn {
+            padding: 10px 16px;
+            background: var(--fra-bg);
+            border: 1px solid var(--fra-border);
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        
+        .fra-suggested-btn:hover {
+            background: var(--fra-primary);
+            color: white;
+            border-color: var(--fra-primary);
+        }
+        
+        /* Conversation */
+        .fra-conversation {
+            max-height: 500px;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        
+        .fra-message {
+            margin-bottom: 20px;
+        }
+        
+        .fra-message-user {
+            background: var(--fra-primary);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 16px 16px 4px 16px;
+            margin-left: 20%;
+            margin-bottom: 10px;
+        }
+        
+        .fra-message-assistant {
+            background: var(--fra-bg);
+            border: 1px solid var(--fra-border);
+            border-radius: 16px;
+            padding: 16px;
+        }
+        
+        .fra-message-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 10px;
+        }
+        
+        .fra-message-actions button {
+            padding: 4px 10px;
+            font-size: 0.75rem;
+            background: transparent;
+            border: 1px solid var(--fra-border);
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .fra-message-content {
+            line-height: 1.7;
+        }
+        
+        .fra-message-sources {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid var(--fra-border);
+        }
+        
+        .fra-message-sources h5 {
+            font-size: 0.8rem;
+            color: var(--fra-text-light);
+            margin-bottom: 8px;
+        }
+        
+        .fra-message-sources a {
+            display: inline-block;
+            margin-right: 10px;
+            margin-bottom: 5px;
+            color: var(--fra-primary);
+            font-size: 0.85rem;
+        }
+        
+        .fra-message-tier {
+            margin-top: 10px;
+            font-size: 0.75rem;
+            color: var(--fra-text-light);
+            font-style: italic;
+        }
+        
+        /* Search Form */
+        .fra-search-form {
+            display: flex;
+            gap: 10px;
+            padding: 15px;
+            border-top: 1px solid var(--fra-border);
+            background: var(--fra-bg);
+        }
+        
+        .fra-search-form input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid var(--fra-border);
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        
+        .fra-search-form input:focus {
+            outline: none;
+            border-color: var(--fra-primary);
+        }
+        
+        .fra-search-form button {
+            padding: 12px 24px;
+            background: var(--fra-primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+        
+        .fra-search-form button:hover {
+            background: #2c5282;
+        }
+        
+        .fra-search-form button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        /* Loading */
+        #fra-loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: var(--fra-text-light);
+        }
+        
+        /* Day Counter */
+        .fra-day-counter {
+            display: none;
+            background: var(--fra-card-bg);
+            border: 1px solid var(--fra-border);
+            border-radius: var(--fra-radius);
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        
+        .fra-dc-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: var(--fra-primary);
+            color: white;
+        }
+        
+        .fra-dc-header h3 {
+            font-size: 1.1rem;
+        }
+        
+        .fra-dc-close {
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            line-height: 1;
+        }
+        
+        .fra-dc-body {
+            padding: 20px;
+        }
+        
+        /* Stats Grid */
+        .fra-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        @media (max-width: 500px) {
+            .fra-stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        .fra-stat-box {
+            text-align: center;
+            padding: 15px;
+            background: var(--fra-bg);
+            border-radius: 8px;
+        }
+        
+        .fra-stat-box.france { border-left: 4px solid var(--fra-france); }
+        .fra-stat-box.us { border-left: 4px solid var(--fra-us); }
+        .fra-stat-box.other { border-left: 4px solid var(--fra-other); }
+        .fra-stat-box.untracked { border-left: 4px solid var(--fra-border); }
+        
+        .fra-stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--fra-primary);
+        }
+        
+        .fra-stat-label {
+            font-size: 0.8rem;
+            color: var(--fra-text-light);
+        }
+        
+        /* Rolling Progress */
+        .fra-rolling-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: var(--fra-bg);
+            border-radius: 8px;
+        }
+        
+        .fra-rolling-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        
+        .fra-progress-track {
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .fra-progress-bar {
+            height: 100%;
+            background: var(--fra-success);
+            transition: width 0.3s;
+        }
+        
+        .fra-progress-bar.fra-warning { background: var(--fra-warning); }
+        .fra-progress-bar.fra-danger { background: var(--fra-danger); }
+        
+        .fra-status-message {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+        
+        .fra-status-ok { background: #d4edda; color: #155724; }
+        .fra-status-warning { background: #fff3cd; color: #856404; }
+        .fra-status-danger { background: #f8d7da; color: #721c24; }
+        
+        /* Calendar */
+        .fra-calendar-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .fra-calendar-nav button {
+            padding: 8px 16px;
+            background: var(--fra-bg);
+            border: 1px solid var(--fra-border);
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        
+        .fra-calendar-nav button:hover {
+            background: var(--fra-border);
+        }
+        
+        .fra-calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        @media (max-width: 600px) {
+            .fra-calendar-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        .fra-calendar-month {
+            background: var(--fra-bg);
+            border-radius: 8px;
+            padding: 10px;
+        }
+        
+        .fra-month-name {
+            text-align: center;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--fra-primary);
+        }
+        
+        .fra-month-days {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 2px;
+        }
+        
+        .fra-day-header {
+            text-align: center;
+            font-size: 0.65rem;
+            color: var(--fra-text-light);
+            padding: 2px;
+        }
+        
+        .fra-day {
+            text-align: center;
+            font-size: 0.7rem;
+            padding: 3px 1px;
+            border-radius: 3px;
+        }
+        
+        .fra-day-empty { visibility: hidden; }
+        .fra-day-france { background: var(--fra-france); color: white; }
+        .fra-day-us { background: var(--fra-us); color: white; }
+        .fra-day-other { background: var(--fra-other); color: white; }
+        .fra-day-today { outline: 2px solid var(--fra-accent); }
+        
+        /* Trip Form */
+        .fra-add-trip-section {
+            margin-bottom: 20px;
+        }
+        
+        .fra-add-trip-form {
+            display: none;
+            background: var(--fra-bg);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+        
+        .fra-form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .fra-form-row.full {
+            grid-template-columns: 1fr;
+        }
+        
+        .fra-form-row label {
+            display: block;
+            font-size: 0.85rem;
+            margin-bottom: 4px;
+            color: var(--fra-text-light);
+        }
+        
+        .fra-form-row input,
+        .fra-form-row select,
+        .fra-form-row textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--fra-border);
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+        
+        .fra-form-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .fra-form-buttons button {
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        
+        #fra-save-trip {
+            background: var(--fra-primary);
+            color: white;
+            border: none;
+        }
+        
+        #fra-cancel-trip {
+            background: white;
+            border: 1px solid var(--fra-border);
+        }
+        
+        /* Trip List */
+        .fra-trip-list {
+            margin-bottom: 20px;
+        }
+        
+        .fra-trip-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 12px;
+            background: var(--fra-bg);
+            border-radius: 6px;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+        
+        .fra-trip-france { border-left: 4px solid var(--fra-france); }
+        .fra-trip-us { border-left: 4px solid var(--fra-us); }
+        .fra-trip-other { border-left: 4px solid var(--fra-other); }
+        
+        .fra-delete-trip {
+            background: transparent;
+            border: none;
+            color: var(--fra-danger);
+            cursor: pointer;
+            font-size: 1rem;
+            padding: 0 5px;
+        }
+        
+        /* Data Management */
+        .fra-data-management {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .fra-data-management button,
+        .fra-data-management label {
+            padding: 8px 14px;
+            background: var(--fra-bg);
+            border: 1px solid var(--fra-border);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+        
+        .fra-data-management input[type="file"] {
+            display: none;
+        }
+        
+        #fra-clear-all-data {
+            color: var(--fra-danger);
+            border-color: var(--fra-danger);
+        }
+        
+        /* Footer */
+        .fra-footer {
+            margin-top: 20px;
+            padding: 20px;
+            background: var(--fra-card-bg);
+            border-radius: var(--fra-radius);
+            border: 1px solid var(--fra-border);
+            font-size: 0.85rem;
+            color: var(--fra-text-light);
+        }
+        
+        .fra-footer p {
+            margin-bottom: 10px;
+        }
+        
+        .fra-footer p:last-child {
+            margin-bottom: 0;
+        }
+        
+        /* Legend */
+        .fra-legend {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+            font-size: 0.85rem;
+        }
+        
+        .fra-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .fra-legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
+        }
+        
+        .fra-legend-color.france { background: var(--fra-france); }
+        .fra-legend-color.us { background: var(--fra-us); }
+        .fra-legend-color.other { background: var(--fra-other); }
+    </style>
+</head>
+<body>
+    <div class="fra-container">
+        <!-- Header -->
+        <header class="fra-header">
+            <div class="fra-header-icon">🇫🇷</div>
+            <h1>France Relocation Assistant</h1>
+            <p>Your guide to relocating from the US to France</p>
+        </header>
+        
+        <!-- Introduction -->
+        <div class="fra-intro">
+            <p>Welcome! This assistant provides information for Americans planning to relocate to France. Browse by category or ask a question below.</p>
+            <span class="fra-badge">Knowledge Base • Regularly Updated</span>
+        </div>
+        
+        <!-- Categories -->
+        <div class="fra-categories">
+            <button class="fra-category-btn" data-category="visas">
+                <span class="fra-category-icon">🛂</span>
+                <span>Visas</span>
+            </button>
+            <button class="fra-category-btn" data-category="property">
+                <span class="fra-category-icon">🏠</span>
+                <span>Property</span>
+            </button>
+            <button class="fra-category-btn" data-category="healthcare">
+                <span class="fra-category-icon">🏥</span>
+                <span>Healthcare</span>
+            </button>
+            <button class="fra-category-btn" data-category="taxes">
+                <span class="fra-category-icon">📋</span>
+                <span>Taxes</span>
+            </button>
+            <button class="fra-category-btn" data-category="driving">
+                <span class="fra-category-icon">🚗</span>
+                <span>Driving</span>
+            </button>
+            <button class="fra-category-btn" data-category="shipping">
+                <span class="fra-category-icon">📦</span>
+                <span>Shipping</span>
+            </button>
+            <button class="fra-category-btn" data-category="banking">
+                <span class="fra-category-icon">🏦</span>
+                <span>Banking</span>
+            </button>
+            <button class="fra-category-btn" data-category="settling">
+                <span class="fra-category-icon">🏡</span>
+                <span>Settling In</span>
+            </button>
+        </div>
+        
+        <!-- Toolbar -->
+        <div class="fra-toolbar">
+            <button id="fra-toggle-day-counter">📅 Day Counter</button>
+            <button id="fra-print-all">🖨️ Print All</button>
+            <button id="fra-clear-screen">🗑️ Clear</button>
+            <div id="fra-clear-confirm">
+                <span>Clear all?</span>
+                <button id="fra-clear-yes">Yes</button>
+                <button id="fra-clear-cancel">No</button>
+            </div>
+        </div>
+        
+        <!-- Day Counter Panel -->
+        <div class="fra-day-counter" id="fra-day-counter-enhanced">
+            <div class="fra-dc-header">
+                <h3>📅 183-Day Tax Residency Tracker</h3>
+                <button class="fra-dc-close" id="fra-close-day-counter">&times;</button>
+            </div>
+            <div class="fra-dc-body">
+                <!-- Stats -->
+                <div class="fra-stats-grid">
+                    <div class="fra-stat-box france">
+                        <div class="fra-stat-number" id="fra-stat-france">0</div>
+                        <div class="fra-stat-label">Days in France</div>
+                    </div>
+                    <div class="fra-stat-box us">
+                        <div class="fra-stat-number" id="fra-stat-us">0</div>
+                        <div class="fra-stat-label">Days in US</div>
+                    </div>
+                    <div class="fra-stat-box other">
+                        <div class="fra-stat-number" id="fra-stat-other">0</div>
+                        <div class="fra-stat-label">Days Elsewhere</div>
+                    </div>
+                    <div class="fra-stat-box untracked">
+                        <div class="fra-stat-number" id="fra-stat-untracked">0</div>
+                        <div class="fra-stat-label">Untracked</div>
+                    </div>
+                </div>
+                
+                <!-- Rolling 183 -->
+                <div class="fra-rolling-section">
+                    <div class="fra-rolling-header">
+                        <strong>Rolling 183-Day Period (France)</strong>
+                        <span><span id="fra-rolling-used">0</span> / 183 days</span>
+                    </div>
+                    <div class="fra-progress-track">
+                        <div class="fra-progress-bar" id="fra-progress-bar" style="width: 0%"></div>
+                    </div>
+                    <div class="fra-status-message fra-status-ok" id="fra-status-message">
+                        OK: 183 days remaining in rolling period
+                    </div>
+                </div>
+                
+                <!-- Calendar Navigation -->
+                <div class="fra-calendar-nav">
+                    <button id="fra-prev-year">&larr; Previous</button>
+                    <strong id="fra-current-year">2025</strong>
+                    <button id="fra-next-year">Next &rarr;</button>
+                </div>
+                
+                <!-- Legend -->
+                <div class="fra-legend">
+                    <div class="fra-legend-item">
+                        <div class="fra-legend-color france"></div>
+                        <span>France</span>
+                    </div>
+                    <div class="fra-legend-item">
+                        <div class="fra-legend-color us"></div>
+                        <span>United States</span>
+                    </div>
+                    <div class="fra-legend-item">
+                        <div class="fra-legend-color other"></div>
+                        <span>Other</span>
+                    </div>
+                </div>
+                
+                <!-- Calendar Grid -->
+                <div class="fra-calendar-grid" id="fra-calendar-grid"></div>
+                
+                <!-- Add Trip -->
+                <div class="fra-add-trip-section">
+                    <button id="fra-add-trip-btn">+ Add Trip</button>
+                    <div class="fra-add-trip-form" id="fra-add-trip-form">
+                        <div class="fra-form-row">
+                            <div>
+                                <label>Start Date</label>
+                                <input type="date" id="fra-trip-start">
+                            </div>
+                            <div>
+                                <label>End Date</label>
+                                <input type="date" id="fra-trip-end">
+                            </div>
+                        </div>
+                        <div class="fra-form-row">
+                            <div>
+                                <label>Location</label>
+                                <select id="fra-trip-location">
+                                    <option value="france">France</option>
+                                    <option value="us">United States</option>
+                                    <option value="other">Other Country</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label>Notes (optional)</label>
+                                <input type="text" id="fra-trip-notes" placeholder="e.g., Business trip">
+                            </div>
+                        </div>
+                        <div class="fra-form-buttons">
+                            <button id="fra-save-trip">Save Trip</button>
+                            <button id="fra-cancel-trip">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Trip List -->
+                <div class="fra-trip-list" id="fra-trip-list">
+                    No trips recorded for this year.
+                </div>
+                
+                <!-- Data Management -->
+                <div class="fra-data-management">
+                    <button id="fra-export-data">📤 Export</button>
+                    <label>
+                        📥 Import
+                        <input type="file" id="fra-import-data" accept=".json">
+                    </label>
+                    <button id="fra-clear-all-data">🗑️ Clear All Data</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Chat Area -->
+        <div class="fra-chat-area">
+            <div class="fra-welcome" id="fra-welcome">
+                <h3>What would you like to know?</h3>
+                <div class="fra-suggested">
+                    <button class="fra-suggested-btn">What visa do I need?</button>
+                    <button class="fra-suggested-btn">How do I buy property?</button>
+                    <button class="fra-suggested-btn">Tell me about healthcare</button>
+                    <button class="fra-suggested-btn">How does taxation work?</button>
+                    <button class="fra-suggested-btn">Can I drive with a US license?</button>
+                    <button class="fra-suggested-btn">How do I ship my belongings?</button>
+                </div>
+            </div>
+            
+            <div class="fra-conversation" id="fra-conversation"></div>
+            
+            <div id="fra-loading">Searching knowledge base...</div>
+            
+            <form class="fra-search-form" id="fra-search-form">
+                <input type="text" id="fra-query" placeholder="Ask about visas, property, healthcare, taxes..." autocomplete="off">
+                <button type="submit" id="fra-submit">Ask</button>
+            </form>
+        </div>
+        
+        <!-- Footer -->
+        <footer class="fra-footer">
+            <p><strong>Disclaimer:</strong> This information is for general guidance only. Immigration, tax, and legal matters require professional consultation. Always verify with official French government sources.</p>
+            <p><strong>Sources:</strong> France-Visas.gouv.fr, Service-Public.fr, Impots.gouv.fr, ANTS.gouv.fr, Ameli.fr</p>
+            <p>For complex situations, consult immigration attorneys, tax advisors, or certified professionals.</p>
+        </footer>
+    </div>
+    
+    <!-- Knowledge Base -->
+    <script>
+        var fraData = {
+            knowledgeBase: {
+                "visas": {
+                    "visitor_visa": {
+                        "title": "Long-Stay Visitor Visa",
+                        "keywords": ["visa", "visitor", "long stay", "VLS-TS", "what visa", "need visa", "retire", "retirement"],
+                        "content": "For Americans planning to stay in France more than 90 days without working, you need a Long-Stay Visitor Visa (VLS-TS).\n\nKey requirements:\n• Proof of sufficient financial resources (approximately €1,500/month minimum)\n• Valid passport with 6+ months validity\n• Proof of health insurance covering France\n• Proof of accommodation in France\n• Signed commitment not to work in France\n\nThe visa is typically valid for 1 year and must be validated online within 3 months of arrival. After the first year, you can apply for a multi-year residence permit (carte de séjour pluriannuelle).\n\nApplication is made at your local French consulate in the US. Processing typically takes 2-4 weeks.",
+                        "sources": [
+                            {"name": "France-Visas Official", "url": "https://france-visas.gouv.fr"},
+                            {"name": "Service-Public.fr", "url": "https://www.service-public.fr"}
+                        ],
+                        "lastVerified": "2024-12"
+                    },
+                    "work_visa": {
+                        "title": "Work Visa Options",
+                        "keywords": ["work", "employment", "job", "talent passport", "employee", "working"],
+                        "content": "Americans wanting to work in France have several visa options:\n\n1. Talent Passport: For highly skilled workers, researchers, artists, and investors. Valid up to 4 years.\n\n2. Employee Visa: Requires a job offer from a French employer who sponsors your visa.\n\n3. Intra-Company Transfer: For employees of multinational companies being transferred to France.\n\n4. Self-Employed/Entrepreneur: For those starting a business in France.\n\nMost work visas require the employer to obtain authorization from French labor authorities before you can apply. The Talent Passport is often the fastest route for qualified professionals.",
+                        "sources": [
+                            {"name": "France-Visas Official", "url": "https://france-visas.gouv.fr"}
+                        ],
+                        "lastVerified": "2024-12"
+                    },
+                    "183_day_rule": {
+                        "title": "183-Day Tax Residency Rule",
+                        "keywords": ["183", "days", "tax resident", "residency", "counting days", "how many days"],
+                        "content": "The 183-day rule is critical for tax purposes in France:\n\n• If you spend 183 or more days in France during a calendar year, you become a French tax resident\n• French tax residents must declare worldwide income to France\n• Days are counted as any day you are physically present in France at midnight\n• Partial days count as full days\n\nImportant considerations:\n• France and the US have a tax treaty to prevent double taxation\n• US citizens remain subject to US tax obligations regardless of residency\n• Careful day-counting is essential during transition years\n• Consider consulting a cross-border tax specialist\n\nUse the Day Counter tool above to track your days in France.",
+                        "sources": [
+                            {"name": "Impots.gouv.fr", "url": "https://www.impots.gouv.fr"},
+                            {"name": "IRS France Tax Treaty", "url": "https://www.irs.gov/businesses/international-businesses/france-tax-treaty-documents"}
+                        ],
+                        "lastVerified": "2024-12"
+                    }
+                },
+                "property": {
+                    "buying_process": {
+                        "title": "Buying Property in France",
+                        "keywords": ["buy", "buying", "property", "house", "apartment", "purchase", "real estate", "how to buy"],
+                        "content": "Americans can freely buy property in France with no restrictions. The process typically takes 3-4 months:\n\n1. Make an Offer (Offre d'Achat): Written offer to the seller\n\n2. Sign Preliminary Contract (Compromis de Vente): Binding agreement signed with 10% deposit. You have a 10-day cooling-off period to withdraw.\n\n3. Notaire Conducts Due Diligence: The notaire (public official) handles all legal checks\n\n4. Final Signing (Acte de Vente): Complete the purchase at the notaire's office\n\nCosts to budget:\n• Notaire fees: 7-8% for older properties, 2-3% for new builds\n• Agency fees: Usually 4-8% (often included in listed price)\n• Mortgage arrangement fees if applicable\n\nYou can buy property before moving to France and use it for your visa accommodation proof.",
+                        "sources": [
+                            {"name": "Notaires.fr", "url": "https://www.notaires.fr"},
+                            {"name": "Service-Public.fr", "url": "https://www.service-public.fr"}
+                        ],
+                        "lastVerified": "2024-12"
+                    },
+                    "mortgages": {
+                        "title": "Getting a French Mortgage",
+                        "keywords": ["mortgage", "loan", "financing", "bank", "borrow", "credit"],
+                        "content": "Americans can obtain mortgages from French banks, though requirements are stricter than in the US:\n\nTypical requirements:\n• Maximum 35% debt-to-income ratio (French law)\n• 10-20% minimum down payment\n• Proof of stable income\n• Life insurance (assurance emprunteur) required\n• Property insurance required\n\nMortgage terms:\n• Fixed rates are standard in France\n• Terms typically 15-25 years\n• Rates currently around 3-4%\n• Early repayment penalties may apply (check terms)\n\nTips for Americans:\n• Work with a mortgage broker (courtier) who knows international clients\n• Provide translated and apostilled US documents\n• Some banks specialize in non-resident buyers\n• Process takes 4-8 weeks after application",
+                        "sources": [
+                            {"name": "Banque de France", "url": "https://www.banque-france.fr"}
+                        ],
+                        "lastVerified": "2024-12"
+                    }
+                },
+                "healthcare": {
+                    "healthcare_system": {
+                        "title": "French Healthcare System",
+                        "keywords": ["healthcare", "health", "insurance", "doctor", "hospital", "medical", "CPAM", "carte vitale", "ameli"],
+                        "content": "France has an excellent universal healthcare system. As a legal resident, you'll join the Protection Universelle Maladie (PUMA).\n\nGetting covered:\n1. After 3 months of legal residence, register with CPAM (Caisse Primaire d'Assurance Maladie)\n2. You'll receive a Carte Vitale (health card) for accessing care\n3. Basic coverage reimburses 70% of standard medical costs\n\nMutuelle (Supplementary Insurance):\nMost residents get a mutuelle to cover the remaining 30% plus extras like dental and optical. Costs range from €30-100/month.\n\nBefore PUMA eligibility:\n• Private international health insurance required\n• Must be included in visa application\n• Coverage should be comprehensive for France\n\nFinding doctors:\n• Use Doctolib.fr to find and book appointments\n• Many doctors speak English in larger cities\n• Register with a médecin traitant (primary care doctor)",
+                        "sources": [
+                            {"name": "Ameli.fr", "url": "https://www.ameli.fr"},
+                            {"name": "Doctolib", "url": "https://www.doctolib.fr"}
+                        ],
+                        "lastVerified": "2024-12"
+                    }
+                },
+                "taxes": {
+                    "tax_overview": {
+                        "title": "Tax Overview for Americans in France",
+                        "keywords": ["tax", "taxes", "income tax", "filing", "declaration", "impots", "taxation"],
+                        "content": "Americans in France face a unique situation - potential tax obligations in both countries:\n\nFrench Taxes:\n• If tax resident (183+ days), declare worldwide income\n• Income tax rates: 0% to 45% progressive scale\n• Social charges: ~9.7% on investment income\n• Wealth tax (IFI) on real estate over €1.3M\n• Annual declaration deadline: typically May\n\nUS Obligations:\n• US citizens must file US taxes regardless of residence\n• Foreign Earned Income Exclusion may apply (~$120,000 for 2024)\n• Foreign Tax Credit prevents double taxation\n• FBAR (FinCEN 114) required if foreign accounts exceed $10,000\n• FATCA reporting may apply\n\nFrance-US Tax Treaty:\n• Prevents double taxation on most income\n• Specific rules for pensions, dividends, capital gains\n• Professional guidance strongly recommended\n\nFirst-year residents may qualify for favorable tax treatment on foreign income.",
+                        "sources": [
+                            {"name": "Impots.gouv.fr", "url": "https://www.impots.gouv.fr"},
+                            {"name": "IRS - International Taxpayers", "url": "https://www.irs.gov/individuals/international-taxpayers"}
+                        ],
+                        "lastVerified": "2024-12"
+                    }
+                },
+                "driving": {
+                    "license_exchange": {
+                        "title": "Driving License in France",
+                        "keywords": ["driving", "license", "driver", "car", "exchange", "drive", "US license", "permis"],
+                        "content": "Americans can drive in France with their US license for the first year of residency. After that, you must exchange for a French license.\n\nLicense Exchange Process:\n• Must be done within first year of residency\n• Apply through ANTS.gouv.fr (online)\n• Required documents: US license, passport, proof of address, visa\n• Some states have reciprocal agreements - no test required\n• States without agreements: may need to pass French driving test\n\nReciprocal States (no test required):\nArkansas, Colorado, Connecticut, Delaware, Florida, Illinois, Iowa, Kansas, Kentucky, Maryland, Massachusetts, Michigan, New Hampshire, Ohio, Oklahoma, Pennsylvania, South Carolina, Texas, Virginia, Wisconsin (plus DC and Puerto Rico)\n\nOther states: You may need to pass the French theory and/or practical test.\n\nInternational Driving Permit:\nUseful for the first year but not a substitute for license exchange. Get one from AAA before leaving the US.",
+                        "sources": [
+                            {"name": "ANTS.gouv.fr", "url": "https://ants.gouv.fr"},
+                            {"name": "Sécurité Routière", "url": "https://www.securite-routiere.gouv.fr"}
+                        ],
+                        "lastVerified": "2024-12"
+                    }
+                },
+                "shipping": {
+                    "shipping_belongings": {
+                        "title": "Shipping Belongings to France",
+                        "keywords": ["shipping", "moving", "belongings", "furniture", "container", "customs", "ship"],
+                        "content": "Moving your household goods to France requires careful planning:\n\nShipping Options:\n• Full container (20ft or 40ft): Best for whole households\n• Shared container (groupage): More affordable for smaller shipments\n• Air freight: Fastest but most expensive, for essentials\n\nTypical Costs:\n• Full 20ft container from East Coast: $3,000-6,000\n• Full 40ft container from East Coast: $5,000-10,000\n• Shared container: $1,500-3,000\n• Transit time: 4-8 weeks by sea\n\nCustoms & Duties:\n• EU residents moving permanently: household goods generally duty-free\n• Must have owned items for 6+ months\n• Need visa/residence permit for duty-free import\n• Complete inventory list required (detailed!)\n• Certificat de changement de résidence needed\n\nProhibited/Restricted:\n• Food items heavily restricted\n• Prescription medications need documentation\n• Plants require phytosanitary certificates\n• Firearms require French authorization\n\nTips:\n• Get multiple quotes from international movers\n• Check reviews and insurance coverage\n• Photograph valuable items before shipping",
+                        "sources": [
+                            {"name": "French Customs (Douane)", "url": "https://www.douane.gouv.fr"}
+                        ],
+                        "lastVerified": "2024-12"
+                    },
+                    "pets": {
+                        "title": "Bringing Pets to France",
+                        "keywords": ["pet", "pets", "dog", "cat", "animal", "bring pet", "import pet"],
+                        "content": "Bringing pets from the US to France requires advance preparation:\n\nRequirements for Dogs and Cats:\n1. ISO microchip (15-digit, must be implanted before rabies vaccine)\n2. Rabies vaccination (at least 21 days before travel)\n3. EU Health Certificate (USDA-endorsed, within 10 days of travel)\n4. Fit-to-fly certificate from veterinarian\n\nTimeline:\n• 30+ days before: Verify/implant microchip, rabies vaccine\n• 10 days before: Vet appointment for health certificate\n• 5-3 days before: USDA endorsement of certificate\n\nAirline Requirements:\n• Each airline has specific pet policies\n• Book pet travel early - limited spaces\n• Small pets may travel in cabin (under seat)\n• Larger pets travel as cargo or manifest cargo\n\nBreed Restrictions:\n• France has restrictions on Category 1 and 2 dogs (certain fighting breeds)\n• Check French regulations if you have a pit bull or similar breed\n\nCosts:\n• USDA endorsement: ~$38\n• Airline fees: $125-500+ depending on size and airline\n• Pet shipping service: $1,000-3,000 if using a professional",
+                        "sources": [
+                            {"name": "APHIS Pet Travel", "url": "https://www.aphis.usda.gov/aphis/pet-travel"},
+                            {"name": "French Ministry of Agriculture", "url": "https://agriculture.gouv.fr"}
+                        ],
+                        "lastVerified": "2024-12"
+                    }
+                },
+                "banking": {
+                    "opening_account": {
+                        "title": "Opening a French Bank Account",
+                        "keywords": ["bank", "banking", "account", "bank account", "open account", "french bank"],
+                        "content": "Opening a French bank account is essential and available to non-residents:\n\nDocuments Typically Required:\n• Valid passport\n• Proof of address (French or home country)\n• Proof of income or employment\n• Initial deposit (varies by bank)\n\nPopular Options:\n\nTraditional Banks:\n• BNP Paribas, Société Générale, Crédit Agricole\n• Full service but may require appointments\n• Easier if buying property (bundled with mortgage)\n\nOnline Banks:\n• Boursorama, Hello Bank, Fortuneo\n• Often easier for foreigners\n• Lower/no fees\n• Good English support\n\nNeo-Banks (interim solution):\n• N26, Revolut (EU-licensed)\n• Can open before arriving\n• Useful for initial expenses\n• Not always accepted for utilities/rent\n\nTimeline:\n• Apply online or in branch\n• Account opening: 1-2 weeks typically\n• Receive cards: 1-2 weeks after opening\n\nTip: Having a French bank account helps enormously with property purchase, utility setup, and daily life.",
+                        "sources": [
+                            {"name": "Banque de France", "url": "https://www.banque-france.fr"}
+                        ],
+                        "lastVerified": "2024-12"
+                    }
+                },
+                "settling": {
+                    "first_steps": {
+                        "title": "First Steps After Arrival",
+                        "keywords": ["arrive", "arrival", "first", "settling", "settle", "move", "moving", "after arrival"],
+                        "content": "Priority tasks after arriving in France:\n\nFirst Week:\n1. Validate your visa online (ANEF portal) within 3 months\n2. Set up mobile phone (Free Mobile, Orange, SFR, Bouygues)\n3. Open bank account if not done already\n4. Register for French classes if needed\n\nFirst Month:\n1. Sign up for utilities (EDF/Engie for energy, water company)\n2. Get home insurance (assurance habitation) - required by law for renters\n3. Register with local mairie (town hall) if required\n4. Find a médecin traitant (primary care doctor)\n\nFirst Three Months:\n1. Apply for Carte Vitale (after 3 months residency)\n2. Apply for CAF benefits if eligible\n3. Exchange driving license (start process early)\n4. Register with local prefecture for residence card if needed\n\nUseful Resources:\n• Service-Public.fr - Official government info\n• Ameli.fr - Healthcare registration\n• Pole-Emploi.fr - If seeking employment\n• CAF.fr - Family/housing benefits",
+                        "sources": [
+                            {"name": "Service-Public.fr", "url": "https://www.service-public.fr"},
+                            {"name": "ANEF Portal", "url": "https://administration-etrangers-en-france.interieur.gouv.fr"}
+                        ],
+                        "lastVerified": "2024-12"
+                    },
+                    "language": {
+                        "title": "Learning French",
+                        "keywords": ["french", "language", "learn", "speaking", "lessons", "class"],
+                        "content": "While you can manage in tourist areas with English, learning French significantly improves your experience:\n\nFree/Low-Cost Options:\n• Alliance Française: Locations worldwide and in France\n• DuoLingo/Babbel: Good for basics\n• French in Action: Free Yale course online\n• France Podcast: Various levels\n\nIntensive Programs:\n• University programs (many cities)\n• Private language schools\n• Individual tutors (italki, Preply)\n\nOfficial Integration:\n• OFII may require French classes as part of visa/residency\n• CIR (Contrat d'Intégration Républicaine) includes free French training\n• Aim for A1/A2 level for residence permit renewal\n\nImmersion Tips:\n• Watch French TV with subtitles (France 2, TF1)\n• Listen to French radio (France Inter, France Culture)\n• Join local clubs, markets, community events\n• Practice with neighbors and shopkeepers\n\nMost French appreciate efforts to speak French, even imperfectly!",
+                        "sources": [
+                            {"name": "Alliance Française", "url": "https://www.alliancefr.org"},
+                            {"name": "OFII", "url": "https://www.ofii.fr"}
+                        ],
+                        "lastVerified": "2024-12"
+                    }
+                }
+            }
+        };
+    </script>
+    
+    <!-- Application JavaScript -->
+    <script>
+        (function() {
+            "use strict";
+            
+            var FRA = window.FRA = {
+                messages: [],
+                trips: [],
+                currentYear: new Date().getFullYear(),
+                isLoading: false,
+                
+                init: function() {
+                    this.loadTrips();
+                    this.renderCalendar();
+                    this.updateStats();
+                    this.bindEvents();
+                    console.log("France Relocation Assistant initialized");
+                },
+                
+                bindEvents: function() {
+                    var self = this;
+                    
+                    // Search form
+                    document.getElementById("fra-search-form").addEventListener("submit", function(e) {
+                        e.preventDefault();
+                        self.submitSearch();
+                    });
+                    
+                    // Suggested questions
+                    var suggestedBtns = document.querySelectorAll(".fra-suggested-btn");
+                    suggestedBtns.forEach(function(btn) {
+                        btn.addEventListener("click", function() {
+                            self.askQuestion(this.textContent.trim());
+                        });
+                    });
+                    
+                    // Category buttons
+                    var categoryBtns = document.querySelectorAll(".fra-category-btn");
+                    categoryBtns.forEach(function(btn) {
+                        btn.addEventListener("click", function() {
+                            self.selectCategory(this.getAttribute("data-category"));
+                        });
+                    });
+                    
+                    // Day counter toggle
+                    document.getElementById("fra-toggle-day-counter").addEventListener("click", function() {
+                        self.toggleDayCounter();
+                    });
+                    
+                    document.getElementById("fra-close-day-counter").addEventListener("click", function() {
+                        self.closeDayCounter();
+                    });
+                    
+                    // Print and clear
+                    document.getElementById("fra-print-all").addEventListener("click", function() {
+                        self.printAll();
+                    });
+                    
+                    document.getElementById("fra-clear-screen").addEventListener("click", function() {
+                        self.showClearConfirm();
+                    });
+                    
+                    document.getElementById("fra-clear-yes").addEventListener("click", function() {
+                        self.clearScreen();
+                    });
+                    
+                    document.getElementById("fra-clear-cancel").addEventListener("click", function() {
+                        self.cancelClear();
+                    });
+                    
+                    // Calendar navigation
+                    document.getElementById("fra-prev-year").addEventListener("click", function() {
+                        self.prevYear();
+                    });
+                    
+                    document.getElementById("fra-next-year").addEventListener("click", function() {
+                        self.nextYear();
+                    });
+                    
+                    // Trip management
+                    document.getElementById("fra-add-trip-btn").addEventListener("click", function() {
+                        self.showAddTrip();
+                    });
+                    
+                    document.getElementById("fra-save-trip").addEventListener("click", function() {
+                        self.saveTrip();
+                    });
+                    
+                    document.getElementById("fra-cancel-trip").addEventListener("click", function() {
+                        self.hideAddTrip();
+                    });
+                    
+                    // Data management
+                    document.getElementById("fra-export-data").addEventListener("click", function() {
+                        self.exportData();
+                    });
+                    
+                    document.getElementById("fra-import-data").addEventListener("change", function() {
+                        self.importData(this);
+                    });
+                    
+                    document.getElementById("fra-clear-all-data").addEventListener("click", function() {
+                        self.clearAllTrips();
+                    });
+                },
+                
+                toggleDayCounter: function() {
+                    var dc = document.getElementById("fra-day-counter-enhanced");
+                    var btn = document.getElementById("fra-toggle-day-counter");
+                    var isHidden = dc.style.display === "none" || dc.style.display === "";
+                    dc.style.display = isHidden ? "block" : "none";
+                    btn.classList.toggle("active", isHidden);
+                },
+                
+                closeDayCounter: function() {
+                    document.getElementById("fra-day-counter-enhanced").style.display = "none";
+                    document.getElementById("fra-toggle-day-counter").classList.remove("active");
+                },
+                
+                submitSearch: function() {
+                    var input = document.getElementById("fra-query");
+                    var query = input.value.trim();
+                    if (!query || this.isLoading) return;
+                    
+                    this.isLoading = true;
+                    var submitBtn = document.getElementById("fra-submit");
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = "...";
+                    
+                    this.addMessage("user", query);
+                    input.value = "";
+                    
+                    document.getElementById("fra-loading").style.display = "block";
+                    
+                    var results = this.searchKnowledgeBase(query);
+                    var self = this;
+                    
+                    setTimeout(function() {
+                        self.handleSearchResults(results, query);
+                        self.isLoading = false;
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = "Ask";
+                        document.getElementById("fra-loading").style.display = "none";
+                    }, 300);
+                },
+                
+                askQuestion: function(query) {
+                    document.getElementById("fra-query").value = query;
+                    this.submitSearch();
+                },
+                
+                searchKnowledgeBase: function(query) {
+                    var kb = fraData.knowledgeBase || {};
+                    var queryLower = query.toLowerCase();
+                    var results = [];
+                    
+                    for (var category in kb) {
+                        var topics = kb[category];
+                        for (var topicKey in topics) {
+                            var topic = topics[topicKey];
+                            var score = 0;
+                            
+                            // Keyword matching
+                            if (topic.keywords) {
+                                topic.keywords.forEach(function(kw) {
+                                    var kwLower = kw.toLowerCase();
+                                    if (queryLower.indexOf(kwLower) !== -1) score += 10;
+                                    if (kwLower.indexOf(queryLower) !== -1) score += 5;
+                                });
+                            }
+                            
+                            // Title matching
+                            if (topic.title && topic.title.toLowerCase().indexOf(queryLower) !== -1) {
+                                score += 8;
+                            }
+                            
+                            // Content word matching
+                            queryLower.split(" ").forEach(function(word) {
+                                if (word.length > 3 && topic.content && topic.content.toLowerCase().indexOf(word) !== -1) {
+                                    score += 2;
+                                }
+                            });
+                            
+                            if (score > 0) {
+                                results.push({
+                                    title: topic.title,
+                                    content: topic.content,
+                                    sources: topic.sources,
+                                    lastVerified: topic.lastVerified,
+                                    score: score,
+                                    category: category
+                                });
+                            }
+                        }
+                    }
+                    
+                    results.sort(function(a, b) { return b.score - a.score; });
+                    return results;
+                },
+                
+                handleSearchResults: function(results, query) {
+                    if (results.length > 0 && results[0].score >= 10) {
+                        this.addMessage("assistant", results[0].content, {
+                            sources: results[0].sources,
+                            lastVerified: results[0].lastVerified,
+                            tier: "knowledge-base"
+                        });
+                    } else if (results.length > 0 && results[0].score >= 5) {
+                        this.addMessage("assistant", "Based on your question, this may be helpful:\n\n" + results[0].content, {
+                            sources: results[0].sources,
+                            lastVerified: results[0].lastVerified,
+                            tier: "knowledge-base"
+                        });
+                    } else {
+                        this.addMessage("assistant", "I don't have specific information about that in my knowledge base.\n\nTopics I can help with include:\n• Visas and immigration\n• Property purchase\n• Healthcare\n• Taxes\n• Driving and vehicles\n• Shipping and pets\n• Banking\n• Settling in\n\nTry asking about one of these topics.", {
+                            tier: "escalate"
+                        });
+                    }
+                },
+                
+                selectCategory: function(category) {
+                    var kb = fraData.knowledgeBase || {};
+                    var categoryData = kb[category];
+                    if (!categoryData) return;
+                    
+                    var names = {
+                        visas: "Visas & Immigration",
+                        property: "Property Purchase",
+                        healthcare: "Healthcare",
+                        taxes: "Taxes",
+                        driving: "Driving & Vehicles",
+                        shipping: "Shipping & Pets",
+                        banking: "Banking",
+                        settling: "Settling In"
+                    };
+                    
+                    var topics = Object.values(categoryData);
+                    var topicList = topics.map(function(t) { return t.title; }).join(", ");
+                    
+                    // Update active state
+                    document.querySelectorAll(".fra-category-btn").forEach(function(btn) {
+                        btn.classList.remove("active");
+                        if (btn.getAttribute("data-category") === category) {
+                            btn.classList.add("active");
+                        }
+                    });
+                    
+                    this.addMessage("user", "Show me information about " + names[category]);
+                    this.addMessage("assistant", "Topics in " + names[category] + ":\n\n" + topicList + "\n\nAsk a specific question about any of these topics, or click a suggested question below.", {});
+                },
+                
+                addMessage: function(type, content, options) {
+                    options = options || {};
+                    this.messages.push({
+                        type: type,
+                        content: content,
+                        sources: options.sources,
+                        lastVerified: options.lastVerified,
+                        tier: options.tier
+                    });
+                    this.renderMessages();
+                    this.showTools();
+                },
+                
+                renderMessages: function() {
+                    var welcome = document.getElementById("fra-welcome");
+                    var conversation = document.getElementById("fra-conversation");
+                    
+                    if (this.messages.length === 0) {
+                        welcome.style.display = "block";
+                        conversation.innerHTML = "";
+                        return;
+                    }
+                    
+                    welcome.style.display = "none";
+                    conversation.innerHTML = "";
+                    
+                    var self = this;
+                    this.messages.forEach(function(msg, idx) {
+                        var el = self.createMessageElement(msg, idx);
+                        conversation.appendChild(el);
+                    });
+                    
+                    // Scroll to bottom
+                    conversation.scrollTop = conversation.scrollHeight;
+                },
+                
+                createMessageElement: function(msg, idx) {
+                    var self = this;
+                    var wrapper = document.createElement("div");
+                    wrapper.className = "fra-message";
+                    
+                    if (msg.type === "user") {
+                        var userDiv = document.createElement("div");
+                        userDiv.className = "fra-message-user";
+                        userDiv.textContent = msg.content;
+                        wrapper.appendChild(userDiv);
+                    } else {
+                        var assistantDiv = document.createElement("div");
+                        assistantDiv.className = "fra-message-assistant";
+                        
+                        // Actions
+                        var actionsDiv = document.createElement("div");
+                        actionsDiv.className = "fra-message-actions";
+                        var printBtn = document.createElement("button");
+                        printBtn.textContent = "Print";
+                        printBtn.addEventListener("click", function() {
+                            self.printMessage(idx);
+                        });
+                        actionsDiv.appendChild(printBtn);
+                        assistantDiv.appendChild(actionsDiv);
+                        
+                        // Content
+                        var contentDiv = document.createElement("div");
+                        contentDiv.className = "fra-message-content";
+                        contentDiv.innerHTML = this.formatContent(msg.content);
+                        assistantDiv.appendChild(contentDiv);
+                        
+                        // Sources
+                        if (msg.sources && msg.sources.length) {
+                            var sourcesDiv = document.createElement("div");
+                            sourcesDiv.className = "fra-message-sources";
+                            var h5 = document.createElement("h5");
+                            h5.textContent = "Sources";
+                            sourcesDiv.appendChild(h5);
+                            
+                            msg.sources.forEach(function(src) {
+                                var a = document.createElement("a");
+                                a.href = src.url;
+                                a.target = "_blank";
+                                a.rel = "noopener";
+                                a.textContent = src.name + " ↗";
+                                sourcesDiv.appendChild(a);
+                            });
+                            
+                            assistantDiv.appendChild(sourcesDiv);
+                        }
+                        
+                        // Tier indicator
+                        if (msg.tier) {
+                            var tierDiv = document.createElement("div");
+                            tierDiv.className = "fra-message-tier";
+                            tierDiv.textContent = msg.tier === "knowledge-base" ? 
+                                "✓ Answered from knowledge base" : 
+                                "No confident match found";
+                            assistantDiv.appendChild(tierDiv);
+                        }
+                        
+                        wrapper.appendChild(assistantDiv);
+                    }
+                    
+                    return wrapper;
+                },
+                
+                formatContent: function(content) {
+                    if (!content) return "";
+                    // Convert newlines to breaks and bullet points
+                    return content
+                        .replace(/\n\n/g, "</p><p>")
+                        .replace(/\n•/g, "<br>•")
+                        .replace(/\n(\d+\.)/g, "<br>$1")
+                        .replace(/\n/g, "<br>");
+                },
+                
+                showTools: function() {
+                    if (this.messages.length > 0) {
+                        document.getElementById("fra-print-all").style.display = "inline-block";
+                        document.getElementById("fra-clear-screen").style.display = "inline-block";
+                    }
+                },
+                
+                showClearConfirm: function() {
+                    document.getElementById("fra-clear-screen").style.display = "none";
+                    document.getElementById("fra-clear-confirm").style.display = "flex";
+                },
+                
+                cancelClear: function() {
+                    document.getElementById("fra-clear-confirm").style.display = "none";
+                    document.getElementById("fra-clear-screen").style.display = "inline-block";
+                },
+                
+                clearScreen: function() {
+                    this.messages = [];
+                    this.renderMessages();
+                    document.getElementById("fra-print-all").style.display = "none";
+                    document.getElementById("fra-clear-screen").style.display = "none";
+                    document.getElementById("fra-clear-confirm").style.display = "none";
+                    document.querySelectorAll(".fra-category-btn").forEach(function(btn) {
+                        btn.classList.remove("active");
+                    });
+                },
+                
+                printMessage: function(idx) {
+                    var msg = this.messages[idx];
+                    if (!msg || msg.type === "user") return;
+                    var w = window.open("", "_blank");
+                    if (w) {
+                        w.document.write("<html><head><title>France Relocation Info</title></head><body><pre style='white-space: pre-wrap; font-family: sans-serif;'>" + msg.content + "</pre></body></html>");
+                        w.document.close();
+                        w.print();
+                    }
+                },
+                
+                printAll: function() {
+                    if (this.messages.length === 0) return;
+                    var content = this.messages.map(function(m) {
+                        return (m.type === "user" ? "Q: " : "A: ") + m.content;
+                    }).join("\n\n---\n\n");
+                    
+                    var w = window.open("", "_blank");
+                    if (w) {
+                        w.document.write("<html><head><title>France Relocation Q&A</title></head><body><pre style='white-space: pre-wrap; font-family: sans-serif;'>" + content + "</pre></body></html>");
+                        w.document.close();
+                        w.print();
+                    }
+                },
+                
+                // Day Counter Methods
+                loadTrips: function() {
+                    try {
+                        var saved = localStorage.getItem("fra_trips");
+                        if (saved) this.trips = JSON.parse(saved);
+                    } catch (e) {
+                        this.trips = [];
+                    }
+                },
+                
+                saveTrips: function() {
+                    try {
+                        localStorage.setItem("fra_trips", JSON.stringify(this.trips));
+                    } catch (e) {}
+                },
+                
+                prevYear: function() {
+                    this.currentYear--;
+                    this.renderCalendar();
+                    this.updateStats();
+                },
+                
+                nextYear: function() {
+                    this.currentYear++;
+                    this.renderCalendar();
+                    this.updateStats();
+                },
+                
+                showAddTrip: function() {
+                    var form = document.getElementById("fra-add-trip-form");
+                    form.style.display = form.style.display === "none" ? "block" : "none";
+                },
+                
+                hideAddTrip: function() {
+                    document.getElementById("fra-add-trip-form").style.display = "none";
+                },
+                
+                saveTrip: function() {
+                    var startDate = document.getElementById("fra-trip-start").value;
+                    var endDate = document.getElementById("fra-trip-end").value;
+                    var location = document.getElementById("fra-trip-location").value;
+                    var notes = document.getElementById("fra-trip-notes").value;
+                    
+                    if (!startDate || !endDate) {
+                        alert("Please enter both start and end dates.");
+                        return;
+                    }
+                    
+                    if (new Date(endDate) < new Date(startDate)) {
+                        alert("End date must be after start date.");
+                        return;
+                    }
+                    
+                    this.trips.push({
+                        id: Date.now(),
+                        startDate: startDate,
+                        endDate: endDate,
+                        location: location,
+                        notes: notes
+                    });
+                    
+                    this.trips.sort(function(a, b) {
+                        return new Date(a.startDate) - new Date(b.startDate);
+                    });
+                    
+                    this.saveTrips();
+                    this.renderCalendar();
+                    this.updateStats();
+                    this.hideAddTrip();
+                    
+                    // Clear form
+                    document.getElementById("fra-trip-start").value = "";
+                    document.getElementById("fra-trip-end").value = "";
+                    document.getElementById("fra-trip-notes").value = "";
+                },
+                
+                deleteTrip: function(id) {
+                    if (!confirm("Delete this trip?")) return;
+                    this.trips = this.trips.filter(function(t) { return t.id !== id; });
+                    this.saveTrips();
+                    this.renderCalendar();
+                    this.updateStats();
+                },
+                
+                clearAllTrips: function() {
+                    if (!confirm("Delete all trip data? This cannot be undone.")) return;
+                    this.trips = [];
+                    this.saveTrips();
+                    this.renderCalendar();
+                    this.updateStats();
+                },
+                
+                getLocationForDate: function(dateStr) {
+                    var date = new Date(dateStr);
+                    for (var i = 0; i < this.trips.length; i++) {
+                        var t = this.trips[i];
+                        if (date >= new Date(t.startDate) && date <= new Date(t.endDate)) {
+                            return t.location;
+                        }
+                    }
+                    return null;
+                },
+                
+                calculateDaysForYear: function(year) {
+                    var result = { france: 0, us: 0, other: 0, untracked: 0 };
+                    var start = new Date(year, 0, 1);
+                    var end = new Date(year, 11, 31);
+                    var today = new Date();
+                    if (today < end) end = today;
+                    
+                    var current = new Date(start);
+                    while (current <= end) {
+                        var loc = this.getLocationForDate(current.toISOString().split("T")[0]);
+                        if (loc === "france") result.france++;
+                        else if (loc === "us") result.us++;
+                        else if (loc === "other") result.other++;
+                        else result.untracked++;
+                        current.setDate(current.getDate() + 1);
+                    }
+                    
+                    return result;
+                },
+                
+                calculateRolling183: function() {
+                    var today = new Date();
+                    var start = new Date(today);
+                    start.setDate(start.getDate() - 182);
+                    
+                    var count = 0;
+                    var current = new Date(start);
+                    while (current <= today) {
+                        if (this.getLocationForDate(current.toISOString().split("T")[0]) === "france") {
+                            count++;
+                        }
+                        current.setDate(current.getDate() + 1);
+                    }
+                    
+                    return count;
+                },
+                
+                updateStats: function() {
+                    var stats = this.calculateDaysForYear(this.currentYear);
+                    var rolling = this.calculateRolling183();
+                    var remaining = Math.max(0, 183 - rolling);
+                    
+                    document.getElementById("fra-stat-france").textContent = stats.france;
+                    document.getElementById("fra-stat-us").textContent = stats.us;
+                    document.getElementById("fra-stat-other").textContent = stats.other;
+                    document.getElementById("fra-stat-untracked").textContent = stats.untracked;
+                    document.getElementById("fra-rolling-used").textContent = rolling;
+                    document.getElementById("fra-current-year").textContent = this.currentYear;
+                    
+                    var bar = document.getElementById("fra-progress-bar");
+                    bar.style.width = Math.min(100, (rolling / 183) * 100) + "%";
+                    bar.className = "fra-progress-bar";
+                    if (rolling >= 183) bar.classList.add("fra-danger");
+                    else if (remaining < 30) bar.classList.add("fra-warning");
+                    
+                    var status = document.getElementById("fra-status-message");
+                    if (rolling >= 183) {
+                        status.className = "fra-status-message fra-status-danger";
+                        status.textContent = "⚠️ Warning: You have exceeded 183 days in France";
+                    } else if (remaining < 30) {
+                        status.className = "fra-status-message fra-status-warning";
+                        status.textContent = "⚡ Caution: Only " + remaining + " days remaining";
+                    } else {
+                        status.className = "fra-status-message fra-status-ok";
+                        status.textContent = "✓ OK: " + remaining + " days remaining in rolling 183-day period";
+                    }
+                },
+                
+                renderCalendar: function() {
+                    var grid = document.getElementById("fra-calendar-grid");
+                    grid.innerHTML = "";
+                    
+                    var months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                    var today = new Date().toISOString().split("T")[0];
+                    var self = this;
+                    
+                    months.forEach(function(monthName, m) {
+                        var monthDiv = document.createElement("div");
+                        monthDiv.className = "fra-calendar-month";
+                        
+                        var nameDiv = document.createElement("div");
+                        nameDiv.className = "fra-month-name";
+                        nameDiv.textContent = monthName;
+                        monthDiv.appendChild(nameDiv);
+                        
+                        var daysDiv = document.createElement("div");
+                        daysDiv.className = "fra-month-days";
+                        
+                        // Day headers
+                        ["S", "M", "T", "W", "T", "F", "S"].forEach(function(d) {
+                            var header = document.createElement("div");
+                            header.className = "fra-day-header";
+                            header.textContent = d;
+                            daysDiv.appendChild(header);
+                        });
+                        
+                        // Empty cells for first week
+                        var firstDay = new Date(self.currentYear, m, 1).getDay();
+                        for (var e = 0; e < firstDay; e++) {
+                            var empty = document.createElement("div");
+                            empty.className = "fra-day fra-day-empty";
+                            daysDiv.appendChild(empty);
+                        }
+                        
+                        // Days
+                        var daysInMonth = new Date(self.currentYear, m + 1, 0).getDate();
+                        for (var d = 1; d <= daysInMonth; d++) {
+                            var dateStr = self.currentYear + "-" + String(m + 1).padStart(2, "0") + "-" + String(d).padStart(2, "0");
+                            var loc = self.getLocationForDate(dateStr);
+                            
+                            var dayDiv = document.createElement("div");
+                            dayDiv.className = "fra-day";
+                            if (loc === "france") dayDiv.classList.add("fra-day-france");
+                            else if (loc === "us") dayDiv.classList.add("fra-day-us");
+                            else if (loc === "other") dayDiv.classList.add("fra-day-other");
+                            if (dateStr === today) dayDiv.classList.add("fra-day-today");
+                            
+                            dayDiv.textContent = d;
+                            daysDiv.appendChild(dayDiv);
+                        }
+                        
+                        monthDiv.appendChild(daysDiv);
+                        grid.appendChild(monthDiv);
+                    });
+                    
+                    this.renderTripList();
+                },
+                
+                renderTripList: function() {
+                    var list = document.getElementById("fra-trip-list");
+                    var self = this;
+                    var yearTrips = this.trips.filter(function(t) {
+                        return new Date(t.startDate).getFullYear() === self.currentYear;
+                    });
+                    
+                    if (yearTrips.length === 0) {
+                        list.innerHTML = "No trips recorded for " + this.currentYear;
+                        return;
+                    }
+                    
+                    list.innerHTML = "";
+                    var labels = { france: "France", us: "United States", other: "Other" };
+                    
+                    yearTrips.forEach(function(t) {
+                        var days = Math.ceil((new Date(t.endDate) - new Date(t.startDate)) / 86400000) + 1;
+                        
+                        var item = document.createElement("div");
+                        item.className = "fra-trip-item fra-trip-" + t.location;
+                        
+                        var text = document.createTextNode(
+                            t.startDate + " to " + t.endDate + " (" + days + " days) - " + labels[t.location] +
+                            (t.notes ? " - " + t.notes : "")
+                        );
+                        item.appendChild(text);
+                        
+                        var deleteBtn = document.createElement("button");
+                        deleteBtn.className = "fra-delete-trip";
+                        deleteBtn.textContent = "×";
+                        deleteBtn.addEventListener("click", function() {
+                            self.deleteTrip(t.id);
+                        });
+                        item.appendChild(deleteBtn);
+                        
+                        list.appendChild(item);
+                    });
+                },
+                
+                exportData: function() {
+                    var data = JSON.stringify({ version: "1.0", trips: this.trips }, null, 2);
+                    var blob = new Blob([data], { type: "application/json" });
+                    var a = document.createElement("a");
+                    a.href = URL.createObjectURL(blob);
+                    a.download = "fra-trips-" + new Date().toISOString().split("T")[0] + ".json";
+                    a.click();
+                },
+                
+                importData: function(input) {
+                    var self = this;
+                    var file = input.files[0];
+                    if (!file) return;
+                    
+                    var reader = new FileReader();
+                    reader.onload = function(e) {
+                        try {
+                            var data = JSON.parse(e.target.result);
+                            if (data.trips && confirm("Import " + data.trips.length + " trips? This will add to existing data.")) {
+                                self.trips = self.trips.concat(data.trips);
+                                self.trips.sort(function(a, b) {
+                                    return new Date(a.startDate) - new Date(b.startDate);
+                                });
+                                self.saveTrips();
+                                self.renderCalendar();
+                                self.updateStats();
+                                alert("Imported successfully!");
+                            }
+                        } catch (err) {
+                            alert("Error importing: " + err.message);
+                        }
+                    };
+                    reader.readAsText(file);
+                    input.value = "";
+                }
+            };
+            
+            // Initialize
+            if (document.readyState === "loading") {
+                document.addEventListener("DOMContentLoaded", function() { FRA.init(); });
+            } else {
+                FRA.init();
+            }
+        })();
+    </script>
+</body>
+</html>
