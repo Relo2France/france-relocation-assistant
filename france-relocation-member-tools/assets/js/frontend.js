@@ -5,7 +5,7 @@
  * 
  * @package FRA_Member_Tools
  * @since 1.0.0
- * @version 1.0.34
+ * @version 1.0.37
  */
 
 (function($) {
@@ -1091,6 +1091,14 @@
                 case 'back-to-guides':
                     this.loadSection('guides');
                     break;
+                case 'restart-guide-chat':
+                    // Restart the current guide from the beginning
+                    if (this.currentGuideContext && this.currentGuideContext.type) {
+                        this.startGuideGeneration(this.currentGuideContext.type);
+                    } else {
+                        this.loadSection('guides');
+                    }
+                    break;
                 case 'back-to-documents':
                     this.loadSection('create-documents');
                     break;
@@ -1544,6 +1552,10 @@
                                     input.placeholder = data.placeholder || 'Type your answer...';
                                 }
                             }
+                            // Add confirm button if we have a profile value
+                            if (data.show_confirm_button && data.prefill_value) {
+                                self.addGuideConfirmButton(data.prefill_value);
+                            }
                         }
                         // If options are provided, user clicks an option (input stays hidden)
                     } else {
@@ -1579,8 +1591,14 @@
                 '<div class="framt-guide-chat-avatar">🇫🇷</div>' :
                 '<div class="framt-guide-chat-avatar">👤</div>';
 
+            // For user messages, convert slugs to human-readable labels
+            var displayContent = content;
+            if (role === 'user') {
+                displayContent = this.getValueLabel(content);
+            }
+
             // Format content (convert markdown-style bold and italic)
-            var formattedContent = this.escapeHtml(content)
+            var formattedContent = this.escapeHtml(displayContent)
                 .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
                 .replace(/_([^_]+)_/g, '<em>$1</em>')
                 .replace(/\n/g, '<br>');
@@ -1733,6 +1751,96 @@
         },
 
         /**
+         * Add a confirm button for profile-suggested values
+         */
+        addGuideConfirmButton: function(prefillValue) {
+            var self = this;
+            var messagesContainer = document.getElementById('framt-guide-chat-messages');
+            if (!messagesContainer) return;
+
+            var confirmDiv = document.createElement('div');
+            confirmDiv.className = 'framt-guide-chat-confirm';
+
+            var btn = document.createElement('button');
+            btn.className = 'framt-btn framt-btn-primary framt-guide-confirm-btn';
+            btn.textContent = '✓ Use ' + prefillValue;
+            btn.addEventListener('click', function() {
+                // Disable button
+                btn.disabled = true;
+                btn.textContent = 'Using ' + prefillValue + '...';
+                // Remove confirm div
+                confirmDiv.remove();
+                // Hide text input
+                var inputArea = document.getElementById('framt-guide-chat-input-area');
+                if (inputArea) inputArea.style.display = 'none';
+                // Send the value
+                self.sendGuideChatMessage(prefillValue, false);
+            });
+
+            confirmDiv.appendChild(btn);
+            messagesContainer.appendChild(confirmDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        },
+
+        /**
+         * Label map for converting slugs to human-readable names in chat
+         */
+        guideValueLabels: {
+            // Document types
+            'birth_cert': 'Birth certificate',
+            'marriage_cert': 'Marriage certificate',
+            'divorce_decree': 'Divorce decree',
+            'death_cert': 'Death certificate',
+            'court_docs': 'Court documents',
+            'fbi_background': 'FBI background check',
+            // Urgency levels
+            'urgent': 'Urgent (within 2 weeks)',
+            'soon': 'Soon (1-2 months)',
+            'flexible': 'Flexible (3+ months)',
+            // Pet types
+            'dog': 'Dog',
+            'cat': 'Cat',
+            'both': 'Both dog and cat',
+            // Travel methods
+            'flying_cabin': 'Flying with pet in cabin',
+            'flying_cargo': 'Flying with pet in cargo',
+            'driving': 'Driving to France',
+            'pet_transport': 'Professional pet transport',
+            'unsure': 'Not yet decided',
+            // Microchip/rabies status
+            'yes': 'Yes',
+            'no': 'No',
+            'current': 'Current and up to date',
+            'expired': 'Expired / needs update',
+            // Loan terms
+            '15': '15 years',
+            '20': '20 years',
+            '25': '25 years',
+            // Banking needs
+            'daily': 'Daily banking',
+            'savings': 'Savings account',
+            'mortgage': 'Mortgage services',
+            'investments': 'Investment services'
+        },
+
+        /**
+         * Convert a value or comma-separated values to human-readable labels
+         */
+        getValueLabel: function(value) {
+            if (!value) return value;
+
+            // Handle comma-separated values (multi-select)
+            if (value.indexOf(',') !== -1) {
+                var self = this;
+                return value.split(',').map(function(v) {
+                    return self.guideValueLabels[v.trim()] || v.trim();
+                }).join(', ');
+            }
+
+            return this.guideValueLabels[value] || value;
+        },
+
+        /**
          * Show guide question (legacy - kept for compatibility)
          * @param {number} index - Question index
          */
@@ -1864,38 +1972,82 @@
         },
 
         /**
-         * Show generated guide
+         * Show generated guide ready UI (in chat, matching document flow)
          * @param {Object} data - Guide data from server
          */
         showGeneratedGuide: function(data) {
-            var container = document.getElementById('fra-member-content-body') || 
+            var messagesContainer = document.getElementById('framt-guide-chat-messages');
+
+            // If in chat mode, show the nice ready card in chat
+            if (messagesContainer) {
+                // Hide generating indicator
+                this.hideGuideGeneratingIndicator();
+                this.hideGuideTypingIndicator();
+
+                // Get guide title
+                var guideTitles = {
+                    'visa-application': 'Step-by-Step Visa Application Guide',
+                    'healthcare': 'Healthcare Navigation Guide',
+                    'banking': 'Banking Setup Guide',
+                    'housing': 'Housing Search Guide',
+                    'relocation-timeline': 'Relocation Timeline',
+                    'bank-ratings': 'French Bank Comparison Guide',
+                    'pet-relocation': 'Pet Relocation Guide',
+                    'french-mortgages': 'French Mortgage Evaluation Guide',
+                    'apostille': 'Apostille Guide'
+                };
+                var guideType = this.currentGuideContext?.type || '';
+                var guideTitle = data.title || guideTitles[guideType] || 'Your Guide';
+
+                var readyDiv = document.createElement('div');
+                readyDiv.className = 'framt-guide-ready';
+                readyDiv.innerHTML = '<div class="framt-doc-ready-content">' +
+                    '<h3>✅ Your guide is ready!</h3>' +
+                    '<p>' + this.escapeHtml(guideTitle) + '</p>' +
+                    '<p class="framt-doc-ready-note">Your guide will be saved to "My Visa Documents" when you download it.</p>' +
+                    '<div class="framt-doc-ready-actions">' +
+                        '<button class="framt-btn framt-btn-primary framt-btn-large" data-action="download-guide-word" data-guide-id="' + data.guide_id + '">📄 Download Word</button>' +
+                        '<button class="framt-btn framt-btn-secondary framt-btn-large" data-action="download-guide-pdf" data-guide-id="' + data.guide_id + '">🖨️ Print / PDF</button>' +
+                    '</div>' +
+                    '<div class="framt-doc-ready-secondary">' +
+                        '<button class="framt-btn framt-btn-ghost" data-action="restart-guide-chat">🔄 Start Over</button>' +
+                        '<button class="framt-btn framt-btn-ghost" data-action="back-to-guides">📁 Create Different Guide</button>' +
+                    '</div>' +
+                '</div>';
+                messagesContainer.appendChild(readyDiv);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                return;
+            }
+
+            // Fallback for non-chat mode
+            var container = document.getElementById('fra-member-content-body') ||
                            document.getElementById('fra-member-content');
-            
+
             if (!container) return;
-            
+
             var html = '<div class="framt-guide-result">' +
                 '<div class="framt-guide-header">' +
                     '<button class="framt-btn framt-btn-small framt-btn-ghost" data-action="back-to-guides">← Back to Guides</button>' +
                     '<h2>' + this.escapeHtml(data.title) + '</h2>';
-            
+
             if (data.ai_generated) {
                 html += '<p class="framt-ai-badge">✨ AI-Generated & Personalized</p>';
             }
-            
+
             html += '</div>' +
                 '<div class="framt-guide-content">';
-            
+
             if (data.preview) {
                 html += '<div class="framt-guide-preview"><p>' + this.escapeHtml(data.preview) + '</p></div>';
             }
-            
+
             html += '</div>' +
                 '<div class="framt-guide-actions">' +
                     '<button class="framt-btn framt-btn-primary framt-btn-large" data-action="download-guide-word" data-guide-id="' + data.guide_id + '">📄 Download Word Document</button>' +
                     '<button class="framt-btn framt-btn-secondary framt-btn-large" data-action="download-guide-pdf" data-guide-id="' + data.guide_id + '">🖨️ Print / Save as PDF</button>' +
                 '</div>' +
             '</div>';
-            
+
             container.innerHTML = html;
         },
 

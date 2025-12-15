@@ -2,7 +2,7 @@
  * France Relocation Member Tools - Frontend Styles
  * @package FRA_Member_Tools
  * @since 1.0.0
- * @version 1.0.34
+ * @version 1.0.37
  * 
  * Uses CSS variables from main France Relocation Assistant plugin.
  * Falls back to defaults if main plugin variables not available.
@@ -205,8 +205,27 @@
 .framt-btn-danger { background: var(--framt-danger); color: white; }
 .framt-btn-small { padding: 0.4rem 0.8rem; font-size: 0.8rem; }
 
-/* Documents */
-.framt-documents-list { display: flex; flex-direction: column; gap: 1rem; }
+/* My Documents Page */
+.framt-my-documents {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.framt-documents-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.25rem;
+}
+
+.framt-documents-header h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: var(--framt-gray-700);
+}
+
+/* Documents List */
+.framt-documents-list { display: flex; flex-direction: column; gap: 0.75rem; }
 .framt-document-card { display: flex; align-items: center; gap: 1rem; padding: 1rem; background: var(--fra-card, white); border: 1px solid var(--framt-gray-200); border-radius: var(--framt-radius); }
 .framt-doc-icon { font-size: 2rem; }
 .framt-doc-info { flex: 1; }
@@ -1481,27 +1500,33 @@
     font-size: 0.9rem;
 }
 
-/* My Documents Notice */
+/* Guide Ready (reuses doc-ready styling) */
+.framt-guide-ready {
+    margin-top: 1rem;
+    margin-left: 48px;
+}
+
+/* My Documents Notice - subtle footer notice */
 .framt-documents-notice {
     display: flex;
-    align-items: flex-start;
-    gap: 0.75rem;
-    background: #fef3c7;
-    border: 1px solid #f59e0b;
-    border-radius: 8px;
-    padding: 0.875rem 1rem;
-    margin-bottom: 1.5rem;
+    align-items: center;
+    gap: 0.5rem;
+    background: #f9fafb;
+    border-radius: 6px;
+    padding: 0.625rem 0.875rem;
+    margin-top: 1.25rem;
 }
 
 .framt-notice-icon {
-    font-size: 1.1rem;
+    font-size: 0.9rem;
     flex-shrink: 0;
+    opacity: 0.7;
 }
 
 .framt-documents-notice p {
     margin: 0;
-    font-size: 0.9rem;
-    color: #92400e;
+    font-size: 0.8rem;
+    color: #6b7280;
     line-height: 1.4;
 }
 
@@ -2749,6 +2774,36 @@
 .framt-guide-chat-option.framt-guide-chat-option-prefilled:hover:not(:disabled) {
     background: #ebe9e2;
     border-color: #c49943;
+}
+
+/* Guide Chat Confirm Button (for profile-suggested text values) */
+.framt-guide-chat-confirm {
+    display: flex;
+    gap: 0.75rem;
+    margin-left: 48px;
+    margin-top: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.framt-guide-confirm-btn {
+    padding: 0.625rem 1.25rem;
+    background: #d4a853;
+    border: none;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #1a1a1a;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.framt-guide-confirm-btn:hover:not(:disabled) {
+    background: #c49943;
+}
+
+.framt-guide-confirm-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }
 
 /* Guide Chat Multi-select */
