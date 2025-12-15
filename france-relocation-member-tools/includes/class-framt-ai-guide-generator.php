@@ -238,7 +238,11 @@ Generate a detailed, personalized pet relocation guide that includes:
 
 Be specific, actionable, and personalized. Use their actual situation to give relevant advice. If they're flying in cabin, don't talk about cargo. If their microchip is already done, acknowledge that.
 
-Format the response as clean HTML with these exact section headers. Use <h2> for main sections, <h3> for subsections, <ul>/<li> for lists, <p> for paragraphs, and <strong> for emphasis. Keep the tone professional but warm and reassuring.";
+Format the response as clean HTML with these exact section headers. Use <h2> for main sections, <h3> for subsections, <ul>/<li> for lists, <p> for paragraphs, and <strong> for emphasis. Keep the tone professional but warm and reassuring.
+
+CRITICAL FORMATTING RULES:
+- Output ONLY raw HTML. Do NOT wrap your response in markdown code fences (no \`\`\`html or \`\`\`).
+- Start your response directly with the HTML content.";
     }
 
     /**
@@ -325,7 +329,13 @@ Generate a detailed mortgage evaluation guide including:
 
 9. **TIMELINE & PROCESS** - What to expect from application to closing
 
-Format as clean HTML with <h2> sections, <h3> subsections, tables where appropriate, and clear formatting. Be specific with numbers and calculations based on their inputs.";
+Format as clean HTML with <h2> sections, <h3> subsections, tables where appropriate, and clear formatting. Be specific with numbers and calculations based on their inputs.
+
+CRITICAL FORMATTING RULES:
+- Output ONLY raw HTML. Do NOT wrap your response in markdown code fences (no \`\`\`html or \`\`\`).
+- Start your response directly with the HTML content.
+- For tables with colored header cells (like quality tier tables), ALWAYS use white text on dark backgrounds for readability.
+- Add a blank line between major sections for better spacing.";
     }
 
     /**
@@ -392,7 +402,11 @@ Generate a detailed apostille guide including:
 
 8. **CHECKLIST** - Everything they need to gather and do
 
-Format as clean HTML. Be specific with state agencies, fees, and timelines. Include actual website URLs where helpful.";
+Format as clean HTML. Be specific with state agencies, fees, and timelines. Include actual website URLs where helpful.
+
+CRITICAL FORMATTING RULES:
+- Output ONLY raw HTML. Do NOT wrap your response in markdown code fences (no \`\`\`html or \`\`\`).
+- Start your response directly with the HTML content.";
     }
 
     /**
@@ -490,7 +504,11 @@ Generate a detailed French bank comparison guide including:
    - Best online-only option
    - Best for English speakers
 
-Format as clean HTML with comparison tables where appropriate. Be specific and actionable.";
+Format as clean HTML with comparison tables where appropriate. Be specific and actionable.
+
+CRITICAL FORMATTING RULES:
+- Output ONLY raw HTML. Do NOT wrap your response in markdown code fences (no \`\`\`html or \`\`\`).
+- Start your response directly with the HTML content.";
     }
 
     /**
@@ -781,7 +799,12 @@ GENERAL FORMATTING:
 - 📝 for notes
 - ℹ️ for informational callouts
 
-Be specific, actionable, and personalized to their exact situation. Include actual fees, timelines, and requirements current as of {$current_date}.";
+Be specific, actionable, and personalized to their exact situation. Include actual fees, timelines, and requirements current as of {$current_date}.
+
+CRITICAL FORMATTING RULES:
+- Output ONLY raw HTML. Do NOT wrap your response in markdown code fences (no \`\`\`html or \`\`\`).
+- Start your response directly with the HTML content.
+- For any tables with colored backgrounds (green/yellow/red for quality tiers), ALWAYS use white text color for contrast.";
     }
 
     /**
@@ -957,6 +980,22 @@ VISA-SPECIFIC REQUIREMENTS FOR RETIREE VISA:
     }
 
     /**
+     * Clean AI content of markdown code fences and other artifacts
+     */
+    private function clean_ai_content($content) {
+        // Remove markdown code fences (```html, ```, etc.)
+        $content = preg_replace('/^```(html|HTML)?\s*\n?/m', '', $content);
+        $content = preg_replace('/\n?```\s*$/m', '', $content);
+        $content = preg_replace('/```(html|HTML)?\s*/i', '', $content);
+        $content = preg_replace('/```\s*/', '', $content);
+
+        // Trim whitespace
+        $content = trim($content);
+
+        return $content;
+    }
+
+    /**
      * Convert guide to beautifully formatted Word document
      * Styled to match professional PDF guide layout
      */
@@ -964,7 +1003,7 @@ VISA-SPECIFIC REQUIREMENTS FOR RETIREE VISA:
         $title = $guide_data['title'];
         $subtitle = $guide_data['subtitle'] ?? '';
         $date = $guide_data['date'];
-        $ai_content = $guide_data['ai_content'];
+        $ai_content = $this->clean_ai_content($guide_data['ai_content']);
         $guide_type = $guide_data['type'] ?? '';
 
         // Professional color palette matching PDF template
@@ -1178,6 +1217,69 @@ tr:nth-child(even) td {
 .comparison-table td:first-child {
     text-align: left;
     font-weight: 500;
+}
+
+/* Quality tier colored cells - ensure white text for contrast */
+td[style*="background-color: #28a745"],
+td[style*="background-color:#28a745"],
+td[style*="background: #28a745"],
+td[style*="background:#28a745"],
+th[style*="background-color: #28a745"],
+th[style*="background-color:#28a745"],
+td[style*="background-color: green"],
+td[style*="background: green"],
+th[style*="background-color: green"],
+th[style*="background: green"] {
+    color: white !important;
+}
+td[style*="background-color: #ffc107"],
+td[style*="background-color:#ffc107"],
+td[style*="background: #ffc107"],
+td[style*="background:#ffc107"],
+th[style*="background-color: #ffc107"],
+th[style*="background-color:#ffc107"],
+td[style*="background-color: yellow"],
+td[style*="background: yellow"],
+th[style*="background-color: yellow"],
+th[style*="background: yellow"],
+td[style*="background-color: #ffcc00"],
+td[style*="background:#ffcc00"],
+th[style*="background-color: #ffcc00"],
+th[style*="background:#ffcc00"] {
+    color: #333 !important;
+    font-weight: 600;
+}
+td[style*="background-color: #dc3545"],
+td[style*="background-color:#dc3545"],
+td[style*="background: #dc3545"],
+td[style*="background:#dc3545"],
+th[style*="background-color: #dc3545"],
+th[style*="background-color:#dc3545"],
+td[style*="background-color: red"],
+td[style*="background: red"],
+th[style*="background-color: red"],
+th[style*="background: red"] {
+    color: white !important;
+}
+
+/* Tier labels with backgrounds */
+.tier-excellent, .excellent {
+    background-color: #28a745 !important;
+    color: white !important;
+    padding: 4pt 8pt;
+    font-weight: 600;
+}
+.tier-acceptable, .acceptable {
+    background-color: #ffc107 !important;
+    color: #333 !important;
+    padding: 4pt 8pt;
+    font-weight: 600;
+}
+.tier-poor, .poor {
+    background-color: #dc3545 !important;
+    color: white !important;
+    padding: 4pt 8pt;
+    font-weight: 600;
 }
 
 /* Document Checklist Styling */
