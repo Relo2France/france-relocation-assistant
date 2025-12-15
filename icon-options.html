@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Navigation Icon Options</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        h1 { margin-bottom: 20px; color: #1e3a5f; }
+        h2 { margin: 30px 0 15px; color: #374151; font-size: 18px; }
+        .option-group {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .option-title {
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #1e3a5f;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .nav-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 4px;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .nav-item:hover { background: #f3f4f6; }
+        .nav-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .nav-icon { font-size: 16px; }
+        .nav-text { font-size: 14px; color: #374151; }
+        .nav-arrow { 
+            font-size: 12px; 
+            color: #3b82f6;
+            width: 20px;
+            text-align: center;
+        }
+        .nav-arrow.chevron { font-size: 14px; }
+        .nav-arrow.svg-icon { display: flex; align-items: center; }
+        .nav-arrow svg { width: 16px; height: 16px; }
+        
+        .section-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #6b7280;
+            margin: 20px 0 10px;
+        }
+        
+        .legend {
+            display: flex;
+            gap: 30px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e5e7eb;
+            font-size: 13px;
+            color: #6b7280;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .legend-icon {
+            color: #3b82f6;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Navigation Icon Options</h1>
+    <p style="margin-bottom: 30px; color: #6b7280;">Choose which style you prefer for expandable (has subtopics) vs direct (opens in chat) navigation items.</p>
+
+    <!-- OPTION 1: Unicode Triangles -->
+    <div class="option-group">
+        <div class="option-title">Option 1: Unicode Triangles (Current Style)</div>
+        <div class="section-label">Expandable Items (has subtopics)</div>
+        <div class="nav-item">
+            <div class="nav-left">
+                <span class="nav-icon">🏠</span>
+                <span class="nav-text">Property Purchase</span>
+            </div>
+            <span class="nav-arrow">▼</span>
+        </div>
+        <div class="nav-item">
+            <div class="nav-left">
+                <span class="nav-icon">🏥</span>
+                <span class="nav-text">Healthcare & Retirement</span>
+            </div>
+            <span class="nav-arrow">▼</span>
+        </div>
+        
+        <div class="section-label">Direct Items (opens in chat)</div>
+        <div class="nav-item">
+            <div class="nav-left">
+                <span class="nav-icon">📋</span>
+                <span class="nav-text">Custom Checklists</span>
+            </div>
+            <span class="nav-arrow">▶</span>
+        </div>
+        <div class="nav-item">
+            <div class="nav-left">
+                <span class="nav-icon">📖</span>
+                <span class="nav-text">Glossary</span>
+            </div>
+            <span class="nav-arrow">▶</span>
+        </div>
+        
+        <div class="legend">
+            <div class="legend-item"><span class="legend-icon">▼</span> Expandable (subtopics)</div>
+            <div class="legend-item"><span class="legend-icon">▶</span> Direct (to chat)</div>
+        </div>
+    </div>
+
+    <!-- OPTION 2: Chevrons -->
+    <div class="option-group">
+        <div class="option-title">Option 2: Chevron Arrows</div>
+        <div class="section-label">Expandable Items (has subtopics)</div>
+        <div class="nav-item">
+            <div class="nav-left">
+                <span class="nav-icon">🏠</span>
+                <span class="nav-text">Property Purchase</span>
+            </div>
+            <span class="nav-arrow chevron">⌄</span>
+        </div>
+        <div class="nav-item">
+            <div class="nav-left">
+                <span class="nav-icon">🏥</span>
+                <span class="nav-text">Healthcare & Retirement</span>
+            </div>
+            <span class="nav-arrow chevron">⌄</span>
+        </div>
+        
+        <div class="section-label">Direct Items (opens in chat)</div>
+        <div class="nav-item">
+            <div class="nav-left">
+                <span class="nav-icon">📋</span>
+                <span class="nav-text">Custom Checklists</span>
+            </div>
+            <span class="nav-arrow chevron">›</span>
+        </div>
+        <div class="nav-item">
+            <div class="nav-left">
+                <span class="nav-icon">📖</span>
+                <span class="nav-text">Glossary</span>
+            </div>
+            <span class="nav-arrow chevron">›</span>
+        </div>
+        
+        <div class="legend">
+            <div class="legend-item"><span class="legend-icon chevron">⌄</span> Expandable (subtopics)</div>
+            <div class="legend-item"><span class="legend-icon chevron">›</span> Direct (to chat)</div>
+        </div>
+    </div>
+
+    <!-- OPTION 3: SVG Icons -->
+    <div class="option-group">
+        <div class="option-title">Option 3: SVG Icons (Clean/Modern)</div>
+        <div class="section-label">Expandable Items (has subtopics)</div>
+        <div class="nav-item">
+            <div class="nav-left">
+                <span class="nav-icon">🏠</span>
+                <span class="nav-text">Property Purchase</span>
+            </div>
+            <span class="nav-arrow svg-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+            </span>
+        </div>
+        <div class="nav-item">
+            <div class="nav-left">
+                <span class="nav-icon">🏥</span>
+                <span class="nav-text">Healthcare & Retirement</span>
+            </div>
+            <span class="nav-arrow svg-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+            </span>
+        </div>
+        
+        <div class="section-label">Direct Items (opens in chat)</div>
+        <div class="nav-item">
+            <div class="nav-left">
+                <span class="nav-icon">📋</span>
+                <span class="nav-text">Custom Checklists</span>
+            </div>
+            <span class="nav-arrow svg-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+            </span>
+        </div>
+        <div class="nav-item">
+            <div class="nav-left">
+                <span class="nav-icon">📖</span>
+                <span class="nav-text">Glossary</span>
+            </div>
+            <span class="nav-arrow svg-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+            </span>
+        </div>
+        
+        <div class="legend">
+            <div class="legend-item">
+                <span class="legend-icon svg-icon" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2.5" width="14" height="14">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </span> Expandable (subtopics)
+            </div>
+            <div class="legend-item">
+                <span class="legend-icon svg-icon" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2.5" width="14" height="14">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                </span> Direct (to chat)
+            </div>
+        </div>
+    </div>
+
+    <!-- OPTION 4: Plus/Arrow Combo -->
+    <div class="option-group">
+        <div class="option-title">Option 4: Plus/Minus for Expand + Arrow for Direct</div>
+        <div class="section-label">Expandable Items (has subtopics)</div>
+        <div class="nav-item">
+            <div class="nav-left">
+                <span class="nav-icon">🏠</span>
+                <span class="nav-text">Property Purchase</span>
+            </div>
+            <span class="nav-arrow" style="font-weight: bold; font-size: 14px;">+</span>
+        </div>
+        <div class="nav-item">
+            <div class="nav-left">
+                <span class="nav-icon">🏥</span>
+                <span class="nav-text">Healthcare & Retirement</span>
+            </div>
+            <span class="nav-arrow" style="font-weight: bold; font-size: 14px;">+</span>
+        </div>
+        
+        <div class="section-label">Direct Items (opens in chat)</div>
+        <div class="nav-item">
+            <div class="nav-left">
+                <span class="nav-icon">📋</span>
+                <span class="nav-text">Custom Checklists</span>
+            </div>
+            <span class="nav-arrow">→</span>
+        </div>
+        <div class="nav-item">
+            <div class="nav-left">
+                <span class="nav-icon">📖</span>
+                <span class="nav-text">Glossary</span>
+            </div>
+            <span class="nav-arrow">→</span>
+        </div>
+        
+        <div class="legend">
+            <div class="legend-item"><span class="legend-icon" style="font-weight: bold;">+</span> Expandable (becomes − when open)</div>
+            <div class="legend-item"><span class="legend-icon">→</span> Direct (to chat)</div>
+        </div>
+    </div>
+
+    <!-- OPTION 5: No icon for direct -->
+    <div class="option-group">
+        <div class="option-title">Option 5: Arrows Only for Expandable (Clean)</div>
+        <div class="section-label">Expandable Items (has subtopics)</div>
+        <div class="nav-item">
+            <div class="nav-left">
+                <span class="nav-icon">🏠</span>
+                <span class="nav-text">Property Purchase</span>
+            </div>
+            <span class="nav-arrow svg-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+            </span>
+        </div>
+        <div class="nav-item">
+            <div class="nav-left">
+                <span class="nav-icon">🏥</span>
+                <span class="nav-text">Healthcare & Retirement</span>
+            </div>
+            <span class="nav-arrow svg-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+            </span>
+        </div>
+        
+        <div class="section-label">Direct Items (no arrow - cleaner look)</div>
+        <div class="nav-item">
+            <div class="nav-left">
+                <span class="nav-icon">📋</span>
+                <span class="nav-text">Custom Checklists</span>
+            </div>
+            <span class="nav-arrow"></span>
+        </div>
+        <div class="nav-item">
+            <div class="nav-left">
+                <span class="nav-icon">📖</span>
+                <span class="nav-text">Glossary</span>
+            </div>
+            <span class="nav-arrow"></span>
+        </div>
+        
+        <div class="legend">
+            <div class="legend-item">
+                <span class="legend-icon svg-icon" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2.5" width="14" height="14">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </span> Expandable only (no icon for direct items)
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

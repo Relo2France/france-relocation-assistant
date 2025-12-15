@@ -1,0 +1,839 @@
+/*
+Theme Name: Relo2France
+Theme URI: https://relo2france.com
+Author: Relo2France
+Author URI: https://relo2france.com
+Description: A clean, professional theme designed for the France Relocation Assistant. Optimized for Americans relocating to France. Includes auth page templates for MemberPress integration.
+Version: 1.2.3
+Requires at least: 6.0
+Tested up to: 6.9
+Requires PHP: 7.4
+License: GNU General Public License v2 or later
+License URI: http://www.gnu.org/licenses/gpl-2.0.html
+Text Domain: relo2france
+Tags: one-column, custom-menu, featured-images, translation-ready, custom-logo
+
+Relo2France Theme - Your guide to relocating from the US to France.
+*/
+
+/* ===== CSS Reset & Base ===== */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+:root {
+    /* Colors */
+    --r2f-primary: #1e3a5f;
+    --r2f-primary-dark: #152a45;
+    --r2f-accent: #c9a227;
+    --r2f-accent-hover: #b8922a;
+    --r2f-text: #2c3e50;
+    --r2f-text-light: #6c757d;
+    --r2f-bg: #f8f9fa;
+    --r2f-white: #ffffff;
+    --r2f-border: #e1e5e9;
+    --r2f-success: #28a745;
+    --r2f-france: #0055a4;
+    --r2f-us: #b22234;
+    
+    /* Auth Page Colors (can be overridden by plugin) */
+    --r2f-auth-blue-dark: #172554;
+    --r2f-auth-blue: #1e3a8a;
+    --r2f-auth-blue-light: #3b82f6;
+    --r2f-auth-orange: #f97316;
+    --r2f-auth-orange-hover: #ea580c;
+    
+    /* Typography */
+    --r2f-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    --r2f-font-size: 16px;
+    --r2f-line-height: 1.6;
+    
+    /* Spacing */
+    --r2f-spacing-xs: 0.5rem;
+    --r2f-spacing-sm: 1rem;
+    --r2f-spacing-md: 1.5rem;
+    --r2f-spacing-lg: 2rem;
+    --r2f-spacing-xl: 3rem;
+    
+    /* Layout */
+    --r2f-max-width: 1200px;
+    --r2f-content-width: 900px;
+    --r2f-radius: 8px;
+    --r2f-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    --r2f-shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+html {
+    font-size: var(--r2f-font-size);
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: var(--r2f-font);
+    font-size: 1rem;
+    line-height: var(--r2f-line-height);
+    color: var(--r2f-text);
+    background-color: var(--r2f-bg);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* ===== Typography ===== */
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--r2f-primary);
+    margin-bottom: var(--r2f-spacing-sm);
+}
+
+h1 { font-size: 2.5rem; }
+h2 { font-size: 2rem; }
+h3 { font-size: 1.5rem; }
+h4 { font-size: 1.25rem; }
+h5 { font-size: 1.125rem; }
+h6 { font-size: 1rem; }
+
+p {
+    margin-bottom: var(--r2f-spacing-sm);
+}
+
+a {
+    color: var(--r2f-primary);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+a:hover {
+    color: var(--r2f-accent);
+}
+
+/* ===== Layout ===== */
+.site-container {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.site-content {
+    flex: 1;
+    width: 100%;
+    max-width: var(--r2f-max-width);
+    margin: 0 auto;
+    padding: var(--r2f-spacing-lg) var(--r2f-spacing-md);
+}
+
+.content-narrow {
+    max-width: var(--r2f-content-width);
+    margin: 0 auto;
+}
+
+/* ===== Header ===== */
+.site-header {
+    background: linear-gradient(135deg, var(--r2f-primary) 0%, var(--r2f-primary-dark) 100%);
+    color: var(--r2f-white);
+    padding: var(--r2f-spacing-md) var(--r2f-spacing-lg);
+    box-shadow: var(--r2f-shadow-lg);
+    position: relative;
+}
+
+.site-header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--r2f-france) 33%, var(--r2f-white) 33%, var(--r2f-white) 66%, var(--r2f-us) 66%);
+}
+
+.header-inner {
+    max-width: var(--r2f-max-width);
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--r2f-spacing-md);
+}
+
+.site-branding {
+    display: flex;
+    align-items: center;
+    gap: var(--r2f-spacing-sm);
+}
+
+.site-logo {
+    font-size: 2.5rem;
+    line-height: 1;
+}
+
+.site-title {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--r2f-white);
+}
+
+.site-title a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.site-description {
+    margin: 0;
+    font-size: 0.875rem;
+    opacity: 0.9;
+    color: var(--r2f-white);
+}
+
+/* ===== Navigation ===== */
+.main-navigation {
+    display: flex;
+    align-items: center;
+}
+
+.main-navigation ul {
+    list-style: none;
+    display: flex;
+    gap: var(--r2f-spacing-md);
+    margin: 0;
+    padding: 0;
+}
+
+.main-navigation a {
+    color: var(--r2f-white);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    padding: var(--r2f-spacing-xs) 0;
+    position: relative;
+    opacity: 0.9;
+    transition: opacity 0.2s ease;
+}
+
+.main-navigation a:hover,
+.main-navigation .current-menu-item a {
+    opacity: 1;
+}
+
+.main-navigation a::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: var(--r2f-accent);
+    transition: width 0.2s ease;
+}
+
+.main-navigation a:hover::after,
+.main-navigation .current-menu-item a::after {
+    width: 100%;
+}
+
+/* Mobile menu toggle */
+.menu-toggle {
+    display: none;
+    background: transparent;
+    border: none;
+    color: var(--r2f-white);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: var(--r2f-spacing-xs);
+}
+
+@media (max-width: 768px) {
+    .menu-toggle {
+        display: block;
+    }
+    
+    .main-navigation ul {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: var(--r2f-primary-dark);
+        flex-direction: column;
+        padding: var(--r2f-spacing-md);
+        gap: var(--r2f-spacing-sm);
+        z-index: 1000;
+    }
+    
+    .main-navigation.toggled ul {
+        display: flex;
+    }
+}
+
+/* ===== New Centered Header (Front Page) ===== */
+.site-header-centered {
+    background: #ffffff;
+    border-bottom: 1px solid #e5e7eb;
+    padding: 48px 24px 56px;
+    text-align: center;
+}
+
+.header-centered-inner {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.header-logo-large {
+    margin-bottom: 24px;
+}
+
+.header-logo-large img,
+.header-logo-large .custom-logo {
+    width: 160px;
+    height: 160px;
+    object-fit: contain;
+}
+
+.header-logo-large .custom-logo-link {
+    display: inline-block;
+}
+
+.header-logo-placeholder {
+    font-size: 8rem;
+    line-height: 1;
+}
+
+.header-site-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #ffffff;
+    background: var(--r2f-primary);
+    display: inline-block;
+    padding: 8px 24px;
+    border-radius: 6px;
+    margin: 0 0 16px 0;
+    line-height: 1.2;
+    letter-spacing: -0.025em;
+}
+
+.header-site-title a {
+    color: #ffffff;
+    text-decoration: none;
+}
+
+.header-site-title a:hover {
+    color: #ffffff;
+    opacity: 0.9;
+}
+
+.header-tagline {
+    color: #ea580c;
+    font-weight: 600;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin: 0 0 20px 0;
+}
+
+.header-description {
+    color: #4b5563;
+    font-size: 1.125rem;
+    line-height: 1.75;
+    max-width: 640px;
+    margin: 0 auto;
+}
+
+/* Responsive centered header */
+@media (max-width: 768px) {
+    .site-header-centered {
+        padding: 32px 16px 40px;
+    }
+    
+    .header-logo-large img,
+    .header-logo-large .custom-logo {
+        width: 120px;
+        height: 120px;
+    }
+    
+    .header-logo-placeholder {
+        font-size: 6rem;
+    }
+    
+    .header-site-title {
+        font-size: 1.75rem;
+        padding: 6px 16px;
+    }
+    
+    .header-tagline {
+        font-size: 0.75rem;
+    }
+    
+    .header-description {
+        font-size: 1rem;
+    }
+}
+
+/* ===== Hero Section (Kept for backwards compatibility) ===== */
+.hero-section {
+    background: linear-gradient(135deg, var(--r2f-primary) 0%, #2c5282 100%);
+    color: var(--r2f-white);
+    padding: var(--r2f-spacing-xl) var(--r2f-spacing-lg);
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-section::before {
+    content: '🇫🇷';
+    position: absolute;
+    font-size: 20rem;
+    opacity: 0.05;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+}
+
+.hero-content {
+    position: relative;
+    z-index: 1;
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+.hero-title {
+    font-size: 2.5rem;
+    margin-bottom: var(--r2f-spacing-md);
+    color: var(--r2f-white);
+}
+
+.hero-subtitle {
+    font-size: 1.25rem;
+    opacity: 0.9;
+    margin-bottom: var(--r2f-spacing-lg);
+}
+
+.hero-cta {
+    display: inline-block;
+    background: var(--r2f-accent);
+    color: var(--r2f-primary);
+    padding: var(--r2f-spacing-sm) var(--r2f-spacing-lg);
+    border-radius: var(--r2f-radius);
+    font-weight: 600;
+    font-size: 1.125rem;
+    transition: all 0.2s ease;
+}
+
+.hero-cta:hover {
+    background: var(--r2f-accent-hover);
+    color: var(--r2f-primary);
+    transform: translateY(-2px);
+    box-shadow: var(--r2f-shadow-lg);
+}
+
+/* ===== Cards ===== */
+.card {
+    background: var(--r2f-white);
+    border-radius: var(--r2f-radius);
+    box-shadow: var(--r2f-shadow);
+    padding: var(--r2f-spacing-lg);
+    margin-bottom: var(--r2f-spacing-lg);
+    transition: box-shadow 0.2s ease;
+}
+
+.card:hover {
+    box-shadow: var(--r2f-shadow-lg);
+}
+
+.card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--r2f-spacing-lg);
+}
+
+/* ===== Buttons ===== */
+.btn {
+    display: inline-block;
+    padding: var(--r2f-spacing-sm) var(--r2f-spacing-md);
+    border-radius: var(--r2f-radius);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    text-decoration: none;
+}
+
+.btn-primary {
+    background: var(--r2f-primary);
+    color: var(--r2f-white);
+}
+
+.btn-primary:hover {
+    background: var(--r2f-primary-dark);
+    color: var(--r2f-white);
+}
+
+.btn-accent {
+    background: var(--r2f-accent);
+    color: var(--r2f-primary);
+}
+
+.btn-accent:hover {
+    background: var(--r2f-accent-hover);
+    color: var(--r2f-primary);
+}
+
+.btn-outline {
+    background: transparent;
+    border: 2px solid var(--r2f-primary);
+    color: var(--r2f-primary);
+}
+
+.btn-outline:hover {
+    background: var(--r2f-primary);
+    color: var(--r2f-white);
+}
+
+/* ===== Footer ===== */
+.site-footer {
+    background: var(--r2f-primary-dark);
+    color: var(--r2f-white);
+    padding: var(--r2f-spacing-xl) var(--r2f-spacing-lg);
+    margin-top: auto;
+}
+
+.footer-inner {
+    max-width: var(--r2f-max-width);
+    margin: 0 auto;
+}
+
+.footer-content {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--r2f-spacing-xl);
+    margin-bottom: var(--r2f-spacing-lg);
+}
+
+.footer-section h4 {
+    color: var(--r2f-accent);
+    margin-bottom: var(--r2f-spacing-md);
+    font-size: 1.125rem;
+}
+
+.footer-section p,
+.footer-section li {
+    opacity: 0.85;
+    font-size: 0.9375rem;
+    line-height: 1.7;
+}
+
+.footer-section ul {
+    list-style: none;
+}
+
+.footer-section ul li {
+    margin-bottom: var(--r2f-spacing-xs);
+}
+
+.footer-section a {
+    color: var(--r2f-white);
+    opacity: 0.85;
+}
+
+.footer-section a:hover {
+    opacity: 1;
+    color: var(--r2f-accent);
+}
+
+.footer-bottom {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: var(--r2f-spacing-lg);
+    text-align: center;
+    font-size: 0.875rem;
+    opacity: 0.7;
+}
+
+.footer-flags {
+    font-size: 1.5rem;
+    margin-bottom: var(--r2f-spacing-sm);
+}
+
+/* ===== Page Styles ===== */
+.page-header {
+    background: var(--r2f-white);
+    padding: var(--r2f-spacing-lg);
+    margin-bottom: var(--r2f-spacing-lg);
+    border-radius: var(--r2f-radius);
+    box-shadow: var(--r2f-shadow);
+}
+
+.page-title {
+    margin-bottom: var(--r2f-spacing-xs);
+}
+
+.page-subtitle {
+    color: var(--r2f-text-light);
+    font-size: 1.125rem;
+}
+
+/* ===== Blog/Post Styles ===== */
+.post-entry {
+    background: var(--r2f-white);
+    border-radius: var(--r2f-radius);
+    box-shadow: var(--r2f-shadow);
+    overflow: hidden;
+    margin-bottom: var(--r2f-spacing-lg);
+}
+
+.post-thumbnail {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+}
+
+.post-content {
+    padding: var(--r2f-spacing-lg);
+}
+
+.post-meta {
+    font-size: 0.875rem;
+    color: var(--r2f-text-light);
+    margin-bottom: var(--r2f-spacing-sm);
+}
+
+.entry-title {
+    font-size: 1.5rem;
+    margin-bottom: var(--r2f-spacing-sm);
+}
+
+.entry-title a {
+    color: var(--r2f-primary);
+}
+
+.entry-title a:hover {
+    color: var(--r2f-accent);
+}
+
+/* ===== Assistant Container Override ===== */
+.fra-container {
+    margin: 0;
+    padding: 0;
+    max-width: 100%;
+}
+
+/* ===== Utility Classes ===== */
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+
+.mt-0 { margin-top: 0; }
+.mt-1 { margin-top: var(--r2f-spacing-sm); }
+.mt-2 { margin-top: var(--r2f-spacing-md); }
+.mt-3 { margin-top: var(--r2f-spacing-lg); }
+.mt-4 { margin-top: var(--r2f-spacing-xl); }
+
+.mb-0 { margin-bottom: 0; }
+.mb-1 { margin-bottom: var(--r2f-spacing-sm); }
+.mb-2 { margin-bottom: var(--r2f-spacing-md); }
+.mb-3 { margin-bottom: var(--r2f-spacing-lg); }
+.mb-4 { margin-bottom: var(--r2f-spacing-xl); }
+
+.hidden { display: none; }
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+    :root {
+        --r2f-font-size: 15px;
+    }
+    
+    h1 { font-size: 2rem; }
+    h2 { font-size: 1.5rem; }
+    h3 { font-size: 1.25rem; }
+    
+    .hero-title {
+        font-size: 1.75rem;
+    }
+    
+    .hero-subtitle {
+        font-size: 1rem;
+    }
+    
+    .site-content {
+        padding: var(--r2f-spacing-md);
+    }
+    
+    .header-inner {
+        flex-direction: column;
+        text-align: center;
+    }
+}
+
+/* ===== Print Styles ===== */
+@media print {
+    .site-header,
+    .site-footer,
+    .main-navigation {
+        display: none;
+    }
+    
+    .site-content {
+        padding: 0;
+        max-width: 100%;
+    }
+    
+    .card {
+        box-shadow: none;
+        border: 1px solid #ddd;
+    }
+}
+
+/* ============================================================
+   AUTH PAGE TEMPLATE STYLES (template-auth.php)
+   Used for Login, Signup, Logout pages with MemberPress
+   ============================================================ */
+
+/* Auth page body - remove margins */
+body.template-auth,
+body.page-template-template-auth {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: transparent;
+}
+
+body.template-auth #wpadminbar,
+body.page-template-template-auth #wpadminbar {
+    display: none !important;
+}
+
+body.template-auth,
+body.page-template-template-auth {
+    margin-top: 0 !important;
+}
+
+/* Auth page wrapper - provided by plugin, these are fallbacks */
+.auth-page-content {
+    min-height: 100vh;
+}
+
+/* Fallback auth wrapper if plugin styles don't load */
+.auth-page-content .fra-auth-wrapper {
+    font-family: var(--r2f-font);
+    min-height: 100vh;
+    background: linear-gradient(135deg, var(--r2f-auth-blue-dark) 0%, var(--r2f-auth-blue) 50%, var(--r2f-auth-blue-light) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+}
+
+.auth-page-content .fra-auth-card {
+    background: var(--r2f-white);
+    border-radius: 16px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+    width: 100%;
+    max-width: 420px;
+    padding: 2.5rem;
+}
+
+.auth-page-content .fra-auth-card.fra-auth-card-wide {
+    max-width: 520px;
+}
+
+/* Auth form input styling - fallback/enhancement */
+.auth-page-content input[type="text"],
+.auth-page-content input[type="email"],
+.auth-page-content input[type="password"] {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-family: var(--r2f-font);
+    transition: all 0.2s ease;
+}
+
+.auth-page-content input[type="text"]:focus,
+.auth-page-content input[type="email"]:focus,
+.auth-page-content input[type="password"]:focus {
+    outline: none;
+    border-color: var(--r2f-auth-blue);
+    box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
+}
+
+/* Auth submit button - fallback/enhancement */
+.auth-page-content input[type="submit"],
+.auth-page-content button[type="submit"] {
+    width: 100%;
+    padding: 1rem 1.5rem;
+    background: var(--r2f-auth-orange);
+    color: var(--r2f-white);
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    font-family: var(--r2f-font);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 15px rgba(249, 115, 22, 0.3);
+}
+
+.auth-page-content input[type="submit"]:hover,
+.auth-page-content button[type="submit"]:hover {
+    background: var(--r2f-auth-orange-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(249, 115, 22, 0.4);
+}
+
+/* Responsive auth pages */
+@media (max-width: 480px) {
+    .auth-page-content .fra-auth-wrapper {
+        padding: 1rem;
+    }
+    
+    .auth-page-content .fra-auth-card {
+        padding: 1.5rem;
+    }
+}
+
+/* ===== Scroll-Snap for France Relocation Assistant =====
+   When the FRA app is present, enable scroll-snap so:
+   - Header is visible initially (NO auto-snap on load)
+   - When user scrolls DOWN past header, app "locks" into full viewport
+   - User can scroll UP to see header again, or DOWN to see footer
+   
+   IMPORTANT: scroll-snap is disabled by default and enabled via JS
+   after user interaction to prevent auto-snapping on page load.
+   ======================================================= */
+
+/* Scroll-snap is DISABLED by default - JS adds .scroll-snap-enabled class */
+html:has(.fra-container) {
+    scroll-snap-type: none; /* Disabled until JS enables it */
+    scroll-behavior: smooth;
+}
+
+/* Only enable scroll-snap after user starts scrolling (class added by JS) */
+html.scroll-snap-enabled:has(.fra-container) {
+    scroll-snap-type: y proximity;
+}
+
+body:has(.fra-container) {
+    overflow-y: scroll;
+}
+
+/* Headers should NOT snap - they flow naturally */
+.fra-site-header-wrapper,
+.site-header {
+    scroll-snap-align: none;
+}
+
+/* FRA app container snaps when scrolled to */
+.fra-container {
+    scroll-snap-align: start;
+    scroll-snap-stop: normal;
+    min-height: 100vh;
+}
+
+/* Footer snaps when scrolled to */
+.site-footer {
+    scroll-snap-align: start;
+    scroll-snap-stop: normal;
+}

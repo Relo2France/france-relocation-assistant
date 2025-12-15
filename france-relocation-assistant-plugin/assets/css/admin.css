@@ -1,0 +1,255 @@
+/**
+ * France Relocation Assistant - Admin Styles
+ */
+
+.fra-admin-wrap {
+    max-width: 1200px;
+}
+
+.fra-admin-wrap h1 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.fra-admin-header {
+    margin-bottom: 20px;
+}
+
+.fra-description {
+    font-size: 14px;
+    color: #666;
+}
+
+.fra-admin-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+@media (max-width: 782px) {
+    .fra-admin-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.fra-card {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    border-radius: 4px;
+    padding: 20px;
+}
+
+.fra-card h2 {
+    margin-top: 0;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.fra-card h3 {
+    font-size: 14px;
+    margin: 20px 0 10px 0;
+}
+
+.fra-card-full {
+    grid-column: span 2;
+}
+
+@media (max-width: 782px) {
+    .fra-card-full {
+        grid-column: span 1;
+    }
+}
+
+.fra-status-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.fra-status-table th,
+.fra-status-table td {
+    padding: 8px 0;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.fra-status-table th {
+    font-weight: 500;
+    width: 150px;
+}
+
+.fra-status-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.fra-status-success {
+    background: #d4edda;
+    color: #155724;
+}
+
+.fra-status-error {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.fra-status-running {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.fra-status-activated {
+    background: #cce5ff;
+    color: #004085;
+}
+
+.fra-message {
+    padding: 12px;
+    border-radius: 4px;
+    margin-top: 15px;
+}
+
+.fra-message-success {
+    background: #d4edda;
+    color: #155724;
+}
+
+.fra-message-error {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.fra-actions {
+    margin-top: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.fra-actions .spinner {
+    float: none;
+    margin: 0;
+}
+
+.fra-update-result {
+    margin-top: 15px;
+    padding: 12px;
+    background: #f0f0f1;
+    border-radius: 4px;
+}
+
+.fra-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.fra-stat {
+    text-align: center;
+    padding: 24px 15px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+}
+
+.fra-stat-number {
+    display: block;
+    font-size: 32px;
+    font-weight: 600;
+    color: #1d2327;
+    line-height: 1.2;
+    margin-bottom: 8px;
+}
+
+.fra-stat-label {
+    display: block;
+    font-size: 11px;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 500;
+}
+
+.fra-category-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.fra-category-list li {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.fra-topic-count {
+    color: #666;
+    font-size: 13px;
+}
+
+.fra-usage-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 30px;
+}
+
+@media (max-width: 782px) {
+    .fra-usage-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.fra-usage-item h3 {
+    margin-top: 0;
+}
+
+.fra-usage-item code {
+    display: block;
+    background: #f0f0f1;
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+.fra-usage-item ul {
+    padding-left: 20px;
+}
+
+.fra-usage-item h4 {
+    font-size: 13px;
+    margin: 15px 0 5px 0;
+}
+
+.fra-update-log {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.fra-update-log li {
+    padding: 5px 0;
+    border-bottom: 1px solid #eee;
+    font-size: 13px;
+    font-family: monospace;
+}
+
+.fra-admin-footer {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #ccd0d4;
+    color: #666;
+    font-size: 13px;
+}
+
+.fra-admin-footer a {
+    color: #0073aa;
+    text-decoration: none;
+}
