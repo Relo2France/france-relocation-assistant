@@ -3,7 +3,7 @@
  * Plugin Name: France Relocation Member Tools
  * Plugin URI: https://relo2france.com
  * Description: Premium member features for the France Relocation Assistant - document generation, checklists, guides, and personalized relocation planning.
- * Version: 1.0.93
+ * Version: 1.0.94
  * Author: Relo2France
  * Author URI: https://relo2france.com
  * License: GPL v2 or later
@@ -22,7 +22,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Plugin constants
-define('FRAMT_VERSION', '1.0.93');
+define('FRAMT_VERSION', '1.0.94');
 define('FRAMT_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('FRAMT_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('FRAMT_PLUGIN_BASENAME', plugin_basename(__FILE__));
@@ -193,6 +193,7 @@ final class FRA_Member_Tools {
     public function init() {
         // Don't init if main plugin missing
         if (!class_exists('France_Relocation_Assistant')) {
+            error_log('FRAMT: Main plugin France_Relocation_Assistant class not found');
             return;
         }
 
@@ -3210,6 +3211,12 @@ Please provide a helpful, accurate answer about their health insurance coverage 
      * @return array Modified navigation items
      */
     public function add_member_navigation($items) {
+        // Safety check - ensure components are initialized
+        if (empty($this->components['membership'])) {
+            error_log('FRAMT: Membership component not initialized in add_member_navigation');
+            return $items;
+        }
+
         $is_member = $this->components['membership']->is_member();
         
         // Get order and settings from main plugin options
