@@ -1471,16 +1471,22 @@
         sendGuideChatMessage: function(message, isStart) {
             var self = this;
             var ctx = this.currentGuideContext;
-            
+
             if (!ctx) return;
-            
+
             // Show user message (unless it's the start)
             if (!isStart && message !== 'start') {
                 this.addGuideChatMessage(message, 'user');
             }
-            
-            // Show typing indicator
-            this.showGuideTypingIndicator();
+
+            // Show appropriate indicator based on whether this is the last question
+            if (ctx.isLastQuestion) {
+                // Show generating indicator for the final generation
+                this.showGuideGeneratingIndicator();
+            } else {
+                // Show typing indicator for regular questions
+                this.showGuideTypingIndicator();
+            }
             
             // Hide input while processing
             var inputArea = document.getElementById('framt-guide-chat-input-area');
@@ -1501,7 +1507,9 @@
                     })
                 },
                 success: function(response) {
+                    // Hide both indicator types
                     self.hideGuideTypingIndicator();
+                    self.hideGuideGeneratingIndicator();
 
                     if (response.success) {
                         var data = response.data;
@@ -1514,9 +1522,12 @@
                             ctx.answers = data.collected;
                         }
 
+                        // Track if this is the last question (for next submission)
+                        ctx.isLastQuestion = data.is_last_question || false;
+
                         // Show AI message with prefill value for highlighting
                         self.addGuideChatMessage(data.message, 'ai', data.options, data.multi_select, data.prefill_value);
-                        
+
                         // Check if guide is ready
                         if (data.guide_ready) {
                             self.showGeneratedGuide({
@@ -1542,6 +1553,7 @@
                 },
                 error: function(xhr, status, error) {
                     self.hideGuideTypingIndicator();
+                    self.hideGuideGeneratingIndicator();
                     if (status === 'timeout') {
                         self.addGuideChatMessage('The request is taking longer than expected. Please try again.', 'ai');
                     } else {
@@ -1679,6 +1691,42 @@
          */
         hideGuideTypingIndicator: function() {
             var indicator = document.querySelector('.framt-guide-typing');
+            if (indicator) {
+                indicator.remove();
+            }
+        },
+
+        /**
+         * Show generating indicator for guide (nice amber box like documents)
+         */
+        showGuideGeneratingIndicator: function() {
+            var messagesContainer = document.getElementById('framt-guide-chat-messages');
+            if (!messagesContainer) return;
+
+            // Remove any existing indicators
+            var existing = messagesContainer.querySelector('.framt-guide-typing');
+            if (existing) existing.remove();
+
+            var indicator = document.createElement('div');
+            indicator.className = 'framt-guide-chat-message framt-guide-chat-ai framt-guide-generating';
+            indicator.innerHTML = '<div class="framt-guide-chat-avatar">🇫🇷</div>' +
+                '<div class="framt-generating-message">' +
+                    '<div class="framt-generating-icon">📋</div>' +
+                    '<div class="framt-generating-text">' +
+                        '<strong>Generating your personalized guide...</strong>' +
+                        '<p>This may take 15-30 seconds. Please wait.</p>' +
+                    '</div>' +
+                    '<div class="framt-generating-spinner"></div>' +
+                '</div>';
+            messagesContainer.appendChild(indicator);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        },
+
+        /**
+         * Hide generating indicator for guide
+         */
+        hideGuideGeneratingIndicator: function() {
+            var indicator = document.querySelector('.framt-guide-generating');
             if (indicator) {
                 indicator.remove();
             }
