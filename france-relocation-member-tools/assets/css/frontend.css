@@ -2,7 +2,7 @@
  * France Relocation Member Tools - Frontend Styles
  * @package FRA_Member_Tools
  * @since 1.0.0
- * @version 1.0.37
+ * @version 1.0.38
  * 
  * Uses CSS variables from main France Relocation Assistant plugin.
  * Falls back to defaults if main plugin variables not available.
@@ -1330,6 +1330,36 @@
 .framt-doc-chat-option.framt-doc-chat-option-prefilled:hover:not(:disabled) {
     background: #ebe9e2;
     border-color: #c49943;
+}
+
+/* Document Chat Confirm Button (for profile-suggested text values) */
+.framt-doc-chat-confirm {
+    display: flex;
+    gap: 0.75rem;
+    margin-left: 48px;
+    margin-top: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.framt-doc-confirm-btn {
+    padding: 0.625rem 1.25rem;
+    background: #d4a853;
+    border: none;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #1a1a1a;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.framt-doc-confirm-btn:hover:not(:disabled) {
+    background: #c49943;
+}
+
+.framt-doc-confirm-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }
 
 /* Chat Input */

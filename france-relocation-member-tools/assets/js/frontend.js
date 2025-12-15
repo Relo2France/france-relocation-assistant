@@ -5,7 +5,7 @@
  * 
  * @package FRA_Member_Tools
  * @since 1.0.0
- * @version 1.0.37
+ * @version 1.0.38
  */
 
 (function($) {
@@ -2209,6 +2209,10 @@
                                     input.placeholder = response.data.placeholder || 'Type your answer...';
                                 }
                             }
+                            // Add confirm button if we have a profile value
+                            if (response.data.show_confirm_button && response.data.prefill_value) {
+                                self.addDocConfirmButton(response.data.prefill_value);
+                            }
                         }
                         // If options are provided, input is hidden (user clicks an option)
                     } else {
@@ -2353,7 +2357,39 @@
             var indicator = document.querySelector('.framt-doc-chat-loading');
             if (indicator) indicator.remove();
         },
-        
+
+        /**
+         * Add a confirm button for profile-suggested values in document chat
+         */
+        addDocConfirmButton: function(prefillValue) {
+            var self = this;
+            var messagesContainer = document.getElementById('framt-doc-chat-messages');
+            if (!messagesContainer) return;
+
+            var confirmDiv = document.createElement('div');
+            confirmDiv.className = 'framt-doc-chat-confirm';
+
+            var btn = document.createElement('button');
+            btn.className = 'framt-btn framt-btn-primary framt-doc-confirm-btn';
+            btn.textContent = '✓ Use ' + prefillValue;
+            btn.addEventListener('click', function() {
+                // Disable button
+                btn.disabled = true;
+                btn.textContent = 'Using ' + prefillValue + '...';
+                // Remove confirm div
+                confirmDiv.remove();
+                // Hide text input
+                var inputArea = document.getElementById('framt-doc-chat-input-area');
+                if (inputArea) inputArea.style.display = 'none';
+                // Send the value
+                self.sendDocChatMessage(prefillValue, false);
+            });
+
+            confirmDiv.appendChild(btn);
+            messagesContainer.appendChild(confirmDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        },
+
         /**
          * Show document ready UI
          */
