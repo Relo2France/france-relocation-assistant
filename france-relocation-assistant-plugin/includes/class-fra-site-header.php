@@ -165,10 +165,12 @@ class FRA_Site_Header {
         // Utility bar content
         $utility_text   = $this->get_setting('site_header_utility_text');
         $login_text     = $this->get_setting('site_header_login_text');
-        $login_url      = $this->get_setting('site_header_login_url');
-        $contact_text   = $this->get_setting('site_header_contact_text');
-        $contact_url    = $this->get_setting('site_header_contact_url');
-        
+        $logout_text    = 'Logout'; // Hardcoded for now
+
+        // Dynamic login/logout state
+        $is_logged_in   = is_user_logged_in();
+        $logout_url     = wp_logout_url(home_url('/?logged_out=1'));
+
         // CTA button
         $cta_text       = $this->get_setting('site_header_cta_text');
         $cta_url        = $this->get_setting('site_header_cta_url');
@@ -240,13 +242,14 @@ class FRA_Site_Header {
                     <!-- Utility Text (Left) -->
                     <span class="fra-utility-text"><?php echo esc_html($utility_text); ?></span>
                     
-                    <!-- Utility Links (Right) -->
+                    <!-- Utility Links (Right) - Dynamic Login/Logout -->
                     <div class="fra-utility-links" style="display: flex; gap: 20px;">
-                        <?php if (!empty($login_text) && !empty($login_url)) : ?>
-                            <a href="<?php echo esc_url($login_url); ?>" style="color: rgba(255,255,255,0.7); text-decoration: none;"><?php echo esc_html($login_text); ?></a>
-                        <?php endif; ?>
-                        <?php if (!empty($contact_text) && !empty($contact_url)) : ?>
-                            <a href="<?php echo esc_url($contact_url); ?>" style="color: rgba(255,255,255,0.7); text-decoration: none;"><?php echo esc_html($contact_text); ?></a>
+                        <?php if ($is_logged_in) : ?>
+                            <a href="<?php echo esc_url($logout_url); ?>" style="color: rgba(255,255,255,0.7); text-decoration: none;"><?php echo esc_html($logout_text); ?></a>
+                        <?php else : ?>
+                            <?php if (!empty($login_text)) : ?>
+                                <a href="#" id="fra-utility-login-btn" style="color: rgba(255,255,255,0.7); text-decoration: none; cursor: pointer;"><?php echo esc_html($login_text); ?></a>
+                            <?php endif; ?>
                         <?php endif; ?>
                     </div>
                     

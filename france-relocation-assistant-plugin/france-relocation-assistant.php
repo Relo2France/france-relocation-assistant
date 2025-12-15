@@ -3,7 +3,7 @@
  * Plugin Name: France Relocation Assistant
  * Plugin URI: https://relo2france.com
  * Description: AI-powered US to France relocation guidance with visa info, property guides, healthcare, taxes, and practical insights. Features weekly auto-updates, "In Practice" real-world advice, and comprehensive knowledge base.
- * Version: 2.9.84
+ * Version: 2.9.109
  * Author: Relo2France
  * Author URI: https://relo2france.com
  * License: GPL v2 or later
@@ -42,7 +42,7 @@ if (!defined('ABSPATH')) {
 | Plugin Constants
 |--------------------------------------------------------------------------
 */
-define('FRA_VERSION', '2.9.83');
+define('FRA_VERSION', '2.9.109');
 define('FRA_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('FRA_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('FRA_PLUGIN_BASENAME', plugin_basename(__FILE__));
@@ -151,7 +151,10 @@ class France_Relocation_Assistant {
         
         // Login redirect - go to home page with welcome message
         add_filter('login_redirect', array($this, 'login_redirect'), 999, 3);
-        
+
+        // MemberPress-specific login redirect
+        add_filter('mepr-login-redirect-url', array($this, 'mepr_login_redirect'), 999, 2);
+
         // Login failed - redirect back to home with error
         add_action('wp_login_failed', array($this, 'login_failed_redirect'), 999, 2);
         
@@ -220,7 +223,32 @@ class France_Relocation_Assistant {
         if (is_object($user) && !empty($user->roles) && in_array('administrator', $user->roles)) {
             return $redirect_to;
         }
-        
+
+        return home_url('/?logged_in=1');
+    }
+
+    /**
+     * MemberPress-specific login redirect
+     * MemberPress has its own redirect filter that we need to hook into
+     *
+     * @param string $redirect_to Default redirect URL
+     * @param object $user User object (may be MeprUser)
+     * @return string New redirect URL
+     */
+    public function mepr_login_redirect($redirect_to, $user = null) {
+        // Don't redirect admins
+        if (is_object($user) && method_exists($user, 'is_admin') && $user->is_admin()) {
+            return $redirect_to;
+        }
+
+        // Check WP user roles as fallback
+        if (is_object($user) && isset($user->ID)) {
+            $wp_user = get_userdata($user->ID);
+            if ($wp_user && in_array('administrator', (array) $wp_user->roles)) {
+                return $redirect_to;
+            }
+        }
+
         return home_url('/?logged_in=1');
     }
     
@@ -1037,7 +1065,13 @@ class France_Relocation_Assistant {
         if ($smic_data) {
             $updates['visas']['visiteur']['financial_requirement'] = $smic_data;
         }
-        
+
+        // Visa Application Guide data (internal use for guide generator)
+        $visa_guide_data = $this->fetch_visa_application_guide_updates();
+        if ($visa_guide_data) {
+            $updates['visa_application_guide'] = $visa_guide_data;
+        }
+
         return $updates;
     }
     
@@ -1121,13 +1155,86 @@ class France_Relocation_Assistant {
         
         return null;
     }
-    
+
+    /**
+     * Fetch visa application guide updates from official sources
+     * Updates fees, processing times, and requirements for the guide generator
+     */
+    private function fetch_visa_application_guide_updates() {
+        $updates = array();
+
+        // Fetch from France-Visas for current fees
+        $response = wp_remote_get('https://france-visas.gouv.fr/en/web/france-visas/long-stay-visa', array(
+            'timeout' => 30,
+            'headers' => array(
+                'User-Agent' => 'France Relocation Assistant WordPress Plugin/' . FRA_VERSION
+            )
+        ));
+
+        if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200) {
+            $body = wp_remote_retrieve_body($response);
+
+            // Parse visa application fee
+            if (preg_match('/(?:visa|application)\s*fee[:\s]*€?(\d+)/i', $body, $matches)) {
+                $updates['fees_and_costs']['visa_application_fee'] = '€' . $matches[1];
+            }
+
+            // Parse OFII tax
+            if (preg_match('/(?:OFII|validation)\s*(?:tax|fee)[:\s]*€?(\d+)/i', $body, $matches)) {
+                $updates['fees_and_costs']['ofii_validation_tax'] = '€' . $matches[1];
+            }
+        }
+
+        // Fetch from TLScontact for service fees
+        $tls_response = wp_remote_get('https://visas-fr.tlscontact.com/visa/us', array(
+            'timeout' => 30,
+            'headers' => array(
+                'User-Agent' => 'France Relocation Assistant WordPress Plugin/' . FRA_VERSION
+            )
+        ));
+
+        if (!is_wp_error($tls_response) && wp_remote_retrieve_response_code($tls_response) === 200) {
+            $tls_body = wp_remote_retrieve_body($tls_response);
+
+            // Parse TLScontact service fee
+            if (preg_match('/service\s*fee[:\s]*(?:USD|€|\$)?(\d+)/i', $tls_body, $matches)) {
+                $updates['tlscontact_info']['service_fee'] = '€' . $matches[1];
+            }
+        }
+
+        // Fetch SMIC for financial thresholds (already done in fetch_smic_update, but we need it here too)
+        $smic_response = wp_remote_get('https://www.service-public.fr/particuliers/vosdroits/F2300', array(
+            'timeout' => 30
+        ));
+
+        if (!is_wp_error($smic_response) && wp_remote_retrieve_response_code($smic_response) === 200) {
+            $smic_body = wp_remote_retrieve_body($smic_response);
+
+            // Parse for SMIC mensuel net
+            if (preg_match('/(\d[\d\s,\.]+)\s*€?\s*(?:net|mensuel)/i', $smic_body, $matches)) {
+                $smic = str_replace(array(' ', ','), array('', '.'), $matches[1]);
+                $monthly = number_format((float)$smic, 0);
+                $updates['document_requirements']['financial_thresholds']['individual_monthly'] = '€' . $monthly;
+                $updates['document_requirements']['financial_thresholds']['couple_monthly'] = '€' . number_format((float)$smic * 1.5, 0);
+                $updates['document_requirements']['financial_thresholds']['annual_individual'] = '€' . number_format((float)$smic * 12, 0);
+                $updates['document_requirements']['financial_thresholds']['annual_couple'] = '€' . number_format((float)$smic * 18, 0);
+            }
+        }
+
+        // Update lastVerified timestamp
+        if (!empty($updates)) {
+            $updates['lastVerified'] = date('F Y');
+        }
+
+        return !empty($updates) ? $updates : null;
+    }
+
     /*
     |--------------------------------------------------------------------------
     | Settings Registration
     |--------------------------------------------------------------------------
     */
-    
+
     /**
      * Register plugin settings with WordPress
      *

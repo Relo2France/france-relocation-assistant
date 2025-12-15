@@ -1562,7 +1562,16 @@
                 doLogout();
             });
         }
-        
+
+        // Utility bar login button (in site header)
+        var utilityLoginBtn = document.getElementById('fra-utility-login-btn');
+        if (utilityLoginBtn) {
+            utilityLoginBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                showAuthView('login');
+            });
+        }
+
         // Switch to signup from login view
         var switchToSignup = document.getElementById('fra-inchat-switch-to-signup');
         if (switchToSignup) {

@@ -529,30 +529,59 @@
 
 /* Tools Section */
 .fra-nav-tools {
-    padding: 12px 16px;
-    border-top: 1px solid var(--fra-gray-200);
-    background: var(--fra-gray-50);
+    padding: 0 16px 12px 16px;
+    background: transparent;
 }
 
+/* 183-Day Counter Button - uses customizer colors via inline styles */
+#fra-day-counter-btn,
 .fra-tool-btn {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     width: 100%;
-    padding: 10px 12px;
-    background: var(--fra-white);
-    border: 1px solid var(--fra-gray-200);
-    border-radius: var(--fra-radius);
+    padding: 12px 14px;
+    border-width: 2px;
+    border-style: solid;
+    border-radius: 8px;
     font-family: var(--fra-font);
-    font-size: 13px;
-    color: var(--fra-gray-600);
+    font-size: 14px;
+    font-weight: 500;
     cursor: pointer;
-    transition: all var(--fra-transition);
+    transition: all 0.2s ease;
 }
 
+#fra-day-counter-btn:hover,
 .fra-tool-btn:hover {
-    border-color: var(--fra-gray-300);
-    color: var(--fra-black);
+    opacity: 0.9;
+}
+
+/* Locked Tool State (non-members) */
+.fra-tool-locked {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+    padding: 10px 12px;
+    background: var(--fra-gray-100);
+    border: 1px dashed var(--fra-gray-300);
+    border-radius: var(--fra-radius);
+    opacity: 0.7;
+}
+
+.fra-tool-locked-label {
+    font-family: var(--fra-font);
+    font-size: 13px;
+    color: var(--fra-gray-500);
+}
+
+.fra-tool-locked-hint {
+    font-family: var(--fra-font);
+    font-size: 10px;
+    color: var(--fra-gray-400);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 /* ===== Members Area Section ===== */
@@ -1557,6 +1586,97 @@
     background: #ffffff;
 }
 
+/* Day Counter Modal Specific */
+.fra-dc-modal {
+    max-width: 800px !important;
+}
+
+/* Status Card - Main highlight area */
+.fra-dc-status-card {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    border: 1px solid #e2e8f0;
+}
+
+.fra-dc-status-card .fra-status-message {
+    margin-bottom: 16px;
+}
+
+.fra-dc-status-card .fra-progress-container {
+    margin-bottom: 0;
+}
+
+/* Top row with stats */
+.fra-dc-top-row {
+    margin-bottom: 20px;
+}
+
+/* Collapsible Sections */
+.fra-dc-section {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    overflow: hidden;
+}
+
+.fra-dc-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 16px;
+    background: #f9fafb;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    color: #374151;
+    list-style: none;
+    border-bottom: 1px solid transparent;
+    transition: background 0.15s ease;
+}
+
+.fra-dc-section-header::-webkit-details-marker {
+    display: none;
+}
+
+.fra-dc-section-header:hover {
+    background: #f3f4f6;
+}
+
+.fra-dc-section[open] .fra-dc-section-header {
+    border-bottom-color: #e5e7eb;
+}
+
+.fra-dc-toggle-icon::after {
+    content: '+';
+    font-size: 16px;
+    color: #9ca3af;
+    font-weight: 400;
+}
+
+.fra-dc-section[open] .fra-dc-toggle-icon::after {
+    content: '−';
+}
+
+.fra-dc-section-content {
+    padding: 16px;
+}
+
+/* Footer area */
+.fra-dc-footer {
+    margin-top: 8px;
+    padding-top: 16px;
+    border-top: 1px solid #e5e7eb;
+}
+
+/* Small buttons */
+.fra-btn-sm {
+    padding: 8px 14px !important;
+    font-size: 12px !important;
+}
+
 /* Day Counter Specific Styles */
 .fra-status-message {
     padding: 12px 16px;
@@ -1704,15 +1824,15 @@
 .fra-legend-other { background: var(--fra-other); }
 .fra-legend-today { background: #fff; box-shadow: inset 0 0 0 2px var(--fra-accent); }
 
-.fra-add-trip-section { text-align: center; margin-bottom: 20px; }
+.fra-add-trip-section { text-align: center; }
 
 .fra-add-trip-form {
     display: none;
     background: var(--fra-gray-50);
     border: 1px solid var(--fra-gray-200);
     border-radius: var(--fra-radius);
-    padding: 20px;
-    margin-bottom: 20px;
+    padding: 16px;
+    margin-top: 12px;
 }
 
 .fra-add-trip-form.active { display: block; }
@@ -1787,9 +1907,9 @@
     cursor: pointer;
 }
 
-.fra-trip-list-section { margin-bottom: 20px; }
+.fra-trip-list-section { margin-top: 16px; }
 .fra-trip-list-section h4 { font-size: 13px; margin: 0 0 12px 0; color: var(--fra-gray-600); }
-.fra-trip-list { max-height: 200px; overflow-y: auto; }
+.fra-trip-list { max-height: 250px; overflow-y: auto; }
 .fra-no-trips { color: var(--fra-gray-400); font-size: 13px; text-align: center; padding: 20px; }
 
 .fra-trip-item {
@@ -1820,8 +1940,7 @@
     display: flex;
     gap: 10px;
     justify-content: center;
-    padding-top: 16px;
-    border-top: 1px solid var(--fra-gray-200);
+    flex-wrap: wrap;
     margin-bottom: 16px;
 }
 

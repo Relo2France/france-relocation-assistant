@@ -3,7 +3,7 @@
  * Relo2France Theme Functions
  *
  * @package Relo2France
- * @version 1.2.0
+ * @version 1.2.3
  */
 
 if (!defined('ABSPATH')) {
@@ -11,7 +11,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Theme version
-define('R2F_VERSION', '1.2.0');
+define('R2F_VERSION', '1.2.3');
 
 /**
  * Theme Setup

@@ -171,5 +171,352 @@ return array(
             'keywords' => array('settling', 'getting started', 'first steps', 'utilities', 'establish'),
             'sources' => array(array('name' => 'Service-Public.fr', 'url' => 'https://www.service-public.fr'))
         )
+    ),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Visa Application Guide Data (Internal Use Only)
+    |--------------------------------------------------------------------------
+    | This section is NOT displayed in the public chatbot. It provides current
+    | data for the Step-by-Step Visa Application Guide generator and is updated
+    | weekly by the automated scraper.
+    */
+    'visa_application_guide' => array(
+        '_internal' => true, // Flag to exclude from public chatbot
+        'lastVerified' => 'December 2025',
+
+        'fees_and_costs' => array(
+            'title' => 'Current Visa Fees and Costs',
+            'visa_application_fee' => '€99',
+            'tlscontact_service_fee' => '€43',
+            'ofii_validation_tax' => '€225',
+            'ofii_tax_breakdown' => '€200 OFII tax + €25 stamp duty',
+            'certified_translation_estimate' => '€30-50 per document',
+            'apostille_estimate' => '€15-30 per document',
+            'health_insurance_annual_estimate' => '€600-1,200',
+            'total_estimate_single' => '€1,100-1,500',
+            'total_estimate_couple' => '€2,200-3,000',
+            'sources' => array(
+                array('name' => 'France-Visas', 'url' => 'https://france-visas.gouv.fr'),
+                array('name' => 'TLScontact', 'url' => 'https://visas-fr.tlscontact.com')
+            )
+        ),
+
+        'tlscontact_info' => array(
+            'title' => 'TLScontact Application Centers',
+            'note' => 'TLScontact replaced VFS Global as of April 18, 2025',
+            'website' => 'https://visas-fr.tlscontact.com',
+            'centers' => array(
+                'Washington DC' => array('states' => 'DC, MD, VA, WV, NC, SC'),
+                'New York' => array('states' => 'NY, NJ, CT, PA'),
+                'Boston' => array('states' => 'MA, ME, NH, VT, RI'),
+                'Atlanta' => array('states' => 'GA, AL, MS, TN'),
+                'Miami' => array('states' => 'FL, PR, USVI'),
+                'Chicago' => array('states' => 'IL, IN, WI, MI, MN, OH, IA, ND, SD, NE'),
+                'Houston' => array('states' => 'TX, OK, AR, LA, NM'),
+                'Los Angeles' => array('states' => 'Southern CA, AZ, NV'),
+                'San Francisco' => array('states' => 'Northern CA, UT, CO'),
+                'Seattle' => array('states' => 'WA, OR, ID, MT, WY, AK, HI')
+            ),
+            'appointment_tips' => array(
+                'Book 2-4 weeks in advance during peak season',
+                'Tuesday-Thursday typically have more availability',
+                'Book back-to-back appointments for couples',
+                'Arrive 15 minutes early, no earlier'
+            ),
+            'sources' => array(array('name' => 'TLScontact', 'url' => 'https://visas-fr.tlscontact.com'))
+        ),
+
+        'application_timeline' => array(
+            'title' => 'Application Timeline',
+            'key_constraint' => 'Cannot apply more than 3 months before planned arrival date',
+            'typical_processing' => '2-4 weeks after appointment',
+            'passport_return' => 'Returned via registered mail within 1-2 weeks of decision',
+            'recommended_timeline' => array(
+                '3-4 months before' => 'Gather documents, get apostilles and translations',
+                '2-3 months before' => 'Create France-Visas account, complete online application',
+                '6-12 weeks before' => 'Book TLScontact appointment',
+                '4-8 weeks before' => 'Attend appointment, submit documents',
+                '2-4 weeks before' => 'Receive decision and passport'
+            ),
+            'sources' => array(array('name' => 'France-Visas', 'url' => 'https://france-visas.gouv.fr'))
+        ),
+
+        'document_requirements' => array(
+            'title' => 'Document Requirements',
+            'general_notes' => array(
+                'Each applicant needs COMPLETE, SEPARATE application',
+                'Bring ORIGINALS and PHOTOCOPIES of all documents',
+                'Documents in languages other than French/English need certified translation',
+                'US documents need apostille'
+            ),
+            'shared_documents' => array(
+                'Marriage certificate (if applying together)',
+                'Property deed (if jointly owned)',
+                'Joint bank accounts'
+            ),
+            'passport_requirements' => array(
+                'Valid for 3+ months beyond intended stay',
+                'At least 2 blank pages',
+                'Issued within last 10 years'
+            ),
+            'photo_specifications' => array(
+                '35mm x 45mm',
+                'White or light gray background',
+                'Taken within last 6 months',
+                'No glasses',
+                'Neutral expression'
+            ),
+            'financial_thresholds' => array(
+                'individual_monthly' => '€1,450',
+                'couple_monthly' => '€2,175',
+                'annual_individual' => '€17,400',
+                'annual_couple' => '€26,100',
+                'note' => 'Based on SMIC; may be flexible for property owners'
+            ),
+            'health_insurance_requirements' => array(
+                'minimum_coverage' => '€30,000',
+                'must_cover' => array('Medical repatriation', 'Emergency medical treatment', 'Hospitalization'),
+                'validity' => 'Entire visa duration (12 months)',
+                'zone' => 'Schengen zone'
+            ),
+            'sources' => array(array('name' => 'France-Visas', 'url' => 'https://france-visas.gouv.fr'))
+        ),
+
+        'ofii_validation' => array(
+            'title' => 'OFII Visa Validation',
+            'website' => 'https://administration-etrangers-en-france.interieur.gouv.fr',
+            'platform' => 'ANEF (Administration Numérique pour les Étrangers en France)',
+            'deadline' => 'Within 3 months of arrival in France',
+            'process_steps' => array(
+                'Create account on ANEF platform',
+                'Enter visa and passport information',
+                'Upload required documents (passport photo page, visa sticker, proof of address)',
+                'Pay €225 online or at tabac shop (timbre fiscal)',
+                'Receive confirmation email',
+                'Possible convocation for medical exam (rare)'
+            ),
+            'payment_methods' => array(
+                'Online at timbres.impots.gouv.fr',
+                'At authorized tabac shops',
+                'Credit/debit card accepted'
+            ),
+            'important_notes' => array(
+                'Cannot leave Schengen zone until validated',
+                'Failure to validate = illegal stay',
+                'Validation converts visa to titre de séjour'
+            ),
+            'sources' => array(array('name' => 'ANEF', 'url' => 'https://administration-etrangers-en-france.interieur.gouv.fr'))
+        ),
+
+        'visa_types' => array(
+            'visitor' => array(
+                'title' => 'VLS-TS Visiteur (Long-Stay Visitor)',
+                'description' => 'For financially independent individuals who will NOT work in France',
+                'work_allowed' => false,
+                'validity' => '12 months, renewable',
+                'key_requirements' => array(
+                    'Attestation sur l\'honneur (declaration not to work)',
+                    'Proof of financial resources (€1,450/month or €17,400/year)',
+                    'International health insurance (€30,000+ coverage)',
+                    'Proof of accommodation in France'
+                ),
+                'ideal_for' => array('Retirees', 'Those living on savings/investments', 'Non-working spouses'),
+                'special_notes' => array(
+                    'If employed in US but working remotely, need carefully worded employer letter',
+                    'Strongly recommended to have French property or long-term lease',
+                    'Can stay full-time or split time between US and France'
+                )
+            ),
+            'talent_passport' => array(
+                'title' => 'Passeport Talent',
+                'description' => 'Multi-year visa for highly-skilled workers, entrepreneurs, investors',
+                'work_allowed' => true,
+                'validity' => 'Up to 4 years',
+                'categories' => array(
+                    'Highly-qualified employee (€56,000+ salary, Master\'s degree)',
+                    'Company founder (business creation in France)',
+                    'Investor (€300,000+ investment)',
+                    'Researcher',
+                    'Artist',
+                    'Innovative project'
+                ),
+                'key_requirements' => array(
+                    'Proof of qualification for specific category',
+                    'Business plan (for entrepreneurs)',
+                    'Employment contract (for employees)',
+                    'Project documentation'
+                ),
+                'special_notes' => array(
+                    'Spouse gets automatic work authorization',
+                    'Family members apply for "Passeport talent famille"',
+                    'Simplified renewal process'
+                )
+            ),
+            'employee' => array(
+                'title' => 'VLS-TS Salarié',
+                'description' => 'For employment with a French company',
+                'work_allowed' => true,
+                'validity' => 'Duration of contract, up to 12 months',
+                'key_requirements' => array(
+                    'Work authorization (autorisation de travail) from employer',
+                    'Employment contract meeting French labor standards',
+                    'Employer application through DIRECCTE'
+                ),
+                'special_notes' => array(
+                    'Employer must initiate the process',
+                    'Tied to specific employer',
+                    'Consider Talent Passport if salary exceeds €56,000'
+                )
+            ),
+            'entrepreneur' => array(
+                'title' => 'VLS-TS Entrepreneur/Profession Libérale',
+                'description' => 'For self-employed professionals and business creators',
+                'work_allowed' => true,
+                'validity' => '12 months, renewable',
+                'key_requirements' => array(
+                    'Detailed business plan',
+                    'Proof of economic viability',
+                    'Professional qualifications (if applicable)',
+                    'Proof of investment capital'
+                ),
+                'special_notes' => array(
+                    'May require approval from professional chambers',
+                    'Registration with relevant French bodies required',
+                    'Must demonstrate business will contribute to French economy'
+                )
+            ),
+            'student' => array(
+                'title' => 'VLS-TS Étudiant',
+                'description' => 'For enrollment in French educational institution',
+                'work_allowed' => 'Limited (964 hours/year)',
+                'validity' => 'Duration of studies',
+                'key_requirements' => array(
+                    'Acceptance letter from French institution',
+                    'Campus France registration',
+                    'Proof of funds (€615/month or €7,380/year)',
+                    'Proof of accommodation'
+                ),
+                'special_notes' => array(
+                    'Campus France mandatory for most nationalities',
+                    'Health insurance through French social security',
+                    'Can work up to 20 hours/week'
+                )
+            ),
+            'family' => array(
+                'title' => 'Regroupement Familial (Family Reunification)',
+                'description' => 'To join family member legally residing in France',
+                'work_allowed' => true,
+                'validity' => 'Varies',
+                'key_requirements' => array(
+                    'Sponsor has legal residence for 18+ months',
+                    'Sponsor meets income requirements',
+                    'Sponsor has adequate housing',
+                    'Family relationship proof'
+                ),
+                'special_notes' => array(
+                    'Long processing time (6-12 months)',
+                    'Complex process involving OFII and Prefecture',
+                    'Sponsor must apply first from France'
+                )
+            ),
+            'spouse_french' => array(
+                'title' => 'VLS-TS Conjoint de Français',
+                'description' => 'For spouses of French citizens',
+                'work_allowed' => true,
+                'validity' => '12 months, renewable',
+                'key_requirements' => array(
+                    'Valid marriage certificate',
+                    'Proof spouse is French citizen',
+                    'Transcription of foreign marriage if married abroad'
+                ),
+                'special_notes' => array(
+                    'No minimum marriage duration required',
+                    'French spouse doesn\'t need to reside in France',
+                    'Simpler process than family reunification',
+                    'Immediate work authorization'
+                )
+            ),
+            'retiree' => array(
+                'title' => 'VLS-TS Visiteur (Retiree)',
+                'description' => 'Same as Visitor visa, for retired individuals',
+                'work_allowed' => false,
+                'validity' => '12 months, renewable',
+                'key_requirements' => array(
+                    'Proof of retirement income (pension, social security, investments)',
+                    'Minimum €1,450/month individual, €2,175/month couple',
+                    'Attestation of no professional activity',
+                    'Health insurance'
+                ),
+                'special_notes' => array(
+                    'Same application as Visitor visa',
+                    'Emphasize stable, ongoing income sources',
+                    'Consider French tax implications of retirement income'
+                )
+            )
+        ),
+
+        'pro_tips' => array(
+            'title' => 'Pro Tips and Insider Knowledge',
+            'tips' => array(
+                'Applications are truly individual - married couples submit separate, complete applications',
+                'Bring extra copies of everything - you can\'t have too many',
+                'Original documents are returned after verification',
+                'French passport photos are 35x45mm (larger than US passport photos)',
+                'Travel insurance is NOT the same as health insurance - you need both',
+                'Book appointments early in the week for faster processing',
+                'Property deed is strong evidence of ties to France',
+                'Bank statements should show consistent balance, not recent large deposits',
+                'OFII validation is now 100% online - no more in-person appointments',
+                'Keep copies of everything you submit - you\'ll need them for renewal'
+            )
+        ),
+
+        'consulate_contacts' => array(
+            'title' => 'French Consulate Visa Sections',
+            'contacts' => array(
+                'Washington DC' => array(
+                    'email' => 'visas.washington-amba@diplomatie.gouv.fr',
+                    'website' => 'https://washington.consulfrance.org'
+                ),
+                'New York' => array(
+                    'email' => 'visas.new-york@diplomatie.gouv.fr',
+                    'website' => 'https://newyork.consulfrance.org'
+                ),
+                'Los Angeles' => array(
+                    'email' => 'visas.los-angeles@diplomatie.gouv.fr',
+                    'website' => 'https://losangeles.consulfrance.org'
+                ),
+                'San Francisco' => array(
+                    'email' => 'visas.san-francisco@diplomatie.gouv.fr',
+                    'website' => 'https://sanfrancisco.consulfrance.org'
+                ),
+                'Chicago' => array(
+                    'email' => 'visas.chicago@diplomatie.gouv.fr',
+                    'website' => 'https://chicago.consulfrance.org'
+                ),
+                'Houston' => array(
+                    'email' => 'visas.houston@diplomatie.gouv.fr',
+                    'website' => 'https://houston.consulfrance.org'
+                ),
+                'Miami' => array(
+                    'email' => 'visas.miami@diplomatie.gouv.fr',
+                    'website' => 'https://miami.consulfrance.org'
+                ),
+                'Atlanta' => array(
+                    'email' => 'visas.atlanta@diplomatie.gouv.fr',
+                    'website' => 'https://atlanta.consulfrance.org'
+                ),
+                'Boston' => array(
+                    'email' => 'visas.boston@diplomatie.gouv.fr',
+                    'website' => 'https://boston.consulfrance.org'
+                )
+            ),
+            'general' => array(
+                'France-Visas Portal' => 'https://france-visas.gouv.fr',
+                'TLScontact Portal' => 'https://visas-fr.tlscontact.com',
+                'TLScontact Helpline' => 'Available on TLScontact website after login'
+            )
+        )
     )
 );

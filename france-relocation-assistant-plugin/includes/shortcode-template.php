@@ -490,9 +490,16 @@ $inchat_auth_enabled = $customizer['inchat_auth_enabled'] ?? true;
             
             <!-- Tools Section (fixed at bottom) -->
             <div class="fra-nav-tools">
-                <button id="fra-day-counter-btn" class="fra-tool-btn">
+                <?php if ($is_member && is_user_logged_in()) : ?>
+                <button id="fra-day-counter-btn" class="fra-tool-btn" style="background: <?php echo esc_attr($member_header_bg); ?>; color: <?php echo esc_attr($member_header_text); ?>; border-color: <?php echo esc_attr($member_header_accent); ?>;">
                     📅 183-Day Counter
                 </button>
+                <?php else : ?>
+                <div class="fra-tool-locked">
+                    <span class="fra-tool-locked-label">🔒 📅 183-Day Counter</span>
+                    <span class="fra-tool-locked-hint">Member feature</span>
+                </div>
+                <?php endif; ?>
             </div>
             
         </aside>
@@ -775,6 +782,8 @@ $inchat_auth_enabled = $customizer['inchat_auth_enabled'] ?? true;
                             <line x1="12" y1="17" x2="12.01" y2="17"/>
                         </svg>
                     </button>
+                    <!-- Hidden version - select/highlight to see -->
+                    <span style="font-size:9px;color:#f5f5f5;background:#f5f5f5;padding:2px 4px;margin-left:8px;user-select:all;">v<?php echo defined('FRA_VERSION') ? FRA_VERSION : '?'; ?></span>
                 </div>
             </div>
             <!-- /Chat Input Area -->
@@ -878,126 +887,150 @@ $inchat_auth_enabled = $customizer['inchat_auth_enabled'] ?? true;
 </div>
 <!-- /PROMPTING TIPS MODAL -->
 <div id="fra-day-counter-modal" class="fra-modal-overlay">
-    <div class="fra-modal">
-        
+    <div class="fra-modal fra-dc-modal">
+
         <!-- Modal Header -->
         <div class="fra-modal-header">
             <h3>📅 183-Day Tax Residency Tracker</h3>
             <button id="fra-close-modal" class="fra-close-btn">×</button>
         </div>
-        
+
         <div class="fra-modal-content">
-            
-            <!-- Status Message (OK/Warning/Danger) -->
-            <div id="fra-status-message" class="fra-status-message fra-status-ok">
-                <strong>✓ OK:</strong> Add trips to start tracking.
-            </div>
-            
-            <!-- Progress Bar (Rolling 183-Day Window) -->
-            <div class="fra-progress-container">
-                <div class="fra-progress-labels">
-                    <span>Rolling 183-Day Window</span>
-                    <span><span id="fra-rolling-used">0</span> / 183 days in France</span>
+
+            <!-- Main Status Card -->
+            <div class="fra-dc-status-card">
+                <!-- Status Message (OK/Warning/Danger) -->
+                <div id="fra-status-message" class="fra-status-message fra-status-ok">
+                    <strong>✓ OK:</strong> Add trips to start tracking.
                 </div>
-                <div class="fra-progress-track">
-                    <div id="fra-progress-bar" class="fra-progress-bar" style="width: 0%;"></div>
-                </div>
-            </div>
-            
-            <!-- Day Statistics by Location -->
-            <div class="fra-dc-stats">
-                <div class="fra-dc-stat fra-stat-france">
-                    <span id="fra-stat-france" class="fra-stat-number">0</span>
-                    <span class="fra-stat-label">🇫🇷 France</span>
-                </div>
-                <div class="fra-dc-stat fra-stat-us">
-                    <span id="fra-stat-us" class="fra-stat-number">0</span>
-                    <span class="fra-stat-label">🇺🇸 US</span>
-                </div>
-                <div class="fra-dc-stat fra-stat-other">
-                    <span id="fra-stat-other" class="fra-stat-number">0</span>
-                    <span class="fra-stat-label">🌍 Other</span>
-                </div>
-                <div class="fra-dc-stat">
-                    <span id="fra-stat-untracked" class="fra-stat-number">0</span>
-                    <span class="fra-stat-label">Untracked</span>
-                </div>
-            </div>
-            
-            <!-- Calendar Year Navigation -->
-            <div class="fra-calendar-nav">
-                <button id="fra-prev-year" class="fra-nav-btn">◀ Prev</button>
-                <span id="fra-current-year" class="fra-year-label">2025</span>
-                <button id="fra-next-year" class="fra-nav-btn">Next ▶</button>
-            </div>
-            
-            <!-- Calendar Grid (populated by JavaScript) -->
-            <div id="fra-calendar-grid" class="fra-calendar-grid"></div>
-            
-            <!-- Calendar Legend -->
-            <div class="fra-calendar-legend">
-                <span class="fra-legend-item"><span class="fra-legend-color fra-legend-france"></span> France</span>
-                <span class="fra-legend-item"><span class="fra-legend-color fra-legend-us"></span> US</span>
-                <span class="fra-legend-item"><span class="fra-legend-color fra-legend-other"></span> Other</span>
-                <span class="fra-legend-item"><span class="fra-legend-color fra-legend-today"></span> Today</span>
-            </div>
-            
-            <!-- Add Trip Button -->
-            <div class="fra-add-trip-section">
-                <button id="fra-add-trip-btn" class="fra-btn-primary">+ Add Trip</button>
-            </div>
-            
-            <!-- Add Trip Form (hidden by default) -->
-            <div id="fra-add-trip-form" class="fra-add-trip-form">
-                <h4>Add New Trip</h4>
-                <div class="fra-form-row">
-                    <div class="fra-form-group">
-                        <label for="fra-trip-start">Start Date</label>
-                        <input type="date" id="fra-trip-start" required>
+
+                <!-- Progress Bar (Rolling 183-Day Window) -->
+                <div class="fra-progress-container">
+                    <div class="fra-progress-labels">
+                        <span>Rolling 183-Day Window</span>
+                        <span><span id="fra-rolling-used">0</span> / 183 days in France</span>
                     </div>
-                    <div class="fra-form-group">
-                        <label for="fra-trip-end">End Date</label>
-                        <input type="date" id="fra-trip-end" required>
-                    </div>
-                    <div class="fra-form-group">
-                        <label for="fra-trip-location">Location</label>
-                        <select id="fra-trip-location">
-                            <option value="france">🇫🇷 France</option>
-                            <option value="us">🇺🇸 United States</option>
-                            <option value="other">🌍 Other</option>
-                        </select>
+                    <div class="fra-progress-track">
+                        <div id="fra-progress-bar" class="fra-progress-bar" style="width: 0%;"></div>
                     </div>
                 </div>
-                <div class="fra-form-group fra-form-full">
-                    <label for="fra-trip-notes">Notes (optional)</label>
-                    <input type="text" id="fra-trip-notes" placeholder="e.g., Business trip to Paris">
+            </div>
+
+            <!-- Two Column Layout: Stats + Quick Add -->
+            <div class="fra-dc-top-row">
+                <!-- Day Statistics by Location -->
+                <div class="fra-dc-stats">
+                    <div class="fra-dc-stat fra-stat-france">
+                        <span id="fra-stat-france" class="fra-stat-number">0</span>
+                        <span class="fra-stat-label">🇫🇷 France</span>
+                    </div>
+                    <div class="fra-dc-stat fra-stat-us">
+                        <span id="fra-stat-us" class="fra-stat-number">0</span>
+                        <span class="fra-stat-label">🇺🇸 US</span>
+                    </div>
+                    <div class="fra-dc-stat fra-stat-other">
+                        <span id="fra-stat-other" class="fra-stat-number">0</span>
+                        <span class="fra-stat-label">🌍 Other</span>
+                    </div>
+                    <div class="fra-dc-stat">
+                        <span id="fra-stat-untracked" class="fra-stat-number">0</span>
+                        <span class="fra-stat-label">Untracked</span>
+                    </div>
                 </div>
-                <div class="fra-form-actions">
-                    <button id="fra-save-trip" class="fra-btn-primary">Save Trip</button>
-                    <button id="fra-cancel-trip" class="fra-btn-secondary">Cancel</button>
+            </div>
+
+            <!-- Collapsible Calendar Section -->
+            <details class="fra-dc-section" open>
+                <summary class="fra-dc-section-header">
+                    <span>📆 Calendar View</span>
+                    <span class="fra-dc-toggle-icon"></span>
+                </summary>
+                <div class="fra-dc-section-content">
+                    <!-- Calendar Year Navigation -->
+                    <div class="fra-calendar-nav">
+                        <button id="fra-prev-year" class="fra-nav-btn">◀</button>
+                        <span id="fra-current-year" class="fra-year-label">2025</span>
+                        <button id="fra-next-year" class="fra-nav-btn">▶</button>
+                    </div>
+
+                    <!-- Calendar Grid (populated by JavaScript) -->
+                    <div id="fra-calendar-grid" class="fra-calendar-grid"></div>
+
+                    <!-- Calendar Legend -->
+                    <div class="fra-calendar-legend">
+                        <span class="fra-legend-item"><span class="fra-legend-color fra-legend-france"></span> France</span>
+                        <span class="fra-legend-item"><span class="fra-legend-color fra-legend-us"></span> US</span>
+                        <span class="fra-legend-item"><span class="fra-legend-color fra-legend-other"></span> Other</span>
+                        <span class="fra-legend-item"><span class="fra-legend-color fra-legend-today"></span> Today</span>
+                    </div>
                 </div>
+            </details>
+
+            <!-- Trips Management Section -->
+            <details class="fra-dc-section" open>
+                <summary class="fra-dc-section-header">
+                    <span>✈️ My Trips</span>
+                    <span class="fra-dc-toggle-icon"></span>
+                </summary>
+                <div class="fra-dc-section-content">
+                    <!-- Add Trip Button -->
+                    <div class="fra-add-trip-section">
+                        <button id="fra-add-trip-btn" class="fra-btn-primary">+ Add Trip</button>
+                    </div>
+
+                    <!-- Add Trip Form (hidden by default) -->
+                    <div id="fra-add-trip-form" class="fra-add-trip-form">
+                        <div class="fra-form-row">
+                            <div class="fra-form-group">
+                                <label for="fra-trip-start">Start Date</label>
+                                <input type="date" id="fra-trip-start" required>
+                            </div>
+                            <div class="fra-form-group">
+                                <label for="fra-trip-end">End Date</label>
+                                <input type="date" id="fra-trip-end" required>
+                            </div>
+                            <div class="fra-form-group">
+                                <label for="fra-trip-location">Location</label>
+                                <select id="fra-trip-location">
+                                    <option value="france">🇫🇷 France</option>
+                                    <option value="us">🇺🇸 United States</option>
+                                    <option value="other">🌍 Other</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="fra-form-group fra-form-full">
+                            <label for="fra-trip-notes">Notes (optional)</label>
+                            <input type="text" id="fra-trip-notes" placeholder="e.g., Business trip to Paris">
+                        </div>
+                        <div class="fra-form-actions">
+                            <button id="fra-save-trip" class="fra-btn-primary">Save Trip</button>
+                            <button id="fra-cancel-trip" class="fra-btn-secondary">Cancel</button>
+                        </div>
+                    </div>
+
+                    <!-- Trip List -->
+                    <div class="fra-trip-list-section">
+                        <div id="fra-trip-list" class="fra-trip-list"></div>
+                    </div>
+                </div>
+            </details>
+
+            <!-- Data Management Footer -->
+            <div class="fra-dc-footer">
+                <div class="fra-data-management">
+                    <button id="fra-export-data" class="fra-btn-secondary fra-btn-sm">📤 Export</button>
+                    <label class="fra-btn-secondary fra-btn-sm fra-import-label">
+                        📥 Import
+                        <input type="file" id="fra-import-data" accept=".json" style="display:none;">
+                    </label>
+                    <button id="fra-clear-all-data" class="fra-btn-danger fra-btn-sm">🗑️ Clear All</button>
+                </div>
+
+                <!-- Disclaimer -->
+                <p class="fra-dc-disclaimer">
+                    <strong>Note:</strong> This tool is for personal tracking only. French tax residency depends on multiple factors beyond physical presence. Consult a tax professional for advice specific to your situation.
+                </p>
             </div>
-            
-            <!-- Trip List -->
-            <div class="fra-trip-list-section">
-                <h4>Recorded Trips</h4>
-                <div id="fra-trip-list" class="fra-trip-list"></div>
-            </div>
-            
-            <!-- Data Import/Export -->
-            <div class="fra-data-management">
-                <button id="fra-export-data" class="fra-btn-secondary">Export</button>
-                <label class="fra-btn-secondary fra-import-label">
-                    Import
-                    <input type="file" id="fra-import-data" accept=".json" style="display:none;">
-                </label>
-                <button id="fra-clear-all-data" class="fra-btn-danger">Clear All</button>
-            </div>
-            
-            <!-- Disclaimer -->
-            <p class="fra-dc-disclaimer">
-                <strong>Note:</strong> This tool is for personal tracking only. French tax residency depends on multiple factors. Consult a tax professional.
-            </p>
             
         </div>
     </div>
