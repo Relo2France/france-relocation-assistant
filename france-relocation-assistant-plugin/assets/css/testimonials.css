@@ -1,0 +1,147 @@
+/**
+ * Testimonials & Authority Badge Styles
+ *
+ * @package FranceRelocationAssistant
+ * @version 3.0.0
+ */
+
+/* ==========================================================================
+   TESTIMONIALS SECTION
+   ========================================================================== */
+
+.fra-testimonials-section {
+    padding: 2.5rem 1.5rem;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 16px;
+    margin: 2rem 0;
+}
+
+.fra-testimonials-title {
+    text-align: center;
+    color: #1E3A5F;
+    margin: 0 0 2rem;
+    font-size: 1.75rem;
+    font-weight: 600;
+}
+
+.fra-testimonials-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+.fra-testimonial-card {
+    background: white;
+    padding: 1.75rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.fra-testimonial-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+}
+
+.fra-testimonial-stars {
+    color: #FFB400;
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+    letter-spacing: 2px;
+}
+
+.fra-testimonial-text {
+    color: #333;
+    font-style: italic;
+    line-height: 1.7;
+    margin: 0 0 1rem;
+    font-size: 1rem;
+}
+
+.fra-testimonial-author {
+    color: #666;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.fra-testimonial-author cite {
+    font-style: normal;
+}
+
+/* ==========================================================================
+   AUTHORITY BADGES
+   ========================================================================== */
+
+.fra-authority-section {
+    text-align: center;
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+}
+
+.fra-authority-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: #E8F5E9;
+    padding: 0.75rem 1.5rem;
+    border-radius: 50px;
+    margin-bottom: 1rem;
+}
+
+.fra-badge-icon {
+    font-size: 1.5rem;
+}
+
+.fra-badge-text {
+    color: #2E7D32;
+    font-weight: 500;
+    font-size: 0.95rem;
+}
+
+.fra-source-logos {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem 1.5rem;
+    font-size: 0.85rem;
+}
+
+.fra-source-label {
+    color: #666;
+}
+
+.fra-source-logos a {
+    color: #1E3A5F;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.fra-source-logos a:hover {
+    text-decoration: underline;
+}
+
+/* ==========================================================================
+   RESPONSIVE
+   ========================================================================== */
+
+@media (max-width: 768px) {
+    .fra-testimonials-section {
+        padding: 2rem 1rem;
+    }
+
+    .fra-testimonials-title {
+        font-size: 1.5rem;
+    }
+
+    .fra-testimonials-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .fra-authority-badge {
+        flex-direction: column;
+        text-align: center;
+    }
+}

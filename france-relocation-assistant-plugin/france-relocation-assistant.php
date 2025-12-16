@@ -3,7 +3,7 @@
  * Plugin Name: France Relocation Assistant
  * Plugin URI: https://relo2france.com
  * Description: AI-powered US to France relocation guidance with visa info, property guides, healthcare, taxes, and practical insights. Features weekly auto-updates, "In Practice" real-world advice, and comprehensive knowledge base.
- * Version: 2.9.109
+ * Version: 3.0.0
  * Author: Relo2France
  * Author URI: https://relo2france.com
  * License: GPL v2 or later
@@ -42,7 +42,7 @@ if (!defined('ABSPATH')) {
 | Plugin Constants
 |--------------------------------------------------------------------------
 */
-define('FRA_VERSION', '2.9.109');
+define('FRA_VERSION', '3.0.0');
 define('FRA_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('FRA_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('FRA_PLUGIN_BASENAME', plugin_basename(__FILE__));
@@ -638,7 +638,15 @@ class France_Relocation_Assistant {
             array(),
             FRA_VERSION
         );
-        
+
+        // Testimonials styles
+        wp_enqueue_style(
+            'fra-testimonials',
+            FRA_PLUGIN_URL . 'assets/css/testimonials.css',
+            array(),
+            FRA_VERSION
+        );
+
         wp_enqueue_script(
             'fra-frontend-script',
             FRA_PLUGIN_URL . 'assets/js/frontend.js',
@@ -1648,6 +1656,9 @@ require_once FRA_PLUGIN_DIR . 'includes/class-fra-ai-review.php';
 require_once FRA_PLUGIN_DIR . 'includes/class-fra-scheduled-review.php';
 require_once FRA_PLUGIN_DIR . 'includes/class-fra-site-header.php';
 require_once FRA_PLUGIN_DIR . 'includes/class-fra-auth-pages.php';
+
+// Testimonials and social proof
+require_once FRA_PLUGIN_DIR . 'includes/testimonials.php';
 
 // Initialize AI Review (registers AJAX handlers)
 FRA_AI_Review::get_instance();
