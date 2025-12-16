@@ -3,7 +3,7 @@
  * Plugin Name: France Relocation Member Tools
  * Plugin URI: https://relo2france.com
  * Description: Premium member features for the France Relocation Assistant - document generation, checklists, guides, and personalized relocation planning.
- * Version: 1.1.4
+ * Version: 1.1.5
  * Author: Relo2France
  * Author URI: https://relo2france.com
  * License: GPL v2 or later
@@ -22,7 +22,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Plugin constants
-define('FRAMT_VERSION', '1.1.4');
+define('FRAMT_VERSION', '1.1.5');
 define('FRAMT_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('FRAMT_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('FRAMT_PLUGIN_BASENAME', plugin_basename(__FILE__));
@@ -3551,6 +3551,7 @@ Please provide a helpful, accurate answer about their health insurance coverage 
         wp_localize_script('framt-frontend', 'framtData', array(
             'ajaxUrl' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('framt_nonce'),
+            'restNonce' => wp_create_nonce('wp_rest'),
             'userId' => $user_id,
             'userName' => $user_name,
             'isMember' => true,
