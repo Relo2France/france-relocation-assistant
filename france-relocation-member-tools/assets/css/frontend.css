@@ -3171,17 +3171,19 @@
     width: 24px;
     height: 24px;
     background: var(--framt-gray-100);
+    border: none;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     color: var(--framt-secondary);
-    text-decoration: none;
     font-size: 0.875rem;
-    transition: background 0.2s;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s;
 }
 
 .framt-task-guide:hover {
     background: var(--framt-secondary);
     color: white;
+    transform: translateX(2px);
 }

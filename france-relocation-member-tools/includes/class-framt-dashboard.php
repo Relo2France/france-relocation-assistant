@@ -763,7 +763,7 @@ class FRAMT_Dashboard {
                                     <span class="framt-task-check"></span>
                                     <span class="framt-task-text"><?php echo esc_html($task['title']); ?></span>
                                     <?php if (!empty($task['link'])): ?>
-                                        <a href="<?php echo esc_url($task['link']); ?>" class="framt-task-guide" title="View guide">→</a>
+                                        <button type="button" class="framt-task-guide" data-guide-link="<?php echo esc_attr($task['link']); ?>" title="View guide">→</button>
                                     <?php endif; ?>
                                 </label>
                             <?php endforeach; ?>
