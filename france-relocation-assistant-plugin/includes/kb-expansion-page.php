@@ -210,17 +210,24 @@ if (isset($_POST['fra_delete_topic']) && check_admin_referer('fra_kb_nonce')) {
             
             <?php foreach ($knowledge_base as $cat_key => $topics): ?>
                 <?php
-                // Skip if not an array
-                if (!is_array($topics)) continue;
+                // Skip if not an array (could be metadata or malformed entry)
+                if (!is_array($topics)) {
+                    continue;
+                }
 
                 // Count only valid topics (arrays with 'title' key)
                 $topic_count = 0;
                 foreach ($topics as $t) {
-                    if (is_array($t) && isset($t['title'])) $topic_count++;
+                    if (is_array($t) && isset($t['title'])) {
+                        $topic_count++;
+                    }
                 }
+
+                // Get category label safely
+                $cat_label = isset($categories[$cat_key]) ? $categories[$cat_key] : ucfirst(str_replace('_', ' ', $cat_key));
                 ?>
                 <div class="fra-kb-category">
-                    <h3><?php echo esc_html($categories[$cat_key] ?? ucfirst($cat_key)); ?>
+                    <h3><?php echo esc_html($cat_label); ?>
                         <span class="fra-topic-count">(<?php echo $topic_count; ?>)</span>
                     </h3>
                     <ul class="fra-topic-list">
