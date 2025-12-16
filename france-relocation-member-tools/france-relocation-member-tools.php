@@ -3,7 +3,7 @@
  * Plugin Name: France Relocation Member Tools
  * Plugin URI: https://relo2france.com
  * Description: Premium member features for the France Relocation Assistant - document generation, checklists, guides, and personalized relocation planning.
- * Version: 1.1.6
+ * Version: 1.1.7
  * Author: Relo2France
  * Author URI: https://relo2france.com
  * License: GPL v2 or later
@@ -22,7 +22,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Plugin constants
-define('FRAMT_VERSION', '1.1.6');
+define('FRAMT_VERSION', '1.1.7');
 define('FRAMT_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('FRAMT_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('FRAMT_PLUGIN_BASENAME', plugin_basename(__FILE__));
@@ -100,9 +100,8 @@ final class FRA_Member_Tools {
         // Initialize plugin after dependencies confirmed
         add_action('plugins_loaded', array($this, 'safe_init'), 10);
 
-        // Activation/deactivation hooks
-        register_activation_hook(__FILE__, array($this, 'safe_activate'));
-        register_deactivation_hook(__FILE__, array($this, 'deactivate'));
+        // Note: Activation/deactivation hooks are registered outside the class
+        // to ensure they work even if the class fails to instantiate
     }
 
     /**
@@ -3996,13 +3995,86 @@ Please provide a helpful, accurate answer about their health insurance coverage 
 }
 
 /**
- * Initialize plugin
+ * Initialize plugin safely
  *
- * @return FRA_Member_Tools
+ * @return FRA_Member_Tools|null
  */
 function framt() {
-    return FRA_Member_Tools::get_instance();
+    static $instance = null;
+    static $failed = false;
+
+    // Don't retry if already failed
+    if ($failed) {
+        return null;
+    }
+
+    if ($instance !== null) {
+        return $instance;
+    }
+
+    try {
+        $instance = FRA_Member_Tools::get_instance();
+        return $instance;
+    } catch (Exception $e) {
+        $failed = true;
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('FRAMT: Failed to initialize - ' . $e->getMessage());
+        }
+        add_action('admin_notices', function() use ($e) {
+            echo '<div class="notice notice-error"><p><strong>France Relocation Member Tools:</strong> ' . esc_html($e->getMessage()) . '</p></div>';
+        });
+        return null;
+    } catch (Error $e) {
+        $failed = true;
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('FRAMT: Fatal error during initialization - ' . $e->getMessage());
+        }
+        add_action('admin_notices', function() use ($e) {
+            echo '<div class="notice notice-error"><p><strong>France Relocation Member Tools:</strong> ' . esc_html($e->getMessage()) . '</p></div>';
+        });
+        return null;
+    }
 }
 
+// Register activation hook BEFORE plugins_loaded (required by WordPress)
+register_activation_hook(__FILE__, function() {
+    try {
+        $plugin = framt();
+        if ($plugin) {
+            $plugin->safe_activate();
+        }
+    } catch (Exception $e) {
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('FRAMT: Activation failed - ' . $e->getMessage());
+        }
+    } catch (Error $e) {
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('FRAMT: Activation fatal error - ' . $e->getMessage());
+        }
+    }
+});
+
+// Register deactivation hook
+register_deactivation_hook(__FILE__, function() {
+    try {
+        $plugin = framt();
+        if ($plugin) {
+            $plugin->deactivate();
+        }
+    } catch (Exception $e) {
+        // Silently fail on deactivation
+    }
+});
+
 // Start the plugin
-framt();
+try {
+    framt();
+} catch (Exception $e) {
+    if (defined('WP_DEBUG') && WP_DEBUG) {
+        error_log('FRAMT: Plugin startup failed - ' . $e->getMessage());
+    }
+} catch (Error $e) {
+    if (defined('WP_DEBUG') && WP_DEBUG) {
+        error_log('FRAMT: Plugin startup fatal error - ' . $e->getMessage());
+    }
+}
