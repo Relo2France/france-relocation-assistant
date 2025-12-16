@@ -1,10 +1,11 @@
 <?php
 /**
  * Default Knowledge Base Data
- * Version: 2.1.0
+ * Version: 2.2.0
  *
  * Structure: Categories with overview + subtopics
  *
+ * v2.2.0 - Fixed VLS-TS comparison formatting (bullet points instead of table)
  * v2.1.0 - Added VLS-TS vs Carte de Séjour à Solliciter topic
  */
 

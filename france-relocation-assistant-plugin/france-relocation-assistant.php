@@ -1621,9 +1621,9 @@ If the user asks you to create, generate, make, or produce any kind of document,
         $kb_version = get_option('fra_kb_version', '1.0');
         
         // Force reload if version mismatch
-        if (!$knowledge_base || version_compare($kb_version, '2.1', '<')) {
+        if (!$knowledge_base || version_compare($kb_version, '2.2', '<')) {
             $this->initialize_knowledge_base();
-            update_option('fra_kb_version', '2.1');
+            update_option('fra_kb_version', '2.2');
             $knowledge_base = get_option(self::KNOWLEDGE_BASE_OPTION);
         }
         
