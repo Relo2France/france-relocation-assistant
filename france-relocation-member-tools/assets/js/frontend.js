@@ -71,7 +71,7 @@
             // Use specific selectors to avoid conflicts with main plugin's tile handlers
             $(document).on('click', '.fra-member-nav-btn[data-section], .framt-nav-btn[data-section]', function(e) {
                 var section = $(this).data('section');
-                var memberSections = ['dashboard', 'my-checklists', 'create-documents', 'upload-verify', 'glossary', 'guides', 'profile', 'messages'];
+                var memberSections = ['dashboard', 'research', 'my-checklists', 'create-documents', 'upload-verify', 'glossary', 'guides', 'profile', 'messages'];
                 
                 if (memberSections.indexOf(section) !== -1) {
                     e.preventDefault();
@@ -182,6 +182,9 @@
                     break;
                 case 'messages':
                     this.initMessages();
+                    break;
+                case 'research':
+                    this.initResearch();
                     break;
             }
         },
@@ -344,6 +347,156 @@
                 var messageId = $(this).data('id');
                 self.deleteMessage(messageId);
             });
+        },
+
+        /**
+         * Initialize research tool section
+         */
+        initResearch: function() {
+            var self = this;
+            var input = document.getElementById('framt-research-input');
+            var sendBtn = document.getElementById('framt-research-send');
+            var messagesContainer = document.getElementById('framt-research-messages');
+
+            if (!input || !sendBtn || !messagesContainer) return;
+
+            // Auto-resize textarea
+            input.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+            });
+
+            // Send on Enter (but allow Shift+Enter for new line)
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    self.sendResearchQuestion();
+                }
+            });
+
+            // Send button click
+            sendBtn.addEventListener('click', function() {
+                self.sendResearchQuestion();
+            });
+
+            // Suggestion chips
+            document.querySelectorAll('.framt-suggestion-chip').forEach(function(chip) {
+                chip.addEventListener('click', function() {
+                    var question = this.dataset.question;
+                    input.value = question;
+                    input.style.height = 'auto';
+                    input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+                    self.sendResearchQuestion();
+                });
+            });
+        },
+
+        /**
+         * Send research question to Claude
+         */
+        sendResearchQuestion: function() {
+            var self = this;
+            var input = document.getElementById('framt-research-input');
+            var messagesContainer = document.getElementById('framt-research-messages');
+            var sendBtn = document.getElementById('framt-research-send');
+            var question = input.value.trim();
+
+            if (!question) return;
+
+            // Disable input while processing
+            input.disabled = true;
+            sendBtn.disabled = true;
+
+            // Add user message
+            var userMsgHtml = '<div class="framt-research-message framt-research-user">' +
+                '<div class="framt-research-avatar">👤</div>' +
+                '<div class="framt-research-bubble"><p>' + this.escapeHtml(question) + '</p></div>' +
+                '</div>';
+            messagesContainer.insertAdjacentHTML('beforeend', userMsgHtml);
+
+            // Clear input
+            input.value = '';
+            input.style.height = 'auto';
+
+            // Add loading indicator
+            var loadingId = 'research-loading-' + Date.now();
+            var loadingHtml = '<div class="framt-research-message framt-research-ai" id="' + loadingId + '">' +
+                '<div class="framt-research-avatar">🔍</div>' +
+                '<div class="framt-research-bubble">' +
+                '<div class="framt-research-loading"><div class="framt-spinner"></div><span>Researching...</span></div>' +
+                '</div></div>';
+            messagesContainer.insertAdjacentHTML('beforeend', loadingHtml);
+
+            // Scroll to bottom
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+            // Send to API - use the main plugin's chat endpoint with research context
+            $.ajax({
+                url: framtData.ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'fra_proxy_query',
+                    message: question,
+                    context: 'research',
+                    nonce: framtData.nonce
+                },
+                success: function(response) {
+                    // Remove loading indicator
+                    var loadingEl = document.getElementById(loadingId);
+                    if (loadingEl) loadingEl.remove();
+
+                    // Add AI response
+                    var responseText = response.success ? (response.data.response || response.data.message || 'I apologize, but I couldn\'t process that request.') : 'An error occurred. Please try again.';
+                    var aiMsgHtml = '<div class="framt-research-message framt-research-ai">' +
+                        '<div class="framt-research-avatar">🔍</div>' +
+                        '<div class="framt-research-bubble">' + self.formatResearchResponse(responseText) + '</div>' +
+                        '</div>';
+                    messagesContainer.insertAdjacentHTML('beforeend', aiMsgHtml);
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                },
+                error: function() {
+                    // Remove loading indicator
+                    var loadingEl = document.getElementById(loadingId);
+                    if (loadingEl) loadingEl.remove();
+
+                    // Add error message
+                    var errorHtml = '<div class="framt-research-message framt-research-ai">' +
+                        '<div class="framt-research-avatar">🔍</div>' +
+                        '<div class="framt-research-bubble"><p>Sorry, there was an error processing your request. Please try again.</p></div>' +
+                        '</div>';
+                    messagesContainer.insertAdjacentHTML('beforeend', errorHtml);
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                },
+                complete: function() {
+                    // Re-enable input
+                    input.disabled = false;
+                    sendBtn.disabled = false;
+                    input.focus();
+                }
+            });
+        },
+
+        /**
+         * Format research response with basic markdown-like formatting
+         */
+        formatResearchResponse: function(text) {
+            // Escape HTML first
+            var escaped = this.escapeHtml(text);
+
+            // Convert markdown-like formatting
+            // Bold: **text** or __text__
+            escaped = escaped.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            escaped = escaped.replace(/__(.*?)__/g, '<strong>$1</strong>');
+
+            // Italic: *text* or _text_
+            escaped = escaped.replace(/\*(.*?)\*/g, '<em>$1</em>');
+
+            // Line breaks
+            escaped = escaped.replace(/\n\n/g, '</p><p>');
+            escaped = escaped.replace(/\n/g, '<br>');
+
+            // Wrap in paragraphs
+            return '<p>' + escaped + '</p>';
         },
 
         /**
@@ -2572,34 +2725,41 @@
 
         /**
          * Initialize timeline functionality (v1.1.0+)
+         * Uses event delegation to prevent duplicate listeners on re-navigation
          */
         initTimeline: function() {
             var self = this;
+            var container = document.querySelector('.framt-timeline, .framt-dashboard');
 
-            // Phase toggle (expand/collapse) - all phase headers
-            document.querySelectorAll('.framt-phase-header').forEach(function(header) {
-                header.addEventListener('click', function(e) {
-                    // Don't toggle if clicking on a button or checkbox
-                    if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') return;
-                    self.togglePhase(e.currentTarget);
-                });
-            });
+            // Skip if no timeline container or already initialized
+            if (!container) return;
+            if (container.dataset.timelineInit === 'true') return;
+            container.dataset.timelineInit = 'true';
 
-            // Task checkbox handling
-            document.querySelectorAll('.framt-timeline-checkbox').forEach(function(checkbox) {
-                checkbox.addEventListener('change', function(e) {
-                    self.handleTimelineTask(e.target);
-                });
-            });
+            // Use event delegation on container to prevent duplicate handlers
+            container.addEventListener('click', function(e) {
+                // Phase header toggle (expand/collapse)
+                var header = e.target.closest('.framt-phase-header');
+                if (header && e.target.tagName !== 'BUTTON' && e.target.tagName !== 'INPUT') {
+                    self.togglePhase(header);
+                    return;
+                }
 
-            // Guide link handling - open in chat context
-            document.querySelectorAll('.framt-task-guide[data-guide-link]').forEach(function(btn) {
-                btn.addEventListener('click', function(e) {
+                // Guide link handling
+                var guideBtn = e.target.closest('.framt-task-guide[data-guide-link]');
+                if (guideBtn) {
                     e.preventDefault();
                     e.stopPropagation();
-                    var link = btn.dataset.guideLink;
-                    self.openGuideInFrame(link);
-                });
+                    self.openGuideInFrame(guideBtn.dataset.guideLink);
+                    return;
+                }
+            });
+
+            // Checkbox change event (separate because 'change' doesn't bubble the same way)
+            container.addEventListener('change', function(e) {
+                if (e.target.classList.contains('framt-timeline-checkbox')) {
+                    self.handleTimelineTask(e.target);
+                }
             });
         },
 
