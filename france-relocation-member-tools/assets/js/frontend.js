@@ -2606,24 +2606,21 @@
          * Open guide link within the chat/app context
          */
         openGuideInFrame: function(link) {
-            // Try to use the main plugin's navigation if available
-            if (window.FRA && typeof FRA.navigateToGuide === 'function') {
-                FRA.navigateToGuide(link);
+            // Navigate to the Member Tools guides section
+            if (typeof FRAMemberTools !== 'undefined' && FRAMemberTools.navigateToSection) {
+                FRAMemberTools.navigateToSection('guides');
                 return;
             }
 
-            // Dispatch event for main plugin to handle
-            var event = new CustomEvent('fra:openGuide', {
-                detail: { url: link }
-            });
-            document.dispatchEvent(event);
-
-            // Fallback: scroll to chat and show link message
-            var chatContainer = document.querySelector('.fra-chat-container, .fra-assistant-container, #fra-chat');
-            if (chatContainer) {
-                chatContainer.scrollIntoView({ behavior: 'smooth' });
-                // Could inject a message suggesting to ask about this topic
+            // Fallback: click the guides nav button if it exists
+            var guidesBtn = document.querySelector('[data-section="guides"]');
+            if (guidesBtn) {
+                guidesBtn.click();
+                return;
             }
+
+            // Last fallback: navigate to the URL directly
+            window.location.href = link;
         },
 
         /**
