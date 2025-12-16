@@ -1707,6 +1707,14 @@ require_once FRA_PLUGIN_DIR . 'includes/dashboard-widget.php';
 require_once FRA_PLUGIN_DIR . 'includes/api-settings.php';
 require_once FRA_PLUGIN_DIR . 'includes/api-proxy.php';
 
+// Performance optimization
+require_once FRA_PLUGIN_DIR . 'includes/performance.php';
+
+// Launch validation (admin only)
+if (is_admin()) {
+    require_once FRA_PLUGIN_DIR . 'includes/launch-validation.php';
+}
+
 // Initialize AI Review (registers AJAX handlers)
 FRA_AI_Review::get_instance();
 
