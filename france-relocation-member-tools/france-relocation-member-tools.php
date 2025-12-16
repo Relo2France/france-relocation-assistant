@@ -3,7 +3,7 @@
  * Plugin Name: France Relocation Member Tools
  * Plugin URI: https://relo2france.com
  * Description: Premium member features for the France Relocation Assistant - document generation, checklists, guides, and personalized relocation planning.
- * Version: 1.1.5
+ * Version: 1.1.6
  * Author: Relo2France
  * Author URI: https://relo2france.com
  * License: GPL v2 or later
@@ -22,7 +22,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Plugin constants
-define('FRAMT_VERSION', '1.1.5');
+define('FRAMT_VERSION', '1.1.6');
 define('FRAMT_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('FRAMT_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('FRAMT_PLUGIN_BASENAME', plugin_basename(__FILE__));
@@ -67,7 +67,25 @@ final class FRA_Member_Tools {
      * Constructor - private to enforce singleton
      */
     private function __construct() {
-        $this->define_hooks();
+        try {
+            $this->define_hooks();
+        } catch (Exception $e) {
+            $this->log_error('Constructor failed: ' . $e->getMessage());
+        } catch (Error $e) {
+            $this->log_error('Constructor fatal error: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Log error message
+     *
+     * @param string $message Error message
+     * @return void
+     */
+    private function log_error($message) {
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('FRAMT Error: ' . $message);
+        }
     }
 
     /**
@@ -78,13 +96,51 @@ final class FRA_Member_Tools {
     private function define_hooks() {
         // Check dependencies before loading
         add_action('plugins_loaded', array($this, 'check_dependencies'), 5);
-        
+
         // Initialize plugin after dependencies confirmed
-        add_action('plugins_loaded', array($this, 'init'), 10);
-        
+        add_action('plugins_loaded', array($this, 'safe_init'), 10);
+
         // Activation/deactivation hooks
-        register_activation_hook(__FILE__, array($this, 'activate'));
+        register_activation_hook(__FILE__, array($this, 'safe_activate'));
         register_deactivation_hook(__FILE__, array($this, 'deactivate'));
+    }
+
+    /**
+     * Safe initialization wrapper with error handling
+     *
+     * @return void
+     */
+    public function safe_init() {
+        try {
+            $this->init();
+        } catch (Exception $e) {
+            $this->log_error('Init failed: ' . $e->getMessage());
+            add_action('admin_notices', function() use ($e) {
+                echo '<div class="notice notice-error"><p><strong>France Relocation Member Tools:</strong> Initialization error - ' . esc_html($e->getMessage()) . '</p></div>';
+            });
+        } catch (Error $e) {
+            $this->log_error('Init fatal error: ' . $e->getMessage());
+            add_action('admin_notices', function() use ($e) {
+                echo '<div class="notice notice-error"><p><strong>France Relocation Member Tools:</strong> Fatal error during initialization - ' . esc_html($e->getMessage()) . '</p></div>';
+            });
+        }
+    }
+
+    /**
+     * Safe activation wrapper with error handling
+     *
+     * @return void
+     */
+    public function safe_activate() {
+        try {
+            $this->activate();
+        } catch (Exception $e) {
+            $this->log_error('Activation failed: ' . $e->getMessage());
+            // Don't throw - let WordPress complete activation
+        } catch (Error $e) {
+            $this->log_error('Activation fatal error: ' . $e->getMessage());
+            // Don't throw - let WordPress complete activation
+        }
     }
 
     /**
@@ -233,23 +289,33 @@ final class FRA_Member_Tools {
      * @return void
      */
     private function load_dependencies() {
-        // Core classes
-        require_once FRAMT_PLUGIN_DIR . 'includes/class-framt-membership.php';
-        require_once FRAMT_PLUGIN_DIR . 'includes/class-framt-profile.php';
-        require_once FRAMT_PLUGIN_DIR . 'includes/class-framt-dashboard.php';
-        require_once FRAMT_PLUGIN_DIR . 'includes/class-framt-documents.php';
-        require_once FRAMT_PLUGIN_DIR . 'includes/class-framt-checklists.php';
-        require_once FRAMT_PLUGIN_DIR . 'includes/class-framt-glossary.php';
-        require_once FRAMT_PLUGIN_DIR . 'includes/class-framt-guides.php';
-        require_once FRAMT_PLUGIN_DIR . 'includes/class-framt-guide-generator.php';
-        require_once FRAMT_PLUGIN_DIR . 'includes/class-framt-ai-guide-generator.php';
-        require_once FRAMT_PLUGIN_DIR . 'includes/class-framt-chat-handler.php';
-        require_once FRAMT_PLUGIN_DIR . 'includes/class-framt-document-generator.php';
-        require_once FRAMT_PLUGIN_DIR . 'includes/class-framt-ai-verification.php';
-        require_once FRAMT_PLUGIN_DIR . 'includes/class-framt-messages.php';
+        // Core classes - load with file existence check
+        $required_files = array(
+            'includes/class-framt-membership.php',
+            'includes/class-framt-profile.php',
+            'includes/class-framt-dashboard.php',
+            'includes/class-framt-documents.php',
+            'includes/class-framt-checklists.php',
+            'includes/class-framt-glossary.php',
+            'includes/class-framt-guides.php',
+            'includes/class-framt-guide-generator.php',
+            'includes/class-framt-ai-guide-generator.php',
+            'includes/class-framt-chat-handler.php',
+            'includes/class-framt-document-generator.php',
+            'includes/class-framt-ai-verification.php',
+            'includes/class-framt-messages.php',
+            'includes/class-framt-main-plugin-bridge.php',
+        );
 
-        // Main plugin bridge (v1.1.0+) - integrates with FRA v3.6.0+ features
-        require_once FRAMT_PLUGIN_DIR . 'includes/class-framt-main-plugin-bridge.php';
+        foreach ($required_files as $file) {
+            $filepath = FRAMT_PLUGIN_DIR . $file;
+            if (file_exists($filepath)) {
+                require_once $filepath;
+            } else {
+                $this->log_error('Missing required file: ' . $file);
+                throw new Exception('Missing required file: ' . $file);
+            }
+        }
     }
 
     /**
@@ -258,19 +324,45 @@ final class FRA_Member_Tools {
      * @return void
      */
     private function init_components() {
-        $this->components['membership'] = FRAMT_Membership::get_instance();
-        $this->components['profile'] = FRAMT_Profile::get_instance();
-        $this->components['dashboard'] = FRAMT_Dashboard::get_instance();
-        $this->components['documents'] = FRAMT_Documents::get_instance();
-        $this->components['checklists'] = FRAMT_Checklists::get_instance();
-        $this->components['glossary'] = FRAMT_Glossary::get_instance();
-        $this->components['guides'] = FRAMT_Guides::get_instance();
-        $this->components['guide_generator'] = FRAMT_Guide_Generator::get_instance();
-        $this->components['ai_guide_generator'] = FRAMT_AI_Guide_Generator::get_instance();
-        $this->components['chat_handler'] = FRAMT_Chat_Handler::get_instance();
-        $this->components['doc_generator'] = FRAMT_Document_Generator::get_instance();
-        $this->components['ai_verification'] = FRAMT_AI_Verification::get_instance();
-        $this->components['messages'] = new FRAMT_Messages();
+        $component_classes = array(
+            'membership' => 'FRAMT_Membership',
+            'profile' => 'FRAMT_Profile',
+            'dashboard' => 'FRAMT_Dashboard',
+            'documents' => 'FRAMT_Documents',
+            'checklists' => 'FRAMT_Checklists',
+            'glossary' => 'FRAMT_Glossary',
+            'guides' => 'FRAMT_Guides',
+            'guide_generator' => 'FRAMT_Guide_Generator',
+            'ai_guide_generator' => 'FRAMT_AI_Guide_Generator',
+            'chat_handler' => 'FRAMT_Chat_Handler',
+            'doc_generator' => 'FRAMT_Document_Generator',
+            'ai_verification' => 'FRAMT_AI_Verification',
+        );
+
+        foreach ($component_classes as $key => $class) {
+            try {
+                if (class_exists($class)) {
+                    $this->components[$key] = $class::get_instance();
+                } else {
+                    $this->log_error('Component class not found: ' . $class);
+                }
+            } catch (Exception $e) {
+                $this->log_error('Failed to initialize component ' . $key . ': ' . $e->getMessage());
+            } catch (Error $e) {
+                $this->log_error('Fatal error initializing component ' . $key . ': ' . $e->getMessage());
+            }
+        }
+
+        // Messages uses different instantiation
+        try {
+            if (class_exists('FRAMT_Messages')) {
+                $this->components['messages'] = new FRAMT_Messages();
+            }
+        } catch (Exception $e) {
+            $this->log_error('Failed to initialize messages component: ' . $e->getMessage());
+        } catch (Error $e) {
+            $this->log_error('Fatal error initializing messages component: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -3740,19 +3832,40 @@ Please provide a helpful, accurate answer about their health insurance coverage 
      * @return void
      */
     public function activate() {
-        // Create database tables
-        $this->create_tables();
-
-        // Set default options
-        $this->set_default_options();
-
-        // Schedule daily cleanup of expired documents
-        if (!wp_next_scheduled('framt_daily_cleanup')) {
-            wp_schedule_event(time(), 'daily', 'framt_daily_cleanup');
+        // Create database tables - wrap in try-catch to prevent activation failure
+        try {
+            $this->create_tables();
+        } catch (Exception $e) {
+            $this->log_error('Table creation failed: ' . $e->getMessage());
+        } catch (Error $e) {
+            $this->log_error('Table creation fatal error: ' . $e->getMessage());
         }
 
-        // Flush rewrite rules
-        flush_rewrite_rules();
+        // Set default options
+        try {
+            $this->set_default_options();
+        } catch (Exception $e) {
+            $this->log_error('Setting default options failed: ' . $e->getMessage());
+        }
+
+        // Schedule daily cleanup of expired documents
+        try {
+            if (!wp_next_scheduled('framt_daily_cleanup')) {
+                wp_schedule_event(time(), 'daily', 'framt_daily_cleanup');
+            }
+        } catch (Exception $e) {
+            $this->log_error('Scheduling cleanup failed: ' . $e->getMessage());
+        }
+
+        // Flush rewrite rules - can be slow, wrap in try-catch
+        try {
+            flush_rewrite_rules();
+        } catch (Exception $e) {
+            $this->log_error('Flush rewrite rules failed: ' . $e->getMessage());
+        }
+
+        // Log successful activation
+        $this->log_error('Plugin activated successfully (v' . FRAMT_VERSION . ')');
     }
 
     /**

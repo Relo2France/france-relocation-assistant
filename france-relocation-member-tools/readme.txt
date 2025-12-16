@@ -4,7 +4,7 @@ Tags: france, relocation, visa, membership, documents
 Requires at least: 5.8
 Tested up to: 6.4
 Requires PHP: 7.4
-Stable tag: 1.1.5
+Stable tag: 1.1.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -62,6 +62,14 @@ Yes! Enable "Demo Mode" in settings to test member features without a membership
 Documents are generated based on application location. US applications generate English documents; renewals from France generate French documents.
 
 == Changelog ==
+
+= 1.1.6 =
+* Improved: Defensive error handling throughout plugin initialization
+* Improved: Try-catch blocks prevent fatal errors from deactivating plugin
+* Improved: File existence checks before loading dependencies
+* Improved: Component initialization with graceful degradation
+* Improved: Activation process wrapped in error handlers
+* Added: Error logging for debugging (when WP_DEBUG is enabled)
 
 = 1.1.5 =
 * Fixed: Timeline checkbox properly persists state (fixed re-trigger on API response)
