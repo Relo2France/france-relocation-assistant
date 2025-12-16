@@ -1,9 +1,11 @@
 <?php
 /**
  * Default Knowledge Base Data
- * Version: 2.0.0
- * 
+ * Version: 2.1.0
+ *
  * Structure: Categories with overview + subtopics
+ *
+ * v2.1.0 - Added VLS-TS vs Carte de Séjour à Solliciter topic
  */
 
 if (!defined('ABSPATH')) {
@@ -47,6 +49,15 @@ return array(
             'content' => "**Post-Arrival Visa Validation**\n\nAfter arriving in France with a VLS-TS visa, you MUST validate it within 3 months.\n\n**Online Process:**\n1. Go to administration-etrangers-en-france.interieur.gouv.fr\n2. Create account, enter visa information\n3. Upload: Passport photo page, visa sticker, proof of address\n4. Pay €225 timbre fiscal online\n5. Receive confirmation email\n\n**Important:**\n• Must validate within 3 months of arrival\n• Cannot leave Schengen zone until validated\n• Failure to validate = illegal stay\n\n**After Validation:**\n• Can apply for Carte Vitale\n• Open bank account more easily\n• Sign up for utilities",
             'keywords' => array('ofii', 'validation', 'validate visa', 'after arrival', 'timbre fiscal'),
             'sources' => array(array('name' => 'ANEF Portal', 'url' => 'https://administration-etrangers-en-france.interieur.gouv.fr'))
+        ),
+        'vls_types' => array(
+            'title' => 'VLS-TS vs Carte de Séjour à Solliciter',
+            'content' => "**Understanding French Long-Stay Visa Types**\n\nWhen applying for a long-stay visa for France (more than 90 days), you may receive either:\n\n1. **VLS-TS** (Visa de Long Séjour valant Titre de Séjour), or\n2. A visa marked **\"carte de séjour à solliciter\"**\n\nThese are NOT interchangeable and lead to very different post-arrival procedures.\n\n---\n\n**VLS-TS (Long-Stay Visa = Residence Permit)**\n\nFrance grants:\n• Entry into France, AND\n• A temporary residence right embedded in the visa itself (usually for one year)\n\n**Result:**\n• Mandatory online validation with OFII within 3 months of arrival\n• No prefecture appointment required during the first year\n• Renewal handled later at the prefecture\n\n---\n\n**\"CARTE DE SÉJOUR À SOLLICITER\"**\n\nFrance grants:\n• Entry into France ONLY\n\nThe residence right:\n• Must be issued locally by a prefecture after arrival\n\n**Result:**\n• NO OFII online validation\n• Mandatory prefecture appointment within ~2-3 months\n• Residence status is NOT secure until the carte de séjour is issued\n\n---\n\n**WHO GETS WHICH TYPE?**\n\n**Most Visitor Visas → VLS-TS**\nLong-stay visitor visas (retirees, financially independent individuals, second-home owners) are almost always issued as VLS-TS \"visiteur\" because:\n• Low-risk category\n• No employment\n• No access to social benefits\n• Minimal need for local administrative review\n\n**Family-Based Visas → Often \"Carte de Séjour à Solliciter\"**\n• Spouse of French national\n• Parent of French child\n• Family reunification cases\n\nReason: Local verification of family ties, marriage validity, or cohabitation required.\n\n**Certain Professional Visas → May be \"Carte de Séjour à Solliciter\"**\n• Some salaried worker visas\n• Certain self-employed or regulated professions\n• Some Passeport Talent sub-categories\n\nReason: Work authorization and professional compliance must be verified locally.\n\n---\n\n**IMPORTANT:** You do NOT choose between these. On France-Visas, you select only your purpose of stay. The consulate determines the visa type based on legal category, risk profile, and administrative policy.\n\n---\n\n**PRACTICAL COMPARISON**\n\n| VLS-TS | Carte de Séjour à Solliciter |\n|--------|------------------------------|\n| Online OFII validation required | No OFII validation |\n| No initial prefecture visit | Mandatory prefecture appointment |\n| Simplified first year | Residence rights not final until card issued |\n| Lower administrative risk | Higher risk if deadlines missed |\n\n---\n\n**BOTTOM LINE**\n\n✅ **Expect VLS-TS** if you are: financially independent, not working in France, not relying on family-based residence rights.\n\n⚠️ **Expect \"Carte de Séjour à Solliciter\"** if your stay involves: employment, regulated professions, family reunification, or complex personal circumstances.",
+            'keywords' => array('vls-ts', 'vls ts', 'carte de sejour', 'carte de séjour', 'solliciter', 'visa types', 'residence permit', 'titre de sejour', 'prefecture', 'ofii validation', 'visitor visa type', 'which visa', 'visa difference'),
+            'sources' => array(
+                array('name' => 'France-Visas', 'url' => 'https://france-visas.gouv.fr'),
+                array('name' => 'Service-Public.fr', 'url' => 'https://www.service-public.fr/particuliers/vosdroits/F39')
+            )
         )
     ),
     

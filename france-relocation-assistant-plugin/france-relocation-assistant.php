@@ -3,7 +3,7 @@
  * Plugin Name: France Relocation Assistant
  * Plugin URI: https://relo2france.com
  * Description: AI-powered US to France relocation guidance with visa info, property guides, healthcare, taxes, and practical insights. Features weekly auto-updates, "In Practice" real-world advice, and comprehensive knowledge base.
- * Version: 3.6.0
+ * Version: 3.6.1
  * Author: Relo2France
  * Author URI: https://relo2france.com
  * License: GPL v2 or later
@@ -42,7 +42,7 @@ if (!defined('ABSPATH')) {
 | Plugin Constants
 |--------------------------------------------------------------------------
 */
-define('FRA_VERSION', '3.6.0');
+define('FRA_VERSION', '3.6.1');
 define('FRA_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('FRA_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('FRA_PLUGIN_BASENAME', plugin_basename(__FILE__));
@@ -1621,9 +1621,9 @@ If the user asks you to create, generate, make, or produce any kind of document,
         $kb_version = get_option('fra_kb_version', '1.0');
         
         // Force reload if version mismatch
-        if (!$knowledge_base || version_compare($kb_version, '2.0', '<')) {
+        if (!$knowledge_base || version_compare($kb_version, '2.1', '<')) {
             $this->initialize_knowledge_base();
-            update_option('fra_kb_version', '2.0');
+            update_option('fra_kb_version', '2.1');
             $knowledge_base = get_option(self::KNOWLEDGE_BASE_OPTION);
         }
         

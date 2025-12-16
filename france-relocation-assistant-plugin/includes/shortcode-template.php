@@ -125,6 +125,7 @@ foreach ($kb as $cat_key => $topics) {
 // =============================================================================
 $quick_topics = array(
     array('cat' => 'visas', 'topic' => 'overview', 'label' => 'What visa do I need?'),
+    array('cat' => 'visas', 'topic' => 'vls_types', 'label' => 'VLS-TS vs Carte de Séjour'),
     array('cat' => 'property', 'topic' => 'overview', 'label' => 'Buying property'),
     array('cat' => 'taxes', 'topic' => 'residency', 'label' => '183-day rule'),
     array('cat' => 'healthcare', 'topic' => 'puma', 'label' => 'French healthcare'),
