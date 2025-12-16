@@ -4,7 +4,7 @@ Tags: france, relocation, visa, membership, documents
 Requires at least: 5.8
 Tested up to: 6.4
 Requires PHP: 7.4
-Stable tag: 1.1.1
+Stable tag: 1.1.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -62,6 +62,9 @@ Yes! Enable "Demo Mode" in settings to test member features without a membership
 Documents are generated based on application location. US applications generate English documents; renewals from France generate French documents.
 
 == Changelog ==
+
+= 1.1.2 =
+* Fixed: Guide links now properly navigate to the Guides section within Member Tools
 
 = 1.1.1 =
 * Fixed: Phase toggle now works on all phases (not just active)
