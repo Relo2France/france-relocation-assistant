@@ -3,7 +3,7 @@
  * Plugin Name: France Relocation Assistant
  * Plugin URI: https://relo2france.com
  * Description: AI-powered US to France relocation guidance with visa info, property guides, healthcare, taxes, and practical insights. Features weekly auto-updates, "In Practice" real-world advice, and comprehensive knowledge base.
- * Version: 3.0.0
+ * Version: 3.2.0
  * Author: Relo2France
  * Author URI: https://relo2france.com
  * License: GPL v2 or later
@@ -42,10 +42,11 @@ if (!defined('ABSPATH')) {
 | Plugin Constants
 |--------------------------------------------------------------------------
 */
-define('FRA_VERSION', '3.0.0');
+define('FRA_VERSION', '3.2.0');
 define('FRA_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('FRA_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('FRA_PLUGIN_BASENAME', plugin_basename(__FILE__));
+define('FRA_PLUGIN_FILE', __FILE__);
 
 /*
 |--------------------------------------------------------------------------
@@ -647,6 +648,14 @@ class France_Relocation_Assistant {
             FRA_VERSION
         );
 
+        // Breadcrumb styles
+        wp_enqueue_style(
+            'fra-breadcrumb',
+            FRA_PLUGIN_URL . 'assets/css/breadcrumb.css',
+            array(),
+            FRA_VERSION
+        );
+
         wp_enqueue_script(
             'fra-frontend-script',
             FRA_PLUGIN_URL . 'assets/js/frontend.js',
@@ -654,7 +663,16 @@ class France_Relocation_Assistant {
             FRA_VERSION,
             true
         );
-        
+
+        // Breadcrumb JavaScript
+        wp_enqueue_script(
+            'fra-breadcrumb',
+            FRA_PLUGIN_URL . 'assets/js/breadcrumb.js',
+            array(),
+            FRA_VERSION,
+            true
+        );
+
         // Check for login error
         $login_error = '';
         if (isset($_GET['login_error']) && isset($_GET['user'])) {
@@ -1647,6 +1665,15 @@ If the user asks you to create, generate, make, or produce any kind of document,
 |--------------------------------------------------------------------------
 */
 
+// Custom post types - must be early
+require_once FRA_PLUGIN_DIR . 'includes/post-types.php';
+
+// Meta fields for post types
+require_once FRA_PLUGIN_DIR . 'includes/meta-fields.php';
+
+// Dynamic menu generator
+require_once FRA_PLUGIN_DIR . 'includes/dynamic-menu.php';
+
 // Core modules
 require_once FRA_PLUGIN_DIR . 'includes/class-fra-seo.php';
 require_once FRA_PLUGIN_DIR . 'includes/class-fra-membership.php';
@@ -1659,6 +1686,9 @@ require_once FRA_PLUGIN_DIR . 'includes/class-fra-auth-pages.php';
 
 // Testimonials and social proof
 require_once FRA_PLUGIN_DIR . 'includes/testimonials.php';
+
+// Breadcrumb navigation
+require_once FRA_PLUGIN_DIR . 'includes/breadcrumb.php';
 
 // Initialize AI Review (registers AJAX handlers)
 FRA_AI_Review::get_instance();
