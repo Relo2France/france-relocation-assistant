@@ -175,6 +175,7 @@
                     break;
                 case 'dashboard':
                     this.initDashboard();
+                    this.initTimeline();
                     break;
                 case 'profile':
                     this.initProfile();
