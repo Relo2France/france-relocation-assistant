@@ -2724,6 +2724,11 @@
         },
 
         /**
+         * Track checkboxes being processed to prevent re-triggering
+         */
+        _processingCheckboxes: {},
+
+        /**
          * Initialize timeline functionality (v1.1.0+)
          * Uses event delegation to prevent duplicate listeners on re-navigation
          */
@@ -2758,6 +2763,11 @@
             // Checkbox change event (separate because 'change' doesn't bubble the same way)
             container.addEventListener('change', function(e) {
                 if (e.target.classList.contains('framt-timeline-checkbox')) {
+                    var taskId = e.target.dataset.taskId;
+                    // Skip if this checkbox is currently being processed (prevents re-trigger on revert)
+                    if (self._processingCheckboxes[taskId]) {
+                        return;
+                    }
                     self.handleTimelineTask(e.target);
                 }
             });
@@ -2814,9 +2824,13 @@
          * Handle timeline task checkbox
          */
         handleTimelineTask: function(checkbox) {
+            var self = this;
             var taskId = checkbox.dataset.taskId;
             var complete = checkbox.checked;
             var taskEl = checkbox.closest('.framt-timeline-task');
+
+            // Mark as processing to prevent re-trigger on revert
+            this._processingCheckboxes[taskId] = true;
 
             // Optimistic UI update
             taskEl.classList.toggle('framt-task-done', complete);
@@ -2838,6 +2852,10 @@
                     // Revert on error
                     checkbox.checked = !complete;
                     taskEl.classList.toggle('framt-task-done', !complete);
+                })
+                .finally(function() {
+                    // Clear processing flag
+                    delete self._processingCheckboxes[taskId];
                 });
         },
 
@@ -2845,7 +2863,9 @@
          * Update task via main plugin REST API
          */
         updateTaskViaApi: function(taskId, complete) {
-            var nonce = window.wpApiSettings ? wpApiSettings.nonce : (window.framtData ? framtData.nonce : '');
+            // Use REST nonce for REST API calls (wp_rest), fallback to wpApiSettings
+            var nonce = (window.framtData && framtData.restNonce) ? framtData.restNonce :
+                        (window.wpApiSettings ? wpApiSettings.nonce : '');
 
             return fetch('/wp-json/fra/v1/task', {
                 method: 'POST',

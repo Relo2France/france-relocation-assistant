@@ -4,7 +4,7 @@ Tags: france, relocation, visa, membership, documents
 Requires at least: 5.8
 Tested up to: 6.4
 Requires PHP: 7.4
-Stable tag: 1.1.3
+Stable tag: 1.1.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -62,6 +62,11 @@ Yes! Enable "Demo Mode" in settings to test member features without a membership
 Documents are generated based on application location. US applications generate English documents; renewals from France generate French documents.
 
 == Changelog ==
+
+= 1.1.5 =
+* Fixed: Timeline checkbox properly persists state (fixed re-trigger on API response)
+* Fixed: REST API authentication with proper wp_rest nonce for task updates
+* Improved: Added processing flag to prevent checkbox double-toggling
 
 = 1.1.4 =
 * New: Research Tool - Dedicated Claude chat for France relocation questions
