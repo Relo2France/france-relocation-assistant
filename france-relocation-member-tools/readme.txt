@@ -4,7 +4,7 @@ Tags: france, relocation, visa, membership, documents
 Requires at least: 5.8
 Tested up to: 6.4
 Requires PHP: 7.4
-Stable tag: 1.1.6
+Stable tag: 1.1.7
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -62,6 +62,12 @@ Yes! Enable "Demo Mode" in settings to test member features without a membership
 Documents are generated based on application location. US applications generate English documents; renewals from France generate French documents.
 
 == Changelog ==
+
+= 1.1.7 =
+* Fixed: Plugin initialization moved outside class to prevent deactivation on errors
+* Fixed: Activation/deactivation hooks registered before class instantiation
+* Improved: Additional error handling layer around entire plugin bootstrap
+* Improved: Static failed flag prevents repeated initialization attempts
 
 = 1.1.6 =
 * Improved: Defensive error handling throughout plugin initialization
