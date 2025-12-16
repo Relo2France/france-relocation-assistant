@@ -1,0 +1,620 @@
+/**
+ * Dashboard Styles
+ *
+ * @package FranceRelocationAssistant
+ * @version 3.6.0
+ */
+
+/* ==========================================================================
+   DASHBOARD CONTAINER
+   ========================================================================== */
+
+.fra-dashboard,
+.fra-onboarding,
+.fra-login-prompt {
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 1.5rem;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* ==========================================================================
+   PROGRESS HEADER
+   ========================================================================== */
+
+.fra-dashboard-header {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%);
+    border-radius: 12px;
+}
+
+/* Progress Ring */
+.fra-progress-ring-container {
+    position: relative;
+    width: 100px;
+    height: 100px;
+    flex-shrink: 0;
+}
+
+.fra-progress-ring {
+    transform: rotate(-90deg);
+    width: 100%;
+    height: 100%;
+}
+
+.fra-progress-bg {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.5);
+    stroke-width: 8;
+}
+
+.fra-progress-fill {
+    fill: none;
+    stroke: #1E3A5F;
+    stroke-width: 8;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.5s ease;
+}
+
+.fra-progress-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+}
+
+.fra-progress-number {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #1E3A5F;
+}
+
+.fra-progress-percent {
+    font-size: 0.875rem;
+    color: #1E3A5F;
+}
+
+/* Dashboard Info */
+.fra-dashboard-info {
+    flex: 1;
+}
+
+.fra-dashboard-title {
+    font-size: 1.25rem;
+    color: #1E3A5F;
+    margin: 0 0 0.375rem;
+}
+
+.fra-dashboard-subtitle {
+    font-size: 0.875rem;
+    color: #546E7A;
+    margin: 0 0 0.75rem;
+}
+
+.fra-edit-profile-btn {
+    background: transparent;
+    border: 1px solid #1E3A5F;
+    color: #1E3A5F;
+    padding: 0.375rem 0.75rem;
+    border-radius: 4px;
+    font-size: 0.8125rem;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+}
+
+.fra-edit-profile-btn:hover {
+    background: #1E3A5F;
+    color: white;
+}
+
+/* ==========================================================================
+   TIMELINE / PHASES
+   ========================================================================== */
+
+.fra-timeline {
+    margin-bottom: 2rem;
+}
+
+.fra-phase {
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    margin-bottom: 0.75rem;
+    overflow: hidden;
+    transition: box-shadow 0.2s;
+}
+
+.fra-phase:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.fra-phase-current {
+    border-color: #1E3A5F;
+    border-width: 2px;
+}
+
+.fra-phase-completed {
+    background: #f8fdf8;
+    border-color: #c8e6c9;
+}
+
+/* Phase Header */
+.fra-phase-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    cursor: pointer;
+    user-select: none;
+}
+
+.fra-phase-indicator {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #e9ecef;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.fra-phase-completed .fra-phase-indicator {
+    background: #4CAF50;
+    color: white;
+}
+
+.fra-phase-current .fra-phase-indicator {
+    background: #1E3A5F;
+    color: white;
+}
+
+.fra-phase-number,
+.fra-phase-check {
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.fra-phase-info {
+    flex: 1;
+}
+
+.fra-phase-title {
+    font-size: 1rem;
+    color: #333;
+    margin: 0;
+}
+
+.fra-phase-subtitle {
+    font-size: 0.75rem;
+    color: #888;
+}
+
+.fra-phase-progress {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.fra-phase-count {
+    font-size: 0.875rem;
+    color: #666;
+    font-weight: 500;
+}
+
+.fra-phase-toggle {
+    font-size: 0.75rem;
+    color: #adb5bd;
+    transition: transform 0.2s;
+}
+
+/* Phase Tasks */
+.fra-phase-tasks {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    border-top: 1px solid #e9ecef;
+}
+
+.fra-phase-tasks-expanded {
+    max-height: 500px;
+}
+
+/* Auto-expand current phase */
+.fra-phase-current .fra-phase-tasks {
+    max-height: 500px;
+}
+
+/* ==========================================================================
+   TASKS
+   ========================================================================== */
+
+.fra-task {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1.25rem 0.75rem 3.5rem;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background 0.2s;
+}
+
+.fra-task:last-child {
+    border-bottom: none;
+}
+
+.fra-task:hover {
+    background: #f8f9fa;
+}
+
+.fra-task-done {
+    background: #f8fdf8;
+}
+
+.fra-task-label {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex: 1;
+    cursor: pointer;
+}
+
+.fra-task-checkbox {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.fra-task-check {
+    width: 20px;
+    height: 20px;
+    border: 2px solid #ccc;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.fra-task-checkbox:checked + .fra-task-check {
+    background: #4CAF50;
+    border-color: #4CAF50;
+}
+
+.fra-task-checkbox:checked + .fra-task-check::after {
+    content: '✓';
+    color: white;
+    font-size: 0.75rem;
+    font-weight: bold;
+}
+
+.fra-task-checkbox:focus + .fra-task-check {
+    box-shadow: 0 0 0 2px rgba(30, 58, 95, 0.2);
+}
+
+.fra-task-title {
+    font-size: 0.9375rem;
+    color: #333;
+    transition: color 0.2s;
+}
+
+.fra-task-done .fra-task-title {
+    color: #888;
+    text-decoration: line-through;
+}
+
+.fra-task-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: #e3f2fd;
+    border-radius: 50%;
+    color: #1E3A5F;
+    text-decoration: none;
+    transition: background 0.2s, transform 0.2s;
+}
+
+.fra-task-link:hover {
+    background: #bbdefb;
+    transform: translateX(2px);
+}
+
+.fra-task-link-icon {
+    font-size: 0.875rem;
+}
+
+/* ==========================================================================
+   QUICK ACTIONS
+   ========================================================================== */
+
+.fra-dashboard-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+.fra-action-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    color: #333;
+    text-decoration: none;
+    font-weight: 500;
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.fra-action-btn:hover {
+    background: white;
+    border-color: #1E3A5F;
+}
+
+.fra-action-icon {
+    font-size: 1.25rem;
+}
+
+/* ==========================================================================
+   ONBOARDING
+   ========================================================================== */
+
+.fra-onboarding-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.fra-onboarding-title {
+    font-size: 1.5rem;
+    color: #1E3A5F;
+    margin: 0 0 0.5rem;
+}
+
+.fra-onboarding-subtitle {
+    color: #666;
+    margin: 0;
+}
+
+.fra-onboarding-form {
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    padding: 2rem;
+}
+
+.fra-form-group {
+    margin-bottom: 1.5rem;
+}
+
+.fra-form-label {
+    display: block;
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 0.5rem;
+}
+
+.fra-form-select,
+.fra-form-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.fra-form-select:focus,
+.fra-form-input:focus {
+    outline: none;
+    border-color: #1E3A5F;
+    box-shadow: 0 0 0 3px rgba(30, 58, 95, 0.1);
+}
+
+/* Counter */
+.fra-form-counter {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.fra-counter-btn {
+    width: 40px;
+    height: 40px;
+    background: #f8f9fa;
+    border: none;
+    font-size: 1.25rem;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.fra-counter-btn:hover {
+    background: #e9ecef;
+}
+
+.fra-counter-input {
+    width: 50px;
+    text-align: center;
+    border: none;
+    border-left: 1px solid #ddd;
+    border-right: 1px solid #ddd;
+    font-size: 1rem;
+    -moz-appearance: textfield;
+}
+
+.fra-counter-input::-webkit-outer-spin-button,
+.fra-counter-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* Checkboxes */
+.fra-form-checkboxes {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.fra-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
+}
+
+.fra-checkbox-label input {
+    width: 18px;
+    height: 18px;
+    accent-color: #1E3A5F;
+}
+
+.fra-checkbox-text {
+    color: #333;
+}
+
+/* Submit Button */
+.fra-onboarding-submit {
+    width: 100%;
+    padding: 1rem;
+    background: linear-gradient(135deg, #1E3A5F 0%, #2E5077 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.fra-onboarding-submit:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(30, 58, 95, 0.3);
+}
+
+.fra-onboarding-submit:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* ==========================================================================
+   LOGIN PROMPT
+   ========================================================================== */
+
+.fra-login-prompt {
+    text-align: center;
+    padding: 3rem 2rem;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 12px;
+}
+
+.fra-login-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.fra-login-title {
+    font-size: 1.5rem;
+    color: #1E3A5F;
+    margin: 0 0 0.75rem;
+}
+
+.fra-login-text {
+    color: #666;
+    margin: 0 0 1.5rem;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.fra-login-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.fra-btn {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.fra-btn-primary {
+    background: #1E3A5F;
+    color: white;
+}
+
+.fra-btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(30, 58, 95, 0.3);
+}
+
+.fra-btn-secondary {
+    background: white;
+    color: #1E3A5F;
+    border: 1px solid #1E3A5F;
+}
+
+.fra-btn-secondary:hover {
+    background: #f8f9fa;
+}
+
+/* ==========================================================================
+   RESPONSIVE
+   ========================================================================== */
+
+@media (max-width: 600px) {
+    .fra-dashboard-header {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .fra-dashboard-info {
+        text-align: center;
+    }
+
+    .fra-dashboard-actions {
+        flex-direction: column;
+    }
+
+    .fra-login-actions {
+        flex-direction: column;
+    }
+
+    .fra-task {
+        padding-left: 1.25rem;
+    }
+
+    .fra-onboarding-form {
+        padding: 1.5rem;
+    }
+}
+
+/* ==========================================================================
+   PRINT STYLES
+   ========================================================================== */
+
+@media print {
+    .fra-dashboard-actions,
+    .fra-edit-profile-btn,
+    .fra-login-prompt {
+        display: none;
+    }
+
+    .fra-phase-tasks {
+        max-height: none !important;
+    }
+}

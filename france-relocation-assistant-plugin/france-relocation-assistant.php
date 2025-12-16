@@ -3,7 +3,7 @@
  * Plugin Name: France Relocation Assistant
  * Plugin URI: https://relo2france.com
  * Description: AI-powered US to France relocation guidance with visa info, property guides, healthcare, taxes, and practical insights. Features weekly auto-updates, "In Practice" real-world advice, and comprehensive knowledge base.
- * Version: 3.2.0
+ * Version: 3.6.0
  * Author: Relo2France
  * Author URI: https://relo2france.com
  * License: GPL v2 or later
@@ -42,7 +42,7 @@ if (!defined('ABSPATH')) {
 | Plugin Constants
 |--------------------------------------------------------------------------
 */
-define('FRA_VERSION', '3.2.0');
+define('FRA_VERSION', '3.6.0');
 define('FRA_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('FRA_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('FRA_PLUGIN_BASENAME', plugin_basename(__FILE__));
@@ -1690,6 +1690,31 @@ require_once FRA_PLUGIN_DIR . 'includes/testimonials.php';
 // Breadcrumb navigation
 require_once FRA_PLUGIN_DIR . 'includes/breadcrumb.php';
 
+// Structured data for SEO (Schema.org JSON-LD)
+require_once FRA_PLUGIN_DIR . 'includes/structured-data.php';
+
+// Migration script (admin only)
+if (is_admin()) {
+    require_once FRA_PLUGIN_DIR . 'includes/migration.php';
+}
+
+// User profile and progress tracking
+require_once FRA_PLUGIN_DIR . 'includes/user-profile.php';
+require_once FRA_PLUGIN_DIR . 'includes/checklist-generator.php';
+require_once FRA_PLUGIN_DIR . 'includes/dashboard-widget.php';
+
+// API proxy and settings
+require_once FRA_PLUGIN_DIR . 'includes/api-settings.php';
+require_once FRA_PLUGIN_DIR . 'includes/api-proxy.php';
+
+// Performance optimization
+require_once FRA_PLUGIN_DIR . 'includes/performance.php';
+
+// Launch validation (admin only)
+if (is_admin()) {
+    require_once FRA_PLUGIN_DIR . 'includes/launch-validation.php';
+}
+
 // Initialize AI Review (registers AJAX handlers)
 FRA_AI_Review::get_instance();
 
@@ -1728,3 +1753,68 @@ function fra_add_cron_schedule($schedules) {
     return $schedules;
 }
 add_filter('cron_schedules', 'fra_add_cron_schedule');
+
+/**
+ * Load custom template for kb_article single posts
+ *
+ * @param string $template Current template path
+ * @return string Modified template path
+ */
+function fra_load_kb_article_template($template) {
+    if (is_singular('kb_article')) {
+        $custom_template = FRA_PLUGIN_DIR . 'templates/single-kb_article.php';
+        if (file_exists($custom_template)) {
+            return $custom_template;
+        }
+    }
+    return $template;
+}
+add_filter('template_include', 'fra_load_kb_article_template');
+
+/**
+ * Enqueue article styles on kb_article single pages
+ */
+function fra_enqueue_article_styles() {
+    if (is_singular('kb_article')) {
+        wp_enqueue_style(
+            'fra-article',
+            FRA_PLUGIN_URL . 'assets/css/article.css',
+            array(),
+            FRA_VERSION
+        );
+    }
+}
+add_action('wp_enqueue_scripts', 'fra_enqueue_article_styles');
+
+/**
+ * Enqueue dashboard assets
+ */
+function fra_enqueue_dashboard_assets() {
+    global $post;
+
+    // Check if shortcode is used on this page
+    if (is_a($post, 'WP_Post') && has_shortcode($post->post_content, 'fra_progress_dashboard')) {
+        wp_enqueue_style(
+            'fra-dashboard',
+            FRA_PLUGIN_URL . 'assets/css/dashboard.css',
+            array(),
+            FRA_VERSION
+        );
+
+        wp_enqueue_script(
+            'fra-dashboard',
+            FRA_PLUGIN_URL . 'assets/js/dashboard.js',
+            array(),
+            FRA_VERSION,
+            true
+        );
+
+        // Add REST API nonce for script
+        wp_localize_script('fra-dashboard', 'fraData', array(
+            'ajaxUrl' => admin_url('admin-ajax.php'),
+            'restUrl' => rest_url('fra/v1/'),
+            'nonce' => wp_create_nonce('wp_rest')
+        ));
+    }
+}
+add_action('wp_enqueue_scripts', 'fra_enqueue_dashboard_assets');

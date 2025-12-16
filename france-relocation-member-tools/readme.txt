@@ -4,7 +4,7 @@ Tags: france, relocation, visa, membership, documents
 Requires at least: 5.8
 Tested up to: 6.4
 Requires PHP: 7.4
-Stable tag: 1.0.9
+Stable tag: 1.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -62,6 +62,15 @@ Yes! Enable "Demo Mode" in settings to test member features without a membership
 Documents are generated based on application location. US applications generate English documents; renewals from France generate French documents.
 
 == Changelog ==
+
+= 1.1.0 =
+* New: Main Plugin Bridge - Integration with France Relocation Assistant v3.6.0+ features
+* New: Profile sync between Member Tools and main plugin basic profile
+* New: Checklist sync - completions now sync to main plugin progress dashboard
+* New: Extended rate limits for members using API proxy
+* New: Pre-fill Member Tools profile from main plugin onboarding data
+* Improved: Better integration with main plugin's new REST API endpoints
+* Requires: France Relocation Assistant v3.6.0+
 
 = 1.0.9 =
 * Fixed: Navigation functions now correctly use FRAMemberTools.navigateToSection

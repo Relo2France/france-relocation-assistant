@@ -3,7 +3,7 @@
  * Plugin Name: France Relocation Member Tools
  * Plugin URI: https://relo2france.com
  * Description: Premium member features for the France Relocation Assistant - document generation, checklists, guides, and personalized relocation planning.
- * Version: 1.0.94
+ * Version: 1.1.0
  * Author: Relo2France
  * Author URI: https://relo2france.com
  * License: GPL v2 or later
@@ -22,7 +22,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Plugin constants
-define('FRAMT_VERSION', '1.0.94');
+define('FRAMT_VERSION', '1.1.0');
 define('FRAMT_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('FRAMT_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('FRAMT_PLUGIN_BASENAME', plugin_basename(__FILE__));
@@ -247,6 +247,9 @@ final class FRA_Member_Tools {
         require_once FRAMT_PLUGIN_DIR . 'includes/class-framt-document-generator.php';
         require_once FRAMT_PLUGIN_DIR . 'includes/class-framt-ai-verification.php';
         require_once FRAMT_PLUGIN_DIR . 'includes/class-framt-messages.php';
+
+        // Main plugin bridge (v1.1.0+) - integrates with FRA v3.6.0+ features
+        require_once FRAMT_PLUGIN_DIR . 'includes/class-framt-main-plugin-bridge.php';
     }
 
     /**
