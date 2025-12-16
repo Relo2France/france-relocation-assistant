@@ -3,7 +3,7 @@
  * Plugin Name: France Relocation Assistant
  * Plugin URI: https://relo2france.com
  * Description: AI-powered US to France relocation guidance with visa info, property guides, healthcare, taxes, and practical insights. Features weekly auto-updates, "In Practice" real-world advice, and comprehensive knowledge base.
- * Version: 3.5.0
+ * Version: 3.6.0
  * Author: Relo2France
  * Author URI: https://relo2france.com
  * License: GPL v2 or later
@@ -42,7 +42,7 @@ if (!defined('ABSPATH')) {
 | Plugin Constants
 |--------------------------------------------------------------------------
 */
-define('FRA_VERSION', '3.5.0');
+define('FRA_VERSION', '3.6.0');
 define('FRA_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('FRA_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('FRA_PLUGIN_BASENAME', plugin_basename(__FILE__));
@@ -1698,6 +1698,11 @@ if (is_admin()) {
     require_once FRA_PLUGIN_DIR . 'includes/migration.php';
 }
 
+// User profile and progress tracking
+require_once FRA_PLUGIN_DIR . 'includes/user-profile.php';
+require_once FRA_PLUGIN_DIR . 'includes/checklist-generator.php';
+require_once FRA_PLUGIN_DIR . 'includes/dashboard-widget.php';
+
 // Initialize AI Review (registers AJAX handlers)
 FRA_AI_Review::get_instance();
 
@@ -1768,3 +1773,36 @@ function fra_enqueue_article_styles() {
     }
 }
 add_action('wp_enqueue_scripts', 'fra_enqueue_article_styles');
+
+/**
+ * Enqueue dashboard assets
+ */
+function fra_enqueue_dashboard_assets() {
+    global $post;
+
+    // Check if shortcode is used on this page
+    if (is_a($post, 'WP_Post') && has_shortcode($post->post_content, 'fra_progress_dashboard')) {
+        wp_enqueue_style(
+            'fra-dashboard',
+            FRA_PLUGIN_URL . 'assets/css/dashboard.css',
+            array(),
+            FRA_VERSION
+        );
+
+        wp_enqueue_script(
+            'fra-dashboard',
+            FRA_PLUGIN_URL . 'assets/js/dashboard.js',
+            array(),
+            FRA_VERSION,
+            true
+        );
+
+        // Add REST API nonce for script
+        wp_localize_script('fra-dashboard', 'fraData', array(
+            'ajaxUrl' => admin_url('admin-ajax.php'),
+            'restUrl' => rest_url('fra/v1/'),
+            'nonce' => wp_create_nonce('wp_rest')
+        ));
+    }
+}
+add_action('wp_enqueue_scripts', 'fra_enqueue_dashboard_assets');
