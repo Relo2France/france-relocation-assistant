@@ -2989,3 +2989,199 @@
     border-radius: 50%;
     animation: spin 1s linear infinite;
 }
+
+/* ==========================================================================
+   RELOCATION TIMELINE (v1.1.0+)
+   Integrates with main plugin checklist system
+   ========================================================================== */
+
+.framt-timeline-card {
+    padding: 1.5rem;
+}
+
+.framt-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.framt-phase {
+    background: var(--framt-gray-100);
+    border: 1px solid var(--framt-gray-200);
+    border-radius: var(--framt-radius);
+    overflow: hidden;
+    transition: box-shadow 0.2s;
+}
+
+.framt-phase:hover {
+    box-shadow: var(--framt-shadow);
+}
+
+.framt-phase-current {
+    border-color: var(--framt-secondary);
+    border-width: 2px;
+}
+
+.framt-phase-done {
+    background: #f0fdf4;
+    border-color: #bbf7d0;
+}
+
+.framt-phase-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    cursor: pointer;
+    user-select: none;
+}
+
+.framt-phase-indicator {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--framt-gray-200);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.875rem;
+    flex-shrink: 0;
+}
+
+.framt-phase-current .framt-phase-indicator {
+    background: var(--framt-secondary);
+    color: white;
+}
+
+.framt-phase-done .framt-phase-indicator {
+    background: var(--framt-success);
+    color: white;
+}
+
+.framt-phase-info {
+    flex: 1;
+}
+
+.framt-phase-info strong {
+    display: block;
+    font-size: 0.95rem;
+    color: var(--framt-gray-700);
+}
+
+.framt-phase-time {
+    font-size: 0.8rem;
+    color: var(--framt-gray-500);
+}
+
+.framt-phase-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--framt-gray-500);
+}
+
+.framt-phase-arrow {
+    font-size: 0.7rem;
+    transition: transform 0.2s;
+}
+
+.framt-phase-tasks {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    border-top: 1px solid var(--framt-gray-200);
+    background: white;
+}
+
+.framt-phase-tasks-open {
+    max-height: 500px;
+}
+
+.framt-phase-header[aria-expanded="true"] .framt-phase-arrow {
+    transform: rotate(180deg);
+}
+
+.framt-timeline-task {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--framt-gray-100);
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.framt-timeline-task:last-child {
+    border-bottom: none;
+}
+
+.framt-timeline-task:hover {
+    background: var(--framt-gray-100);
+}
+
+.framt-timeline-task.framt-task-done {
+    background: #f0fdf4;
+}
+
+.framt-timeline-checkbox {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.framt-task-check {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--framt-gray-300);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.framt-timeline-checkbox:checked + .framt-task-check {
+    background: var(--framt-success);
+    border-color: var(--framt-success);
+}
+
+.framt-timeline-checkbox:checked + .framt-task-check::after {
+    content: '✓';
+    color: white;
+    font-size: 0.75rem;
+    font-weight: bold;
+}
+
+.framt-task-text {
+    flex: 1;
+    font-size: 0.9rem;
+    color: var(--framt-gray-700);
+}
+
+.framt-task-done .framt-task-text {
+    color: var(--framt-gray-500);
+    text-decoration: line-through;
+}
+
+.framt-task-guide {
+    width: 24px;
+    height: 24px;
+    background: var(--framt-gray-100);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--framt-secondary);
+    text-decoration: none;
+    font-size: 0.875rem;
+    transition: background 0.2s;
+}
+
+.framt-task-guide:hover {
+    background: var(--framt-secondary);
+    color: white;
+}

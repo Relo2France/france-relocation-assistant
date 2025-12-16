@@ -51,6 +51,7 @@
             this.bindEvents();
             this.initGlossary();
             this.listenForNavigation();
+            this.initTimeline();
         },
 
         /**
@@ -2553,19 +2554,147 @@
             var searchInput = document.getElementById('framt-glossary-search');
             var categoryFilter = document.getElementById('framt-glossary-category');
             var terms = document.querySelectorAll('.framt-glossary-term');
-            
+
             var searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
             var category = categoryFilter ? categoryFilter.value : '';
-            
+
             terms.forEach(function(term) {
                 var termText = (term.textContent || '').toLowerCase();
                 var termCategory = term.dataset.category || '';
-                
+
                 var matchesSearch = !searchTerm || termText.indexOf(searchTerm) !== -1;
                 var matchesCategory = !category || termCategory === category;
-                
+
                 term.style.display = (matchesSearch && matchesCategory) ? '' : 'none';
             });
+        },
+
+        /**
+         * Initialize timeline functionality (v1.1.0+)
+         */
+        initTimeline: function() {
+            var self = this;
+
+            // Phase toggle (expand/collapse)
+            document.querySelectorAll('.framt-phase-header[data-toggle="phase-tasks"]').forEach(function(header) {
+                header.addEventListener('click', function(e) {
+                    self.togglePhase(e.currentTarget);
+                });
+            });
+
+            // Task checkbox handling
+            document.querySelectorAll('.framt-timeline-checkbox').forEach(function(checkbox) {
+                checkbox.addEventListener('change', function(e) {
+                    self.handleTimelineTask(e.target);
+                });
+            });
+        },
+
+        /**
+         * Toggle phase expand/collapse
+         */
+        togglePhase: function(header) {
+            var phase = header.closest('.framt-phase');
+            var tasks = phase.querySelector('.framt-phase-tasks');
+            var arrow = header.querySelector('.framt-phase-arrow');
+            var isOpen = tasks.classList.contains('framt-phase-tasks-open');
+
+            // Close all other phases
+            document.querySelectorAll('.framt-phase-tasks-open').forEach(function(el) {
+                if (el !== tasks) {
+                    el.classList.remove('framt-phase-tasks-open');
+                    var otherArrow = el.closest('.framt-phase').querySelector('.framt-phase-arrow');
+                    if (otherArrow) otherArrow.textContent = '▼';
+                }
+            });
+
+            // Toggle current
+            tasks.classList.toggle('framt-phase-tasks-open', !isOpen);
+            if (arrow) {
+                arrow.textContent = isOpen ? '▼' : '▲';
+            }
+            header.setAttribute('aria-expanded', !isOpen);
+        },
+
+        /**
+         * Handle timeline task checkbox
+         */
+        handleTimelineTask: function(checkbox) {
+            var taskId = checkbox.dataset.taskId;
+            var complete = checkbox.checked;
+            var taskEl = checkbox.closest('.framt-timeline-task');
+
+            // Optimistic UI update
+            taskEl.classList.toggle('framt-task-done', complete);
+
+            // Send to main plugin REST API
+            this.updateTaskViaApi(taskId, complete)
+                .then(function(response) {
+                    if (response.success) {
+                        // Update phase count
+                        var phase = taskEl.closest('.framt-phase');
+                        FRAMT.updatePhaseCount(phase);
+                    } else {
+                        // Revert on error
+                        checkbox.checked = !complete;
+                        taskEl.classList.toggle('framt-task-done', !complete);
+                    }
+                })
+                .catch(function() {
+                    // Revert on error
+                    checkbox.checked = !complete;
+                    taskEl.classList.toggle('framt-task-done', !complete);
+                });
+        },
+
+        /**
+         * Update task via main plugin REST API
+         */
+        updateTaskViaApi: function(taskId, complete) {
+            var nonce = window.wpApiSettings ? wpApiSettings.nonce : (window.framtData ? framtData.nonce : '');
+
+            return fetch('/wp-json/fra/v1/task', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-WP-Nonce': nonce
+                },
+                body: JSON.stringify({
+                    task_id: taskId,
+                    complete: complete
+                }),
+                credentials: 'same-origin'
+            }).then(function(res) { return res.json(); });
+        },
+
+        /**
+         * Update phase task count display
+         */
+        updatePhaseCount: function(phaseEl) {
+            if (!phaseEl) return;
+
+            var tasks = phaseEl.querySelectorAll('.framt-timeline-task');
+            var completed = phaseEl.querySelectorAll('.framt-task-done');
+            var countEl = phaseEl.querySelector('.framt-phase-status span:first-child');
+
+            if (countEl) {
+                countEl.textContent = completed.length + '/' + tasks.length;
+            }
+
+            // Update phase completion state
+            var isComplete = (completed.length === tasks.length && tasks.length > 0);
+            phaseEl.classList.toggle('framt-phase-done', isComplete);
+
+            // Update indicator
+            var indicator = phaseEl.querySelector('.framt-phase-indicator');
+            if (indicator) {
+                if (isComplete) {
+                    indicator.innerHTML = '<span class="framt-phase-check">✓</span>';
+                } else {
+                    var index = Array.from(phaseEl.parentNode.children).indexOf(phaseEl);
+                    indicator.innerHTML = '<span class="framt-phase-num">' + (index + 1) + '</span>';
+                }
+            }
         }
     };
 
