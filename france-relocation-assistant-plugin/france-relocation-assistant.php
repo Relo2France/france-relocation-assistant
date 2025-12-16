@@ -1703,6 +1703,10 @@ require_once FRA_PLUGIN_DIR . 'includes/user-profile.php';
 require_once FRA_PLUGIN_DIR . 'includes/checklist-generator.php';
 require_once FRA_PLUGIN_DIR . 'includes/dashboard-widget.php';
 
+// API proxy and settings
+require_once FRA_PLUGIN_DIR . 'includes/api-settings.php';
+require_once FRA_PLUGIN_DIR . 'includes/api-proxy.php';
+
 // Initialize AI Review (registers AJAX handlers)
 FRA_AI_Review::get_instance();
 
