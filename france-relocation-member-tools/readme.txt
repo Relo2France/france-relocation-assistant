@@ -63,6 +63,12 @@ Documents are generated based on application location. US applications generate 
 
 == Changelog ==
 
+= 1.1.4 =
+* New: Research Tool - Dedicated Claude chat for France relocation questions
+* Fixed: Timeline checkbox now works reliably (fixed duplicate event listeners)
+* Changed: Renamed "Guides" to "Custom In-Depth Guides"
+* Improved: Event delegation for timeline to prevent re-binding issues
+
 = 1.1.3 =
 * Fixed: Timeline event handlers now initialize after AJAX loads dashboard content
 * Fixed: Phase toggle and guide links now work correctly

@@ -141,7 +141,7 @@ class FRAMT_Guides {
         ob_start();
         ?>
         <div class="framt-guides">
-            <h2><?php esc_html_e('📖 Guides', 'fra-member-tools'); ?></h2>
+            <h2><?php esc_html_e('📖 Custom In-Depth Guides', 'fra-member-tools'); ?></h2>
             <p><?php esc_html_e('Comprehensive guides personalized for your situation. View the guide info or generate a personalized document.', 'fra-member-tools'); ?></p>
 
             <div class="framt-guides-grid">

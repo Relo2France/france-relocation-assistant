@@ -3,7 +3,7 @@
  * Plugin Name: France Relocation Member Tools
  * Plugin URI: https://relo2france.com
  * Description: Premium member features for the France Relocation Assistant - document generation, checklists, guides, and personalized relocation planning.
- * Version: 1.1.3
+ * Version: 1.1.4
  * Author: Relo2France
  * Author URI: https://relo2france.com
  * License: GPL v2 or later
@@ -22,7 +22,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Plugin constants
-define('FRAMT_VERSION', '1.1.3');
+define('FRAMT_VERSION', '1.1.4');
 define('FRAMT_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('FRAMT_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('FRAMT_PLUGIN_BASENAME', plugin_basename(__FILE__));
@@ -3157,6 +3157,9 @@ Please provide a helpful, accurate answer about their health insurance coverage 
             case 'dashboard':
                 $html = $this->components['dashboard']->render();
                 break;
+            case 'research':
+                $html = $this->render_research_tool();
+                break;
             case 'my-checklists':
                 $html = $this->components['checklists']->render();
                 break;
@@ -3223,7 +3226,7 @@ Please provide a helpful, accurate answer about their health insurance coverage 
         $is_member = $this->components['membership']->is_member();
         
         // Get order and settings from main plugin options
-        $mt_order = get_option('fra_member_tools_order', array('dashboard', 'my-checklists', 'create-documents', 'upload-verify', 'glossary', 'guides'));
+        $mt_order = get_option('fra_member_tools_order', array('dashboard', 'research', 'my-checklists', 'create-documents', 'upload-verify', 'glossary', 'guides'));
         $mt_settings = get_option('fra_member_tools_settings', array());
         $teaser_message = get_option('fra_mt_teaser_message', __('Unlock personalized documents, checklists, and guides', 'fra-member-tools'));
 
@@ -3233,6 +3236,11 @@ Please provide a helpful, accurate answer about their health insurance coverage 
                 'label' => __('Dashboard', 'fra-member-tools'),
                 'icon' => '📊',
                 'priority' => 5,
+            ),
+            'research' => array(
+                'label' => __('Research Tool', 'fra-member-tools'),
+                'icon' => '🔍',
+                'priority' => 8,
             ),
             'my-checklists' => array(
                 'label' => __('My Checklists', 'fra-member-tools'),
@@ -3256,9 +3264,9 @@ Please provide a helpful, accurate answer about their health insurance coverage 
                 'priority' => 30,
             ),
             'guides' => array(
-                'label' => __('Guides', 'fra-member-tools'),
+                'label' => __('Custom In-Depth Guides', 'fra-member-tools'),
                 'icon' => '📖',
-                'priority' => 35,
+                'priority' => 40,
                 'children' => $this->get_guide_types(),
             ),
         );
@@ -3326,6 +3334,79 @@ Please provide a helpful, accurate answer about their health insurance coverage 
             'french-mortgages' => __('French Mortgages', 'fra-member-tools'),
             'bank-ratings' => __('Bank Ratings', 'fra-member-tools'),
         );
+    }
+
+    /**
+     * Render the Research Tool section
+     * Provides a dedicated Claude chat interface for France relocation questions
+     *
+     * @return string HTML output
+     */
+    private function render_research_tool() {
+        $user_id = get_current_user_id();
+        $user = wp_get_current_user();
+        $profile = $this->components['profile']->get_profile($user_id);
+        $name = !empty($profile['legal_first_name']) ? $profile['legal_first_name'] : (!empty($user->first_name) ? $user->first_name : $user->display_name);
+
+        ob_start();
+        ?>
+        <div class="framt-research-tool">
+            <div class="framt-research-header">
+                <h2><?php esc_html_e('🔍 Research Tool', 'fra-member-tools'); ?></h2>
+                <p><?php esc_html_e('Ask Claude anything about moving to France. Get instant, personalized answers to your relocation questions.', 'fra-member-tools'); ?></p>
+            </div>
+
+            <div class="framt-research-suggestions">
+                <h4><?php esc_html_e('Popular Questions', 'fra-member-tools'); ?></h4>
+                <div class="framt-suggestion-chips">
+                    <button class="framt-suggestion-chip" data-question="<?php esc_attr_e('What documents do I need for a French long-stay visa?', 'fra-member-tools'); ?>">
+                        <?php esc_html_e('Visa document requirements', 'fra-member-tools'); ?>
+                    </button>
+                    <button class="framt-suggestion-chip" data-question="<?php esc_attr_e('How do I open a French bank account as an American?', 'fra-member-tools'); ?>">
+                        <?php esc_html_e('Opening a French bank account', 'fra-member-tools'); ?>
+                    </button>
+                    <button class="framt-suggestion-chip" data-question="<?php esc_attr_e('What is the French healthcare system like and how do I enroll?', 'fra-member-tools'); ?>">
+                        <?php esc_html_e('Healthcare in France', 'fra-member-tools'); ?>
+                    </button>
+                    <button class="framt-suggestion-chip" data-question="<?php esc_attr_e('What are the tax implications of moving to France from the US?', 'fra-member-tools'); ?>">
+                        <?php esc_html_e('Tax implications', 'fra-member-tools'); ?>
+                    </button>
+                    <button class="framt-suggestion-chip" data-question="<?php esc_attr_e('How do I find housing in France before I arrive?', 'fra-member-tools'); ?>">
+                        <?php esc_html_e('Finding housing', 'fra-member-tools'); ?>
+                    </button>
+                    <button class="framt-suggestion-chip" data-question="<?php esc_attr_e('What should I know about French residency cards (titre de séjour)?', 'fra-member-tools'); ?>">
+                        <?php esc_html_e('Residency cards', 'fra-member-tools'); ?>
+                    </button>
+                </div>
+            </div>
+
+            <div class="framt-research-chat-container">
+                <div class="framt-research-messages" id="framt-research-messages">
+                    <div class="framt-research-message framt-research-ai">
+                        <div class="framt-research-avatar">🔍</div>
+                        <div class="framt-research-bubble">
+                            <p><?php printf(esc_html__('Hi %s! I\'m here to help you research anything about moving to France.', 'fra-member-tools'), esc_html($name)); ?></p>
+                            <p><?php esc_html_e('Ask me about visas, taxes, healthcare, housing, banking, cultural tips, or any other aspect of French relocation. I have access to comprehensive knowledge about the process.', 'fra-member-tools'); ?></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="framt-research-input-area">
+                    <div class="framt-research-input-wrapper">
+                        <textarea id="framt-research-input" placeholder="<?php esc_attr_e('Ask your question about moving to France...', 'fra-member-tools'); ?>" rows="1"></textarea>
+                        <button class="framt-btn framt-btn-primary" id="framt-research-send">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="22" y1="2" x2="11" y2="13"></line>
+                                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                            </svg>
+                        </button>
+                    </div>
+                    <p class="framt-research-disclaimer"><?php esc_html_e('AI responses are for informational purposes. Always verify important details with official sources.', 'fra-member-tools'); ?></p>
+                </div>
+            </div>
+        </div>
+        <?php
+        return ob_get_clean();
     }
 
     /**

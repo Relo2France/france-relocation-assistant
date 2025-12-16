@@ -1480,17 +1480,18 @@ if (isset($_POST['fra_reset_customizer']) && check_admin_referer('fra_customizer
                     
                     <?php
                     // Get current member tools order and settings
-                    $mt_order = get_option('fra_member_tools_order', array('dashboard', 'my-checklists', 'create-documents', 'upload-verify', 'glossary', 'guides'));
+                    $mt_order = get_option('fra_member_tools_order', array('dashboard', 'research', 'my-checklists', 'create-documents', 'upload-verify', 'glossary', 'guides'));
                     $mt_settings = get_option('fra_member_tools_settings', array());
-                    
+
                     // Default icons and labels
                     $mt_defaults = array(
                         'dashboard' => array('icon' => '📊', 'label' => 'Dashboard'),
+                        'research' => array('icon' => '🔍', 'label' => 'Research Tool'),
                         'my-checklists' => array('icon' => '📋', 'label' => 'My Checklists'),
                         'create-documents' => array('icon' => '📄', 'label' => 'Create Documents'),
                         'upload-verify' => array('icon' => '📎', 'label' => 'Upload & Verify'),
                         'glossary' => array('icon' => '📚', 'label' => 'Glossary'),
-                        'guides' => array('icon' => '📖', 'label' => 'Guides'),
+                        'guides' => array('icon' => '📖', 'label' => 'Custom In-Depth Guides'),
                     );
                     ?>
                     
