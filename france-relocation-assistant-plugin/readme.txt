@@ -4,7 +4,7 @@ Tags: france, relocation, expat, immigration, visa, property, american expat, mo
 Requires at least: 5.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.5.0
+Stable tag: 1.5.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -107,6 +107,11 @@ No. This tool provides general information only. Always consult qualified profes
 4. SEO settings admin page
 
 == Changelog ==
+
+= 1.5.1 =
+* New KB content: VLS-TS vs Carte de Séjour à Solliciter - explains visa type differences
+* Added quick topic button for VLS-TS vs Carte de Séjour
+* KB version bump to 2.1 for automatic content refresh
 
 = 1.5.0 =
 * New side-by-side layout (navigation left, preview right)
