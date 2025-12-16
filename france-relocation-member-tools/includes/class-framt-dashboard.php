@@ -71,6 +71,7 @@ class FRAMT_Dashboard {
             ?>
             
             <?php echo $this->render_progress($data); ?>
+            <?php echo $this->render_relocation_timeline($data); ?>
             <?php echo $this->render_next_steps($data); ?>
             <?php echo $this->render_messages($user_id); ?>
             <?php echo $this->render_quick_actions(); ?>
@@ -673,5 +674,105 @@ class FRAMT_Dashboard {
         }
 
         wp_send_json_success($this->get_dashboard_data(get_current_user_id()));
+    }
+
+    /**
+     * Render relocation timeline with phases
+     * Integrates with main plugin's checklist system (FRA v3.6.0+)
+     *
+     * @param array $data Dashboard data
+     * @return string HTML
+     */
+    public function render_relocation_timeline($data) {
+        // Check if main plugin functions exist
+        if (!function_exists('fra_get_checklist') || !function_exists('fra_get_user_profile')) {
+            return '';
+        }
+
+        $user_id = get_current_user_id();
+        $profile = fra_get_user_profile($user_id);
+
+        // Get visa type from MT profile first, fallback to main plugin profile
+        $visa_type = $data['profile']['visa_type'] ?? $profile['visa_type'] ?? 'visitor';
+
+        // Map MT visa types to main plugin types
+        $visa_map = array(
+            'visitor' => 'visitor',
+            'talent_passport' => 'talent',
+            'student' => 'student',
+            'family' => 'family',
+            'retiree' => 'retiree',
+            'other' => 'other'
+        );
+        $mapped_visa = $visa_map[$visa_type] ?? 'visitor';
+
+        $checklist = fra_get_checklist($mapped_visa);
+        $completed_tasks = $profile['completed_tasks'] ?? array();
+        $current_stage = $profile['current_stage'] ?? 'planning';
+
+        if (empty($checklist)) {
+            return '';
+        }
+
+        ob_start();
+        ?>
+        <div class="framt-card framt-timeline-card">
+            <h3><?php esc_html_e('🗺️ Relocation Timeline', 'fra-member-tools'); ?></h3>
+
+            <div class="framt-timeline">
+                <?php foreach ($checklist as $index => $phase): ?>
+                    <?php
+                    $phase_tasks = count($phase['tasks']);
+                    $phase_completed = 0;
+                    foreach ($phase['tasks'] as $task) {
+                        if (in_array($task['id'], $completed_tasks)) {
+                            $phase_completed++;
+                        }
+                    }
+                    $is_current = ($current_stage === $phase['phase']);
+                    $is_completed = ($phase_completed === $phase_tasks && $phase_tasks > 0);
+                    $phase_class = $is_current ? 'framt-phase-current' : ($is_completed ? 'framt-phase-done' : '');
+                    ?>
+                    <div class="framt-phase <?php echo esc_attr($phase_class); ?>" data-phase="<?php echo esc_attr($phase['phase']); ?>">
+                        <div class="framt-phase-header" data-toggle="phase-tasks">
+                            <div class="framt-phase-indicator">
+                                <?php if ($is_completed): ?>
+                                    <span class="framt-phase-check">✓</span>
+                                <?php else: ?>
+                                    <span class="framt-phase-num"><?php echo $index + 1; ?></span>
+                                <?php endif; ?>
+                            </div>
+                            <div class="framt-phase-info">
+                                <strong><?php echo esc_html($phase['title']); ?></strong>
+                                <span class="framt-phase-time"><?php echo esc_html($phase['subtitle']); ?></span>
+                            </div>
+                            <div class="framt-phase-status">
+                                <span><?php echo $phase_completed; ?>/<?php echo $phase_tasks; ?></span>
+                                <span class="framt-phase-arrow">▼</span>
+                            </div>
+                        </div>
+
+                        <div class="framt-phase-tasks <?php echo $is_current ? 'framt-phase-tasks-open' : ''; ?>">
+                            <?php foreach ($phase['tasks'] as $task): ?>
+                                <?php $is_done = in_array($task['id'], $completed_tasks); ?>
+                                <label class="framt-timeline-task <?php echo $is_done ? 'framt-task-done' : ''; ?>">
+                                    <input type="checkbox"
+                                           class="framt-timeline-checkbox"
+                                           data-task-id="<?php echo esc_attr($task['id']); ?>"
+                                           <?php checked($is_done); ?> />
+                                    <span class="framt-task-check"></span>
+                                    <span class="framt-task-text"><?php echo esc_html($task['title']); ?></span>
+                                    <?php if (!empty($task['link'])): ?>
+                                        <a href="<?php echo esc_url($task['link']); ?>" class="framt-task-guide" title="View guide">→</a>
+                                    <?php endif; ?>
+                                </label>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        <?php
+        return ob_get_clean();
     }
 }
