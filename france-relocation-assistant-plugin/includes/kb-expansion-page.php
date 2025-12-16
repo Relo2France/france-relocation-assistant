@@ -215,10 +215,10 @@ if (isset($_POST['fra_delete_topic']) && check_admin_referer('fra_kb_nonce')) {
                     continue;
                 }
 
-                // Count only valid topics (arrays with 'title' key)
+                // Count only valid topics (arrays with 'title' key that is a string)
                 $topic_count = 0;
                 foreach ($topics as $t) {
-                    if (is_array($t) && isset($t['title'])) {
+                    if (is_array($t) && array_key_exists('title', $t) && is_string($t['title'])) {
                         $topic_count++;
                     }
                 }
@@ -233,10 +233,13 @@ if (isset($_POST['fra_delete_topic']) && check_admin_referer('fra_kb_nonce')) {
                     <ul class="fra-topic-list">
                         <?php foreach ($topics as $topic_key => $topic): ?>
                             <?php
-                            // Skip non-topic entries (metadata fields like _internal, lastVerified)
-                            if (!is_array($topic) || !isset($topic['title'])) continue;
+                            // Skip non-topic entries (metadata fields, non-arrays, or entries without proper title)
+                            if (!is_array($topic) || !array_key_exists('title', $topic) || !is_string($topic['title'])) {
+                                continue;
+                            }
 
-                            $has_in_practice = strpos($topic['content'] ?? '', '**In Practice**') !== false;
+                            $topic_content = isset($topic['content']) && is_string($topic['content']) ? $topic['content'] : '';
+                            $has_in_practice = strpos($topic_content, '**In Practice**') !== false;
                             ?>
                             <li>
                                 <span class="fra-topic-title">
@@ -253,10 +256,21 @@ if (isset($_POST['fra_delete_topic']) && check_admin_referer('fra_kb_nonce')) {
                                             title="<?php echo $has_in_practice ? 'Regenerate In Practice section' : 'Add In Practice section'; ?>">
                                         <?php echo $has_in_practice ? '🔄' : '✨'; ?> <?php _e('In Practice', 'france-relocation-assistant'); ?>
                                     </button>
-                                    <button type="button" class="button-link fra-edit-topic" 
+                                    <?php
+                                    // Prepare safe topic data for JSON encoding (only include editable fields)
+                                    $topic_for_edit = array(
+                                        'title' => isset($topic['title']) ? $topic['title'] : '',
+                                        'content' => isset($topic['content']) ? $topic['content'] : '',
+                                        'keywords' => isset($topic['keywords']) && is_array($topic['keywords']) ? $topic['keywords'] : array(),
+                                        'sources' => isset($topic['sources']) && is_array($topic['sources']) ? $topic['sources'] : array(),
+                                        'lastVerified' => isset($topic['lastVerified']) ? $topic['lastVerified'] : ''
+                                    );
+                                    $topic_json = json_encode($topic_for_edit, JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE);
+                                    ?>
+                                    <button type="button" class="button-link fra-edit-topic"
                                             data-category="<?php echo esc_attr($cat_key); ?>"
                                             data-key="<?php echo esc_attr($topic_key); ?>"
-                                            data-topic="<?php echo esc_attr(json_encode($topic)); ?>">
+                                            data-topic="<?php echo esc_attr($topic_json ? $topic_json : '{}'); ?>">
                                         <?php _e('Edit', 'france-relocation-assistant'); ?>
                                     </button>
                                     <form method="post" style="display:inline;" onsubmit="return confirm('Delete this topic?');">
