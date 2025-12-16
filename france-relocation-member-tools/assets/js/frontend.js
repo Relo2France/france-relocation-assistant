@@ -2575,9 +2575,11 @@
         initTimeline: function() {
             var self = this;
 
-            // Phase toggle (expand/collapse)
-            document.querySelectorAll('.framt-phase-header[data-toggle="phase-tasks"]').forEach(function(header) {
+            // Phase toggle (expand/collapse) - all phase headers
+            document.querySelectorAll('.framt-phase-header').forEach(function(header) {
                 header.addEventListener('click', function(e) {
+                    // Don't toggle if clicking on a button or checkbox
+                    if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') return;
                     self.togglePhase(e.currentTarget);
                 });
             });
@@ -2588,6 +2590,40 @@
                     self.handleTimelineTask(e.target);
                 });
             });
+
+            // Guide link handling - open in chat context
+            document.querySelectorAll('.framt-task-guide[data-guide-link]').forEach(function(btn) {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    var link = btn.dataset.guideLink;
+                    self.openGuideInFrame(link);
+                });
+            });
+        },
+
+        /**
+         * Open guide link within the chat/app context
+         */
+        openGuideInFrame: function(link) {
+            // Try to use the main plugin's navigation if available
+            if (window.FRA && typeof FRA.navigateToGuide === 'function') {
+                FRA.navigateToGuide(link);
+                return;
+            }
+
+            // Dispatch event for main plugin to handle
+            var event = new CustomEvent('fra:openGuide', {
+                detail: { url: link }
+            });
+            document.dispatchEvent(event);
+
+            // Fallback: scroll to chat and show link message
+            var chatContainer = document.querySelector('.fra-chat-container, .fra-assistant-container, #fra-chat');
+            if (chatContainer) {
+                chatContainer.scrollIntoView({ behavior: 'smooth' });
+                // Could inject a message suggesting to ask about this topic
+            }
         },
 
         /**
