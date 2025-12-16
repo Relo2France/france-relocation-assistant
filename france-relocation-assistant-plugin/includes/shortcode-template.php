@@ -795,6 +795,11 @@ $inchat_auth_enabled = $customizer['inchat_auth_enabled'] ?? true;
 </div>
 <!-- /FRANCE RELOCATION ASSISTANT -->
 
+<!-- ==========================================================================
+     TESTIMONIALS & TRUST SIGNALS
+     ========================================================================== -->
+<?php echo fra_render_testimonials(3); ?>
+<?php echo fra_render_authority_badges(); ?>
 
 <!-- ==========================================================================
      PROMPTING TIPS MODAL
