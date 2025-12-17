@@ -127,8 +127,10 @@ class FRAMT_Portal_Settings {
      * Add settings page to admin menu.
      */
     public function add_settings_page() {
+        // Try to add under france-relocation menu first (main plugin)
+        // If that doesn't exist, add as a top-level menu
         add_submenu_page(
-            'fra-member-tools',
+            'france-relocation',
             'Portal Settings',
             'Portal Settings',
             'manage_options',
