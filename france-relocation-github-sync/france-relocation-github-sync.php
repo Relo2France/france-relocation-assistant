@@ -1,29 +1,97 @@
 <?php
 /**
+ * France Relocation GitHub Sync
+ *
+ * Custom GitHub sync solution for WordPress - automatically updates plugins
+ * and themes from GitHub without requiring WP Pusher. Includes diagnostics,
+ * version tracking, local backups, and detailed logging.
+ *
+ * @package     FranceRelocation
+ * @subpackage  GitHubSync
+ * @author      Relo2France
+ * @copyright   2024 Relo2France
+ * @license     GPL-2.0-or-later
+ *
+ * @wordpress-plugin
  * Plugin Name: France Relocation GitHub Sync
- * Plugin URI: https://relo2france.com
+ * Plugin URI:  https://relo2france.com
  * Description: Custom GitHub sync solution - automatically updates plugins from GitHub without requiring WP Pusher. Includes diagnostics, version tracking, local backups, and detailed logging.
- * Version: 2.1.0
- * Author: Relo2France
- * Author URI: https://relo2france.com
- * License: GPL v2 or later
+ * Version:     2.2.0
+ * Author:      Relo2France
+ * Author URI:  https://relo2france.com
+ * License:     GPL v2 or later
+ * Text Domain: fra-github-sync
  */
 
-if (!defined('ABSPATH')) {
+// Prevent direct access.
+if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+/**
+ * Main plugin class using Singleton pattern.
+ *
+ * Handles GitHub synchronization for plugins and themes including
+ * automatic updates, backups, and restore functionality.
+ *
+ * @since 1.0.0
+ */
 class FRA_GitHub_Sync {
 
+    /**
+     * Singleton instance.
+     *
+     * @since 1.0.0
+     * @var FRA_GitHub_Sync|null
+     */
     private static $instance = null;
 
-    // GitHub repo details
+    /**
+     * GitHub repository path.
+     *
+     * @since 1.0.0
+     * @var string
+     */
     const GITHUB_REPO = 'Relo2France/france-relocation-assistant';
+
+    /**
+     * GitHub branch to sync from.
+     *
+     * @since 1.0.0
+     * @var string
+     */
     const GITHUB_BRANCH = 'main';
-    const VERSION = '2.1.0';
+
+    /**
+     * Plugin version.
+     *
+     * @since 1.0.0
+     * @var string
+     */
+    const VERSION = '2.2.0';
+
+    /**
+     * Backup folder name within uploads directory.
+     *
+     * @since 2.0.0
+     * @var string
+     */
     const BACKUP_FOLDER = 'fra-github-sync-backups';
 
-    // Plugins to sync (folder name => main plugin file)
+    /**
+     * Encryption method for token storage.
+     *
+     * @since 2.2.0
+     * @var string
+     */
+    const ENCRYPT_METHOD = 'AES-256-CBC';
+
+    /**
+     * Plugins to sync from GitHub.
+     *
+     * @since 1.0.0
+     * @var array
+     */
     private $plugins = array(
         'france-relocation-assistant-plugin' => array(
             'file' => 'france-relocation-assistant-plugin/france-relocation-assistant.php',
@@ -35,55 +103,163 @@ class FRA_GitHub_Sync {
         ),
     );
 
-    // Themes to sync (folder name => display name)
+    /**
+     * Themes to sync from GitHub.
+     *
+     * @since 2.1.0
+     * @var array
+     */
     private $themes = array(
         'relo2france-theme' => array(
             'name' => 'Relo2France Theme',
         ),
     );
 
+    /**
+     * Get singleton instance.
+     *
+     * @since 1.0.0
+     * @return FRA_GitHub_Sync Plugin instance.
+     */
     public static function get_instance() {
-        if (null === self::$instance) {
+        if ( null === self::$instance ) {
             self::$instance = new self();
         }
         return self::$instance;
     }
 
+    /**
+     * Constructor - sets up hooks and actions.
+     *
+     * @since 1.0.0
+     */
     private function __construct() {
-        // Schedule cron event
-        add_action('init', array($this, 'schedule_sync'));
-        add_filter('cron_schedules', array($this, 'add_cron_interval'));
+        // Schedule cron event.
+        add_action( 'init', array( $this, 'schedule_sync' ) );
+        add_filter( 'cron_schedules', array( $this, 'add_cron_interval' ) );
 
-        // Hook for the cron job
-        add_action('fra_github_sync_check', array($this, 'check_for_updates'));
+        // Hook for the cron job.
+        add_action( 'fra_github_sync_check', array( $this, 'check_for_updates' ) );
 
-        // Admin menu
-        add_action('admin_menu', array($this, 'add_admin_menu'));
+        // Admin menu.
+        add_action( 'admin_menu', array( $this, 'add_admin_menu' ) );
 
-        // AJAX handlers
-        add_action('wp_ajax_fra_github_sync', array($this, 'ajax_handler'));
+        // AJAX handlers.
+        add_action( 'wp_ajax_fra_github_sync', array( $this, 'ajax_handler' ) );
 
-        // Admin notice when updates are available
-        add_action('admin_notices', array($this, 'show_update_notice'));
+        // Admin notice when updates are available.
+        add_action( 'admin_notices', array( $this, 'show_update_notice' ) );
 
-        // Settings
-        add_action('admin_init', array($this, 'register_settings'));
+        // Settings.
+        add_action( 'admin_init', array( $this, 'register_settings' ) );
 
-        // Cleanup on deactivation
-        register_deactivation_hook(__FILE__, array($this, 'deactivate'));
+        // Cleanup on deactivation.
+        register_deactivation_hook( __FILE__, array( $this, 'deactivate' ) );
     }
 
     /**
-     * Register settings
+     * Register plugin settings.
+     *
+     * @since 1.0.0
+     * @return void
      */
     public function register_settings() {
-        register_setting('fra_github_sync_settings', 'fra_github_token');
-        register_setting('fra_github_sync_settings', 'fra_sync_interval');
-        register_setting('fra_github_sync_settings', 'fra_keep_backups');
+        register_setting( 'fra_github_sync_settings', 'fra_github_token_encrypted' );
+        register_setting( 'fra_github_sync_settings', 'fra_sync_interval' );
+        register_setting( 'fra_github_sync_settings', 'fra_keep_backups' );
     }
 
     /**
-     * Get backup directory path
+     * Encrypt a value for secure storage.
+     *
+     * @since 2.2.0
+     * @param string $value Value to encrypt.
+     * @return string Encrypted value (base64 encoded).
+     */
+    private function encrypt_value( $value ) {
+        if ( empty( $value ) ) {
+            return '';
+        }
+
+        $key = wp_salt( 'auth' );
+        $iv  = openssl_random_pseudo_bytes( openssl_cipher_iv_length( self::ENCRYPT_METHOD ) );
+
+        $encrypted = openssl_encrypt( $value, self::ENCRYPT_METHOD, $key, 0, $iv );
+
+        // Combine IV and encrypted data.
+        return base64_encode( $iv . '::' . $encrypted );
+    }
+
+    /**
+     * Decrypt a stored value.
+     *
+     * @since 2.2.0
+     * @param string $encrypted_value Encrypted value (base64 encoded).
+     * @return string Decrypted value.
+     */
+    private function decrypt_value( $encrypted_value ) {
+        if ( empty( $encrypted_value ) ) {
+            return '';
+        }
+
+        $key  = wp_salt( 'auth' );
+        $data = base64_decode( $encrypted_value );
+
+        if ( false === strpos( $data, '::' ) ) {
+            // Fallback for unencrypted legacy tokens.
+            return $encrypted_value;
+        }
+
+        list( $iv, $encrypted ) = explode( '::', $data, 2 );
+
+        return openssl_decrypt( $encrypted, self::ENCRYPT_METHOD, $key, 0, $iv );
+    }
+
+    /**
+     * Get the GitHub token (decrypted).
+     *
+     * @since 2.2.0
+     * @return string Decrypted GitHub token.
+     */
+    private function get_github_token() {
+        // Try new encrypted option first.
+        $encrypted = get_option( 'fra_github_token_encrypted', '' );
+        if ( ! empty( $encrypted ) ) {
+            return $this->decrypt_value( $encrypted );
+        }
+
+        // Fallback to old unencrypted option and migrate.
+        $legacy_token = get_option( 'fra_github_token', '' );
+        if ( ! empty( $legacy_token ) ) {
+            $this->save_github_token( $legacy_token );
+            delete_option( 'fra_github_token' );
+            return $legacy_token;
+        }
+
+        return '';
+    }
+
+    /**
+     * Save the GitHub token (encrypted).
+     *
+     * @since 2.2.0
+     * @param string $token GitHub token to save.
+     * @return bool Success status.
+     */
+    private function save_github_token( $token ) {
+        if ( empty( $token ) ) {
+            delete_option( 'fra_github_token_encrypted' );
+            return true;
+        }
+
+        return update_option( 'fra_github_token_encrypted', $this->encrypt_value( $token ) );
+    }
+
+    /**
+     * Get backup directory path.
+     *
+     * @since 2.0.0
+     * @return string Full path to backup directory.
      */
     private function get_backup_dir() {
         $upload_dir = wp_upload_dir();
@@ -91,22 +267,43 @@ class FRA_GitHub_Sync {
     }
 
     /**
-     * Ensure backup directory exists
+     * Ensure backup directory exists with security measures.
+     *
+     * @since 2.0.0
+     * @return string Full path to backup directory.
      */
     private function ensure_backup_dir() {
         $backup_dir = $this->get_backup_dir();
-        if (!is_dir($backup_dir)) {
-            wp_mkdir_p($backup_dir);
-            // Add index.php for security
-            file_put_contents($backup_dir . '/index.php', '<?php // Silence is golden');
+
+        if ( ! is_dir( $backup_dir ) ) {
+            wp_mkdir_p( $backup_dir );
+
+            // Add index.php for security.
+            $index_file = $backup_dir . '/index.php';
+            if ( ! file_exists( $index_file ) ) {
+                // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+                file_put_contents( $index_file, '<?php // Silence is golden' );
+            }
+
+            // Add .htaccess for Apache servers.
+            $htaccess_file = $backup_dir . '/.htaccess';
+            if ( ! file_exists( $htaccess_file ) ) {
+                // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+                file_put_contents( $htaccess_file, 'Deny from all' );
+            }
         }
+
         return $backup_dir;
     }
 
     /**
-     * Get list of backups for a plugin
+     * Get list of backups for a plugin.
+     *
+     * @since 2.0.0
+     * @param string|null $folder Optional. Plugin folder to filter by.
+     * @return array List of backup information arrays.
      */
-    public function get_backups($folder = null) {
+    public function get_backups( $folder = null ) {
         $backup_dir = $this->get_backup_dir();
         $backups = array();
 
@@ -404,12 +601,12 @@ class FRA_GitHub_Sync {
                 'User-Agent' => 'WordPress/' . get_bloginfo('version'),
             );
 
-            $token = get_option('fra_github_token', '');
-            if (!empty($token)) {
+            $token = $this->get_github_token();
+            if ( ! empty( $token ) ) {
                 $headers['Authorization'] = 'token ' . $token;
             }
 
-            $response = wp_remote_get($url, array('headers' => $headers, 'timeout' => 10));
+            $response = wp_remote_get( $url, array( 'headers' => $headers, 'timeout' => 10 ) );
 
             if (is_wp_error($response)) {
                 $result['status'] = 'error';
@@ -680,16 +877,16 @@ class FRA_GitHub_Sync {
         );
 
         $headers = array(
-            'Accept' => 'application/vnd.github.v3+json',
-            'User-Agent' => 'WordPress/' . get_bloginfo('version'),
+            'Accept'     => 'application/vnd.github.v3+json',
+            'User-Agent' => 'WordPress/' . get_bloginfo( 'version' ),
         );
 
-        $token = get_option('fra_github_token', '');
-        if (!empty($token)) {
+        $token = $this->get_github_token();
+        if ( ! empty( $token ) ) {
             $headers['Authorization'] = 'token ' . $token;
         }
 
-        $response = wp_remote_get($url, array('headers' => $headers, 'timeout' => 15));
+        $response = wp_remote_get( $url, array( 'headers' => $headers, 'timeout' => 15 ) );
 
         if (is_wp_error($response)) {
             $this->log('GitHub API error: ' . $response->get_error_message());
@@ -1352,18 +1549,30 @@ class FRA_GitHub_Sync {
                 break;
 
             case 'save_settings':
-                $token = isset($_POST['github_token']) ? sanitize_text_field($_POST['github_token']) : '';
-                $interval = isset($_POST['sync_interval']) ? sanitize_text_field($_POST['sync_interval']) : 'every_15_minutes';
-                $keep_backups = isset($_POST['keep_backups']) ? (bool) $_POST['keep_backups'] : true;
+                $token        = isset( $_POST['github_token'] ) ? sanitize_text_field( wp_unslash( $_POST['github_token'] ) ) : '';
+                $interval     = isset( $_POST['sync_interval'] ) ? sanitize_text_field( wp_unslash( $_POST['sync_interval'] ) ) : 'every_15_minutes';
+                $keep_backups = isset( $_POST['keep_backups'] ) ? (bool) $_POST['keep_backups'] : true;
 
-                update_option('fra_github_token', $token);
-                update_option('fra_sync_interval', $interval);
-                update_option('fra_keep_backups', $keep_backups);
+                // Validate interval is a known value.
+                $valid_intervals = array( 'every_5_minutes', 'every_15_minutes', 'every_30_minutes', 'hourly' );
+                if ( ! in_array( $interval, $valid_intervals, true ) ) {
+                    $interval = 'every_15_minutes';
+                }
 
-                wp_clear_scheduled_hook('fra_github_sync_check');
-                wp_schedule_event(time(), $interval, 'fra_github_sync_check');
+                // Only update token if a new one is provided (not empty).
+                if ( ! empty( $token ) ) {
+                    $this->save_github_token( $token );
+                }
 
-                wp_send_json_success(array('message' => 'Settings saved'));
+                update_option( 'fra_sync_interval', $interval );
+                update_option( 'fra_keep_backups', $keep_backups );
+
+                // Reschedule cron with new interval.
+                wp_clear_scheduled_hook( 'fra_github_sync_check' );
+                wp_schedule_event( time(), $interval, 'fra_github_sync_check' );
+
+                $this->log( 'Settings saved' );
+                wp_send_json_success( array( 'message' => 'Settings saved' ) );
                 break;
 
             default:
@@ -1655,6 +1864,11 @@ class FRA_GitHub_Sync {
                 var interval = $('#fra-sync-interval').val();
                 var keepBackups = $('#fra-keep-backups').is(':checked') ? 1 : 0;
 
+                // Don't send placeholder dots as actual token.
+                if (token === '••••••••••••••••') {
+                    token = '';
+                }
+
                 $btn.prop('disabled', true).text('Saving...');
 
                 fraAjax('save_settings', {
@@ -1665,6 +1879,7 @@ class FRA_GitHub_Sync {
                     $btn.prop('disabled', false).text('Save Settings');
                     if (response.success) {
                         alert('Settings saved!');
+                        location.reload();
                     }
                 });
             });
@@ -1864,10 +2079,17 @@ class FRA_GitHub_Sync {
         <?php
     }
 
+    /**
+     * Render the settings tab.
+     *
+     * @since 1.0.0
+     * @return void
+     */
     private function render_settings_tab() {
-        $token = get_option('fra_github_token', '');
-        $interval = get_option('fra_sync_interval', 'every_15_minutes');
-        $keep_backups = get_option('fra_keep_backups', true);
+        $token        = $this->get_github_token();
+        $has_token    = ! empty( $token );
+        $interval     = get_option( 'fra_sync_interval', 'every_15_minutes' );
+        $keep_backups = get_option( 'fra_keep_backups', true );
         ?>
         <div class="fra-card">
             <h2>Settings</h2>
@@ -1875,8 +2097,13 @@ class FRA_GitHub_Sync {
                 <tr>
                     <th>GitHub Token</th>
                     <td>
-                        <input type="password" id="fra-github-token" value="<?php echo esc_attr($token); ?>" class="regular-text">
-                        <p class="description">Optional. For private repos or to avoid rate limits.</p>
+                        <input type="password" id="fra-github-token" value="<?php echo $has_token ? '••••••••••••••••' : ''; ?>" class="regular-text" placeholder="<?php echo $has_token ? 'Token saved (enter new to replace)' : 'Enter token'; ?>">
+                        <p class="description">
+                            Optional. For private repos or to avoid rate limits.
+                            <?php if ( $has_token ) : ?>
+                                <br><span style="color: green;">✓ Token is saved (encrypted)</span>
+                            <?php endif; ?>
+                        </p>
                     </td>
                 </tr>
                 <tr>
