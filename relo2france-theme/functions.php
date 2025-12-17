@@ -2,19 +2,29 @@
 /**
  * Relo2France Theme Functions
  *
- * @package Relo2France
- * @version 1.2.3
+ * Custom WordPress theme for the France Relocation Assistant website.
+ * Provides styling, layouts, and customizer options for the relocation platform.
+ *
+ * @package     Relo2France
+ * @author      Relo2France
+ * @copyright   2024 Relo2France
+ * @license     GPL-2.0-or-later
+ * @version     1.2.4
  */
 
-if (!defined('ABSPATH')) {
+// Prevent direct access.
+if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-// Theme version
-define('R2F_VERSION', '1.2.3');
+// Theme version.
+define( 'R2F_VERSION', '1.2.4' );
 
 /**
- * Theme Setup
+ * Sets up theme defaults and registers support for various WordPress features.
+ *
+ * @since 1.0.0
+ * @return void
  */
 function relo2france_setup() {
     // Add theme support

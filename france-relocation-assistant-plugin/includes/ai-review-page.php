@@ -15,7 +15,7 @@ $ai_review = FRA_AI_Review::get_instance();
 $pending_reviews = $ai_review->get_pending_reviews();
 $reviewable_topics = $ai_review->get_reviewable_topics();
 $review_history = get_option('fra_review_history', array());
-$api_key_configured = !empty(get_option('fra_api_key', ''));
+$api_key_configured = ! empty( France_Relocation_Assistant::get_api_key() );
 
 // Count total reviewable topics
 $total_topics = 0;

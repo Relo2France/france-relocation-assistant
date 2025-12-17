@@ -1,28 +1,37 @@
 <?php
 /**
+ * France Relocation Member Tools
+ *
+ * Premium member features for the France Relocation Assistant - document generation,
+ * checklists, guides, and personalized relocation planning.
+ *
+ * @package     FRA_Member_Tools
+ * @author      Relo2France
+ * @copyright   2024 Relo2France
+ * @license     GPL-2.0-or-later
+ *
+ * @wordpress-plugin
  * Plugin Name: France Relocation Member Tools
- * Plugin URI: https://relo2france.com
+ * Plugin URI:  https://relo2france.com
  * Description: Premium member features for the France Relocation Assistant - document generation, checklists, guides, and personalized relocation planning.
- * Version: 1.1.8
- * Author: Relo2France
- * Author URI: https://relo2france.com
- * License: GPL v2 or later
+ * Version:     1.1.9
+ * Author:      Relo2France
+ * Author URI:  https://relo2france.com
+ * License:     GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: fra-member-tools
  * Domain Path: /languages
  * Requires at least: 5.8
  * Requires PHP: 7.4
- * 
- * @package FRA_Member_Tools
  */
 
-// Prevent direct access
-if (!defined('ABSPATH')) {
+// Prevent direct access.
+if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-// Plugin constants
-define('FRAMT_VERSION', '1.1.8');
+// Plugin constants.
+define( 'FRAMT_VERSION', '1.1.9' );
 define('FRAMT_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('FRAMT_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('FRAMT_PLUGIN_BASENAME', plugin_basename(__FILE__));
@@ -2222,10 +2231,10 @@ window.onload = function() {
         // Sync answers to profile (only updates empty fields)
         $this->sync_answers_to_profile($answers, $user_id);
 
-        // Get the AI API key
-        $api_key = get_option('fra_api_key');
+        // Get the AI API key (encrypted in main plugin).
+        $api_key = France_Relocation_Assistant::get_api_key();
 
-        if (!$api_key) {
+        if ( ! $api_key ) {
             // Fall back to template-based generation
             return $this->generate_template_document($document_type, $answers, $profile);
         }
@@ -3188,10 +3197,10 @@ STYLE:
             return;
         }
         
-        // Get API key
-        $api_key = get_option('fra_api_key', '');
-        if (empty($api_key)) {
-            wp_send_json_error(array('message' => __('AI not configured', 'fra-member-tools')));
+        // Get API key (encrypted in main plugin).
+        $api_key = France_Relocation_Assistant::get_api_key();
+        if ( empty( $api_key ) ) {
+            wp_send_json_error( array( 'message' => __( 'AI not configured', 'fra-member-tools' ) ) );
             return;
         }
         

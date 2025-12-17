@@ -76,7 +76,7 @@ if (!defined('ABSPATH')) {
                     <td>
                         <?php 
                         $ai_enabled = get_option('fra_enable_ai', false);
-                        $api_key = get_option('fra_api_key', '');
+                        $api_key = France_Relocation_Assistant::get_api_key();
                         // Handle various boolean representations
                         $is_enabled = ($ai_enabled === true || $ai_enabled === '1' || $ai_enabled === 1 || $ai_enabled === 'yes' || $ai_enabled === 'on');
                         if ($is_enabled && !empty($api_key)) {

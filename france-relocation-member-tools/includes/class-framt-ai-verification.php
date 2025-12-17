@@ -42,12 +42,16 @@ class FRAMT_AI_Verification {
     private function __construct() {}
     
     /**
-     * Get API key from main plugin's settings
-     * Uses the same 'fra_api_key' option as the main France Relocation Assistant plugin
+     * Get API key from main plugin's settings (encrypted).
+     *
+     * Uses the France_Relocation_Assistant::get_api_key() method which
+     * handles decryption automatically.
+     *
+     * @since 1.0.12
+     * @return string Decrypted API key.
      */
     private function get_api_key() {
-        // Use the main plugin's API key setting
-        return get_option('fra_api_key', '');
+        return France_Relocation_Assistant::get_api_key();
     }
     
     /**

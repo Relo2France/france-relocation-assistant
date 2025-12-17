@@ -383,12 +383,12 @@ class FRA_AI_Review {
             wp_send_json_error('Unauthorized');
         }
         
-        $api_key = get_option('fra_api_key', '');
-        if (empty($api_key)) {
-            wp_send_json_error('API key not configured');
+        $api_key = France_Relocation_Assistant::get_api_key();
+        if ( empty( $api_key ) ) {
+            wp_send_json_error( 'API key not configured' );
         }
-        
-        $category = sanitize_text_field(wp_unslash($_POST['category'] ?? ''));
+
+        $category = sanitize_text_field( wp_unslash( $_POST['category'] ?? '' ) );
         $topic = sanitize_text_field(wp_unslash($_POST['topic'] ?? ''));
         
         if (empty($category) || empty($topic)) {
@@ -550,10 +550,10 @@ Write an \"**In Practice**\" section that covers the real-world reality of this 
             wp_send_json_error('Unauthorized');
         }
         
-        $api_key = get_option('fra_api_key', '');
-        if (empty($api_key)) {
-            error_log('FRA AI Review: No API key');
-            wp_send_json_error('API key not configured. Please set up Claude API in Settings.');
+        $api_key = France_Relocation_Assistant::get_api_key();
+        if ( empty( $api_key ) ) {
+            error_log( 'FRA AI Review: No API key' );
+            wp_send_json_error( 'API key not configured. Please set up Claude API in Settings.' );
         }
         
         // Get specific category/topic if provided, otherwise review all
@@ -625,12 +625,12 @@ Write an \"**In Practice**\" section that covers the real-world reality of this 
             wp_send_json_error('Unauthorized');
         }
         
-        $api_key = get_option('fra_api_key', '');
-        if (empty($api_key)) {
-            wp_send_json_error('API key not configured');
+        $api_key = France_Relocation_Assistant::get_api_key();
+        if ( empty( $api_key ) ) {
+            wp_send_json_error( 'API key not configured' );
         }
-        
-        $topics_json = isset($_POST['topics']) ? wp_unslash($_POST['topics']) : '[]';
+
+        $topics_json = isset( $_POST['topics'] ) ? wp_unslash( $_POST['topics'] ) : '[]';
         $topics = json_decode($topics_json, true);
         
         if (!is_array($topics) || empty($topics)) {

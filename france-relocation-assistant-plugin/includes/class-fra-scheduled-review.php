@@ -257,10 +257,10 @@ class FRA_Scheduled_Review {
             return new WP_Error('already_running', 'A background review is already in progress');
         }
         
-        // Check API key
-        $api_key = get_option('fra_api_key', '');
-        if (empty($api_key)) {
-            return new WP_Error('no_api_key', 'API key not configured');
+        // Check API key.
+        $api_key = France_Relocation_Assistant::get_api_key();
+        if ( empty( $api_key ) ) {
+            return new WP_Error( 'no_api_key', 'API key not configured' );
         }
         
         // Get all topics
@@ -369,9 +369,9 @@ class FRA_Scheduled_Review {
     /**
      * Review a single topic
      */
-    private function review_single_topic($topic) {
-        $api_key = get_option('fra_api_key', '');
-        $knowledge_base = get_option('fra_knowledge_base', array());
+    private function review_single_topic( $topic ) {
+        $api_key        = France_Relocation_Assistant::get_api_key();
+        $knowledge_base = get_option( 'fra_knowledge_base', array() );
         
         if (!isset($knowledge_base[$topic['category']][$topic['topic_key']])) {
             return new WP_Error('not_found', 'Topic not found in KB');
