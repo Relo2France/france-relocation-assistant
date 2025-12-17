@@ -11,18 +11,8 @@ import { MessagesView } from '@/components/messages';
 import { TimelineView } from '@/components/timeline';
 import { SettingsView } from '@/components/settings';
 import { HelpView } from '@/components/help';
-
-
-function PlaceholderView({ title }: { title: string }) {
-  return (
-    <div className="p-6">
-      <div className="card p-8 text-center">
-        <h2 className="text-xl font-semibold text-gray-900 mb-2">{title}</h2>
-        <p className="text-gray-600">This feature is coming soon!</p>
-      </div>
-    </div>
-  );
-}
+import { GuidesView } from '@/components/guides';
+import { FamilyView } from '@/components/family';
 
 // View router
 function ViewRouter() {
@@ -40,11 +30,11 @@ function ViewRouter() {
     case 'timeline':
       return <TimelineView />;
     case 'guides':
-      return <PlaceholderView title="Guides" />;
+      return <GuidesView />;
     case 'files':
-      return <PlaceholderView title="Files" />;
+      return <DocumentsView />;
     case 'family':
-      return <PlaceholderView title="Family Members" />;
+      return <FamilyView />;
     case 'settings':
       return <SettingsView />;
     case 'help':
