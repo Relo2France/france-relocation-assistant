@@ -282,6 +282,7 @@ final class FRA_Member_Tools {
         add_filter('theme_page_templates', array($this, 'register_portal_template'));
         add_filter('template_include', array($this, 'load_portal_template'));
         add_action('wp_enqueue_scripts', array($this, 'enqueue_portal_assets'));
+        add_action('wp_enqueue_scripts', array($this, 'enqueue_homepage_assets'));
 
         // Register AJAX handlers
         $this->register_ajax_handlers();
@@ -3768,6 +3769,7 @@ Please provide a helpful, accurate answer about their health insurance coverage 
      */
     public function register_portal_template($templates) {
         $templates['template-portal.php'] = __('Members Portal', 'fra-member-tools');
+        $templates['template-homepage.php'] = __('France Relocation Homepage', 'fra-member-tools');
         return $templates;
     }
 
@@ -3786,8 +3788,14 @@ Please provide a helpful, accurate answer about their health insurance coverage 
 
         $page_template = get_page_template_slug($post->ID);
 
-        if ('template-portal.php' === $page_template) {
-            $plugin_template = FRAMT_PLUGIN_DIR . 'templates/template-portal.php';
+        // Map template slugs to their files
+        $plugin_templates = array(
+            'template-portal.php' => 'templates/template-portal.php',
+            'template-homepage.php' => 'templates/template-homepage.php',
+        );
+
+        if (isset($plugin_templates[$page_template])) {
+            $plugin_template = FRAMT_PLUGIN_DIR . $plugin_templates[$page_template];
             if (file_exists($plugin_template)) {
                 return $plugin_template;
             }
@@ -3882,6 +3890,31 @@ Please provide a helpful, accurate answer about their health insurance coverage 
             'pluginUrl' => FRAMT_PLUGIN_URL,
             'isAdmin' => current_user_can('manage_options'),
         ));
+    }
+
+    /**
+     * Enqueue homepage template assets
+     *
+     * @return void
+     */
+    public function enqueue_homepage_assets() {
+        if (!is_page()) {
+            return;
+        }
+
+        global $post;
+        $page_template = get_page_template_slug($post->ID);
+
+        if ('template-homepage.php' !== $page_template) {
+            return;
+        }
+
+        wp_enqueue_style(
+            'framt-homepage',
+            FRAMT_PLUGIN_URL . 'assets/css/homepage.css',
+            array(),
+            FRAMT_VERSION
+        );
     }
 
     /**

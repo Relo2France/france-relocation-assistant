@@ -1,0 +1,891 @@
+/**
+ * France Relocation Member Tools - Homepage Styles
+ * @package FRA_Member_Tools
+ * @since 2.0.0
+ *
+ * Modern landing page styling for the France Relocation homepage template.
+ * Uses CSS variables from main France Relocation Assistant plugin.
+ */
+
+/* ========================================
+   CSS Variables
+   ======================================== */
+:root {
+    --fra-hp-primary: var(--fra-accent, #ff6b00);
+    --fra-hp-primary-dark: var(--fra-accent-dark, #e55a00);
+    --fra-hp-secondary: var(--fra-primary, #1e3a5f);
+    --fra-hp-text: var(--fra-text, #1a1a1a);
+    --fra-hp-text-light: var(--fra-text-light, #666666);
+    --fra-hp-bg: var(--fra-background, #fafaf8);
+    --fra-hp-card: var(--fra-card, #ffffff);
+    --fra-hp-border: var(--fra-border, #e8e6e1);
+    --fra-hp-radius: 12px;
+    --fra-hp-radius-lg: 20px;
+    --fra-hp-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    --fra-hp-shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.12);
+    --fra-hp-transition: all 0.3s ease;
+}
+
+/* ========================================
+   Reset & Base
+   ======================================== */
+.fra-homepage {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    color: var(--fra-hp-text);
+    line-height: 1.6;
+    overflow-x: hidden;
+}
+
+.fra-homepage * {
+    box-sizing: border-box;
+}
+
+.fra-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px;
+}
+
+@media (min-width: 768px) {
+    .fra-container {
+        padding: 0 40px;
+    }
+}
+
+/* ========================================
+   Buttons
+   ======================================== */
+.fra-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: var(--fra-hp-transition);
+}
+
+.fra-btn-lg {
+    padding: 16px 32px;
+    font-size: 1.1rem;
+}
+
+.fra-btn-primary {
+    background: var(--fra-hp-primary);
+    color: white;
+}
+
+.fra-btn-primary:hover {
+    background: var(--fra-hp-primary-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 107, 0, 0.4);
+}
+
+.fra-btn-secondary {
+    background: var(--fra-hp-card);
+    color: var(--fra-hp-text);
+    border: 2px solid var(--fra-hp-border);
+}
+
+.fra-btn-secondary:hover {
+    border-color: var(--fra-hp-primary);
+    color: var(--fra-hp-primary);
+}
+
+.fra-btn-white {
+    background: white;
+    color: var(--fra-hp-primary);
+}
+
+.fra-btn-white:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.3);
+}
+
+.fra-btn-outline-white {
+    background: transparent;
+    color: white;
+    border: 2px solid rgba(255, 255, 255, 0.5);
+}
+
+.fra-btn-outline-white:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: white;
+}
+
+.fra-btn-icon {
+    width: 20px;
+    height: 20px;
+}
+
+/* ========================================
+   Section Headers
+   ======================================== */
+.fra-section-header {
+    text-align: center;
+    max-width: 700px;
+    margin: 0 auto 60px;
+}
+
+.fra-section-badge {
+    display: inline-block;
+    padding: 6px 16px;
+    background: rgba(255, 107, 0, 0.1);
+    color: var(--fra-hp-primary);
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-bottom: 16px;
+}
+
+.fra-section-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--fra-hp-text);
+    margin: 0 0 16px;
+    line-height: 1.2;
+}
+
+@media (min-width: 768px) {
+    .fra-section-title {
+        font-size: 2.5rem;
+    }
+}
+
+.fra-section-subtitle {
+    font-size: 1.125rem;
+    color: var(--fra-hp-text-light);
+    margin: 0;
+}
+
+/* ========================================
+   Hero Section
+   ======================================== */
+.fra-hero {
+    position: relative;
+    padding: 80px 0 100px;
+    background: linear-gradient(135deg, #fafaf8 0%, #f0ede8 100%);
+    overflow: hidden;
+}
+
+.fra-hero-bg {
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(circle at 20% 80%, rgba(255, 107, 0, 0.05) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(30, 58, 95, 0.05) 0%, transparent 50%);
+}
+
+.fra-hero .fra-container {
+    position: relative;
+    display: grid;
+    gap: 60px;
+    align-items: center;
+}
+
+@media (min-width: 1024px) {
+    .fra-hero .fra-container {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+.fra-hero-badge {
+    display: inline-block;
+    padding: 8px 16px;
+    background: var(--fra-hp-card);
+    border: 1px solid var(--fra-hp-border);
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--fra-hp-text-light);
+    margin-bottom: 24px;
+}
+
+.fra-hero-title {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--fra-hp-text);
+    margin: 0 0 24px;
+    line-height: 1.1;
+}
+
+@media (min-width: 768px) {
+    .fra-hero-title {
+        font-size: 3.5rem;
+    }
+}
+
+.fra-hero-highlight {
+    color: var(--fra-hp-primary);
+    position: relative;
+}
+
+.fra-hero-subtitle {
+    font-size: 1.125rem;
+    color: var(--fra-hp-text-light);
+    margin: 0 0 32px;
+    max-width: 500px;
+}
+
+.fra-hero-cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 48px;
+}
+
+/* Hero Stats */
+.fra-hero-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 32px;
+}
+
+.fra-stat {
+    text-align: left;
+}
+
+.fra-stat-number {
+    display: block;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--fra-hp-primary);
+    line-height: 1;
+}
+
+.fra-stat-label {
+    display: block;
+    font-size: 0.875rem;
+    color: var(--fra-hp-text-light);
+    margin-top: 4px;
+}
+
+/* Hero Visual - Chat Preview */
+.fra-hero-visual {
+    display: flex;
+    justify-content: center;
+}
+
+.fra-chat-preview {
+    width: 100%;
+    max-width: 400px;
+    background: var(--fra-hp-card);
+    border-radius: var(--fra-hp-radius-lg);
+    box-shadow: var(--fra-hp-shadow-lg);
+    overflow: hidden;
+    transform: perspective(1000px) rotateY(-5deg) rotateX(5deg);
+    transition: var(--fra-hp-transition);
+}
+
+.fra-chat-preview:hover {
+    transform: perspective(1000px) rotateY(0deg) rotateX(0deg);
+}
+
+.fra-chat-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    background: var(--fra-hp-secondary);
+    color: white;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.fra-chat-dot {
+    width: 10px;
+    height: 10px;
+    background: #4ade80;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.fra-chat-messages {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-height: 200px;
+}
+
+.fra-chat-message {
+    max-width: 85%;
+    padding: 12px 16px;
+    border-radius: 16px;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.fra-chat-message p {
+    margin: 0;
+}
+
+.fra-chat-bot {
+    background: #f3f4f6;
+    color: var(--fra-hp-text);
+    border-bottom-left-radius: 4px;
+    align-self: flex-start;
+}
+
+.fra-chat-user {
+    background: var(--fra-hp-primary);
+    color: white;
+    border-bottom-right-radius: 4px;
+    align-self: flex-end;
+}
+
+.fra-chat-input {
+    padding: 16px 20px;
+    border-top: 1px solid var(--fra-hp-border);
+    color: #9ca3af;
+    font-size: 0.875rem;
+}
+
+/* ========================================
+   Features Section
+   ======================================== */
+.fra-features {
+    padding: 100px 0;
+    background: var(--fra-hp-card);
+}
+
+.fra-features-grid {
+    display: grid;
+    gap: 24px;
+}
+
+@media (min-width: 768px) {
+    .fra-features-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 1024px) {
+    .fra-features-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+.fra-feature-card {
+    background: var(--fra-hp-bg);
+    border: 1px solid var(--fra-hp-border);
+    border-radius: var(--fra-hp-radius);
+    padding: 32px;
+    transition: var(--fra-hp-transition);
+}
+
+.fra-feature-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--fra-hp-shadow);
+}
+
+.fra-feature-highlight {
+    grid-row: span 2;
+    background: linear-gradient(135deg, var(--fra-hp-secondary) 0%, #2d4a6f 100%);
+    color: white;
+    border: none;
+}
+
+.fra-feature-highlight .fra-feature-title,
+.fra-feature-highlight .fra-feature-desc {
+    color: white;
+}
+
+.fra-feature-highlight .fra-feature-desc {
+    opacity: 0.9;
+}
+
+.fra-feature-icon {
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    margin-bottom: 20px;
+}
+
+.fra-feature-icon svg {
+    width: 28px;
+    height: 28px;
+}
+
+.fra-feature-icon-ai {
+    background: rgba(255, 107, 0, 0.15);
+    color: var(--fra-hp-primary);
+}
+
+.fra-feature-highlight .fra-feature-icon-ai {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.fra-feature-icon-docs {
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+}
+
+.fra-feature-icon-tasks {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+}
+
+.fra-feature-icon-files {
+    background: rgba(139, 92, 246, 0.1);
+    color: #8b5cf6;
+}
+
+.fra-feature-icon-timeline {
+    background: rgba(236, 72, 153, 0.1);
+    color: #ec4899;
+}
+
+.fra-feature-icon-notes {
+    background: rgba(245, 158, 11, 0.1);
+    color: #f59e0b;
+}
+
+.fra-feature-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--fra-hp-text);
+    margin: 0 0 12px;
+}
+
+.fra-feature-desc {
+    font-size: 0.95rem;
+    color: var(--fra-hp-text-light);
+    margin: 0;
+    line-height: 1.6;
+}
+
+.fra-feature-list {
+    list-style: none;
+    padding: 0;
+    margin: 20px 0 0;
+}
+
+.fra-feature-list li {
+    padding: 8px 0;
+    padding-left: 24px;
+    position: relative;
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+.fra-feature-list li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 14px;
+    width: 8px;
+    height: 8px;
+    background: var(--fra-hp-primary);
+    border-radius: 50%;
+}
+
+.fra-feature-highlight .fra-feature-list li::before {
+    background: white;
+}
+
+/* ========================================
+   How It Works Section
+   ======================================== */
+.fra-how-it-works {
+    padding: 100px 0;
+    background: var(--fra-hp-bg);
+}
+
+.fra-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+@media (min-width: 768px) {
+    .fra-steps {
+        flex-direction: row;
+        align-items: flex-start;
+    }
+}
+
+.fra-step {
+    flex: 1;
+    text-align: center;
+    padding: 24px;
+}
+
+.fra-step-number {
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--fra-hp-primary);
+    color: white;
+    font-size: 1.5rem;
+    font-weight: 700;
+    border-radius: 50%;
+    margin: 0 auto 20px;
+}
+
+.fra-step-content h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--fra-hp-text);
+    margin: 0 0 12px;
+}
+
+.fra-step-content p {
+    font-size: 0.95rem;
+    color: var(--fra-hp-text-light);
+    margin: 0;
+}
+
+.fra-step-connector {
+    display: none;
+}
+
+@media (min-width: 768px) {
+    .fra-step-connector {
+        display: block;
+        width: 60px;
+        height: 2px;
+        background: var(--fra-hp-border);
+        margin-top: 50px;
+        flex-shrink: 0;
+    }
+}
+
+/* ========================================
+   Portal Preview Section
+   ======================================== */
+.fra-portal-preview {
+    padding: 100px 0;
+    background: var(--fra-hp-card);
+}
+
+.fra-portal-preview .fra-container {
+    display: grid;
+    gap: 60px;
+    align-items: center;
+}
+
+@media (min-width: 1024px) {
+    .fra-portal-preview .fra-container {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+.fra-preview-content {
+    max-width: 500px;
+}
+
+.fra-preview-features {
+    list-style: none;
+    padding: 0;
+    margin: 32px 0;
+}
+
+.fra-preview-features li {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 0;
+    font-size: 1rem;
+    color: var(--fra-hp-text);
+}
+
+.fra-check-icon {
+    width: 24px;
+    height: 24px;
+    color: #10b981;
+    flex-shrink: 0;
+}
+
+/* Dashboard Mockup */
+.fra-preview-visual {
+    display: flex;
+    justify-content: center;
+}
+
+.fra-dashboard-mockup {
+    width: 100%;
+    max-width: 500px;
+    background: var(--fra-hp-card);
+    border-radius: var(--fra-hp-radius-lg);
+    box-shadow: var(--fra-hp-shadow-lg);
+    overflow: hidden;
+    border: 1px solid var(--fra-hp-border);
+}
+
+.fra-mockup-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: #f9fafb;
+    border-bottom: 1px solid var(--fra-hp-border);
+}
+
+.fra-mockup-dots {
+    display: flex;
+    gap: 6px;
+}
+
+.fra-mockup-dots span {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #e5e7eb;
+}
+
+.fra-mockup-dots span:first-child {
+    background: #ef4444;
+}
+
+.fra-mockup-dots span:nth-child(2) {
+    background: #f59e0b;
+}
+
+.fra-mockup-dots span:last-child {
+    background: #10b981;
+}
+
+.fra-mockup-title {
+    font-size: 0.75rem;
+    color: var(--fra-hp-text-light);
+}
+
+.fra-mockup-body {
+    display: flex;
+    min-height: 280px;
+}
+
+.fra-mockup-sidebar {
+    width: 60px;
+    background: var(--fra-hp-secondary);
+    flex-shrink: 0;
+}
+
+.fra-mockup-content {
+    flex: 1;
+    padding: 20px;
+    background: var(--fra-hp-bg);
+}
+
+.fra-mockup-progress {
+    height: 8px;
+    background: #e5e7eb;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    overflow: hidden;
+}
+
+.fra-mockup-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--fra-hp-primary), #ff8c33);
+    border-radius: 4px;
+}
+
+.fra-mockup-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+.fra-mockup-card {
+    height: 80px;
+    background: var(--fra-hp-card);
+    border-radius: 8px;
+    border: 1px solid var(--fra-hp-border);
+}
+
+/* ========================================
+   Visa Types Section
+   ======================================== */
+.fra-visa-types {
+    padding: 100px 0;
+    background: var(--fra-hp-bg);
+}
+
+.fra-visa-grid {
+    display: grid;
+    gap: 24px;
+}
+
+@media (min-width: 640px) {
+    .fra-visa-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 1024px) {
+    .fra-visa-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+.fra-visa-card {
+    background: var(--fra-hp-card);
+    border: 1px solid var(--fra-hp-border);
+    border-radius: var(--fra-hp-radius);
+    padding: 28px;
+    text-align: center;
+    transition: var(--fra-hp-transition);
+}
+
+.fra-visa-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--fra-hp-shadow);
+    border-color: var(--fra-hp-primary);
+}
+
+.fra-visa-icon {
+    width: 64px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 107, 0, 0.1);
+    border-radius: 50%;
+    margin: 0 auto 20px;
+}
+
+.fra-visa-icon svg {
+    width: 28px;
+    height: 28px;
+    color: var(--fra-hp-primary);
+}
+
+.fra-visa-card h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--fra-hp-text);
+    margin: 0 0 8px;
+}
+
+.fra-visa-card p {
+    font-size: 0.875rem;
+    color: var(--fra-hp-text-light);
+    margin: 0;
+}
+
+/* ========================================
+   CTA Section
+   ======================================== */
+.fra-cta {
+    padding: 80px 0;
+    background: linear-gradient(135deg, var(--fra-hp-primary) 0%, var(--fra-hp-primary-dark) 100%);
+    color: white;
+}
+
+.fra-cta-content {
+    text-align: center;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.fra-cta-content h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0 0 16px;
+}
+
+@media (min-width: 768px) {
+    .fra-cta-content h2 {
+        font-size: 2.5rem;
+    }
+}
+
+.fra-cta-content p {
+    font-size: 1.125rem;
+    opacity: 0.9;
+    margin: 0 0 32px;
+}
+
+.fra-cta-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 16px;
+}
+
+/* ========================================
+   Responsive Adjustments
+   ======================================== */
+@media (max-width: 767px) {
+    .fra-hero {
+        padding: 60px 0 80px;
+    }
+
+    .fra-hero-title {
+        font-size: 2rem;
+    }
+
+    .fra-hero-stats {
+        gap: 24px;
+    }
+
+    .fra-stat-number {
+        font-size: 1.5rem;
+    }
+
+    .fra-chat-preview {
+        transform: none;
+    }
+
+    .fra-chat-preview:hover {
+        transform: none;
+    }
+
+    .fra-features,
+    .fra-how-it-works,
+    .fra-portal-preview,
+    .fra-visa-types {
+        padding: 60px 0;
+    }
+
+    .fra-section-header {
+        margin-bottom: 40px;
+    }
+
+    .fra-feature-highlight {
+        grid-row: span 1;
+    }
+}
+
+/* ========================================
+   Animation Utilities
+   ======================================== */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fra-animate-in {
+    animation: fadeInUp 0.6s ease forwards;
+}
+
+/* Smooth scroll behavior */
+.fra-homepage {
+    scroll-behavior: smooth;
+}
