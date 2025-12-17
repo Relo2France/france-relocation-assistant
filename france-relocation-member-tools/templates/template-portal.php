@@ -150,9 +150,10 @@ $react_settings = array(
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    <?php if ( $settings['show_wp_header'] ) : ?>
-        <?php wp_head(); ?>
-    <?php endif; ?>
+    <?php
+    // Always call wp_head to load required scripts and styles
+    wp_head();
+    ?>
 
     <style>
         /* Critical CSS for loading state */
