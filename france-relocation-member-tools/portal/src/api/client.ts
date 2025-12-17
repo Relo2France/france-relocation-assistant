@@ -8,6 +8,8 @@ import type {
   TaskStatus,
   PortalFile,
   FileCategory,
+  Note,
+  NoteVisibility,
 } from '@/types';
 
 /**
@@ -201,4 +203,39 @@ export const filesApi = {
     // Return the download URL - browser will handle the download
     return `${wpData.apiUrl}/files/${id}/download?_wpnonce=${wpData.nonce}`;
   },
+};
+
+// Notes API
+export const notesApi = {
+  list: (projectId: number, filters?: { task_id?: number; pinned?: boolean }) => {
+    const params = new URLSearchParams();
+    if (filters?.task_id) params.set('task_id', String(filters.task_id));
+    if (filters?.pinned) params.set('pinned', 'true');
+    const query = params.toString();
+    return apiFetch<Note[]>(`/projects/${projectId}/notes${query ? `?${query}` : ''}`);
+  },
+
+  get: (id: number) => apiFetch<Note>(`/notes/${id}`),
+
+  create: (projectId: number, data: { content: string; task_id?: number; visibility?: NoteVisibility }) =>
+    apiFetch<Note>(`/projects/${projectId}/notes`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  update: (id: number, data: { content?: string; visibility?: NoteVisibility }) =>
+    apiFetch<Note>(`/notes/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  delete: (id: number) =>
+    apiFetch<{ deleted: boolean }>(`/notes/${id}`, {
+      method: 'DELETE',
+    }),
+
+  togglePin: (id: number) =>
+    apiFetch<Note>(`/notes/${id}/pin`, {
+      method: 'PATCH',
+    }),
 };

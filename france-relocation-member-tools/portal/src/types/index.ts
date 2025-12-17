@@ -162,6 +162,24 @@ export interface PortalFile {
 export type FileType = 'document' | 'image' | 'pdf' | 'spreadsheet' | 'archive' | 'other';
 export type FileCategory = 'identity' | 'financial' | 'housing' | 'employment' | 'visa' | 'medical' | 'education' | 'other';
 
+// Note types
+export interface Note {
+  id: number;
+  project_id: number;
+  user_id: number;
+  user_name: string;
+  user_avatar: string;
+  task_id: number | null;
+  content: string;
+  is_pinned: boolean;
+  visibility: NoteVisibility;
+  created_at: string;
+  updated_at: string;
+  relative_time: string;
+}
+
+export type NoteVisibility = 'private' | 'team' | 'shared';
+
 // API Response types
 export interface ApiError {
   code: string;

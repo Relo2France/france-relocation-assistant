@@ -250,6 +250,56 @@ class FRAMT_Portal_API {
                 'permission_callback' => array( $this, 'check_file_permission' ),
             )
         );
+
+        // Notes endpoints
+        register_rest_route(
+            self::NAMESPACE,
+            '/projects/(?P<project_id>\d+)/notes',
+            array(
+                array(
+                    'methods'             => 'GET',
+                    'callback'            => array( $this, 'get_notes' ),
+                    'permission_callback' => array( $this, 'check_project_permission_by_param' ),
+                ),
+                array(
+                    'methods'             => 'POST',
+                    'callback'            => array( $this, 'create_note' ),
+                    'permission_callback' => array( $this, 'check_project_permission_by_param' ),
+                ),
+            )
+        );
+
+        register_rest_route(
+            self::NAMESPACE,
+            '/notes/(?P<id>\d+)',
+            array(
+                array(
+                    'methods'             => 'GET',
+                    'callback'            => array( $this, 'get_note' ),
+                    'permission_callback' => array( $this, 'check_note_permission' ),
+                ),
+                array(
+                    'methods'             => 'PUT',
+                    'callback'            => array( $this, 'update_note' ),
+                    'permission_callback' => array( $this, 'check_note_permission' ),
+                ),
+                array(
+                    'methods'             => 'DELETE',
+                    'callback'            => array( $this, 'delete_note' ),
+                    'permission_callback' => array( $this, 'check_note_permission' ),
+                ),
+            )
+        );
+
+        register_rest_route(
+            self::NAMESPACE,
+            '/notes/(?P<id>\d+)/pin',
+            array(
+                'methods'             => 'PATCH',
+                'callback'            => array( $this, 'toggle_note_pin' ),
+                'permission_callback' => array( $this, 'check_note_permission' ),
+            )
+        );
     }
 
     /**
@@ -1262,6 +1312,308 @@ class FRAMT_Portal_API {
                 'nonce'   => $nonce,
             ),
             admin_url( 'admin-ajax.php' )
+        );
+    }
+
+    // =========================================================================
+    // Notes Methods
+    // =========================================================================
+
+    /**
+     * Check if user has permission to access a note
+     *
+     * @param WP_REST_Request $request Request object
+     * @return bool|WP_Error
+     */
+    public function check_note_permission( $request ) {
+        $base_check = $this->check_member_permission();
+        if ( is_wp_error( $base_check ) ) {
+            return $base_check;
+        }
+
+        global $wpdb;
+        $note_id = $request->get_param( 'id' );
+        $table   = FRAMT_Portal_Schema::get_table( 'notes' );
+        $note    = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE id = %d", $note_id ) );
+
+        if ( ! $note ) {
+            return new WP_Error(
+                'rest_note_not_found',
+                'Note not found.',
+                array( 'status' => 404 )
+            );
+        }
+
+        if ( $note->user_id != get_current_user_id() && ! current_user_can( 'manage_options' ) ) {
+            return new WP_Error(
+                'rest_forbidden',
+                'You do not have permission to access this note.',
+                array( 'status' => 403 )
+            );
+        }
+
+        return true;
+    }
+
+    /**
+     * Get notes for a project
+     *
+     * @param WP_REST_Request $request Request object
+     * @return WP_REST_Response|WP_Error
+     */
+    public function get_notes( $request ) {
+        global $wpdb;
+
+        $project_id = $request->get_param( 'project_id' );
+        $task_id    = $request->get_param( 'task_id' );
+        $pinned     = $request->get_param( 'pinned' );
+        $table      = FRAMT_Portal_Schema::get_table( 'notes' );
+
+        $where = array( 'project_id = %d' );
+        $args  = array( $project_id );
+
+        if ( $task_id ) {
+            $where[] = 'task_id = %d';
+            $args[]  = $task_id;
+        }
+
+        if ( $pinned === 'true' || $pinned === '1' ) {
+            $where[] = 'is_pinned = 1';
+        }
+
+        $where_clause = implode( ' AND ', $where );
+        $sql = "SELECT * FROM $table WHERE $where_clause ORDER BY is_pinned DESC, created_at DESC";
+
+        $notes = $wpdb->get_results( $wpdb->prepare( $sql, ...$args ) );
+
+        $formatted = array_map( array( $this, 'format_note_response' ), $notes );
+
+        return rest_ensure_response( $formatted );
+    }
+
+    /**
+     * Get single note
+     *
+     * @param WP_REST_Request $request Request object
+     * @return WP_REST_Response|WP_Error
+     */
+    public function get_note( $request ) {
+        global $wpdb;
+
+        $note_id = $request->get_param( 'id' );
+        $table   = FRAMT_Portal_Schema::get_table( 'notes' );
+        $note    = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE id = %d", $note_id ) );
+
+        if ( ! $note ) {
+            return new WP_Error(
+                'rest_note_not_found',
+                'Note not found.',
+                array( 'status' => 404 )
+            );
+        }
+
+        return rest_ensure_response( $this->format_note_response( $note ) );
+    }
+
+    /**
+     * Create a new note
+     *
+     * @param WP_REST_Request $request Request object
+     * @return WP_REST_Response|WP_Error
+     */
+    public function create_note( $request ) {
+        global $wpdb;
+
+        $project_id = $request->get_param( 'project_id' );
+        $content    = $request->get_param( 'content' );
+        $task_id    = $request->get_param( 'task_id' );
+        $visibility = $request->get_param( 'visibility' ) ?: 'private';
+
+        if ( empty( $content ) ) {
+            return new WP_Error(
+                'rest_invalid_note',
+                'Note content is required.',
+                array( 'status' => 400 )
+            );
+        }
+
+        $table = FRAMT_Portal_Schema::get_table( 'notes' );
+
+        $result = $wpdb->insert(
+            $table,
+            array(
+                'project_id' => $project_id,
+                'user_id'    => get_current_user_id(),
+                'task_id'    => $task_id ?: null,
+                'content'    => wp_kses_post( $content ),
+                'visibility' => $visibility,
+                'is_pinned'  => 0,
+                'created_at' => current_time( 'mysql' ),
+                'updated_at' => current_time( 'mysql' ),
+            ),
+            array( '%d', '%d', '%d', '%s', '%s', '%d', '%s', '%s' )
+        );
+
+        if ( false === $result ) {
+            return new WP_Error(
+                'rest_note_create_failed',
+                'Failed to create note.',
+                array( 'status' => 500 )
+            );
+        }
+
+        $note_id = $wpdb->insert_id;
+        $note    = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE id = %d", $note_id ) );
+
+        // Log activity
+        FRAMT_Activity::log(
+            $project_id,
+            get_current_user_id(),
+            'note_created',
+            'note',
+            $note_id,
+            'Added a new note'
+        );
+
+        return rest_ensure_response( $this->format_note_response( $note ) );
+    }
+
+    /**
+     * Update a note
+     *
+     * @param WP_REST_Request $request Request object
+     * @return WP_REST_Response|WP_Error
+     */
+    public function update_note( $request ) {
+        global $wpdb;
+
+        $note_id    = $request->get_param( 'id' );
+        $content    = $request->get_param( 'content' );
+        $visibility = $request->get_param( 'visibility' );
+
+        $table = FRAMT_Portal_Schema::get_table( 'notes' );
+        $note  = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE id = %d", $note_id ) );
+
+        $update_data   = array( 'updated_at' => current_time( 'mysql' ) );
+        $update_format = array( '%s' );
+
+        if ( $content !== null ) {
+            $update_data['content'] = wp_kses_post( $content );
+            $update_format[]        = '%s';
+        }
+
+        if ( $visibility !== null ) {
+            $update_data['visibility'] = $visibility;
+            $update_format[]           = '%s';
+        }
+
+        $result = $wpdb->update(
+            $table,
+            $update_data,
+            array( 'id' => $note_id ),
+            $update_format,
+            array( '%d' )
+        );
+
+        if ( false === $result ) {
+            return new WP_Error(
+                'rest_note_update_failed',
+                'Failed to update note.',
+                array( 'status' => 500 )
+            );
+        }
+
+        $note = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE id = %d", $note_id ) );
+
+        return rest_ensure_response( $this->format_note_response( $note ) );
+    }
+
+    /**
+     * Delete a note
+     *
+     * @param WP_REST_Request $request Request object
+     * @return WP_REST_Response|WP_Error
+     */
+    public function delete_note( $request ) {
+        global $wpdb;
+
+        $note_id = $request->get_param( 'id' );
+        $table   = FRAMT_Portal_Schema::get_table( 'notes' );
+
+        $result = $wpdb->delete( $table, array( 'id' => $note_id ), array( '%d' ) );
+
+        if ( false === $result ) {
+            return new WP_Error(
+                'rest_note_delete_failed',
+                'Failed to delete note.',
+                array( 'status' => 500 )
+            );
+        }
+
+        return rest_ensure_response( array( 'deleted' => true ) );
+    }
+
+    /**
+     * Toggle note pinned status
+     *
+     * @param WP_REST_Request $request Request object
+     * @return WP_REST_Response|WP_Error
+     */
+    public function toggle_note_pin( $request ) {
+        global $wpdb;
+
+        $note_id = $request->get_param( 'id' );
+        $table   = FRAMT_Portal_Schema::get_table( 'notes' );
+        $note    = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE id = %d", $note_id ) );
+
+        $new_pinned = $note->is_pinned ? 0 : 1;
+
+        $result = $wpdb->update(
+            $table,
+            array(
+                'is_pinned'  => $new_pinned,
+                'updated_at' => current_time( 'mysql' ),
+            ),
+            array( 'id' => $note_id ),
+            array( '%d', '%s' ),
+            array( '%d' )
+        );
+
+        if ( false === $result ) {
+            return new WP_Error(
+                'rest_note_pin_failed',
+                'Failed to update pin status.',
+                array( 'status' => 500 )
+            );
+        }
+
+        $note = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE id = %d", $note_id ) );
+
+        return rest_ensure_response( $this->format_note_response( $note ) );
+    }
+
+    /**
+     * Format note response
+     *
+     * @param object $note Note object
+     * @return array Formatted note data
+     */
+    private function format_note_response( $note ) {
+        $user = get_userdata( $note->user_id );
+
+        return array(
+            'id'             => (int) $note->id,
+            'project_id'     => (int) $note->project_id,
+            'user_id'        => (int) $note->user_id,
+            'user_name'      => $user ? $user->display_name : 'Unknown',
+            'user_avatar'    => $user ? get_avatar_url( $user->ID, array( 'size' => 48 ) ) : '',
+            'task_id'        => $note->task_id ? (int) $note->task_id : null,
+            'content'        => $note->content,
+            'is_pinned'      => (bool) $note->is_pinned,
+            'visibility'     => $note->visibility,
+            'created_at'     => $note->created_at,
+            'updated_at'     => $note->updated_at,
+            'relative_time'  => human_time_diff( strtotime( $note->created_at ), current_time( 'timestamp' ) ) . ' ago',
         );
     }
 }

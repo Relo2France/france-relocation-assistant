@@ -7,17 +7,8 @@ import Header from '@/components/layout/Header';
 import Dashboard from '@/components/dashboard/Dashboard';
 import TasksView from '@/components/tasks/TasksView';
 import { DocumentsView } from '@/components/documents';
-
-function MessagesView() {
-  return (
-    <div className="p-6">
-      <div className="card p-8 text-center">
-        <h2 className="text-xl font-semibold text-gray-900 mb-2">Messages</h2>
-        <p className="text-gray-600">Messages coming in Phase 4</p>
-      </div>
-    </div>
-  );
-}
+import { MessagesView } from '@/components/messages';
+import { TimelineView } from '@/components/timeline';
 
 
 function PlaceholderView({ title }: { title: string }) {
@@ -45,7 +36,7 @@ function ViewRouter() {
     case 'documents':
       return <DocumentsView />;
     case 'timeline':
-      return <PlaceholderView title="Timeline" />;
+      return <TimelineView />;
     case 'guides':
       return <PlaceholderView title="Guides" />;
     case 'files':

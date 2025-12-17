@@ -6,8 +6,9 @@ import {
   activityApi,
   userApi,
   filesApi,
+  notesApi,
 } from '@/api/client';
-import type { Task, TaskStatus, Project, FileCategory } from '@/types';
+import type { Task, TaskStatus, Project, FileCategory, NoteVisibility } from '@/types';
 
 // Query keys
 export const queryKeys = {
@@ -20,6 +21,8 @@ export const queryKeys = {
   user: ['user'] as const,
   files: (projectId: number, filters?: object) => ['files', projectId, filters] as const,
   file: (id: number) => ['file', id] as const,
+  notes: (projectId: number, filters?: object) => ['notes', projectId, filters] as const,
+  note: (id: number) => ['note', id] as const,
 };
 
 // Dashboard hook
@@ -213,4 +216,71 @@ export function useDownloadFile() {
       window.open(url, '_blank');
     },
   };
+}
+
+// Notes hooks
+export function useNotes(projectId: number, filters?: { task_id?: number; pinned?: boolean }) {
+  return useQuery({
+    queryKey: queryKeys.notes(projectId, filters),
+    queryFn: () => notesApi.list(projectId, filters),
+    enabled: projectId > 0,
+  });
+}
+
+export function useNote(id: number) {
+  return useQuery({
+    queryKey: queryKeys.note(id),
+    queryFn: () => notesApi.get(id),
+    enabled: id > 0,
+  });
+}
+
+export function useCreateNote(projectId: number) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: { content: string; task_id?: number; visibility?: NoteVisibility }) =>
+      notesApi.create(projectId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.notes(projectId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.activity(projectId) });
+    },
+  });
+}
+
+export function useUpdateNote() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: { content?: string; visibility?: NoteVisibility } }) =>
+      notesApi.update(id, data),
+    onSuccess: (updatedNote) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.notes(updatedNote.project_id) });
+      queryClient.setQueryData(queryKeys.note(updatedNote.id), updatedNote);
+    },
+  });
+}
+
+export function useDeleteNote() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, projectId }: { id: number; projectId: number }) =>
+      notesApi.delete(id).then((result) => ({ ...result, projectId })),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.notes(variables.projectId) });
+    },
+  });
+}
+
+export function useToggleNotePin() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => notesApi.togglePin(id),
+    onSuccess: (updatedNote) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.notes(updatedNote.project_id) });
+      queryClient.setQueryData(queryKeys.note(updatedNote.id), updatedNote);
+    },
+  });
 }
