@@ -205,6 +205,51 @@ class FRAMT_Portal_API {
                 'permission_callback' => array( $this, 'check_member_permission' ),
             )
         );
+
+        // Files endpoints
+        register_rest_route(
+            self::NAMESPACE,
+            '/projects/(?P<project_id>\d+)/files',
+            array(
+                array(
+                    'methods'             => 'GET',
+                    'callback'            => array( $this, 'get_files' ),
+                    'permission_callback' => array( $this, 'check_project_permission_by_param' ),
+                ),
+                array(
+                    'methods'             => 'POST',
+                    'callback'            => array( $this, 'upload_file' ),
+                    'permission_callback' => array( $this, 'check_project_permission_by_param' ),
+                ),
+            )
+        );
+
+        register_rest_route(
+            self::NAMESPACE,
+            '/files/(?P<id>\d+)',
+            array(
+                array(
+                    'methods'             => 'GET',
+                    'callback'            => array( $this, 'get_file' ),
+                    'permission_callback' => array( $this, 'check_file_permission' ),
+                ),
+                array(
+                    'methods'             => 'DELETE',
+                    'callback'            => array( $this, 'delete_file' ),
+                    'permission_callback' => array( $this, 'check_file_permission' ),
+                ),
+            )
+        );
+
+        register_rest_route(
+            self::NAMESPACE,
+            '/files/(?P<id>\d+)/download',
+            array(
+                'methods'             => 'GET',
+                'callback'            => array( $this, 'download_file' ),
+                'permission_callback' => array( $this, 'check_file_permission' ),
+            )
+        );
     }
 
     /**
@@ -822,5 +867,401 @@ class FRAMT_Portal_API {
         }
 
         return rest_ensure_response( $response );
+    }
+
+    /**
+     * Check if user has permission to access a file
+     *
+     * @param WP_REST_Request $request Request object
+     * @return bool|WP_Error
+     */
+    public function check_file_permission( $request ) {
+        $base_check = $this->check_member_permission();
+        if ( is_wp_error( $base_check ) ) {
+            return $base_check;
+        }
+
+        $file_id = $request->get_param( 'id' );
+        global $wpdb;
+
+        $table = FRAMT_Portal_Schema::get_table( 'files' );
+        $file  = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE id = %d", $file_id ) );
+
+        if ( ! $file ) {
+            return new WP_Error(
+                'rest_file_not_found',
+                'File not found.',
+                array( 'status' => 404 )
+            );
+        }
+
+        if ( (int) $file->user_id !== get_current_user_id() && ! current_user_can( 'manage_options' ) ) {
+            return new WP_Error(
+                'rest_forbidden',
+                'You do not have permission to access this file.',
+                array( 'status' => 403 )
+            );
+        }
+
+        return true;
+    }
+
+    /**
+     * Get files for a project
+     *
+     * @param WP_REST_Request $request Request object
+     * @return WP_REST_Response
+     */
+    public function get_files( $request ) {
+        global $wpdb;
+
+        $project_id = $request->get_param( 'project_id' );
+        $category   = $request->get_param( 'category' );
+
+        $table  = FRAMT_Portal_Schema::get_table( 'files' );
+        $where  = array( 'project_id = %d' );
+        $values = array( $project_id );
+
+        if ( $category ) {
+            $where[]  = 'category = %s';
+            $values[] = $category;
+        }
+
+        $sql   = $wpdb->prepare(
+            "SELECT * FROM $table WHERE " . implode( ' AND ', $where ) . " ORDER BY created_at DESC",
+            $values
+        );
+        $files = $wpdb->get_results( $sql );
+
+        $response = array();
+        foreach ( $files as $file ) {
+            $response[] = $this->format_file_response( $file );
+        }
+
+        return rest_ensure_response( $response );
+    }
+
+    /**
+     * Get a single file
+     *
+     * @param WP_REST_Request $request Request object
+     * @return WP_REST_Response
+     */
+    public function get_file( $request ) {
+        global $wpdb;
+
+        $file_id = $request->get_param( 'id' );
+        $table   = FRAMT_Portal_Schema::get_table( 'files' );
+        $file    = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE id = %d", $file_id ) );
+
+        return rest_ensure_response( $this->format_file_response( $file ) );
+    }
+
+    /**
+     * Upload a file
+     *
+     * @param WP_REST_Request $request Request object
+     * @return WP_REST_Response|WP_Error
+     */
+    public function upload_file( $request ) {
+        global $wpdb;
+
+        $project_id = $request->get_param( 'project_id' );
+        $user_id    = get_current_user_id();
+        $files      = $request->get_file_params();
+
+        if ( empty( $files['file'] ) ) {
+            return new WP_Error(
+                'rest_no_file',
+                'No file was uploaded.',
+                array( 'status' => 400 )
+            );
+        }
+
+        $uploaded_file = $files['file'];
+
+        // Validate file type
+        $allowed_types = array(
+            'application/pdf',
+            'image/jpeg',
+            'image/png',
+            'image/gif',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/vnd.ms-excel',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'text/plain',
+        );
+
+        $finfo     = finfo_open( FILEINFO_MIME_TYPE );
+        $mime_type = finfo_file( $finfo, $uploaded_file['tmp_name'] );
+        finfo_close( $finfo );
+
+        if ( ! in_array( $mime_type, $allowed_types, true ) ) {
+            return new WP_Error(
+                'rest_invalid_file_type',
+                'This file type is not allowed.',
+                array( 'status' => 400 )
+            );
+        }
+
+        // Check file size (max 10MB)
+        if ( $uploaded_file['size'] > 10 * 1024 * 1024 ) {
+            return new WP_Error(
+                'rest_file_too_large',
+                'File size must be less than 10MB.',
+                array( 'status' => 400 )
+            );
+        }
+
+        // Create upload directory
+        $upload_dir = wp_upload_dir();
+        $portal_dir = $upload_dir['basedir'] . '/fra-portal/' . $user_id;
+
+        if ( ! file_exists( $portal_dir ) ) {
+            wp_mkdir_p( $portal_dir );
+            // Add .htaccess for security
+            file_put_contents( $portal_dir . '/.htaccess', 'deny from all' );
+        }
+
+        // Generate unique filename
+        $ext      = pathinfo( $uploaded_file['name'], PATHINFO_EXTENSION );
+        $filename = wp_unique_filename( $portal_dir, sanitize_file_name( $uploaded_file['name'] ) );
+        $filepath = $portal_dir . '/' . $filename;
+
+        // Move file
+        if ( ! move_uploaded_file( $uploaded_file['tmp_name'], $filepath ) ) {
+            return new WP_Error(
+                'rest_upload_failed',
+                'Failed to save the uploaded file.',
+                array( 'status' => 500 )
+            );
+        }
+
+        // Get category from request params
+        $params   = $request->get_params();
+        $category = sanitize_key( $params['category'] ?? 'upload' );
+        $task_id  = isset( $params['task_id'] ) ? (int) $params['task_id'] : null;
+
+        // Get file type from extension
+        $file_type = $this->get_file_type_from_extension( $ext );
+
+        // Insert into database
+        $table = FRAMT_Portal_Schema::get_table( 'files' );
+        $wpdb->insert(
+            $table,
+            array(
+                'project_id'    => $project_id,
+                'user_id'       => $user_id,
+                'task_id'       => $task_id,
+                'filename'      => $filename,
+                'original_name' => sanitize_file_name( $uploaded_file['name'] ),
+                'file_type'     => $file_type,
+                'file_size'     => $uploaded_file['size'],
+                'mime_type'     => $mime_type,
+                'file_path'     => $filepath,
+                'category'      => $category,
+                'visibility'    => 'private',
+            ),
+            array( '%d', '%d', '%d', '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%s' )
+        );
+
+        $file_id = $wpdb->insert_id;
+
+        // Log activity
+        FRAMT_Activity::log( $project_id, $user_id, 'file_uploaded', 'file', $file_id, $uploaded_file['name'] );
+
+        // Get the inserted file
+        $file = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE id = %d", $file_id ) );
+
+        return rest_ensure_response( $this->format_file_response( $file ) );
+    }
+
+    /**
+     * Delete a file
+     *
+     * @param WP_REST_Request $request Request object
+     * @return WP_REST_Response|WP_Error
+     */
+    public function delete_file( $request ) {
+        global $wpdb;
+
+        $file_id = $request->get_param( 'id' );
+        $table   = FRAMT_Portal_Schema::get_table( 'files' );
+        $file    = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE id = %d", $file_id ) );
+
+        // Delete physical file
+        if ( $file->file_path && file_exists( $file->file_path ) ) {
+            unlink( $file->file_path );
+        }
+
+        // Log activity
+        FRAMT_Activity::log( $file->project_id, get_current_user_id(), 'file_deleted', 'file', $file_id, $file->original_name );
+
+        // Delete from database
+        $wpdb->delete( $table, array( 'id' => $file_id ), array( '%d' ) );
+
+        return rest_ensure_response( array( 'deleted' => true ) );
+    }
+
+    /**
+     * Download a file
+     *
+     * @param WP_REST_Request $request Request object
+     * @return WP_REST_Response|WP_Error
+     */
+    public function download_file( $request ) {
+        global $wpdb;
+
+        $file_id = $request->get_param( 'id' );
+        $table   = FRAMT_Portal_Schema::get_table( 'files' );
+        $file    = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE id = %d", $file_id ) );
+
+        if ( ! $file->file_path || ! file_exists( $file->file_path ) ) {
+            return new WP_Error(
+                'rest_file_not_found',
+                'File not found on server.',
+                array( 'status' => 404 )
+            );
+        }
+
+        // Return file URL (for download handling on frontend)
+        // In a real implementation, you'd generate a signed URL or serve the file directly
+        return rest_ensure_response(
+            array(
+                'download_url' => $this->get_secure_download_url( $file ),
+                'filename'     => $file->original_name,
+                'mime_type'    => $file->mime_type,
+            )
+        );
+    }
+
+    /**
+     * Format file for API response
+     *
+     * @param object $file Database row
+     * @return array
+     */
+    private function format_file_response( $file ) {
+        $metadata = $file->metadata ? json_decode( $file->metadata, true ) : array();
+
+        return array(
+            'id'            => (int) $file->id,
+            'project_id'    => (int) $file->project_id,
+            'user_id'       => (int) $file->user_id,
+            'task_id'       => $file->task_id ? (int) $file->task_id : null,
+            'filename'      => $file->filename,
+            'original_name' => $file->original_name,
+            'file_type'     => $file->file_type,
+            'file_size'     => (int) $file->file_size,
+            'file_size_formatted' => size_format( $file->file_size ),
+            'mime_type'     => $file->mime_type,
+            'category'      => $file->category,
+            'category_label' => $this->get_category_label( $file->category ),
+            'visibility'    => $file->visibility,
+            'thumbnail_url' => $this->get_file_thumbnail( $file ),
+            'preview_url'   => $this->get_file_preview_url( $file ),
+            'metadata'      => $metadata,
+            'created_at'    => $file->created_at,
+            'updated_at'    => $file->updated_at,
+        );
+    }
+
+    /**
+     * Get file type from extension
+     *
+     * @param string $ext File extension
+     * @return string File type
+     */
+    private function get_file_type_from_extension( $ext ) {
+        $types = array(
+            'pdf'  => 'pdf',
+            'doc'  => 'document',
+            'docx' => 'document',
+            'xls'  => 'spreadsheet',
+            'xlsx' => 'spreadsheet',
+            'jpg'  => 'image',
+            'jpeg' => 'image',
+            'png'  => 'image',
+            'gif'  => 'image',
+            'txt'  => 'text',
+        );
+
+        return $types[ strtolower( $ext ) ] ?? 'other';
+    }
+
+    /**
+     * Get category label
+     *
+     * @param string $category Category key
+     * @return string Category label
+     */
+    private function get_category_label( $category ) {
+        $labels = array(
+            'upload'    => 'Uploaded',
+            'generated' => 'Generated',
+            'template'  => 'Template',
+            'passport'  => 'Passport',
+            'visa'      => 'Visa Documents',
+            'financial' => 'Financial',
+            'housing'   => 'Housing',
+            'medical'   => 'Medical',
+            'other'     => 'Other',
+        );
+
+        return $labels[ $category ] ?? ucfirst( $category );
+    }
+
+    /**
+     * Get file thumbnail URL
+     *
+     * @param object $file File object
+     * @return string|null Thumbnail URL
+     */
+    private function get_file_thumbnail( $file ) {
+        // For images, return the file itself (in production, you'd generate thumbnails)
+        if ( in_array( $file->file_type, array( 'image' ), true ) ) {
+            return $this->get_file_preview_url( $file );
+        }
+
+        // For other types, return a placeholder based on type
+        return null;
+    }
+
+    /**
+     * Get file preview URL
+     *
+     * @param object $file File object
+     * @return string Preview URL
+     */
+    private function get_file_preview_url( $file ) {
+        // Generate a secure preview URL
+        $nonce = wp_create_nonce( 'fra_file_preview_' . $file->id );
+        return add_query_arg(
+            array(
+                'action'  => 'fra_preview_file',
+                'file_id' => $file->id,
+                'nonce'   => $nonce,
+            ),
+            admin_url( 'admin-ajax.php' )
+        );
+    }
+
+    /**
+     * Get secure download URL
+     *
+     * @param object $file File object
+     * @return string Download URL
+     */
+    private function get_secure_download_url( $file ) {
+        $nonce = wp_create_nonce( 'fra_file_download_' . $file->id );
+        return add_query_arg(
+            array(
+                'action'  => 'fra_download_file',
+                'file_id' => $file->id,
+                'nonce'   => $nonce,
+            ),
+            admin_url( 'admin-ajax.php' )
+        );
     }
 }

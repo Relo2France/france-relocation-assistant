@@ -5,7 +5,9 @@ import type {
   Stage,
   Activity,
   User,
-  TaskStatus
+  TaskStatus,
+  PortalFile,
+  FileCategory,
 } from '@/types';
 
 /**
@@ -145,4 +147,58 @@ export const activityApi = {
 // User API
 export const userApi = {
   me: () => apiFetch<User>('/me'),
+};
+
+// Files API
+export const filesApi = {
+  list: (projectId: number, filters?: { category?: FileCategory; file_type?: string }) => {
+    const params = new URLSearchParams();
+    if (filters?.category) params.set('category', filters.category);
+    if (filters?.file_type) params.set('file_type', filters.file_type);
+    const query = params.toString();
+    return apiFetch<PortalFile[]>(`/projects/${projectId}/files${query ? `?${query}` : ''}`);
+  },
+
+  get: (id: number) => apiFetch<PortalFile>(`/files/${id}`),
+
+  upload: async (projectId: number, file: File, data?: { category?: FileCategory; description?: string }) => {
+    const wpData = getWpData();
+    const formData = new FormData();
+    formData.append('file', file);
+    if (data?.category) formData.append('category', data.category);
+    if (data?.description) formData.append('description', data.description);
+
+    const response = await fetch(`${wpData.apiUrl}/projects/${projectId}/files`, {
+      method: 'POST',
+      headers: {
+        'X-WP-Nonce': wpData.nonce,
+      },
+      credentials: 'same-origin',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: 'Upload failed' }));
+      throw new Error(error.message || `HTTP error ${response.status}`);
+    }
+
+    return response.json() as Promise<PortalFile>;
+  },
+
+  update: (id: number, data: { category?: FileCategory; description?: string }) =>
+    apiFetch<PortalFile>(`/files/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  delete: (id: number) =>
+    apiFetch<{ deleted: boolean }>(`/files/${id}`, {
+      method: 'DELETE',
+    }),
+
+  download: (id: number) => {
+    const wpData = getWpData();
+    // Return the download URL - browser will handle the download
+    return `${wpData.apiUrl}/files/${id}/download?_wpnonce=${wpData.nonce}`;
+  },
 };

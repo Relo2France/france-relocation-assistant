@@ -132,6 +132,36 @@ export interface User {
   is_member?: boolean;
 }
 
+// File types
+export interface PortalFile {
+  id: number;
+  project_id: number;
+  user_id: number;
+  filename: string;
+  original_name: string;
+  file_type: FileType;
+  file_type_label: string;
+  mime_type: string;
+  file_size: number;
+  file_size_formatted: string;
+  category: FileCategory;
+  category_label: string;
+  description: string | null;
+  is_generated: boolean;
+  entity_type: string | null;
+  entity_id: number | null;
+  thumbnail_url: string | null;
+  preview_url: string | null;
+  download_url: string;
+  uploaded_by: number;
+  uploaded_by_name: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export type FileType = 'document' | 'image' | 'pdf' | 'spreadsheet' | 'archive' | 'other';
+export type FileCategory = 'identity' | 'financial' | 'housing' | 'employment' | 'visa' | 'medical' | 'education' | 'other';
+
 // API Response types
 export interface ApiError {
   code: string;

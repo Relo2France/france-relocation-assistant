@@ -62,17 +62,6 @@ export default function TasksView() {
     return result;
   }, [tasks, searchQuery, taskFilters]);
 
-  // Task counts for status tabs
-  const taskCounts = useMemo(() => {
-    return {
-      all: tasks.length,
-      todo: tasks.filter((t) => t.status === 'todo').length,
-      in_progress: tasks.filter((t) => t.status === 'in_progress').length,
-      waiting: tasks.filter((t) => t.status === 'waiting').length,
-      done: tasks.filter((t) => t.status === 'done').length,
-    };
-  }, [tasks]);
-
   // Handlers
   const handleTaskClick = (task: Task) => {
     setSelectedTask(task);

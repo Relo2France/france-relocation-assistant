@@ -6,6 +6,7 @@ import Sidebar from '@/components/layout/Sidebar';
 import Header from '@/components/layout/Header';
 import Dashboard from '@/components/dashboard/Dashboard';
 import TasksView from '@/components/tasks/TasksView';
+import { DocumentsView } from '@/components/documents';
 
 function MessagesView() {
   return (
@@ -18,16 +19,6 @@ function MessagesView() {
   );
 }
 
-function DocumentsView() {
-  return (
-    <div className="p-6">
-      <div className="card p-8 text-center">
-        <h2 className="text-xl font-semibold text-gray-900 mb-2">Documents</h2>
-        <p className="text-gray-600">Document management coming in Phase 3</p>
-      </div>
-    </div>
-  );
-}
 
 function PlaceholderView({ title }: { title: string }) {
   return (

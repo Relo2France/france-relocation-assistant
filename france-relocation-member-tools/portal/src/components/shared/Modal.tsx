@@ -9,6 +9,7 @@ interface ModalProps {
   size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
   children: React.ReactNode;
   footer?: React.ReactNode;
+  showHeader?: boolean;
 }
 
 const sizeClasses = {
@@ -26,6 +27,7 @@ export default function Modal({
   size = 'md',
   children,
   footer,
+  showHeader = true,
 }: ModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
 
@@ -70,7 +72,7 @@ export default function Modal({
         )}
       >
         {/* Header */}
-        {title && (
+        {showHeader && title && (
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
             <button
@@ -83,15 +85,7 @@ export default function Modal({
         )}
 
         {/* Body */}
-        <div className={clsx('px-6 py-4', !title && 'pt-6')}>
-          {!title && (
-            <button
-              onClick={onClose}
-              className="absolute top-4 right-4 p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          )}
+        <div className={clsx(showHeader && title ? 'px-6 py-4' : '', !showHeader && 'relative')}>
           {children}
         </div>
 

@@ -5,8 +5,9 @@ import {
   tasksApi,
   activityApi,
   userApi,
+  filesApi,
 } from '@/api/client';
-import type { Task, TaskStatus, Project } from '@/types';
+import type { Task, TaskStatus, Project, FileCategory } from '@/types';
 
 // Query keys
 export const queryKeys = {
@@ -17,6 +18,8 @@ export const queryKeys = {
   task: (id: number) => ['task', id] as const,
   activity: (projectId: number) => ['activity', projectId] as const,
   user: ['user'] as const,
+  files: (projectId: number, filters?: object) => ['files', projectId, filters] as const,
+  file: (id: number) => ['file', id] as const,
 };
 
 // Dashboard hook
@@ -144,4 +147,70 @@ export function useActivity(projectId: number, options?: { limit?: number; offse
     queryFn: () => activityApi.list(projectId, options),
     enabled: projectId > 0,
   });
+}
+
+// Files hooks
+export function useFiles(projectId: number, filters?: { category?: FileCategory; file_type?: string }) {
+  return useQuery({
+    queryKey: queryKeys.files(projectId, filters),
+    queryFn: () => filesApi.list(projectId, filters),
+    enabled: projectId > 0,
+  });
+}
+
+export function useFile(id: number) {
+  return useQuery({
+    queryKey: queryKeys.file(id),
+    queryFn: () => filesApi.get(id),
+    enabled: id > 0,
+  });
+}
+
+export function useUploadFile(projectId: number) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ file, data }: { file: File; data?: { category?: FileCategory; description?: string } }) =>
+      filesApi.upload(projectId, file, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.files(projectId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.dashboard });
+    },
+  });
+}
+
+export function useUpdateFile() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: { category?: FileCategory; description?: string } }) =>
+      filesApi.update(id, data),
+    onSuccess: (updatedFile) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.files(updatedFile.project_id) });
+      queryClient.setQueryData(queryKeys.file(updatedFile.id), updatedFile);
+    },
+  });
+}
+
+export function useDeleteFile() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, projectId }: { id: number; projectId: number }) =>
+      filesApi.delete(id).then((result) => ({ ...result, projectId })),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.files(variables.projectId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.dashboard });
+    },
+  });
+}
+
+export function useDownloadFile() {
+  return {
+    download: (id: number) => {
+      const url = filesApi.download(id);
+      // Open in new tab or trigger download
+      window.open(url, '_blank');
+    },
+  };
 }
