@@ -3,7 +3,7 @@
  * Plugin Name: France Relocation Member Tools
  * Plugin URI: https://relo2france.com
  * Description: Premium member features for the France Relocation Assistant - document generation, checklists, guides, and personalized relocation planning.
- * Version: 1.1.7
+ * Version: 1.1.8
  * Author: Relo2France
  * Author URI: https://relo2france.com
  * License: GPL v2 or later
@@ -22,7 +22,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Plugin constants
-define('FRAMT_VERSION', '1.1.7');
+define('FRAMT_VERSION', '1.1.8');
 define('FRAMT_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('FRAMT_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('FRAMT_PLUGIN_BASENAME', plugin_basename(__FILE__));
@@ -2705,12 +2705,49 @@ STYLE:
             $url = $upload_dir['baseurl'] . '/framt-documents/user-' . $user_id . '/' . $filename . '.doc';
             $file_ext = 'doc';
         } else {
-            // PDF - add print styling
-            $html = str_replace('</head>', '<script>window.onload=function(){window.print();}</script></head>', $html);
-            $file_path = $user_doc_dir . '/' . $filename . '.html';
-            file_put_contents($file_path, $html);
-            $url = $upload_dir['baseurl'] . '/framt-documents/user-' . $user_id . '/' . $filename . '.html';
-            $file_ext = 'html';
+            // PDF - use proper PDF generation
+            require_once FRAMT_PLUGIN_DIR . 'vendor/class-simple-pdf.php';
+
+            $pdf = new FRAMT_Simple_PDF();
+            $pdf->addPage();
+
+            // Add title
+            $pdf->writeTitle($content['title']);
+            $pdf->addSpace(1);
+
+            // Process body content
+            $body = $content['content'];
+
+            // Remove markdown bold markers but keep the text
+            $body = preg_replace('/\*\*([^*]+)\*\*/', '$1', $body);
+
+            // Remove underline HTML tags
+            $body = preg_replace('/<\/?u>/', '', $body);
+
+            // Split into paragraphs and write
+            $paragraphs = preg_split('/\n\n+/', $body);
+            foreach ($paragraphs as $para) {
+                $para = trim($para);
+                if (!empty($para)) {
+                    // Check if it looks like a section header (underlined text pattern)
+                    $is_header = (strlen($para) < 60 && preg_match('/^[A-Z]/', $para) && substr($para, -1) === ':');
+
+                    // Handle multi-line paragraphs
+                    $lines = explode("\n", $para);
+                    foreach ($lines as $line) {
+                        $line = trim($line);
+                        if (!empty($line)) {
+                            $pdf->write($line, $is_header);
+                        }
+                    }
+                    $pdf->addSpace(1);
+                }
+            }
+
+            $file_path = $user_doc_dir . '/' . $filename . '.pdf';
+            $pdf->save($file_path);
+            $url = $upload_dir['baseurl'] . '/framt-documents/user-' . $user_id . '/' . $filename . '.pdf';
+            $file_ext = 'pdf';
         }
         
         // Check if already saved (prevent duplicate saves)
