@@ -9,6 +9,7 @@ import {
   MoreVertical,
   Eye,
   FolderOpen,
+  Shield,
 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import type { PortalFile, FileType } from '@/types';
@@ -19,6 +20,7 @@ interface FileGridProps {
   onFileClick: (file: PortalFile) => void;
   onDownload: (file: PortalFile) => void;
   onDelete: (file: PortalFile) => void;
+  onVerify?: (file: PortalFile) => void;
   isLoading?: boolean;
 }
 
@@ -46,6 +48,7 @@ export default function FileGrid({
   onFileClick,
   onDownload,
   onDelete,
+  onVerify,
   isLoading,
 }: FileGridProps) {
   if (isLoading) {
@@ -76,6 +79,7 @@ export default function FileGrid({
             onClick={() => onFileClick(file)}
             onDownload={() => onDownload(file)}
             onDelete={() => onDelete(file)}
+            onVerify={onVerify ? () => onVerify(file) : undefined}
           />
         ))}
       </div>
@@ -102,6 +106,7 @@ export default function FileGrid({
               onClick={() => onFileClick(file)}
               onDownload={() => onDownload(file)}
               onDelete={() => onDelete(file)}
+              onVerify={onVerify ? () => onVerify(file) : undefined}
             />
           ))}
         </tbody>
@@ -115,9 +120,10 @@ interface FileItemProps {
   onClick: () => void;
   onDownload: () => void;
   onDelete: () => void;
+  onVerify?: () => void;
 }
 
-function FileCardGrid({ file, onClick, onDownload, onDelete }: FileItemProps) {
+function FileCardGrid({ file, onClick, onDownload, onDelete, onVerify }: FileItemProps) {
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const Icon = fileTypeIcons[file.file_type] || File;
@@ -190,6 +196,15 @@ function FileCardGrid({ file, onClick, onDownload, onDelete }: FileItemProps) {
                   <Download className="w-4 h-4" />
                   Download
                 </button>
+                {onVerify && (
+                  <button
+                    onClick={() => { onVerify(); setShowMenu(false); }}
+                    className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                  >
+                    <Shield className="w-4 h-4" />
+                    Verify
+                  </button>
+                )}
                 <hr className="my-1 border-gray-100" />
                 <button
                   onClick={() => { onDelete(); setShowMenu(false); }}
@@ -207,7 +222,7 @@ function FileCardGrid({ file, onClick, onDownload, onDelete }: FileItemProps) {
   );
 }
 
-function FileRowList({ file, onClick, onDownload, onDelete }: FileItemProps) {
+function FileRowList({ file, onClick, onDownload, onDelete, onVerify }: FileItemProps) {
   const Icon = fileTypeIcons[file.file_type] || File;
   const colorClass = fileTypeColors[file.file_type] || fileTypeColors.other;
 
@@ -265,6 +280,15 @@ function FileRowList({ file, onClick, onDownload, onDelete }: FileItemProps) {
           >
             <Download className="w-4 h-4" />
           </button>
+          {onVerify && (
+            <button
+              onClick={onVerify}
+              className="p-1.5 text-gray-400 hover:text-primary-600 rounded-lg hover:bg-primary-50"
+              title="Verify Document"
+            >
+              <Shield className="w-4 h-4" />
+            </button>
+          )}
           <button
             onClick={onDelete}
             className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50"

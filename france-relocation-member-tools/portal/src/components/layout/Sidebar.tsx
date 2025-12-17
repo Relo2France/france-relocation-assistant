@@ -13,6 +13,12 @@ import {
   BookOpen,
   Calendar,
   LucideIcon,
+  // New icons for added features
+  ClipboardList,
+  BookMarked,
+  Bot,
+  User,
+  CreditCard,
 } from 'lucide-react';
 import { usePortalStore } from '@/store';
 import type { MenuItem } from '@/types';
@@ -30,6 +36,12 @@ const iconComponents: Record<string, LucideIcon> = {
   FolderKanban: FolderOpen,
   BookOpen,
   Calendar,
+  // New icons for added features
+  ClipboardList,
+  BookMarked,
+  Bot,
+  User,
+  CreditCard,
 };
 
 // Group menu items into sections for display
@@ -38,17 +50,17 @@ const groupMenuItems = (items: MenuItem[]) => {
     {
       id: 'project',
       label: 'PROJECT',
-      itemIds: ['dashboard', 'tasks', 'timeline', 'messages'],
+      itemIds: ['dashboard', 'tasks', 'checklists', 'timeline', 'messages'],
     },
     {
       id: 'resources',
       label: 'RESOURCES',
-      itemIds: ['documents', 'guides', 'files'],
+      itemIds: ['documents', 'guides', 'glossary', 'chat', 'files'],
     },
     {
       id: 'account',
       label: 'ACCOUNT',
-      itemIds: ['family', 'settings', 'help'],
+      itemIds: ['profile', 'family', 'membership', 'settings', 'help'],
     },
   ];
 

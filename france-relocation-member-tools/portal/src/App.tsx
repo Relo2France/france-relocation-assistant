@@ -13,6 +13,12 @@ import { SettingsView } from '@/components/settings';
 import { HelpView } from '@/components/help';
 import { GuidesView } from '@/components/guides';
 import { FamilyView } from '@/components/family';
+// New imports for added features
+import { ProfileView } from '@/components/profile';
+import { ChecklistsView } from '@/components/checklists';
+import { GlossaryView } from '@/components/glossary';
+import { KnowledgeBaseChat } from '@/components/chat';
+import { MembershipView } from '@/components/membership';
 
 // View router
 function ViewRouter() {
@@ -39,6 +45,17 @@ function ViewRouter() {
       return <SettingsView />;
     case 'help':
       return <HelpView />;
+    // New routes for added features
+    case 'profile':
+      return <ProfileView />;
+    case 'checklists':
+      return <ChecklistsView />;
+    case 'glossary':
+      return <GlossaryView />;
+    case 'chat':
+      return <KnowledgeBaseChat />;
+    case 'membership':
+      return <MembershipView />;
     default:
       return <Dashboard />;
   }

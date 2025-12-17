@@ -27,14 +27,21 @@ const defaultSettings: PortalSettings = {
     fileUpload: true,
   },
   menu: [
+    // PROJECT section
     { id: 'dashboard', label: 'Dashboard', icon: 'LayoutDashboard', path: '/dashboard' },
     { id: 'tasks', label: 'Tasks', icon: 'CheckSquare', path: '/tasks' },
+    { id: 'checklists', label: 'Checklists', icon: 'ClipboardList', path: '/checklists' },
     { id: 'timeline', label: 'Timeline', icon: 'Calendar', path: '/timeline' },
     { id: 'messages', label: 'Messages', icon: 'MessageSquare', path: '/messages' },
+    // RESOURCES section
     { id: 'documents', label: 'Documents', icon: 'FileText', path: '/documents' },
     { id: 'guides', label: 'Guides', icon: 'BookOpen', path: '/guides' },
-    { id: 'files', label: 'Files', icon: 'FolderOpen', path: '/files' },
+    { id: 'glossary', label: 'Glossary', icon: 'BookMarked', path: '/glossary' },
+    { id: 'chat', label: 'Ask AI', icon: 'Bot', path: '/chat' },
+    // ACCOUNT section
+    { id: 'profile', label: 'My Profile', icon: 'User', path: '/profile' },
     { id: 'family', label: 'Family Members', icon: 'Users', path: '/family' },
+    { id: 'membership', label: 'Membership', icon: 'CreditCard', path: '/membership' },
     { id: 'settings', label: 'Settings', icon: 'Settings', path: '/settings' },
     { id: 'help', label: 'Help & Support', icon: 'HelpCircle', path: '/help' },
   ],

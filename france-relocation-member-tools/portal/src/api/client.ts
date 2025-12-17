@@ -12,6 +12,26 @@ import type {
   FileCategory,
   Note,
   NoteVisibility,
+  MemberProfile,
+  Checklist,
+  ChecklistItem,
+  ChecklistItemStatus,
+  TaskChecklist,
+  TaskChecklistItem,
+  GeneratedDocument,
+  DocumentGenerationRequest,
+  DocumentGenerationResponse,
+  GlossaryCategory,
+  VerificationRequest,
+  VerificationResult,
+  PersonalizedGuide,
+  ChatRequest,
+  ChatResponse,
+  KnowledgeCategory,
+  MembershipInfo,
+  Subscription,
+  Payment,
+  UpgradeOption,
 } from '@/types';
 
 /**
@@ -254,4 +274,194 @@ export const notesApi = {
     apiFetch<Note>(`/notes/${id}/pin`, {
       method: 'PATCH',
     }),
+};
+
+// Profile API (Full 30+ fields)
+export const profileApi = {
+  get: () => apiFetch<MemberProfile>('/profile'),
+
+  update: (data: Partial<MemberProfile>) =>
+    apiFetch<MemberProfile>('/profile', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  getCompletion: () => apiFetch<{ percentage: number; missing_fields: string[] }>('/profile/completion'),
+};
+
+// Checklists API
+export const checklistsApi = {
+  list: (visaType?: string) => {
+    const params = new URLSearchParams();
+    if (visaType) params.set('visa_type', visaType);
+    const query = params.toString();
+    return apiFetch<Checklist[]>(`/checklists${query ? `?${query}` : ''}`);
+  },
+
+  get: (type: string) => apiFetch<Checklist>(`/checklists/${type}`),
+
+  updateItem: (
+    checklistType: string,
+    itemId: string,
+    data: { status?: ChecklistItemStatus; handled_own?: boolean; notes?: string }
+  ) =>
+    apiFetch<ChecklistItem>(`/checklists/${checklistType}/items/${itemId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  // Task-specific mini checklists
+  getTaskChecklist: (taskId: number) =>
+    apiFetch<TaskChecklist>(`/tasks/${taskId}/checklist`),
+
+  updateTaskChecklistItem: (taskId: number, itemId: string, completed: boolean) =>
+    apiFetch<TaskChecklistItem>(`/tasks/${taskId}/checklist/${itemId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ completed }),
+    }),
+
+  addTaskChecklistItem: (taskId: number, title: string) =>
+    apiFetch<TaskChecklistItem>(`/tasks/${taskId}/checklist`, {
+      method: 'POST',
+      body: JSON.stringify({ title }),
+    }),
+
+  deleteTaskChecklistItem: (taskId: number, itemId: string) =>
+    apiFetch<{ deleted: boolean }>(`/tasks/${taskId}/checklist/${itemId}`, {
+      method: 'DELETE',
+    }),
+};
+
+// Document Generation API
+export const documentGeneratorApi = {
+  getTypes: () =>
+    apiFetch<{ type: string; label: string; description: string; requires_profile: string[] }[]>(
+      '/documents/generator/types'
+    ),
+
+  preview: (data: DocumentGenerationRequest) =>
+    apiFetch<DocumentGenerationResponse>('/documents/generator/preview', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  generate: (projectId: number, data: DocumentGenerationRequest) =>
+    apiFetch<DocumentGenerationResponse>(`/projects/${projectId}/documents/generate`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  listGenerated: (projectId: number) =>
+    apiFetch<GeneratedDocument[]>(`/projects/${projectId}/documents/generated`),
+
+  downloadGenerated: (id: number, format: 'pdf' | 'docx' = 'pdf') => {
+    const wpData = getWpData();
+    return `${wpData.apiUrl}/documents/generated/${id}/download?format=${format}&_wpnonce=${wpData.nonce}`;
+  },
+};
+
+// Glossary API
+export const glossaryApi = {
+  getAll: () => apiFetch<GlossaryCategory[]>('/glossary'),
+
+  search: (query: string) =>
+    apiFetch<GlossaryCategory[]>(`/glossary/search?q=${encodeURIComponent(query)}`),
+
+  getCategory: (categoryId: string) =>
+    apiFetch<GlossaryCategory>(`/glossary/category/${categoryId}`),
+};
+
+// AI Verification API
+export const verificationApi = {
+  verify: (data: VerificationRequest) =>
+    apiFetch<VerificationResult>('/verify', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  verifyFile: async (projectId: number, file: File, verificationType: string) => {
+    const wpData = getWpData();
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('verification_type', verificationType);
+
+    const response = await fetch(`${wpData.apiUrl}/projects/${projectId}/verify`, {
+      method: 'POST',
+      headers: {
+        'X-WP-Nonce': wpData.nonce,
+      },
+      credentials: 'same-origin',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: 'Verification failed' }));
+      throw new Error(error.message || `HTTP error ${response.status}`);
+    }
+
+    return response.json() as Promise<VerificationResult>;
+  },
+
+  getHistory: (projectId: number) =>
+    apiFetch<VerificationResult[]>(`/projects/${projectId}/verify/history`),
+};
+
+// Personalized Guides API
+export const guidesApi = {
+  list: () => apiFetch<PersonalizedGuide[]>('/guides'),
+
+  get: (guideType: string) => apiFetch<PersonalizedGuide>(`/guides/${guideType}`),
+
+  getPersonalized: (guideType: string) =>
+    apiFetch<PersonalizedGuide>(`/guides/${guideType}/personalized`),
+
+  generateAI: (guideType: string) =>
+    apiFetch<PersonalizedGuide>(`/guides/${guideType}/generate`, {
+      method: 'POST',
+    }),
+};
+
+// Knowledge Base Chat API
+export const chatApi = {
+  send: (data: ChatRequest) =>
+    apiFetch<ChatResponse>('/chat', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  getCategories: () => apiFetch<KnowledgeCategory[]>('/chat/categories'),
+
+  searchTopics: (query: string) =>
+    apiFetch<{ results: { title: string; category: string; is_premium: boolean }[] }>(
+      `/chat/search?q=${encodeURIComponent(query)}`
+    ),
+};
+
+// MemberPress/Membership API
+export const membershipApi = {
+  getInfo: () => apiFetch<MembershipInfo>('/membership'),
+
+  getSubscriptions: () => apiFetch<Subscription[]>('/membership/subscriptions'),
+
+  getPayments: () => apiFetch<Payment[]>('/membership/payments'),
+
+  cancelSubscription: (subscriptionId: number) =>
+    apiFetch<{ success: boolean; message: string }>(`/membership/subscriptions/${subscriptionId}/cancel`, {
+      method: 'POST',
+    }),
+
+  suspendSubscription: (subscriptionId: number) =>
+    apiFetch<{ success: boolean; message: string }>(`/membership/subscriptions/${subscriptionId}/suspend`, {
+      method: 'POST',
+    }),
+
+  resumeSubscription: (subscriptionId: number) =>
+    apiFetch<{ success: boolean; message: string }>(`/membership/subscriptions/${subscriptionId}/resume`, {
+      method: 'POST',
+    }),
+
+  getUpgradeOptions: () =>
+    apiFetch<UpgradeOption[]>(
+      '/membership/upgrade-options'
+    ),
 };

@@ -12,6 +12,7 @@ import { useDashboard, useFiles, useDownloadFile } from '@/hooks/useApi';
 import FileUpload from './FileUpload';
 import FileGrid from './FileGrid';
 import FilePreview from './FilePreview';
+import { AIVerificationModal } from './AIVerification';
 import Modal from '@/components/shared/Modal';
 import type { PortalFile, FileCategory, FileType } from '@/types';
 
@@ -47,6 +48,8 @@ export default function DocumentsView() {
   const [showUpload, setShowUpload] = useState(false);
   const [selectedFile, setSelectedFile] = useState<PortalFile | null>(null);
   const [showPreview, setShowPreview] = useState(false);
+  const [showVerification, setShowVerification] = useState(false);
+  const [fileToVerify, setFileToVerify] = useState<PortalFile | null>(null);
 
   // Data
   const { data: dashboard, isLoading: dashboardLoading } = useDashboard();
@@ -98,9 +101,19 @@ export default function DocumentsView() {
     setShowPreview(true);
   };
 
+  const handleVerify = (file: PortalFile) => {
+    setFileToVerify(file);
+    setShowVerification(true);
+  };
+
   const handleClosePreview = () => {
     setShowPreview(false);
     setSelectedFile(null);
+  };
+
+  const handleCloseVerification = () => {
+    setShowVerification(false);
+    setFileToVerify(null);
   };
 
   const clearFilters = () => {
@@ -279,6 +292,7 @@ export default function DocumentsView() {
         onFileClick={handleFileClick}
         onDownload={handleDownload}
         onDelete={handleDelete}
+        onVerify={handleVerify}
         isLoading={filesLoading}
       />
 
@@ -325,6 +339,14 @@ export default function DocumentsView() {
         isOpen={showPreview}
         onClose={handleClosePreview}
         projectId={projectId}
+      />
+
+      {/* AI Verification */}
+      <AIVerificationModal
+        isOpen={showVerification}
+        onClose={handleCloseVerification}
+        projectId={projectId}
+        existingFileId={fileToVerify?.id}
       />
     </div>
   );

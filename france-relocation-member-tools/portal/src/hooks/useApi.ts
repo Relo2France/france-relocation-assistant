@@ -7,8 +7,28 @@ import {
   userApi,
   filesApi,
   notesApi,
+  profileApi,
+  checklistsApi,
+  documentGeneratorApi,
+  glossaryApi,
+  verificationApi,
+  guidesApi,
+  chatApi,
+  membershipApi,
 } from '@/api/client';
-import type { Task, TaskStatus, Project, FileCategory, NoteVisibility, UpdateProfileData, UserSettings } from '@/types';
+import type {
+  Task,
+  TaskStatus,
+  Project,
+  FileCategory,
+  NoteVisibility,
+  UpdateProfileData,
+  UserSettings,
+  MemberProfile,
+  ChecklistItemStatus,
+  DocumentGenerationRequest,
+  ChatRequest,
+} from '@/types';
 
 // Query keys
 export const queryKeys = {
@@ -17,6 +37,7 @@ export const queryKeys = {
   project: (id: number) => ['project', id] as const,
   tasks: (projectId: number, filters?: object) => ['tasks', projectId, filters] as const,
   task: (id: number) => ['task', id] as const,
+  taskChecklist: (taskId: number) => ['taskChecklist', taskId] as const,
   activity: (projectId: number) => ['activity', projectId] as const,
   user: ['user'] as const,
   userSettings: ['userSettings'] as const,
@@ -24,6 +45,24 @@ export const queryKeys = {
   file: (id: number) => ['file', id] as const,
   notes: (projectId: number, filters?: object) => ['notes', projectId, filters] as const,
   note: (id: number) => ['note', id] as const,
+  // New keys
+  profile: ['profile'] as const,
+  profileCompletion: ['profileCompletion'] as const,
+  checklists: (visaType?: string) => ['checklists', visaType] as const,
+  checklist: (type: string) => ['checklist', type] as const,
+  documentTypes: ['documentTypes'] as const,
+  generatedDocuments: (projectId: number) => ['generatedDocuments', projectId] as const,
+  glossary: ['glossary'] as const,
+  glossarySearch: (query: string) => ['glossary', 'search', query] as const,
+  verificationHistory: (projectId: number) => ['verificationHistory', projectId] as const,
+  guides: ['guides'] as const,
+  guide: (type: string) => ['guide', type] as const,
+  personalizedGuide: (type: string) => ['personalizedGuide', type] as const,
+  chatCategories: ['chatCategories'] as const,
+  membership: ['membership'] as const,
+  subscriptions: ['subscriptions'] as const,
+  payments: ['payments'] as const,
+  upgradeOptions: ['upgradeOptions'] as const,
 };
 
 // Dashboard hook
@@ -313,5 +352,345 @@ export function useToggleNotePin() {
       queryClient.invalidateQueries({ queryKey: queryKeys.notes(updatedNote.project_id) });
       queryClient.setQueryData(queryKeys.note(updatedNote.id), updatedNote);
     },
+  });
+}
+
+// ============================================
+// Profile Hooks (Full 30+ fields)
+// ============================================
+
+export function useMemberProfile() {
+  return useQuery({
+    queryKey: queryKeys.profile,
+    queryFn: profileApi.get,
+    staleTime: 60000 * 5, // 5 minutes
+  });
+}
+
+export function useUpdateMemberProfile() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: Partial<MemberProfile>) => profileApi.update(data),
+    onSuccess: (updatedProfile) => {
+      queryClient.setQueryData(queryKeys.profile, updatedProfile);
+      queryClient.invalidateQueries({ queryKey: queryKeys.profileCompletion });
+    },
+  });
+}
+
+export function useProfileCompletion() {
+  return useQuery({
+    queryKey: queryKeys.profileCompletion,
+    queryFn: profileApi.getCompletion,
+    staleTime: 60000, // 1 minute
+  });
+}
+
+// ============================================
+// Checklists Hooks
+// ============================================
+
+export function useChecklists(visaType?: string) {
+  return useQuery({
+    queryKey: queryKeys.checklists(visaType),
+    queryFn: () => checklistsApi.list(visaType),
+  });
+}
+
+export function useChecklist(type: string) {
+  return useQuery({
+    queryKey: queryKeys.checklist(type),
+    queryFn: () => checklistsApi.get(type),
+    enabled: !!type,
+  });
+}
+
+export function useUpdateChecklistItem() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      checklistType,
+      itemId,
+      data,
+    }: {
+      checklistType: string;
+      itemId: string;
+      data: { status?: ChecklistItemStatus; handled_own?: boolean; notes?: string };
+    }) => checklistsApi.updateItem(checklistType, itemId, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.checklist(variables.checklistType) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.checklists() });
+    },
+  });
+}
+
+// Task-specific mini checklists
+export function useTaskChecklist(taskId: number) {
+  return useQuery({
+    queryKey: queryKeys.taskChecklist(taskId),
+    queryFn: () => checklistsApi.getTaskChecklist(taskId),
+    enabled: taskId > 0,
+  });
+}
+
+export function useUpdateTaskChecklistItem(taskId: number) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ itemId, completed }: { itemId: string; completed: boolean }) =>
+      checklistsApi.updateTaskChecklistItem(taskId, itemId, completed),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.taskChecklist(taskId) });
+    },
+  });
+}
+
+export function useAddTaskChecklistItem(taskId: number) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (title: string) => checklistsApi.addTaskChecklistItem(taskId, title),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.taskChecklist(taskId) });
+    },
+  });
+}
+
+export function useDeleteTaskChecklistItem(taskId: number) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (itemId: string) => checklistsApi.deleteTaskChecklistItem(taskId, itemId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.taskChecklist(taskId) });
+    },
+  });
+}
+
+// ============================================
+// Document Generation Hooks
+// ============================================
+
+export function useDocumentTypes() {
+  return useQuery({
+    queryKey: queryKeys.documentTypes,
+    queryFn: documentGeneratorApi.getTypes,
+    staleTime: 60000 * 60, // 1 hour
+  });
+}
+
+export function useGeneratedDocuments(projectId: number) {
+  return useQuery({
+    queryKey: queryKeys.generatedDocuments(projectId),
+    queryFn: () => documentGeneratorApi.listGenerated(projectId),
+    enabled: projectId > 0,
+  });
+}
+
+export function usePreviewDocument() {
+  return useMutation({
+    mutationFn: (data: DocumentGenerationRequest) => documentGeneratorApi.preview(data),
+  });
+}
+
+export function useGenerateDocument(projectId: number) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: DocumentGenerationRequest) => documentGeneratorApi.generate(projectId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.generatedDocuments(projectId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.files(projectId) });
+    },
+  });
+}
+
+export function useDownloadGeneratedDocument() {
+  return {
+    download: (id: number, format: 'pdf' | 'docx' = 'pdf') => {
+      const url = documentGeneratorApi.downloadGenerated(id, format);
+      window.open(url, '_blank');
+    },
+  };
+}
+
+// ============================================
+// Glossary Hooks
+// ============================================
+
+export function useGlossary() {
+  return useQuery({
+    queryKey: queryKeys.glossary,
+    queryFn: glossaryApi.getAll,
+    staleTime: 60000 * 60, // 1 hour
+  });
+}
+
+export function useGlossarySearch(query: string) {
+  return useQuery({
+    queryKey: queryKeys.glossarySearch(query),
+    queryFn: () => glossaryApi.search(query),
+    enabled: query.length >= 2,
+  });
+}
+
+// ============================================
+// AI Verification Hooks
+// ============================================
+
+export function useVerifyDocument(projectId: number) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ file, verificationType }: { file: File; verificationType: string }) =>
+      verificationApi.verifyFile(projectId, file, verificationType),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.verificationHistory(projectId) });
+    },
+  });
+}
+
+export function useVerificationHistory(projectId: number) {
+  return useQuery({
+    queryKey: queryKeys.verificationHistory(projectId),
+    queryFn: () => verificationApi.getHistory(projectId),
+    enabled: projectId > 0,
+  });
+}
+
+// ============================================
+// Personalized Guides Hooks
+// ============================================
+
+export function useGuides() {
+  return useQuery({
+    queryKey: queryKeys.guides,
+    queryFn: guidesApi.list,
+    staleTime: 60000 * 5, // 5 minutes
+  });
+}
+
+export function useGuide(type: string) {
+  return useQuery({
+    queryKey: queryKeys.guide(type),
+    queryFn: () => guidesApi.get(type),
+    enabled: !!type,
+  });
+}
+
+export function usePersonalizedGuide(type: string) {
+  return useQuery({
+    queryKey: queryKeys.personalizedGuide(type),
+    queryFn: () => guidesApi.getPersonalized(type),
+    enabled: !!type,
+  });
+}
+
+export function useGenerateAIGuide() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (guideType: string) => guidesApi.generateAI(guideType),
+    onSuccess: (_, guideType) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.personalizedGuide(guideType) });
+    },
+  });
+}
+
+// ============================================
+// Knowledge Base Chat Hooks
+// ============================================
+
+export function useChatCategories() {
+  return useQuery({
+    queryKey: queryKeys.chatCategories,
+    queryFn: chatApi.getCategories,
+    staleTime: 60000 * 60, // 1 hour
+  });
+}
+
+export function useSendChatMessage() {
+  return useMutation({
+    mutationFn: (data: ChatRequest) => chatApi.send(data),
+  });
+}
+
+export function useSearchChatTopics(query: string) {
+  return useQuery({
+    queryKey: ['chatSearch', query],
+    queryFn: () => chatApi.searchTopics(query),
+    enabled: query.length >= 2,
+  });
+}
+
+// ============================================
+// MemberPress/Membership Hooks
+// ============================================
+
+export function useMembership() {
+  return useQuery({
+    queryKey: queryKeys.membership,
+    queryFn: membershipApi.getInfo,
+    staleTime: 60000 * 5, // 5 minutes
+  });
+}
+
+export function useSubscriptions() {
+  return useQuery({
+    queryKey: queryKeys.subscriptions,
+    queryFn: membershipApi.getSubscriptions,
+  });
+}
+
+export function usePayments() {
+  return useQuery({
+    queryKey: queryKeys.payments,
+    queryFn: membershipApi.getPayments,
+  });
+}
+
+export function useCancelSubscription() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (subscriptionId: number) => membershipApi.cancelSubscription(subscriptionId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.subscriptions });
+      queryClient.invalidateQueries({ queryKey: queryKeys.membership });
+    },
+  });
+}
+
+export function useSuspendSubscription() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (subscriptionId: number) => membershipApi.suspendSubscription(subscriptionId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.subscriptions });
+      queryClient.invalidateQueries({ queryKey: queryKeys.membership });
+    },
+  });
+}
+
+export function useResumeSubscription() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (subscriptionId: number) => membershipApi.resumeSubscription(subscriptionId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.subscriptions });
+      queryClient.invalidateQueries({ queryKey: queryKeys.membership });
+    },
+  });
+}
+
+export function useUpgradeOptions() {
+  return useQuery({
+    queryKey: queryKeys.upgradeOptions,
+    queryFn: membershipApi.getUpgradeOptions,
+    staleTime: 60000 * 60, // 1 hour
   });
 }
