@@ -5,18 +5,7 @@ import { usePortalStore } from '@/store';
 import Sidebar from '@/components/layout/Sidebar';
 import Header from '@/components/layout/Header';
 import Dashboard from '@/components/dashboard/Dashboard';
-
-// Placeholder components for other views
-function TasksView() {
-  return (
-    <div className="p-6">
-      <div className="card p-8 text-center">
-        <h2 className="text-xl font-semibold text-gray-900 mb-2">Tasks View</h2>
-        <p className="text-gray-600">Task management coming in Phase 2</p>
-      </div>
-    </div>
-  );
-}
+import TasksView from '@/components/tasks/TasksView';
 
 function MessagesView() {
   return (
