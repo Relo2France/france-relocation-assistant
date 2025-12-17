@@ -4,7 +4,7 @@ Tags: france, relocation, visa, membership, documents
 Requires at least: 5.8
 Tested up to: 6.4
 Requires PHP: 7.4
-Stable tag: 1.1.7
+Stable tag: 1.1.8
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -62,6 +62,11 @@ Yes! Enable "Demo Mode" in settings to test member features without a membership
 Documents are generated based on application location. US applications generate English documents; renewals from France generate French documents.
 
 == Changelog ==
+
+= 1.1.8 =
+* Fixed: PDF generation now creates proper PDF files instead of HTML print dialogs
+* Improved: PDF documents use FRAMT_Simple_PDF class for reliable cross-browser support
+* Improved: PDF content properly handles markdown formatting from AI-generated documents
 
 = 1.1.7 =
 * Fixed: Plugin initialization moved outside class to prevent deactivation on errors
