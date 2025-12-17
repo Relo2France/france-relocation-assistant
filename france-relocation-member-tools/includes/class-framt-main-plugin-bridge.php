@@ -349,12 +349,12 @@ class FRAMT_Main_Plugin_Bridge {
      * @param string $context Context
      * @return array|WP_Error
      */
-    private function direct_api_call($message, $context = '') {
-        $api_key = get_option('fra_api_key', '');
-        $model = get_option('fra_api_model', 'claude-sonnet-4-20250514');
+    private function direct_api_call( $message, $context = '' ) {
+        $api_key = France_Relocation_Assistant::get_api_key();
+        $model   = get_option( 'fra_api_model', 'claude-sonnet-4-20250514' );
 
-        if (empty($api_key)) {
-            return new WP_Error('no_api_key', 'API key not configured');
+        if ( empty( $api_key ) ) {
+            return new WP_Error( 'no_api_key', 'API key not configured' );
         }
 
         $response = wp_remote_post('https://api.anthropic.com/v1/messages', array(

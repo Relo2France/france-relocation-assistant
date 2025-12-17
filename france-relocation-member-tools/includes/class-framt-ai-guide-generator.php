@@ -29,10 +29,13 @@ class FRAMT_AI_Guide_Generator {
     private function __construct() {}
 
     /**
-     * Get API key from main plugin
+     * Get API key from main plugin (encrypted).
+     *
+     * @since 1.0.30
+     * @return string Decrypted API key.
      */
     private function get_api_key() {
-        return get_option('fra_api_key', '');
+        return France_Relocation_Assistant::get_api_key();
     }
 
     /**
