@@ -10,6 +10,7 @@ import { DocumentsView } from '@/components/documents';
 import { MessagesView } from '@/components/messages';
 import { TimelineView } from '@/components/timeline';
 import { SettingsView } from '@/components/settings';
+import { HelpView } from '@/components/help';
 
 
 function PlaceholderView({ title }: { title: string }) {
@@ -47,7 +48,7 @@ function ViewRouter() {
     case 'settings':
       return <SettingsView />;
     case 'help':
-      return <PlaceholderView title="Help & Support" />;
+      return <HelpView />;
     default:
       return <Dashboard />;
   }
