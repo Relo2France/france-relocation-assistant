@@ -13,8 +13,8 @@
  * @wordpress-plugin
  * Plugin Name: France Relocation Member Tools
  * Plugin URI:  https://relo2france.com
- * Description: Premium member features for the France Relocation Assistant - document generation, checklists, guides, and personalized relocation planning.
- * Version:     1.1.9
+ * Description: Premium member features including the Members Portal with project management, task tracking, document generation, checklists, guides, and personalized relocation planning.
+ * Version:     2.0.0
  * Author:      Relo2France
  * Author URI:  https://relo2france.com
  * License:     GPL v2 or later
@@ -31,7 +31,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Plugin constants.
-define( 'FRAMT_VERSION', '1.1.9' );
+define( 'FRAMT_VERSION', '2.0.0' );
 define('FRAMT_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('FRAMT_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('FRAMT_PLUGIN_BASENAME', plugin_basename(__FILE__));
@@ -278,6 +278,12 @@ final class FRA_Member_Tools {
         add_action('wp_enqueue_scripts', array($this, 'enqueue_frontend_assets'));
         add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_assets'));
 
+        // Portal v2.0 template registration
+        add_filter('theme_page_templates', array($this, 'register_portal_template'));
+        add_filter('template_include', array($this, 'load_portal_template'));
+        add_action('wp_enqueue_scripts', array($this, 'enqueue_portal_assets'));
+        add_action('wp_enqueue_scripts', array($this, 'enqueue_homepage_assets'));
+
         // Register AJAX handlers
         $this->register_ajax_handlers();
         
@@ -313,6 +319,13 @@ final class FRA_Member_Tools {
             'includes/class-framt-ai-verification.php',
             'includes/class-framt-messages.php',
             'includes/class-framt-main-plugin-bridge.php',
+            // Portal v2.0 classes
+            'includes/class-framt-portal-schema.php',
+            'includes/class-framt-activity.php',
+            'includes/class-framt-stage.php',
+            'includes/class-framt-project.php',
+            'includes/class-framt-task.php',
+            'includes/class-framt-portal-api.php',
         );
 
         foreach ($required_files as $file) {
@@ -370,6 +383,22 @@ final class FRA_Member_Tools {
             $this->log_error('Failed to initialize messages component: ' . $e->getMessage());
         } catch (Error $e) {
             $this->log_error('Fatal error initializing messages component: ' . $e->getMessage());
+        }
+
+        // Portal v2.0 API - initialize REST endpoints
+        try {
+            if (class_exists('FRAMT_Portal_API')) {
+                $this->components['portal_api'] = FRAMT_Portal_API::get_instance();
+            }
+        } catch (Exception $e) {
+            $this->log_error('Failed to initialize portal API: ' . $e->getMessage());
+        } catch (Error $e) {
+            $this->log_error('Fatal error initializing portal API: ' . $e->getMessage());
+        }
+
+        // Check if portal schema needs update
+        if (class_exists('FRAMT_Portal_Schema') && FRAMT_Portal_Schema::needs_update()) {
+            FRAMT_Portal_Schema::create_tables();
         }
     }
 
@@ -3733,6 +3762,162 @@ Please provide a helpful, accurate answer about their health insurance coverage 
     }
     
     /**
+     * Register portal page template
+     *
+     * @param array $templates Available templates
+     * @return array Modified templates
+     */
+    public function register_portal_template($templates) {
+        $templates['template-portal.php'] = __('Members Portal', 'fra-member-tools');
+        $templates['template-homepage.php'] = __('France Relocation Homepage', 'fra-member-tools');
+        return $templates;
+    }
+
+    /**
+     * Load portal template from plugin
+     *
+     * @param string $template Current template path
+     * @return string Modified template path
+     */
+    public function load_portal_template($template) {
+        global $post;
+
+        if (!$post) {
+            return $template;
+        }
+
+        $page_template = get_page_template_slug($post->ID);
+
+        // Map template slugs to their files
+        $plugin_templates = array(
+            'template-portal.php' => 'templates/template-portal.php',
+            'template-homepage.php' => 'templates/template-homepage.php',
+        );
+
+        if (isset($plugin_templates[$page_template])) {
+            $plugin_template = FRAMT_PLUGIN_DIR . $plugin_templates[$page_template];
+            if (file_exists($plugin_template)) {
+                return $plugin_template;
+            }
+        }
+
+        return $template;
+    }
+
+    /**
+     * Enqueue portal React app assets
+     *
+     * @return void
+     */
+    public function enqueue_portal_assets() {
+        if (!is_page()) {
+            return;
+        }
+
+        global $post;
+        $page_template = get_page_template_slug($post->ID);
+
+        if ('template-portal.php' !== $page_template) {
+            return;
+        }
+
+        // Check for production build manifest
+        $manifest_path = FRAMT_PLUGIN_DIR . 'assets/portal/.vite/manifest.json';
+
+        if (file_exists($manifest_path)) {
+            // Production mode - load from built assets
+            $manifest = json_decode(file_get_contents($manifest_path), true);
+
+            if (isset($manifest['index.html'])) {
+                $entry = $manifest['index.html'];
+
+                // Enqueue main JS
+                if (isset($entry['file'])) {
+                    wp_enqueue_script(
+                        'fra-portal',
+                        FRAMT_PLUGIN_URL . 'assets/portal/' . $entry['file'],
+                        array(),
+                        FRAMT_VERSION,
+                        true
+                    );
+                }
+
+                // Enqueue CSS
+                if (isset($entry['css'])) {
+                    foreach ($entry['css'] as $css_file) {
+                        wp_enqueue_style(
+                            'fra-portal-' . md5($css_file),
+                            FRAMT_PLUGIN_URL . 'assets/portal/' . $css_file,
+                            array(),
+                            FRAMT_VERSION
+                        );
+                    }
+                }
+            }
+        } else {
+            // Development mode - load from Vite dev server
+            wp_enqueue_script(
+                'fra-portal-vite',
+                'http://localhost:5173/@vite/client',
+                array(),
+                null,
+                true
+            );
+
+            wp_enqueue_script(
+                'fra-portal',
+                'http://localhost:5173/src/main.tsx',
+                array('fra-portal-vite'),
+                null,
+                true
+            );
+
+            // Add type="module" to scripts
+            add_filter('script_loader_tag', function($tag, $handle) {
+                if (in_array($handle, ['fra-portal-vite', 'fra-portal'])) {
+                    return str_replace(' src', ' type="module" src', $tag);
+                }
+                return $tag;
+            }, 10, 2);
+        }
+
+        // Localize script with WordPress data
+        wp_localize_script('fra-portal', 'fraPortalData', array(
+            'apiUrl' => rest_url('fra-portal/v1'),
+            'nonce' => wp_create_nonce('wp_rest'),
+            'userId' => get_current_user_id(),
+            'siteUrl' => home_url(),
+            'pluginUrl' => FRAMT_PLUGIN_URL,
+            'isAdmin' => current_user_can('manage_options'),
+        ));
+    }
+
+    /**
+     * Enqueue homepage template assets
+     *
+     * @return void
+     */
+    public function enqueue_homepage_assets() {
+        if (!is_page()) {
+            return;
+        }
+
+        global $post;
+        $page_template = get_page_template_slug($post->ID);
+
+        if ('template-homepage.php' !== $page_template) {
+            return;
+        }
+
+        wp_enqueue_style(
+            'framt-homepage',
+            FRAMT_PLUGIN_URL . 'assets/css/homepage.css',
+            array(),
+            FRAMT_VERSION
+        );
+    }
+
+    /**
      * Register admin menu
      *
      * @return void
@@ -3884,6 +4069,17 @@ Please provide a helpful, accurate answer about their health insurance coverage 
             $this->log_error('Table creation failed: ' . $e->getMessage());
         } catch (Error $e) {
             $this->log_error('Table creation fatal error: ' . $e->getMessage());
+        }
+
+        // Create portal v2.0 tables
+        try {
+            if (class_exists('FRAMT_Portal_Schema')) {
+                FRAMT_Portal_Schema::create_tables();
+            }
+        } catch (Exception $e) {
+            $this->log_error('Portal table creation failed: ' . $e->getMessage());
+        } catch (Error $e) {
+            $this->log_error('Portal table creation fatal error: ' . $e->getMessage());
         }
 
         // Set default options
