@@ -38,9 +38,11 @@
                 window.history.replaceState({}, document.title, newUrl);
             };
 
-            // DIRECT VIEW - Open signup or login view directly via ?view=signup or ?view=login
+            // DIRECT VIEW - Open auth views directly via ?view= parameter
+            // Supported views: signup, login, dashboard, account, subscriptions, payments
             var viewParam = urlParams.get('view');
-            if (viewParam === 'signup' || viewParam === 'login') {
+            var validViews = ['signup', 'login', 'dashboard', 'account', 'subscriptions', 'payments'];
+            if (viewParam && validViews.indexOf(viewParam) !== -1) {
                 cleanUrl();
                 // Wait for the auth system to initialize, then show the view
                 setTimeout(function() {
