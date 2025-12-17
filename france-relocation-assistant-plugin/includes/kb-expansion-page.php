@@ -9,7 +9,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-$api_key = get_option('fra_api_key', '');
+$api_key = France_Relocation_Assistant::get_api_key();
 $knowledge_base = France_Relocation_Assistant::get_instance()->get_knowledge_base();
 
 $categories = array(

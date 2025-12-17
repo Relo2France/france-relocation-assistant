@@ -1,39 +1,33 @@
 <?php
 /**
+ * France Relocation Assistant
+ *
+ * AI-powered US to France relocation guidance with visa info, property guides,
+ * healthcare, taxes, and practical insights. Features weekly auto-updates,
+ * "In Practice" real-world advice, and comprehensive knowledge base.
+ *
+ * @package     France_Relocation_Assistant
+ * @author      Relo2France
+ * @copyright   2024 Relo2France
+ * @license     GPL-2.0-or-later
+ *
+ * @wordpress-plugin
  * Plugin Name: France Relocation Assistant
- * Plugin URI: https://relo2france.com
+ * Plugin URI:  https://relo2france.com
  * Description: AI-powered US to France relocation guidance with visa info, property guides, healthcare, taxes, and practical insights. Features weekly auto-updates, "In Practice" real-world advice, and comprehensive knowledge base.
- * Version: 3.6.3
- * Author: Relo2France
- * Author URI: https://relo2france.com
- * License: GPL v2 or later
+ * Version:     3.6.4
+ * Author:      Relo2France
+ * Author URI:  https://relo2france.com
+ * License:     GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: france-relocation-assistant
  * Domain Path: /languages
  * Requires at least: 5.8
  * Requires PHP: 7.4
- * 
- * @package France_Relocation_Assistant
- * @since 1.0.0
- * 
- * CHANGELOG:
- * 2.9.0 - Member Tools integration hooks, filter system for add-on plugins
- * 2.6.2 - Fixed AI Review to scan ALL KB topics, not just predefined ones
- * 2.6.1 - Individual "In Practice" generator for any topic
- * 2.6.0 - Code cleanup, documentation, AI "In Practice" responses
- * 2.5.x - AI Review system, dynamic KB menu, mobile header fixes
- * 2.4.x - Site header, SEO, analytics features
- * 2.3.x - Membership system, customizer
- * 2.0.0 - Complete rewrite with AI integration
- * 1.0.0 - Initial release
  */
 
-/*
-|--------------------------------------------------------------------------
-| Security Check
-|--------------------------------------------------------------------------
-*/
-if (!defined('ABSPATH')) {
+// Prevent direct access.
+if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
@@ -42,11 +36,12 @@ if (!defined('ABSPATH')) {
 | Plugin Constants
 |--------------------------------------------------------------------------
 */
-define('FRA_VERSION', '3.6.3');
-define('FRA_PLUGIN_DIR', plugin_dir_path(__FILE__));
-define('FRA_PLUGIN_URL', plugin_dir_url(__FILE__));
-define('FRA_PLUGIN_BASENAME', plugin_basename(__FILE__));
-define('FRA_PLUGIN_FILE', __FILE__);
+define( 'FRA_VERSION', '3.6.4' );
+define( 'FRA_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
+define( 'FRA_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
+define( 'FRA_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
+define( 'FRA_PLUGIN_FILE', __FILE__ );
+define( 'FRA_ENCRYPT_METHOD', 'AES-256-CBC' );
 
 /*
 |--------------------------------------------------------------------------
@@ -92,7 +87,98 @@ class France_Relocation_Assistant {
      * @var string
      */
     const CRON_HOOK = 'fra_weekly_update';
-    
+
+    /*
+    |--------------------------------------------------------------------------
+    | API Key Encryption Methods
+    |--------------------------------------------------------------------------
+    */
+
+    /**
+     * Encrypt a value for secure storage.
+     *
+     * @since 3.6.4
+     * @param string $value Value to encrypt.
+     * @return string Encrypted value (base64 encoded).
+     */
+    public static function encrypt_value( $value ) {
+        if ( empty( $value ) ) {
+            return '';
+        }
+
+        $key = wp_salt( 'auth' );
+        $iv  = openssl_random_pseudo_bytes( openssl_cipher_iv_length( FRA_ENCRYPT_METHOD ) );
+
+        $encrypted = openssl_encrypt( $value, FRA_ENCRYPT_METHOD, $key, 0, $iv );
+
+        return base64_encode( $iv . '::' . $encrypted );
+    }
+
+    /**
+     * Decrypt a stored value.
+     *
+     * @since 3.6.4
+     * @param string $encrypted_value Encrypted value (base64 encoded).
+     * @return string Decrypted value.
+     */
+    public static function decrypt_value( $encrypted_value ) {
+        if ( empty( $encrypted_value ) ) {
+            return '';
+        }
+
+        $key  = wp_salt( 'auth' );
+        $data = base64_decode( $encrypted_value );
+
+        if ( false === strpos( $data, '::' ) ) {
+            // Fallback for unencrypted legacy values.
+            return $encrypted_value;
+        }
+
+        list( $iv, $encrypted ) = explode( '::', $data, 2 );
+
+        return openssl_decrypt( $encrypted, FRA_ENCRYPT_METHOD, $key, 0, $iv );
+    }
+
+    /**
+     * Get the API key (decrypted).
+     *
+     * @since 3.6.4
+     * @return string Decrypted API key.
+     */
+    public static function get_api_key() {
+        // Try new encrypted option first.
+        $encrypted = get_option( 'fra_api_key_encrypted', '' );
+        if ( ! empty( $encrypted ) ) {
+            return self::decrypt_value( $encrypted );
+        }
+
+        // Fallback to old unencrypted option and migrate.
+        $legacy_key = get_option( 'fra_api_key', '' );
+        if ( ! empty( $legacy_key ) ) {
+            self::save_api_key( $legacy_key );
+            delete_option( 'fra_api_key' );
+            return $legacy_key;
+        }
+
+        return '';
+    }
+
+    /**
+     * Save the API key (encrypted).
+     *
+     * @since 3.6.4
+     * @param string $key API key to save.
+     * @return bool Success status.
+     */
+    public static function save_api_key( $key ) {
+        if ( empty( $key ) ) {
+            delete_option( 'fra_api_key_encrypted' );
+            return true;
+        }
+
+        return update_option( 'fra_api_key_encrypted', self::encrypt_value( $key ) );
+    }
+
     /*
     |--------------------------------------------------------------------------
     | Initialization
@@ -692,7 +778,7 @@ class France_Relocation_Assistant {
             'nonce' => wp_create_nonce('fra_nonce'),
             'lastUpdate' => get_option(self::LAST_UPDATE_OPTION),
             'knowledgeBase' => $this->get_knowledge_base(),
-            'aiEnabled' => get_option('fra_enable_ai', false) && !empty(get_option('fra_api_key', '')),
+            'aiEnabled' => get_option( 'fra_enable_ai', false ) && ! empty( self::get_api_key() ),
             'isLoggedIn' => is_user_logged_in(),
             'logoutUrl' => wp_logout_url(home_url('/?logged_out=1')),
             'loginError' => $login_error,
@@ -1302,12 +1388,12 @@ class France_Relocation_Assistant {
      * @return void
      */
     public function register_settings() {
-        // API Key
-        register_setting('fra_settings', 'fra_api_key', array(
-            'type' => 'string',
+        // API Key (encrypted storage - registration for backwards compatibility).
+        register_setting( 'fra_settings', 'fra_api_key_encrypted', array(
+            'type'              => 'string',
             'sanitize_callback' => 'sanitize_text_field',
-            'default' => ''
-        ));
+            'default'           => '',
+        ) );
         
         // AI Model selection
         register_setting('fra_settings', 'fra_api_model', array(
@@ -1365,9 +1451,9 @@ class France_Relocation_Assistant {
             wp_send_json_error('AI responses are not enabled');
         }
         
-        $api_key = get_option('fra_api_key', '');
-        if (empty($api_key)) {
-            wp_send_json_error('API key not configured');
+        $api_key = self::get_api_key();
+        if ( empty( $api_key ) ) {
+            wp_send_json_error( 'API key not configured' );
         }
         
         // Check if user is requesting document/checklist creation

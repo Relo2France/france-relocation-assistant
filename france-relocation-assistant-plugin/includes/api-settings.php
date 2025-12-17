@@ -19,7 +19,7 @@ if (!defined('ABSPATH')) {
  */
 function fra_get_api_config() {
     return array(
-        'api_key'           => get_option('fra_api_key', ''),
+        'api_key'           => France_Relocation_Assistant::get_api_key(),
         'api_model'         => get_option('fra_api_model', 'claude-sonnet-4-20250514'),
         'enable_ai'         => get_option('fra_enable_ai', false),
         'rate_limit'        => get_option('fra_rate_limit', 20), // requests per minute

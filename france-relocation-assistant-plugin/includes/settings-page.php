@@ -1,41 +1,50 @@
 <?php
 /**
  * API Settings Page Template
- * 
+ *
  * @package France_Relocation_Assistant
+ * @since   1.0.0
  */
 
-if (!defined('ABSPATH')) {
+if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-$api_key = get_option('fra_api_key', '');
-$api_model = get_option('fra_api_model', 'claude-sonnet-4-20250514');
-$enable_ai = get_option('fra_enable_ai', false);
-$github_repo = get_option('fra_github_repo', '');
-$update_url = get_option('fra_update_url', '');
-$membership_url = get_option('fra_membership_url', '/membership/');
+// Get current values (API key is now encrypted).
+$api_key        = France_Relocation_Assistant::get_api_key();
+$has_api_key    = ! empty( $api_key );
+$api_model      = get_option( 'fra_api_model', 'claude-sonnet-4-20250514' );
+$enable_ai      = get_option( 'fra_enable_ai', false );
+$github_repo    = get_option( 'fra_github_repo', '' );
+$update_url     = get_option( 'fra_update_url', '' );
+$membership_url = get_option( 'fra_membership_url', '/membership/' );
 
-// Handle form submission
-if (isset($_POST['fra_save_settings']) && check_admin_referer('fra_settings_nonce')) {
-    $api_key = sanitize_text_field(wp_unslash($_POST['fra_api_key'] ?? ''));
-    $api_model = sanitize_text_field(wp_unslash($_POST['fra_api_model'] ?? 'claude-sonnet-4-20250514'));
-    $enable_ai = isset($_POST['fra_enable_ai']) ? true : false;
-    $github_repo = sanitize_text_field(wp_unslash($_POST['fra_github_repo'] ?? ''));
-    $update_url = esc_url_raw(wp_unslash($_POST['fra_update_url'] ?? ''));
-    $membership_url = esc_url_raw(wp_unslash($_POST['fra_membership_url'] ?? '/membership/'));
-    
-    update_option('fra_api_key', $api_key);
-    update_option('fra_api_model', $api_model);
-    update_option('fra_enable_ai', $enable_ai);
-    update_option('fra_github_repo', $github_repo);
-    update_option('fra_update_url', $update_url);
-    update_option('fra_membership_url', $membership_url);
-    
-    // Clear update cache when settings change
-    delete_transient('fra_update_check');
-    
-    echo '<div class="notice notice-success is-dismissible"><p>' . __('Settings saved successfully.', 'france-relocation-assistant') . '</p></div>';
+// Handle form submission.
+if ( isset( $_POST['fra_save_settings'] ) && check_admin_referer( 'fra_settings_nonce' ) ) {
+    $new_api_key    = isset( $_POST['fra_api_key'] ) ? sanitize_text_field( wp_unslash( $_POST['fra_api_key'] ) ) : '';
+    $api_model      = isset( $_POST['fra_api_model'] ) ? sanitize_text_field( wp_unslash( $_POST['fra_api_model'] ) ) : 'claude-sonnet-4-20250514';
+    $enable_ai      = isset( $_POST['fra_enable_ai'] );
+    $github_repo    = isset( $_POST['fra_github_repo'] ) ? sanitize_text_field( wp_unslash( $_POST['fra_github_repo'] ) ) : '';
+    $update_url     = isset( $_POST['fra_update_url'] ) ? esc_url_raw( wp_unslash( $_POST['fra_update_url'] ) ) : '';
+    $membership_url = isset( $_POST['fra_membership_url'] ) ? esc_url_raw( wp_unslash( $_POST['fra_membership_url'] ) ) : '/membership/';
+
+    // Only update API key if a new one is provided (not the placeholder).
+    if ( ! empty( $new_api_key ) && '••••••••••••••••' !== $new_api_key ) {
+        France_Relocation_Assistant::save_api_key( $new_api_key );
+        $api_key     = $new_api_key;
+        $has_api_key = true;
+    }
+
+    update_option( 'fra_api_model', $api_model );
+    update_option( 'fra_enable_ai', $enable_ai );
+    update_option( 'fra_github_repo', $github_repo );
+    update_option( 'fra_update_url', $update_url );
+    update_option( 'fra_membership_url', $membership_url );
+
+    // Clear update cache when settings change.
+    delete_transient( 'fra_update_check' );
+
+    echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Settings saved successfully.', 'france-relocation-assistant' ) . '</p></div>';
 }
 
 // Test API connection if requested
@@ -119,10 +128,13 @@ if (isset($_POST['fra_test_api']) && check_admin_referer('fra_settings_nonce')) 
                     
                     <tr>
                         <th scope="row">
-                            <label for="fra_api_key"><?php _e('Anthropic API Key', 'france-relocation-assistant'); ?></label>
+                            <label for="fra_api_key"><?php esc_html_e( 'Anthropic API Key', 'france-relocation-assistant' ); ?></label>
                         </th>
                         <td>
-                            <input type="password" name="fra_api_key" id="fra_api_key" value="<?php echo esc_attr($api_key); ?>" class="regular-text" autocomplete="off">
+                            <input type="password" name="fra_api_key" id="fra_api_key" value="<?php echo $has_api_key ? '••••••••••••••••' : ''; ?>" class="regular-text" autocomplete="off" placeholder="<?php echo $has_api_key ? esc_attr__( 'Key saved (enter new to replace)', 'france-relocation-assistant' ) : esc_attr__( 'Enter API key', 'france-relocation-assistant' ); ?>">
+                            <?php if ( $has_api_key ) : ?>
+                                <p class="description" style="color: green;">✓ <?php esc_html_e( 'API key is saved (encrypted)', 'france-relocation-assistant' ); ?></p>
+                            <?php endif; ?>
                             <button type="button" class="button" onclick="toggleApiKeyVisibility()" id="toggle-api-key">
                                 <?php _e('Show', 'france-relocation-assistant'); ?>
                             </button>
