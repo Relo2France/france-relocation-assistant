@@ -3,7 +3,7 @@
  * Plugin Name: France Relocation GitHub Sync
  * Plugin URI: https://relo2france.com
  * Description: Automatically syncs plugins from GitHub by polling for changes every 15 minutes. Workaround for WordPress.com webhook limitations.
- * Version: 1.0.0
+ * Version: 1.0.1
  * Author: Relo2France
  * Author URI: https://relo2france.com
  * License: GPL v2 or later
@@ -44,8 +44,9 @@ class FRA_GitHub_Sync {
         // Admin menu for manual trigger and status
         add_action('admin_menu', array($this, 'add_admin_menu'));
 
-        // AJAX handler for manual sync
+        // AJAX handlers
         add_action('wp_ajax_fra_manual_github_sync', array($this, 'ajax_manual_sync'));
+        add_action('wp_ajax_fra_force_github_update', array($this, 'ajax_force_update'));
 
         // Cleanup on deactivation
         register_deactivation_hook(__FILE__, array($this, 'deactivate'));
@@ -173,50 +174,49 @@ class FRA_GitHub_Sync {
      * Update a single plugin via WP Pusher
      */
     private function update_single_plugin($package_name) {
-        // Method 1: Try WP Pusher's internal API
-        if (class_exists('WPPusher\WPPusher')) {
+        $this->log("Updating plugin: {$package_name}");
+
+        // Get WP Pusher plugin data from database
+        global $wpdb;
+        $table = $wpdb->prefix . 'wppusher_plugins';
+
+        if ($wpdb->get_var("SHOW TABLES LIKE '{$table}'") !== $table) {
+            $this->log('WP Pusher table not found');
+            return $this->pull_from_github($package_name);
+        }
+
+        $plugin = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$table} WHERE directory = %s",
+            $package_name
+        ));
+
+        if (!$plugin) {
+            $this->log("Plugin not found in WP Pusher: {$package_name}");
+            return $this->pull_from_github($package_name);
+        }
+
+        $this->log("Found WP Pusher record for: {$package_name}, attempting update...");
+
+        // Try to use WP Pusher's Plugin class directly
+        if (class_exists('Pusher\Storage\PluginRepository')) {
             try {
-                $pusher = \WPPusher\WPPusher::init();
-                if (method_exists($pusher, 'pushToInstall')) {
-                    // This might work depending on WP Pusher version
-                    $this->log("Attempting WP Pusher update for: {$package_name}");
+                $container = \Pusher\Pusher::getInstance()->getContainer();
+                $repo = $container->resolve('Pusher\Storage\PluginRepository');
+                $pusherPlugin = $repo->fromSlug($package_name);
+
+                if ($pusherPlugin) {
+                    $installer = $container->resolve('Pusher\Git\PluginInstaller');
+                    $installer->install($pusherPlugin);
+                    $this->log("WP Pusher update successful for: {$package_name}");
+                    return true;
                 }
             } catch (Exception $e) {
                 $this->log('WP Pusher API error: ' . $e->getMessage());
             }
         }
 
-        // Method 2: Simulate the update action WP Pusher uses
-        // Get WP Pusher plugin data from database
-        global $wpdb;
-        $table = $wpdb->prefix . 'wppusher_plugins';
-
-        if ($wpdb->get_var("SHOW TABLES LIKE '{$table}'") === $table) {
-            $plugin = $wpdb->get_row($wpdb->prepare(
-                "SELECT * FROM {$table} WHERE directory = %s",
-                $package_name
-            ));
-
-            if ($plugin) {
-                $this->log("Found WP Pusher plugin record for: {$package_name}");
-
-                // Try to trigger update through WordPress plugin upgrader
-                if (!function_exists('request_filesystem_credentials')) {
-                    require_once ABSPATH . 'wp-admin/includes/file.php';
-                }
-                if (!class_exists('Plugin_Upgrader')) {
-                    require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
-                }
-
-                // Use WP Pusher's own update mechanism if available
-                do_action('wppusher_plugin_update', $package_name);
-
-                return true;
-            }
-        }
-
-        // Method 3: Direct file update from GitHub
-        $this->log("Attempting direct GitHub pull for: {$package_name}");
+        // Fallback: Direct file update from GitHub
+        $this->log("Falling back to direct GitHub pull for: {$package_name}");
         return $this->pull_from_github($package_name);
     }
 
@@ -351,6 +351,9 @@ class FRA_GitHub_Sync {
                     <button type="button" class="button button-primary" id="fra-manual-sync">
                         Check Now
                     </button>
+                    <button type="button" class="button" id="fra-force-update" style="margin-left: 10px;">
+                        Force Update All
+                    </button>
                     <span id="fra-sync-status" style="margin-left: 10px;"></span>
                 </p>
             </div>
@@ -391,6 +394,31 @@ class FRA_GitHub_Sync {
                     }
                 });
             });
+
+            $('#fra-force-update').on('click', function() {
+                var $btn = $(this);
+                var $status = $('#fra-sync-status');
+
+                if (!confirm('This will force update all plugins from GitHub. Continue?')) {
+                    return;
+                }
+
+                $btn.prop('disabled', true);
+                $status.text('Forcing update...');
+
+                $.post(ajaxurl, {
+                    action: 'fra_force_github_update',
+                    nonce: '<?php echo wp_create_nonce('fra_github_sync'); ?>'
+                }, function(response) {
+                    $btn.prop('disabled', false);
+                    if (response.success) {
+                        $status.html('<span style="color: green;">' + response.data.message + '</span>');
+                        setTimeout(function() { location.reload(); }, 2000);
+                    } else {
+                        $status.html('<span style="color: red;">' + response.data.message + '</span>');
+                    }
+                });
+            });
         });
         </script>
         <?php
@@ -417,6 +445,49 @@ class FRA_GitHub_Sync {
             wp_send_json_success(array(
                 'message' => 'No updates available. Already on latest commit.',
                 'updated' => false,
+            ));
+        }
+    }
+
+    /**
+     * AJAX handler for force update
+     */
+    public function ajax_force_update() {
+        check_ajax_referer('fra_github_sync', 'nonce');
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(array('message' => 'Permission denied'));
+        }
+
+        // Clear stored commit to force update detection
+        delete_option('fra_github_last_commit');
+
+        // Get latest commit from GitHub
+        $github_commit = $this->get_latest_github_commit();
+
+        if (!$github_commit) {
+            wp_send_json_error(array('message' => 'Failed to connect to GitHub'));
+            return;
+        }
+
+        // Trigger updates
+        $result = $this->trigger_wp_pusher_update();
+
+        // Store the new commit
+        update_option('fra_github_last_commit', $github_commit);
+        update_option('fra_github_last_check', current_time('mysql'));
+        update_option('fra_github_last_update', current_time('mysql'));
+
+        // Reactivate plugins
+        $this->reactivate_plugins();
+
+        if ($result) {
+            wp_send_json_success(array(
+                'message' => 'Force update completed! Reloading...',
+            ));
+        } else {
+            wp_send_json_success(array(
+                'message' => 'Update attempted. Check if plugins updated.',
             ));
         }
     }
