@@ -3925,7 +3925,7 @@ Please provide a helpful, accurate answer about their health insurance coverage 
      */
     public function register_admin_menu() {
         add_submenu_page(
-            'france-relocation', // Parent slug (main plugin)
+            'france-relocation-assistant', // Parent slug (main FR Assistant plugin)
             __('Member Tools', 'fra-member-tools'),
             __('Member Tools', 'fra-member-tools'),
             'manage_options',
