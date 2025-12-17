@@ -16,6 +16,7 @@ import {
 import { Drawer } from '@/components/shared/Modal';
 import { useUpdateTask, useUpdateTaskStatus, useDeleteTask } from '@/hooks/useApi';
 import type { Task, TaskStatus, TaskPriority } from '@/types';
+import TaskChecklist from './TaskChecklist';
 
 interface TaskDetailProps {
   task: Task | null;
@@ -155,6 +156,11 @@ export default function TaskDetail({ task, isOpen, onClose }: TaskDetailProps) {
             )}
           </div>
         )}
+      </div>
+
+      {/* Task Checklist */}
+      <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+        <TaskChecklist taskId={task.id} editable={true} />
       </div>
 
       {/* Properties grid */}

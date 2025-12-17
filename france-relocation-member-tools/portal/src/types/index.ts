@@ -267,6 +267,334 @@ export interface PortalApi {
   nonce: string;
 }
 
+// Full Profile types (30+ fields for visa applications)
+export interface MemberProfile {
+  // Personal Information
+  legal_first_name: string;
+  legal_middle_name: string;
+  legal_last_name: string;
+  date_of_birth: string;
+  nationality: string;
+  passport_number: string;
+  passport_expiry: string;
+
+  // Applicant Information
+  applicants: ApplicantType;
+  spouse_legal_first_name: string;
+  spouse_legal_last_name: string;
+  spouse_date_of_birth: string;
+  spouse_name: string;
+  spouse_work_status: WorkStatus;
+  num_children: number;
+  children_ages: string;
+  has_pets: PetType;
+  pet_details: string;
+
+  // Visa & Employment
+  visa_type: ProfileVisaType;
+  employment_status: WorkStatus;
+  work_in_france: WorkInFranceType;
+  industry: string;
+  employer_name: string;
+
+  // Location Information
+  current_country: string;
+  current_state: string;
+  current_city: string;
+  birth_state: string;
+  spouse_birth_state: string;
+  marriage_state: string;
+  marriage_country: string;
+  target_location: string;
+  application_location: ApplicationLocation;
+
+  // Financial Information
+  financial_resources: FinancialRange;
+  income_sources: string;
+
+  // Metadata
+  profile_completion: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export type ApplicantType = 'alone' | 'spouse' | 'spouse_kids' | 'kids_only';
+export type WorkStatus = 'employed' | 'self_employed' | 'retired' | 'not_working';
+export type PetType = 'no' | 'dogs' | 'cats' | 'both' | 'other';
+export type ProfileVisaType = 'undecided' | 'visitor' | 'talent_passport' | 'employee' | 'entrepreneur' | 'student' | 'family' | 'spouse_french' | 'retiree';
+export type WorkInFranceType = 'no' | 'yes_local' | 'yes_remote' | 'yes_self' | 'undecided';
+export type ApplicationLocation = 'us' | 'france';
+export type FinancialRange = 'under_50k' | '50k_100k' | '100k_200k' | '200k_500k' | 'over_500k';
+
+// Checklist types
+export interface Checklist {
+  id: string;
+  title: string;
+  type: ChecklistType;
+  visa_type: string;
+  items: ChecklistItem[];
+  completion_percentage: number;
+}
+
+export interface ChecklistItem {
+  id: string;
+  checklist_type: ChecklistType;
+  title: string;
+  description?: string;
+  lead_time: string;
+  status: ChecklistItemStatus;
+  handled_own: boolean;
+  notes: string;
+  due_date?: string;
+  completed_at?: string;
+  sort_order: number;
+}
+
+export type ChecklistType = 'visa-application' | 'relocation' | 'task-checklist';
+export type ChecklistItemStatus = 'pending' | 'in_progress' | 'complete';
+
+// Task Checklist (mini checklists within tasks)
+export interface TaskChecklist {
+  task_id: number;
+  items: TaskChecklistItem[];
+}
+
+export interface TaskChecklistItem {
+  id: string;
+  title: string;
+  completed: boolean;
+  sort_order: number;
+}
+
+// Document Generation types
+export interface GeneratedDocument {
+  id: number;
+  project_id: number;
+  user_id: number;
+  document_type: GeneratedDocumentType;
+  document_type_label: string;
+  language: 'en' | 'fr';
+  filename: string;
+  file_url: string;
+  answers: Record<string, unknown>;
+  created_at: string;
+}
+
+export type GeneratedDocumentType = 'cover-letter' | 'financial-statement' | 'no-work-attestation' | 'accommodation-letter';
+
+export interface DocumentGenerationRequest {
+  document_type: GeneratedDocumentType;
+  language: 'en' | 'fr';
+  answers: Record<string, unknown>;
+}
+
+export interface DocumentGenerationResponse {
+  success: boolean;
+  document?: GeneratedDocument;
+  preview?: DocumentPreview;
+  error?: string;
+}
+
+export interface DocumentPreview {
+  type: GeneratedDocumentType;
+  language: string;
+  content: DocumentContent;
+}
+
+export interface DocumentContent {
+  header?: {
+    date: string;
+    recipient: string[];
+  };
+  subject?: string;
+  salutation?: string;
+  paragraphs: string[];
+  closing?: string;
+  signature?: {
+    line: string;
+    name: string;
+    date_line: string;
+  };
+}
+
+// Glossary types
+export interface GlossaryCategory {
+  id: string;
+  title: string;
+  terms: GlossaryTerm[];
+}
+
+export interface GlossaryTerm {
+  id: string;
+  title: string;
+  french?: string;
+  short: string;
+  full?: string;
+  category: string;
+}
+
+// AI Verification types
+export interface VerificationRequest {
+  file_id: number;
+  verification_type: VerificationType;
+}
+
+export interface VerificationResult {
+  success: boolean;
+  status: VerificationStatus;
+  message: string;
+  details?: VerificationDetails;
+  error?: string;
+}
+
+export interface VerificationDetails {
+  coverage_type?: string;
+  coverage_territory?: string;
+  coverage_duration?: string;
+  start_date?: string;
+  end_date?: string;
+  provider?: string;
+  issues?: string[];
+  recommendations?: string[];
+}
+
+export type VerificationType = 'health-insurance' | 'financial' | 'accommodation';
+export type VerificationStatus = 'passed' | 'failed' | 'needs_review' | 'error';
+
+// Personalized Guide types
+export interface PersonalizedGuide {
+  id: string;
+  title: string;
+  type: GuideType;
+  icon: string;
+  description: string;
+  is_personalized: boolean;
+  sections: GuideSection[];
+  metadata?: GuideMetadata;
+}
+
+export interface GuideSection {
+  id: string;
+  title: string;
+  content: string;
+  tips?: string[];
+  warnings?: string[];
+}
+
+export interface GuideMetadata {
+  visa_type?: string;
+  states?: StateApostilleInfo[];
+  estimated_time?: string;
+  last_updated?: string;
+}
+
+export interface StateApostilleInfo {
+  state: string;
+  state_name: string;
+  document: string;
+  agency: string;
+  method: string;
+  cost: string;
+  processing_time: string;
+  website?: string;
+  notes?: string;
+}
+
+export type GuideType = 'visa-application' | 'apostille' | 'pet-relocation' | 'french-mortgages' | 'bank-ratings' | 'healthcare' | 'housing' | 'general';
+
+// Knowledge Base Chat types
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: string;
+  sources?: ChatSource[];
+}
+
+export interface ChatSource {
+  title: string;
+  category: string;
+  relevance: number;
+}
+
+export interface ChatRequest {
+  message: string;
+  context?: string;
+  include_practice?: boolean;
+}
+
+export interface ChatResponse {
+  success: boolean;
+  message?: string;
+  sources?: ChatSource[];
+  is_premium_topic?: boolean;
+  error?: string;
+}
+
+export interface KnowledgeCategory {
+  id: string;
+  title: string;
+  icon: string;
+  description: string;
+  topics: KnowledgeTopic[];
+}
+
+export interface KnowledgeTopic {
+  id: string;
+  title: string;
+  keywords: string[];
+  is_premium: boolean;
+}
+
+// MemberPress types
+export interface Subscription {
+  id: number;
+  membership_id: number;
+  membership_title: string;
+  status: SubscriptionStatus;
+  status_label: string;
+  price: string;
+  billing_period: string;
+  created_at: string;
+  expires_at: string | null;
+  next_billing_date: string | null;
+  can_cancel: boolean;
+  can_suspend: boolean;
+  can_resume: boolean;
+  can_upgrade: boolean;
+}
+
+export type SubscriptionStatus = 'active' | 'cancelled' | 'suspended' | 'expired' | 'pending';
+
+export interface Payment {
+  id: number;
+  subscription_id: number;
+  amount: string;
+  status: PaymentStatus;
+  status_label: string;
+  payment_method: string;
+  transaction_id: string;
+  created_at: string;
+}
+
+export type PaymentStatus = 'complete' | 'pending' | 'failed' | 'refunded';
+
+export interface MembershipInfo {
+  is_member: boolean;
+  membership_level: string | null;
+  membership_id: number | null;
+  expires_at: string | null;
+  subscriptions: Subscription[];
+  payments: Payment[];
+}
+
+export interface UpgradeOption {
+  id: number;
+  title: string;
+  price: string;
+  features: string[];
+}
+
 // WordPress global types
 declare global {
   interface Window {
