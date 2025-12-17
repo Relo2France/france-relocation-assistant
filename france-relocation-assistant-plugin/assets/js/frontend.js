@@ -26,18 +26,41 @@
         
         /**
          * Check for auth-related URL parameters and display appropriate messages
-         * Handles: login_error, logged_out, logged_in, new_signup
+         * Handles: login_error, logged_out, logged_in, new_signup, view=signup, view=login
          */
         checkAuthMessages: function() {
             var urlParams = new URLSearchParams(window.location.search);
             var messagesContainer = document.getElementById('fra-chat-messages');
-            
+
             // Clean URL helper
             var cleanUrl = function() {
                 var newUrl = window.location.pathname;
                 window.history.replaceState({}, document.title, newUrl);
             };
-            
+
+            // DIRECT VIEW - Open signup or login view directly via ?view=signup or ?view=login
+            var viewParam = urlParams.get('view');
+            if (viewParam === 'signup' || viewParam === 'login') {
+                cleanUrl();
+                // Wait for the auth system to initialize, then show the view
+                setTimeout(function() {
+                    if (window.FRAInChatAuth) {
+                        window.FRAInChatAuth.showView(viewParam);
+                    } else {
+                        // Fallback: try the global showAuthView function
+                        var targetView = document.getElementById('fra-inchat-' + viewParam);
+                        if (targetView) {
+                            targetView.style.display = 'flex';
+                            var chatPanel = document.querySelector('.fra-chat-panel');
+                            if (chatPanel) {
+                                chatPanel.classList.add('showing-inchat-auth');
+                            }
+                        }
+                    }
+                }, 300);
+                return;
+            }
+
             // LOGIN ERROR - Show error and login form
             if (urlParams.get('login_error') === '1') {
                 cleanUrl();
