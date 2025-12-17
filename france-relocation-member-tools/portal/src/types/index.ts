@@ -217,6 +217,56 @@ export interface NavSection {
   items: NavItem[];
 }
 
+// Portal Settings types (from PHP admin settings)
+export interface PortalSettings {
+  colors: {
+    primary: string;
+    secondary: string;
+    accent: string;
+    sidebarBg: string;
+    sidebarText: string;
+    headerBg: string;
+  };
+  layout: {
+    showWpHeader: boolean;
+    showWpFooter: boolean;
+    showPromoBanner: boolean;
+    sidebarPosition: 'left' | 'right';
+    sidebarCollapsed: boolean;
+  };
+  branding: {
+    title: string;
+    logoUrl: string;
+  };
+  features: {
+    notifications: boolean;
+    fileUpload: boolean;
+  };
+  menu: MenuItem[];
+  customCss: string;
+}
+
+export interface MenuItem {
+  id: string;
+  label: string;
+  icon: string;
+  path: string;
+}
+
+export interface PortalUser {
+  id: number;
+  email: string;
+  displayName: string;
+  firstName: string;
+  lastName: string;
+  avatar: string;
+}
+
+export interface PortalApi {
+  root: string;
+  nonce: string;
+}
+
 // WordPress global types
 declare global {
   interface Window {
@@ -228,5 +278,8 @@ declare global {
       pluginUrl: string;
       isAdmin: boolean;
     };
+    PORTAL_SETTINGS?: PortalSettings;
+    PORTAL_USER?: PortalUser;
+    PORTAL_API?: PortalApi;
   }
 }

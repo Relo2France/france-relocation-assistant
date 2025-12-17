@@ -326,6 +326,7 @@ final class FRA_Member_Tools {
             'includes/class-framt-project.php',
             'includes/class-framt-task.php',
             'includes/class-framt-portal-api.php',
+            'includes/class-framt-portal-settings.php',
         );
 
         foreach ($required_files as $file) {
