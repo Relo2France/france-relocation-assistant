@@ -3,7 +3,7 @@
  * Plugin Name: France Relocation Assistant
  * Plugin URI: https://relo2france.com
  * Description: AI-powered US to France relocation guidance with visa info, property guides, healthcare, taxes, and practical insights. Features weekly auto-updates, "In Practice" real-world advice, and comprehensive knowledge base.
- * Version: 3.6.1
+ * Version: 3.6.2
  * Author: Relo2France
  * Author URI: https://relo2france.com
  * License: GPL v2 or later
@@ -42,7 +42,7 @@ if (!defined('ABSPATH')) {
 | Plugin Constants
 |--------------------------------------------------------------------------
 */
-define('FRA_VERSION', '3.6.1');
+define('FRA_VERSION', '3.6.2');
 define('FRA_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('FRA_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('FRA_PLUGIN_BASENAME', plugin_basename(__FILE__));
@@ -135,6 +135,9 @@ class France_Relocation_Assistant {
         // Admin interface
         add_action('admin_menu', array($this, 'add_admin_menu'));
         add_action('admin_init', array($this, 'register_settings'));
+
+        // Auto-reactivate plugins after WP Pusher updates (WordPress.com hosted compatibility)
+        add_action('admin_init', array($this, 'auto_reactivate_plugins'), 1);
         
         // AJAX handlers (logged-in and public)
         add_action('wp_ajax_fra_search', array($this, 'ajax_search'));
@@ -1260,6 +1263,38 @@ class France_Relocation_Assistant {
     | Settings Registration
     |--------------------------------------------------------------------------
     */
+
+    /**
+     * Auto-reactivate France Relocation plugins after updates
+     *
+     * This handles WordPress.com hosted environments where mu-plugins
+     * aren't available. Runs on admin_init to ensure plugins stay active.
+     *
+     * @return void
+     */
+    public function auto_reactivate_plugins() {
+        if (!current_user_can('activate_plugins')) {
+            return;
+        }
+
+        // Include plugin functions if not available
+        if (!function_exists('is_plugin_active')) {
+            include_once ABSPATH . 'wp-admin/includes/plugin.php';
+        }
+
+        $plugins_to_check = array(
+            'france-relocation-assistant-plugin/france-relocation-assistant.php',
+            'france-relocation-member-tools/france-relocation-member-tools.php',
+        );
+
+        foreach ($plugins_to_check as $plugin) {
+            $plugin_file = WP_PLUGIN_DIR . '/' . $plugin;
+            if (file_exists($plugin_file) && !is_plugin_active($plugin)) {
+                // Silently reactivate the plugin
+                activate_plugin($plugin, '', false, true);
+            }
+        }
+    }
 
     /**
      * Register plugin settings with WordPress
