@@ -3,7 +3,7 @@
  * Plugin Name: France Relocation GitHub Sync
  * Plugin URI: https://relo2france.com
  * Description: Automatically syncs plugins from GitHub by polling for changes every 15 minutes. Workaround for WordPress.com webhook limitations.
- * Version: 1.0.2
+ * Version: 1.0.3
  * Author: Relo2France
  * Author URI: https://relo2france.com
  * License: GPL v2 or later
@@ -48,6 +48,7 @@ class FRA_GitHub_Sync {
         add_action('wp_ajax_fra_manual_github_sync', array($this, 'ajax_manual_sync'));
         add_action('wp_ajax_fra_force_github_update', array($this, 'ajax_force_update'));
         add_action('wp_ajax_fra_clear_update_notice', array($this, 'ajax_clear_notice'));
+        add_action('wp_ajax_fra_clear_sync_logs', array($this, 'ajax_clear_logs'));
 
         // Admin notice when updates are available
         add_action('admin_notices', array($this, 'show_update_notice'));
@@ -231,16 +232,25 @@ class FRA_GitHub_Sync {
     }
 
     /**
-     * Pull plugin directly from GitHub (fallback method)
+     * Pull plugin directly from GitHub using WordPress Plugin_Upgrader
      */
     private function pull_from_github($package_name) {
+        // Build zip URL for specific subdirectory
+        // GitHub doesn't support subdirectory downloads, so we use a workaround
         $zip_url = sprintf(
             'https://github.com/%s/archive/refs/heads/%s.zip',
             self::GITHUB_REPO,
             self::GITHUB_BRANCH
         );
 
-        // Download zip
+        $this->log("Downloading from: {$zip_url}");
+
+        // Use WordPress's built-in upgrader
+        require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
+        require_once ABSPATH . 'wp-admin/includes/file.php';
+        require_once ABSPATH . 'wp-admin/includes/plugin.php';
+
+        // Download the zip
         $tmp_file = download_url($zip_url);
 
         if (is_wp_error($tmp_file)) {
@@ -248,12 +258,12 @@ class FRA_GitHub_Sync {
             return false;
         }
 
-        // Extract and copy files
+        // Extract to temp directory
         WP_Filesystem();
         global $wp_filesystem;
 
-        $plugin_dir = WP_PLUGIN_DIR . '/' . $package_name;
         $tmp_dir = get_temp_dir() . 'fra-github-sync-' . time();
+        wp_mkdir_p($tmp_dir);
 
         $unzip_result = unzip_file($tmp_file, $tmp_dir);
         @unlink($tmp_file);
@@ -267,10 +277,15 @@ class FRA_GitHub_Sync {
         $extracted_dirs = glob($tmp_dir . '/*', GLOB_ONLYDIR);
         if (empty($extracted_dirs)) {
             $this->log('No extracted directory found');
+            $wp_filesystem->delete($tmp_dir, true);
             return false;
         }
 
         $source_dir = $extracted_dirs[0] . '/' . $package_name;
+        $plugin_dir = WP_PLUGIN_DIR . '/' . $package_name;
+
+        $this->log("Source: {$source_dir}");
+        $this->log("Destination: {$plugin_dir}");
 
         if (!is_dir($source_dir)) {
             $this->log("Source directory not found: {$source_dir}");
@@ -278,8 +293,17 @@ class FRA_GitHub_Sync {
             return false;
         }
 
-        // Remove old plugin and copy new
-        $wp_filesystem->delete($plugin_dir, true);
+        // Deactivate plugin before updating
+        $plugin_file = $this->plugins[$package_name] ?? '';
+        if ($plugin_file && is_plugin_active($plugin_file)) {
+            deactivate_plugins($plugin_file, true);
+            $this->log("Deactivated: {$plugin_file}");
+        }
+
+        // Remove old plugin directory and copy new
+        if (is_dir($plugin_dir)) {
+            $wp_filesystem->delete($plugin_dir, true);
+        }
         $copy_result = copy_dir($source_dir, $plugin_dir);
 
         // Cleanup
@@ -388,6 +412,24 @@ class FRA_GitHub_Sync {
                 <p><strong>Repository:</strong> <?php echo esc_html(self::GITHUB_REPO); ?></p>
                 <p><strong>Branch:</strong> <?php echo esc_html(self::GITHUB_BRANCH); ?></p>
             </div>
+
+            <?php $logs = $this->get_logs(); ?>
+            <?php if (!empty($logs)) : ?>
+            <div class="card" style="max-width: 600px; padding: 20px; margin-top: 20px;">
+                <h2>Recent Logs</h2>
+                <div style="max-height: 300px; overflow-y: auto; background: #f0f0f0; padding: 10px; font-family: monospace; font-size: 12px;">
+                    <?php foreach (array_reverse($logs) as $log) : ?>
+                        <div style="margin-bottom: 5px;">
+                            <span style="color: #666;">[<?php echo esc_html($log['time']); ?>]</span>
+                            <?php echo esc_html($log['message']); ?>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+                <p style="margin-top: 10px;">
+                    <button type="button" class="button" id="fra-clear-logs">Clear Logs</button>
+                </p>
+            </div>
+            <?php endif; ?>
         </div>
 
         <script>
@@ -428,6 +470,17 @@ class FRA_GitHub_Sync {
                     if (response.success) {
                         $status.html('<span style="color: green;">Notice cleared!</span>');
                         setTimeout(function() { location.reload(); }, 1000);
+                    }
+                });
+            });
+
+            $('#fra-clear-logs').on('click', function() {
+                $.post(ajaxurl, {
+                    action: 'fra_clear_sync_logs',
+                    nonce: '<?php echo wp_create_nonce('fra_github_sync'); ?>'
+                }, function(response) {
+                    if (response.success) {
+                        location.reload();
                     }
                 });
             });
@@ -519,6 +572,20 @@ class FRA_GitHub_Sync {
     }
 
     /**
+     * AJAX handler for clearing sync logs
+     */
+    public function ajax_clear_logs() {
+        check_ajax_referer('fra_github_sync', 'nonce');
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(array('message' => 'Permission denied'));
+        }
+
+        $this->clear_logs();
+        wp_send_json_success(array('message' => 'Logs cleared'));
+    }
+
+    /**
      * Show admin notice when updates are available
      */
     public function show_update_notice() {
@@ -543,9 +610,33 @@ class FRA_GitHub_Sync {
      * Log messages for debugging
      */
     private function log($message) {
+        // Always log to our custom log
+        $logs = get_option('fra_github_sync_log', array());
+        $logs[] = array(
+            'time' => current_time('mysql'),
+            'message' => $message,
+        );
+        // Keep only last 50 entries
+        $logs = array_slice($logs, -50);
+        update_option('fra_github_sync_log', $logs);
+
         if (defined('WP_DEBUG') && WP_DEBUG) {
             error_log('[FRA GitHub Sync] ' . $message);
         }
+    }
+
+    /**
+     * Get recent logs
+     */
+    public function get_logs() {
+        return get_option('fra_github_sync_log', array());
+    }
+
+    /**
+     * Clear logs
+     */
+    public function clear_logs() {
+        delete_option('fra_github_sync_log');
     }
 
     /**
