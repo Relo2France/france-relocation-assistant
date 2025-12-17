@@ -9,45 +9,16 @@ import {
   HelpCircle,
   ChevronLeft,
   ChevronRight,
-  FolderKanban,
+  FolderOpen,
   BookOpen,
   Calendar,
+  LucideIcon,
 } from 'lucide-react';
 import { usePortalStore } from '@/store';
-import type { NavSection } from '@/types';
+import type { MenuItem } from '@/types';
 
-const navigationSections: NavSection[] = [
-  {
-    id: 'project',
-    label: 'PROJECT',
-    items: [
-      { id: 'dashboard', label: 'Dashboard', icon: 'LayoutDashboard', path: '/dashboard' },
-      { id: 'tasks', label: 'Tasks', icon: 'CheckSquare', path: '/tasks' },
-      { id: 'timeline', label: 'Timeline', icon: 'Calendar', path: '/timeline' },
-      { id: 'messages', label: 'Messages', icon: 'MessageSquare', path: '/messages' },
-    ],
-  },
-  {
-    id: 'resources',
-    label: 'RESOURCES',
-    items: [
-      { id: 'documents', label: 'Documents', icon: 'FileText', path: '/documents' },
-      { id: 'guides', label: 'Guides', icon: 'BookOpen', path: '/guides' },
-      { id: 'files', label: 'Files', icon: 'FolderKanban', path: '/files' },
-    ],
-  },
-  {
-    id: 'account',
-    label: 'ACCOUNT',
-    items: [
-      { id: 'family', label: 'Family Members', icon: 'Users', path: '/family' },
-      { id: 'settings', label: 'Settings', icon: 'Settings', path: '/settings' },
-      { id: 'help', label: 'Help & Support', icon: 'HelpCircle', path: '/help' },
-    ],
-  },
-];
-
-const iconComponents: Record<string, React.ComponentType<{ className?: string }>> = {
+// Map icon names to components
+const iconComponents: Record<string, LucideIcon> = {
   LayoutDashboard,
   CheckSquare,
   FileText,
@@ -55,13 +26,50 @@ const iconComponents: Record<string, React.ComponentType<{ className?: string }>
   Users,
   Settings,
   HelpCircle,
-  FolderKanban,
+  FolderOpen,
+  FolderKanban: FolderOpen,
   BookOpen,
   Calendar,
 };
 
+// Group menu items into sections for display
+const groupMenuItems = (items: MenuItem[]) => {
+  const sections = [
+    {
+      id: 'project',
+      label: 'PROJECT',
+      itemIds: ['dashboard', 'tasks', 'timeline', 'messages'],
+    },
+    {
+      id: 'resources',
+      label: 'RESOURCES',
+      itemIds: ['documents', 'guides', 'files'],
+    },
+    {
+      id: 'account',
+      label: 'ACCOUNT',
+      itemIds: ['family', 'settings', 'help'],
+    },
+  ];
+
+  return sections
+    .map((section) => ({
+      ...section,
+      items: items.filter((item) => section.itemIds.includes(item.id)),
+    }))
+    .filter((section) => section.items.length > 0);
+};
+
 export default function Sidebar() {
-  const { sidebarCollapsed, toggleSidebar, activeView, setActiveView } = usePortalStore();
+  const { sidebarCollapsed, toggleSidebar, activeView, setActiveView, settings } = usePortalStore();
+  const menuItems = settings.menu;
+  const sections = groupMenuItems(menuItems);
+
+  // Apply custom colors from settings
+  const sidebarStyle = {
+    '--sidebar-bg': settings.colors.sidebarBg,
+    '--sidebar-text': settings.colors.sidebarText,
+  } as React.CSSProperties;
 
   return (
     <aside
@@ -69,19 +77,36 @@ export default function Sidebar() {
         'sidebar flex flex-col',
         sidebarCollapsed ? 'sidebar-collapsed' : 'sidebar-expanded'
       )}
+      style={sidebarStyle}
     >
       {/* Logo */}
       <div className="flex items-center h-16 px-4 border-b border-gray-700/50">
         {!sidebarCollapsed && (
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-primary-500 flex items-center justify-center">
-              <span className="text-white font-bold text-sm">R2F</span>
-            </div>
-            <span className="font-semibold text-sidebar-textActive">Members Portal</span>
+            {settings.branding.logoUrl ? (
+              <img
+                src={settings.branding.logoUrl}
+                alt={settings.branding.title}
+                className="h-8 w-auto"
+              />
+            ) : (
+              <div
+                className="w-8 h-8 rounded-lg flex items-center justify-center"
+                style={{ backgroundColor: settings.colors.primary }}
+              >
+                <span className="text-white font-bold text-sm">R2F</span>
+              </div>
+            )}
+            <span className="font-semibold text-sidebar-textActive">
+              {settings.branding.title}
+            </span>
           </div>
         )}
         {sidebarCollapsed && (
-          <div className="w-8 h-8 rounded-lg bg-primary-500 flex items-center justify-center mx-auto">
+          <div
+            className="w-8 h-8 rounded-lg flex items-center justify-center mx-auto"
+            style={{ backgroundColor: settings.colors.primary }}
+          >
             <span className="text-white font-bold text-sm">R</span>
           </div>
         )}
@@ -89,7 +114,7 @@ export default function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-4 scrollbar-thin">
-        {navigationSections.map((section) => (
+        {sections.map((section) => (
           <div key={section.id} className="mb-6">
             {!sidebarCollapsed && (
               <h3 className="px-4 mb-2 text-xs font-semibold text-sidebar-text/60 uppercase tracking-wider">
@@ -98,7 +123,7 @@ export default function Sidebar() {
             )}
             <ul className="space-y-1 px-2">
               {section.items.map((item) => {
-                const Icon = iconComponents[item.icon];
+                const Icon = iconComponents[item.icon] || LayoutDashboard;
                 const isActive = activeView === item.id;
 
                 return (
@@ -112,13 +137,8 @@ export default function Sidebar() {
                       )}
                       title={sidebarCollapsed ? item.label : undefined}
                     >
-                      {Icon && <Icon className="w-5 h-5 flex-shrink-0" />}
+                      <Icon className="w-5 h-5 flex-shrink-0" />
                       {!sidebarCollapsed && <span>{item.label}</span>}
-                      {item.badge && !sidebarCollapsed && (
-                        <span className="ml-auto bg-primary-500 text-white text-xs px-2 py-0.5 rounded-full">
-                          {item.badge}
-                        </span>
-                      )}
                     </button>
                   </li>
                 );
