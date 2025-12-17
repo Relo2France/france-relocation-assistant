@@ -3,7 +3,7 @@
  * Plugin Name: France Relocation GitHub Sync
  * Plugin URI: https://relo2france.com
  * Description: Automatically syncs plugins from GitHub by polling for changes every 15 minutes. Workaround for WordPress.com webhook limitations.
- * Version: 1.0.1
+ * Version: 1.0.2
  * Author: Relo2France
  * Author URI: https://relo2france.com
  * License: GPL v2 or later
@@ -47,6 +47,10 @@ class FRA_GitHub_Sync {
         // AJAX handlers
         add_action('wp_ajax_fra_manual_github_sync', array($this, 'ajax_manual_sync'));
         add_action('wp_ajax_fra_force_github_update', array($this, 'ajax_force_update'));
+        add_action('wp_ajax_fra_clear_update_notice', array($this, 'ajax_clear_notice'));
+
+        // Admin notice when updates are available
+        add_action('admin_notices', array($this, 'show_update_notice'));
 
         // Cleanup on deactivation
         register_deactivation_hook(__FILE__, array($this, 'deactivate'));
@@ -91,21 +95,27 @@ class FRA_GitHub_Sync {
         $this->log("GitHub commit: {$github_commit}, Stored: {$stored_commit}");
 
         if ($github_commit !== $stored_commit) {
-            $this->log('New commit detected, triggering update...');
+            $this->log('New commit detected!');
 
-            // Update stored commit first to prevent multiple triggers
+            // Set notification flag for admin notice
+            update_option('fra_github_update_available', true);
+
+            // Update stored commit
             update_option('fra_github_last_commit', $github_commit);
             update_option('fra_github_last_check', current_time('mysql'));
 
-            // Trigger WP Pusher updates
+            // Try to trigger WP Pusher updates (may not work on WordPress.com)
             $result = $this->trigger_wp_pusher_update();
 
             if ($result) {
                 update_option('fra_github_last_update', current_time('mysql'));
+                update_option('fra_github_update_available', false); // Clear flag if update succeeded
                 $this->log('Update triggered successfully');
 
                 // Reactivate plugins after update
                 $this->reactivate_plugins();
+            } else {
+                $this->log('Auto-update failed. User should update manually via WP Pusher.');
             }
 
             return $result;
@@ -351,11 +361,21 @@ class FRA_GitHub_Sync {
                     <button type="button" class="button button-primary" id="fra-manual-sync">
                         Check Now
                     </button>
-                    <button type="button" class="button" id="fra-force-update" style="margin-left: 10px;">
-                        Force Update All
+                    <a href="<?php echo admin_url('admin.php?page=wppusher-plugins'); ?>" class="button" style="margin-left: 10px;">
+                        Go to WP Pusher
+                    </a>
+                    <?php if (get_option('fra_github_update_available', false)) : ?>
+                    <button type="button" class="button" id="fra-clear-notification" style="margin-left: 10px;">
+                        Clear Update Notice
                     </button>
+                    <?php endif; ?>
                     <span id="fra-sync-status" style="margin-left: 10px;"></span>
                 </p>
+                <?php if (get_option('fra_github_update_available', false)) : ?>
+                <p style="color: #d63638; font-weight: bold;">
+                    ⚠️ Updates are available! Click "Go to WP Pusher" and click "Update plugin" for each plugin.
+                </p>
+                <?php endif; ?>
             </div>
 
             <div class="card" style="max-width: 600px; padding: 20px; margin-top: 20px;">
@@ -395,27 +415,19 @@ class FRA_GitHub_Sync {
                 });
             });
 
-            $('#fra-force-update').on('click', function() {
+            $('#fra-clear-notification').on('click', function() {
                 var $btn = $(this);
                 var $status = $('#fra-sync-status');
 
-                if (!confirm('This will force update all plugins from GitHub. Continue?')) {
-                    return;
-                }
-
                 $btn.prop('disabled', true);
-                $status.text('Forcing update...');
 
                 $.post(ajaxurl, {
-                    action: 'fra_force_github_update',
+                    action: 'fra_clear_update_notice',
                     nonce: '<?php echo wp_create_nonce('fra_github_sync'); ?>'
                 }, function(response) {
-                    $btn.prop('disabled', false);
                     if (response.success) {
-                        $status.html('<span style="color: green;">' + response.data.message + '</span>');
-                        setTimeout(function() { location.reload(); }, 2000);
-                    } else {
-                        $status.html('<span style="color: red;">' + response.data.message + '</span>');
+                        $status.html('<span style="color: green;">Notice cleared!</span>');
+                        setTimeout(function() { location.reload(); }, 1000);
                     }
                 });
             });
@@ -489,6 +501,41 @@ class FRA_GitHub_Sync {
             wp_send_json_success(array(
                 'message' => 'Update attempted. Check if plugins updated.',
             ));
+        }
+    }
+
+    /**
+     * AJAX handler for clearing update notice
+     */
+    public function ajax_clear_notice() {
+        check_ajax_referer('fra_github_sync', 'nonce');
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(array('message' => 'Permission denied'));
+        }
+
+        delete_option('fra_github_update_available');
+        wp_send_json_success(array('message' => 'Notice cleared'));
+    }
+
+    /**
+     * Show admin notice when updates are available
+     */
+    public function show_update_notice() {
+        $update_available = get_option('fra_github_update_available', false);
+
+        if ($update_available && current_user_can('manage_options')) {
+            $wp_pusher_url = admin_url('admin.php?page=wppusher-plugins');
+            ?>
+            <div class="notice notice-info is-dismissible">
+                <p>
+                    <strong>🔄 France Relocation plugins have updates available!</strong>
+                    <a href="<?php echo esc_url($wp_pusher_url); ?>" class="button button-primary" style="margin-left: 10px;">
+                        Update in WP Pusher
+                    </a>
+                </p>
+            </div>
+            <?php
         }
     }
 
