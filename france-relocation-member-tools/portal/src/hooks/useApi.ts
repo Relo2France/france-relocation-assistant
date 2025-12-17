@@ -8,7 +8,7 @@ import {
   filesApi,
   notesApi,
 } from '@/api/client';
-import type { Task, TaskStatus, Project, FileCategory, NoteVisibility } from '@/types';
+import type { Task, TaskStatus, Project, FileCategory, NoteVisibility, UpdateProfileData, UserSettings } from '@/types';
 
 // Query keys
 export const queryKeys = {
@@ -19,6 +19,7 @@ export const queryKeys = {
   task: (id: number) => ['task', id] as const,
   activity: (projectId: number) => ['activity', projectId] as const,
   user: ['user'] as const,
+  userSettings: ['userSettings'] as const,
   files: (projectId: number, filters?: object) => ['files', projectId, filters] as const,
   file: (id: number) => ['file', id] as const,
   notes: (projectId: number, filters?: object) => ['notes', projectId, filters] as const,
@@ -40,6 +41,36 @@ export function useCurrentUser() {
     queryKey: queryKeys.user,
     queryFn: userApi.me,
     staleTime: 60000 * 5, // 5 minutes
+  });
+}
+
+export function useUpdateProfile() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: UpdateProfileData) => userApi.updateProfile(data),
+    onSuccess: (updatedUser) => {
+      queryClient.setQueryData(queryKeys.user, updatedUser);
+    },
+  });
+}
+
+export function useUserSettings() {
+  return useQuery({
+    queryKey: queryKeys.userSettings,
+    queryFn: userApi.getSettings,
+    staleTime: 60000 * 5, // 5 minutes
+  });
+}
+
+export function useUpdateSettings() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: Partial<UserSettings>) => userApi.updateSettings(data),
+    onSuccess: (updatedSettings) => {
+      queryClient.setQueryData(queryKeys.userSettings, updatedSettings);
+    },
   });
 }
 

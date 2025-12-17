@@ -5,6 +5,8 @@ import type {
   Stage,
   Activity,
   User,
+  UserSettings,
+  UpdateProfileData,
   TaskStatus,
   PortalFile,
   FileCategory,
@@ -149,6 +151,20 @@ export const activityApi = {
 // User API
 export const userApi = {
   me: () => apiFetch<User>('/me'),
+
+  updateProfile: (data: UpdateProfileData) =>
+    apiFetch<User>('/me', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  getSettings: () => apiFetch<UserSettings>('/me/settings'),
+
+  updateSettings: (data: Partial<UserSettings>) =>
+    apiFetch<UserSettings>('/me/settings', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
 };
 
 // Files API

@@ -9,6 +9,7 @@ import TasksView from '@/components/tasks/TasksView';
 import { DocumentsView } from '@/components/documents';
 import { MessagesView } from '@/components/messages';
 import { TimelineView } from '@/components/timeline';
+import { SettingsView } from '@/components/settings';
 
 
 function PlaceholderView({ title }: { title: string }) {
@@ -44,7 +45,7 @@ function ViewRouter() {
     case 'family':
       return <PlaceholderView title="Family Members" />;
     case 'settings':
-      return <PlaceholderView title="Settings" />;
+      return <SettingsView />;
     case 'help':
       return <PlaceholderView title="Help & Support" />;
     default:

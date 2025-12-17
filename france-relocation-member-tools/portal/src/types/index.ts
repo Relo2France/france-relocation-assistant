@@ -132,6 +132,21 @@ export interface User {
   is_member?: boolean;
 }
 
+export interface UserSettings {
+  email_notifications: boolean;
+  task_reminders: boolean;
+  weekly_digest: boolean;
+  language: string;
+  timezone: string;
+  date_format: string;
+}
+
+export interface UpdateProfileData {
+  first_name?: string;
+  last_name?: string;
+  display_name?: string;
+}
+
 // File types
 export interface PortalFile {
   id: number;

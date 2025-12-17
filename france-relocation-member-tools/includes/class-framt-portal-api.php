@@ -200,9 +200,34 @@ class FRAMT_Portal_API {
             self::NAMESPACE,
             '/me',
             array(
-                'methods'             => 'GET',
-                'callback'            => array( $this, 'get_current_user' ),
-                'permission_callback' => array( $this, 'check_member_permission' ),
+                array(
+                    'methods'             => 'GET',
+                    'callback'            => array( $this, 'get_current_user' ),
+                    'permission_callback' => array( $this, 'check_member_permission' ),
+                ),
+                array(
+                    'methods'             => 'PUT',
+                    'callback'            => array( $this, 'update_current_user' ),
+                    'permission_callback' => array( $this, 'check_member_permission' ),
+                ),
+            )
+        );
+
+        // User settings endpoint
+        register_rest_route(
+            self::NAMESPACE,
+            '/me/settings',
+            array(
+                array(
+                    'methods'             => 'GET',
+                    'callback'            => array( $this, 'get_user_settings' ),
+                    'permission_callback' => array( $this, 'check_member_permission' ),
+                ),
+                array(
+                    'methods'             => 'PUT',
+                    'callback'            => array( $this, 'update_user_settings' ),
+                    'permission_callback' => array( $this, 'check_member_permission' ),
+                ),
             )
         );
 
@@ -917,6 +942,109 @@ class FRAMT_Portal_API {
         }
 
         return rest_ensure_response( $response );
+    }
+
+    /**
+     * Update current user profile
+     *
+     * @param WP_REST_Request $request Request object
+     * @return WP_REST_Response|WP_Error
+     */
+    public function update_current_user( $request ) {
+        $user_id = get_current_user_id();
+        $params  = $request->get_json_params();
+
+        $user_data = array( 'ID' => $user_id );
+
+        // Allowed fields to update
+        if ( isset( $params['first_name'] ) ) {
+            $user_data['first_name'] = sanitize_text_field( $params['first_name'] );
+        }
+        if ( isset( $params['last_name'] ) ) {
+            $user_data['last_name'] = sanitize_text_field( $params['last_name'] );
+        }
+        if ( isset( $params['display_name'] ) ) {
+            $user_data['display_name'] = sanitize_text_field( $params['display_name'] );
+        }
+
+        // Update user
+        $result = wp_update_user( $user_data );
+
+        if ( is_wp_error( $result ) ) {
+            return $result;
+        }
+
+        // Return updated user data
+        return $this->get_current_user( $request );
+    }
+
+    /**
+     * Get user settings
+     *
+     * @param WP_REST_Request $request Request object
+     * @return WP_REST_Response
+     */
+    public function get_user_settings( $request ) {
+        $user_id = get_current_user_id();
+
+        $defaults = array(
+            'email_notifications' => true,
+            'task_reminders'      => true,
+            'weekly_digest'       => false,
+            'language'            => 'en',
+            'timezone'            => wp_timezone_string(),
+            'date_format'         => 'M j, Y',
+        );
+
+        $settings = get_user_meta( $user_id, 'fra_portal_settings', true );
+        if ( ! is_array( $settings ) ) {
+            $settings = array();
+        }
+
+        return rest_ensure_response( array_merge( $defaults, $settings ) );
+    }
+
+    /**
+     * Update user settings
+     *
+     * @param WP_REST_Request $request Request object
+     * @return WP_REST_Response|WP_Error
+     */
+    public function update_user_settings( $request ) {
+        $user_id = get_current_user_id();
+        $params  = $request->get_json_params();
+
+        // Get existing settings
+        $settings = get_user_meta( $user_id, 'fra_portal_settings', true );
+        if ( ! is_array( $settings ) ) {
+            $settings = array();
+        }
+
+        // Allowed settings to update
+        $allowed = array(
+            'email_notifications',
+            'task_reminders',
+            'weekly_digest',
+            'language',
+            'timezone',
+            'date_format',
+        );
+
+        foreach ( $allowed as $key ) {
+            if ( isset( $params[ $key ] ) ) {
+                if ( is_bool( $params[ $key ] ) || in_array( $key, array( 'email_notifications', 'task_reminders', 'weekly_digest' ), true ) ) {
+                    $settings[ $key ] = (bool) $params[ $key ];
+                } else {
+                    $settings[ $key ] = sanitize_text_field( $params[ $key ] );
+                }
+            }
+        }
+
+        // Save settings
+        update_user_meta( $user_id, 'fra_portal_settings', $settings );
+
+        // Return updated settings
+        return $this->get_user_settings( $request );
     }
 
     /**
