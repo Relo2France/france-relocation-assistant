@@ -154,6 +154,7 @@ export default function Dashboard() {
           subtext={`${task_stats.percentage}% complete`}
           icon={CheckCircle}
           color="green"
+          onClick={() => setActiveView('tasks')}
         />
         <StatCard
           label="In Progress"
@@ -161,6 +162,7 @@ export default function Dashboard() {
           subtext="Tasks being worked on"
           icon={Clock}
           color="blue"
+          onClick={() => setActiveView('tasks')}
         />
         <StatCard
           label="To Do"
@@ -168,6 +170,7 @@ export default function Dashboard() {
           subtext="Tasks remaining"
           icon={Clock}
           color="gray"
+          onClick={() => setActiveView('tasks')}
         />
         <StatCard
           label="Overdue"
@@ -175,6 +178,7 @@ export default function Dashboard() {
           subtext={task_stats.overdue > 0 ? 'Need attention!' : 'All on track'}
           icon={AlertTriangle}
           color={task_stats.overdue > 0 ? 'red' : 'green'}
+          onClick={() => setActiveView('tasks')}
         />
       </div>
 
@@ -245,9 +249,10 @@ interface StatCardProps {
   subtext: string;
   icon: React.ComponentType<{ className?: string }>;
   color: 'green' | 'blue' | 'gray' | 'red' | 'yellow';
+  onClick?: () => void;
 }
 
-function StatCard({ label, value, subtext, icon: Icon, color }: StatCardProps) {
+function StatCard({ label, value, subtext, icon: Icon, color, onClick }: StatCardProps) {
   const colorClasses = {
     green: 'bg-green-50 text-green-600',
     blue: 'bg-blue-50 text-blue-600',
@@ -257,7 +262,12 @@ function StatCard({ label, value, subtext, icon: Icon, color }: StatCardProps) {
   };
 
   return (
-    <div className="card p-5">
+    <button
+      type="button"
+      onClick={onClick}
+      className="card p-5 w-full text-left hover:shadow-md transition-shadow cursor-pointer"
+      aria-label={`${label}: ${value}. ${subtext}. Click to view tasks.`}
+    >
       <div className="flex items-start justify-between">
         <div>
           <p className="text-sm font-medium text-gray-500">{label}</p>
@@ -268,7 +278,7 @@ function StatCard({ label, value, subtext, icon: Icon, color }: StatCardProps) {
           <Icon className="w-5 h-5" />
         </div>
       </div>
-    </div>
+    </button>
   );
 }
 
