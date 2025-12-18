@@ -3,7 +3,6 @@ import { clsx } from 'clsx';
 import {
   User,
   Bell,
-  Shield,
   Save,
   Check,
   Loader2,
@@ -22,7 +21,7 @@ import {
 } from '@/hooks/useApi';
 import type { UserSettings, MemberProfile } from '@/types';
 
-type SettingsTab = 'profile' | 'visa-profile' | 'notifications' | 'account';
+type SettingsTab = 'portal-account' | 'visa-profile' | 'notifications';
 
 // Field type for Visa Profile sections
 interface ProfileField {
@@ -42,13 +41,12 @@ interface ProfileSection {
 }
 
 export default function SettingsView() {
-  const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
+  const [activeTab, setActiveTab] = useState<SettingsTab>('portal-account');
 
   const tabs = [
-    { id: 'profile' as SettingsTab, label: 'Profile', icon: User },
+    { id: 'portal-account' as SettingsTab, label: 'Portal Account', icon: User },
     { id: 'visa-profile' as SettingsTab, label: 'Visa Profile', icon: FileText },
     { id: 'notifications' as SettingsTab, label: 'Notifications', icon: Bell },
-    { id: 'account' as SettingsTab, label: 'Account', icon: Shield },
   ];
 
   return (
@@ -88,17 +86,16 @@ export default function SettingsView() {
 
         {/* Content area */}
         <div className="flex-1">
-          {activeTab === 'profile' && <ProfileSection />}
+          {activeTab === 'portal-account' && <PortalAccountSection />}
           {activeTab === 'visa-profile' && <VisaProfileSection />}
           {activeTab === 'notifications' && <NotificationsSection />}
-          {activeTab === 'account' && <AccountSection />}
         </div>
       </div>
     </div>
   );
 }
 
-function ProfileSection() {
+function PortalAccountSection() {
   const { data: user, isLoading: userLoading } = useCurrentUser();
   const updateProfile = useUpdateProfile();
 
@@ -129,116 +126,170 @@ function ProfileSection() {
   }
 
   return (
-    <div className="card p-6">
-      <h2 className="text-lg font-semibold text-gray-900 mb-6">Profile Information</h2>
+    <div className="space-y-6">
+      {/* Profile Information card */}
+      <div className="card p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-6">Profile Information</h2>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Avatar */}
-        <div className="flex items-center gap-4">
-          <img
-            src={user?.avatar_url}
-            alt={user?.display_name}
-            className="w-20 h-20 rounded-full"
-          />
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Avatar */}
+          <div className="flex items-center gap-4">
+            <img
+              src={user?.avatar_url}
+              alt={user?.display_name}
+              className="w-20 h-20 rounded-full"
+            />
+            <div>
+              <p className="text-sm text-gray-600">
+                Profile photo is managed through your Gravatar account
+              </p>
+              <a
+                href="https://gravatar.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-primary-600 hover:text-primary-700"
+              >
+                Change on Gravatar
+              </a>
+            </div>
+          </div>
+
+          {/* Name fields */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="first_name" className="block text-sm font-medium text-gray-700 mb-1">
+                First Name
+              </label>
+              <input
+                type="text"
+                id="first_name"
+                value={formData.first_name}
+                onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              />
+            </div>
+            <div>
+              <label htmlFor="last_name" className="block text-sm font-medium text-gray-700 mb-1">
+                Last Name
+              </label>
+              <input
+                type="text"
+                id="last_name"
+                value={formData.last_name}
+                onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              />
+            </div>
+          </div>
+
           <div>
-            <p className="text-sm text-gray-600">
-              Profile photo is managed through your Gravatar account
+            <label htmlFor="display_name" className="block text-sm font-medium text-gray-700 mb-1">
+              Display Name
+            </label>
+            <input
+              type="text"
+              id="display_name"
+              value={formData.display_name}
+              onChange={(e) => setFormData({ ...formData, display_name: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            />
+            <p className="mt-1 text-sm text-gray-500">
+              This is how your name will appear throughout the portal
             </p>
-            <a
-              href="https://gravatar.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm text-primary-600 hover:text-primary-700"
+          </div>
+
+          {/* Submit button */}
+          <div className="flex items-center gap-3">
+            <button
+              type="submit"
+              disabled={updateProfile.isPending}
+              className="btn btn-primary flex items-center gap-2"
             >
-              Change on Gravatar
+              {updateProfile.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : updateProfile.isSuccess ? (
+                <Check className="w-4 h-4" />
+              ) : (
+                <Save className="w-4 h-4" />
+              )}
+              {updateProfile.isPending ? 'Saving...' : updateProfile.isSuccess ? 'Saved!' : 'Save Changes'}
+            </button>
+            {updateProfile.isError && (
+              <span className="text-sm text-red-600">
+                Failed to save. Please try again.
+              </span>
+            )}
+          </div>
+        </form>
+      </div>
+
+      {/* Account info card */}
+      <div className="card p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-6">Account Information</h2>
+
+        <div className="space-y-4">
+          <div className="flex justify-between py-3 border-b border-gray-100">
+            <span className="text-gray-600">Username</span>
+            <span className="font-medium text-gray-900">{user?.username}</span>
+          </div>
+          <div className="flex justify-between py-3 border-b border-gray-100">
+            <span className="text-gray-600">Email</span>
+            <span className="font-medium text-gray-900">{user?.email}</span>
+          </div>
+          <div className="flex justify-between py-3 border-b border-gray-100">
+            <span className="text-gray-600">Account Type</span>
+            <span className="font-medium text-gray-900">
+              {user?.is_admin ? 'Administrator' : 'Member'}
+            </span>
+          </div>
+          <div className="flex justify-between py-3">
+            <span className="text-gray-600">Membership Status</span>
+            <span className={clsx(
+              'px-2 py-1 rounded-full text-xs font-medium',
+              user?.is_member
+                ? 'bg-green-100 text-green-700'
+                : 'bg-gray-100 text-gray-700'
+            )}>
+              {user?.is_member ? 'Active' : 'Inactive'}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Security card */}
+      <div className="card p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Security</h2>
+
+        <div className="space-y-4">
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+            <div>
+              <h3 className="font-medium text-gray-900">Password</h3>
+              <p className="text-sm text-gray-500">Last changed: Unknown</p>
+            </div>
+            <a
+              href={`${window.fraPortalData?.siteUrl || ''}/wp-admin/profile.php`}
+              className="btn btn-secondary text-sm"
+            >
+              Change Password
             </a>
           </div>
         </div>
+      </div>
 
-        {/* Name fields */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="first_name" className="block text-sm font-medium text-gray-700 mb-1">
-              First Name
-            </label>
-            <input
-              type="text"
-              id="first_name"
-              value={formData.first_name}
-              onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-            />
-          </div>
-          <div>
-            <label htmlFor="last_name" className="block text-sm font-medium text-gray-700 mb-1">
-              Last Name
-            </label>
-            <input
-              type="text"
-              id="last_name"
-              value={formData.last_name}
-              onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-            />
-          </div>
-        </div>
+      {/* Danger zone */}
+      <div className="card p-6 border-red-200">
+        <h2 className="text-lg font-semibold text-red-600 mb-4">Danger Zone</h2>
 
-        <div>
-          <label htmlFor="display_name" className="block text-sm font-medium text-gray-700 mb-1">
-            Display Name
-          </label>
-          <input
-            type="text"
-            id="display_name"
-            value={formData.display_name}
-            onChange={(e) => setFormData({ ...formData, display_name: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-          />
-          <p className="mt-1 text-sm text-gray-500">
-            This is how your name will appear throughout the portal
+        <div className="p-4 bg-red-50 rounded-lg">
+          <h3 className="font-medium text-gray-900">Delete Account</h3>
+          <p className="text-sm text-gray-600 mt-1">
+            Once you delete your account, there is no going back. All your data will be permanently removed.
+          </p>
+          <p className="text-sm text-gray-600 mt-2">
+            To delete your account, please contact support.
           </p>
         </div>
-
-        {/* Email (read-only) */}
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-            Email Address
-          </label>
-          <input
-            type="email"
-            id="email"
-            value={user?.email || ''}
-            disabled
-            className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500"
-          />
-          <p className="mt-1 text-sm text-gray-500">
-            Contact support to change your email address
-          </p>
-        </div>
-
-        {/* Submit button */}
-        <div className="flex items-center gap-3">
-          <button
-            type="submit"
-            disabled={updateProfile.isPending}
-            className="btn btn-primary flex items-center gap-2"
-          >
-            {updateProfile.isPending ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : updateProfile.isSuccess ? (
-              <Check className="w-4 h-4" />
-            ) : (
-              <Save className="w-4 h-4" />
-            )}
-            {updateProfile.isPending ? 'Saving...' : updateProfile.isSuccess ? 'Saved!' : 'Save Changes'}
-          </button>
-          {updateProfile.isError && (
-            <span className="text-sm text-red-600">
-              Failed to save. Please try again.
-            </span>
-          )}
-        </div>
-      </form>
+      </div>
     </div>
   );
 }
@@ -684,86 +735,6 @@ function NotificationsSection() {
               <option value="Asia/Tokyo">Tokyo (JST)</option>
             </select>
           </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function AccountSection() {
-  const { data: user, isLoading } = useCurrentUser();
-
-  if (isLoading) {
-    return <SettingsSkeleton />;
-  }
-
-  return (
-    <div className="space-y-6">
-      {/* Account info card */}
-      <div className="card p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-6">Account Information</h2>
-
-        <div className="space-y-4">
-          <div className="flex justify-between py-3 border-b border-gray-100">
-            <span className="text-gray-600">Username</span>
-            <span className="font-medium text-gray-900">{user?.username}</span>
-          </div>
-          <div className="flex justify-between py-3 border-b border-gray-100">
-            <span className="text-gray-600">Email</span>
-            <span className="font-medium text-gray-900">{user?.email}</span>
-          </div>
-          <div className="flex justify-between py-3 border-b border-gray-100">
-            <span className="text-gray-600">Account Type</span>
-            <span className="font-medium text-gray-900">
-              {user?.is_admin ? 'Administrator' : 'Member'}
-            </span>
-          </div>
-          <div className="flex justify-between py-3">
-            <span className="text-gray-600">Membership Status</span>
-            <span className={clsx(
-              'px-2 py-1 rounded-full text-xs font-medium',
-              user?.is_member
-                ? 'bg-green-100 text-green-700'
-                : 'bg-gray-100 text-gray-700'
-            )}>
-              {user?.is_member ? 'Active' : 'Inactive'}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Security card */}
-      <div className="card p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Security</h2>
-
-        <div className="space-y-4">
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-            <div>
-              <h3 className="font-medium text-gray-900">Password</h3>
-              <p className="text-sm text-gray-500">Last changed: Unknown</p>
-            </div>
-            <a
-              href={`${window.fraPortalData?.siteUrl || ''}/wp-admin/profile.php`}
-              className="btn btn-secondary text-sm"
-            >
-              Change Password
-            </a>
-          </div>
-        </div>
-      </div>
-
-      {/* Danger zone */}
-      <div className="card p-6 border-red-200">
-        <h2 className="text-lg font-semibold text-red-600 mb-4">Danger Zone</h2>
-
-        <div className="p-4 bg-red-50 rounded-lg">
-          <h3 className="font-medium text-gray-900">Delete Account</h3>
-          <p className="text-sm text-gray-600 mt-1">
-            Once you delete your account, there is no going back. All your data will be permanently removed.
-          </p>
-          <p className="text-sm text-gray-600 mt-2">
-            To delete your account, please contact support.
-          </p>
         </div>
       </div>
     </div>
