@@ -28,8 +28,8 @@ export default defineConfig({
       },
     },
   },
-  // Define base path for WordPress
-  base: '/wp-content/plugins/france-relocation-member-tools/assets/portal/',
+  // Use relative paths for WordPress compatibility
+  base: './',
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
