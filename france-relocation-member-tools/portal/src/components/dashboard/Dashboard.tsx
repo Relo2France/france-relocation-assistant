@@ -13,6 +13,7 @@ import { usePortalStore } from '@/store';
 import ProgressTracker from './ProgressTracker';
 import TaskCard from './TaskCard';
 import ActivityFeed from './ActivityFeed';
+import WelcomeBanner from './WelcomeBanner';
 import Modal from '@/components/shared/Modal';
 
 export default function Dashboard() {
@@ -40,10 +41,13 @@ export default function Dashboard() {
 
   if (!data) return null;
 
-  const { project, stages, task_stats, profile_visa_label, upcoming_tasks, overdue_tasks, recent_activity } = data;
+  const { project, stages, task_stats, profile_visa_label, welcome_banner, upcoming_tasks, overdue_tasks, recent_activity } = data;
 
   return (
     <div className="p-6 space-y-6">
+      {/* Welcome banner for new users */}
+      {welcome_banner && <WelcomeBanner banner={welcome_banner} />}
+
       {/* Welcome header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>

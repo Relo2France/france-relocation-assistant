@@ -122,6 +122,13 @@ class FRAMT_Portal_Settings {
 
         // Custom CSS
         'custom_css'          => '',
+
+        // Welcome Banner
+        'welcome_banner_enabled'      => true,
+        'welcome_banner_title'        => 'Welcome to Your Relocation Portal!',
+        'welcome_banner_message'      => 'This portal is your central hub for managing your move to France. Track your tasks, upload documents, access helpful guides, and stay organized throughout your relocation journey. Start by completing your profile and exploring the different sections in the sidebar.',
+        'welcome_banner_bg_color'     => '#ecfdf5',
+        'welcome_banner_border_color' => '#10b981',
     );
 
     /**
@@ -254,7 +261,8 @@ class FRAMT_Portal_Settings {
         // Colors
         $color_fields = array(
             'primary_color', 'secondary_color', 'sidebar_bg_color',
-            'sidebar_text_color', 'header_bg_color', 'accent_color'
+            'sidebar_text_color', 'header_bg_color', 'accent_color',
+            'welcome_banner_bg_color', 'welcome_banner_border_color'
         );
         foreach ( $color_fields as $field ) {
             if ( isset( $input[ $field ] ) ) {
@@ -266,7 +274,7 @@ class FRAMT_Portal_Settings {
         $bool_fields = array(
             'show_wp_header', 'show_wp_footer', 'show_promo_banner',
             'sidebar_collapsed', 'enable_notifications', 'enable_file_upload',
-            'enable_ai_assistant',
+            'enable_ai_assistant', 'welcome_banner_enabled',
             'menu_dashboard', 'menu_tasks', 'menu_checklists', 'menu_timeline',
             'menu_messages', 'menu_chat', 'menu_documents', 'menu_guides',
             'menu_glossary', 'menu_files', 'menu_profile', 'menu_family',
@@ -278,7 +286,7 @@ class FRAMT_Portal_Settings {
 
         // Text fields (labels and section labels)
         $text_fields = array(
-            'portal_title',
+            'portal_title', 'welcome_banner_title',
             'label_dashboard', 'label_tasks', 'label_checklists', 'label_timeline',
             'label_messages', 'label_chat', 'label_documents', 'label_guides',
             'label_glossary', 'label_files', 'label_profile', 'label_family',
@@ -289,6 +297,11 @@ class FRAMT_Portal_Settings {
             if ( isset( $input[ $field ] ) ) {
                 $sanitized[ $field ] = sanitize_text_field( $input[ $field ] );
             }
+        }
+
+        // Textarea fields (allow newlines)
+        if ( isset( $input['welcome_banner_message'] ) ) {
+            $sanitized['welcome_banner_message'] = sanitize_textarea_field( $input['welcome_banner_message'] );
         }
 
         // Icon fields - validate against available icons
@@ -632,6 +645,8 @@ class FRAMT_Portal_Settings {
             ),
             'features' => array(
                 'enable_notifications', 'enable_file_upload', 'enable_ai_assistant',
+                'welcome_banner_enabled', 'welcome_banner_title', 'welcome_banner_message',
+                'welcome_banner_bg_color', 'welcome_banner_border_color',
             ),
             'advanced' => array(
                 'custom_css',
@@ -650,6 +665,7 @@ class FRAMT_Portal_Settings {
         $bool_fields = array(
             'show_wp_header', 'show_wp_footer', 'show_promo_banner', 'sidebar_collapsed',
             'enable_notifications', 'enable_file_upload', 'enable_ai_assistant',
+            'welcome_banner_enabled',
             'menu_dashboard', 'menu_tasks', 'menu_checklists', 'menu_timeline',
             'menu_messages', 'menu_chat', 'menu_documents', 'menu_guides',
             'menu_glossary', 'menu_files', 'menu_profile', 'menu_family',
@@ -1267,6 +1283,79 @@ class FRAMT_Portal_Settings {
                     </td>
                 </tr>
             </table>
+        </div>
+
+        <div class="framt-settings-card">
+            <h2>Welcome Banner</h2>
+            <p>Display a dismissible welcome message for new members on the dashboard. Once dismissed, it won't appear again for that user.</p>
+
+            <table class="form-table">
+                <tr>
+                    <th>Enable Welcome Banner</th>
+                    <td>
+                        <label>
+                            <input type="checkbox" name="<?php echo self::OPTION_NAME; ?>[welcome_banner_enabled]"
+                                   value="1" <?php checked( $settings['welcome_banner_enabled'] ); ?>>
+                            Show welcome banner for new members
+                        </label>
+                    </td>
+                </tr>
+                <tr>
+                    <th>Banner Title</th>
+                    <td>
+                        <input type="text" name="<?php echo self::OPTION_NAME; ?>[welcome_banner_title]"
+                               value="<?php echo esc_attr( $settings['welcome_banner_title'] ); ?>"
+                               class="regular-text"
+                               placeholder="Welcome to Your Relocation Portal!">
+                    </td>
+                </tr>
+                <tr>
+                    <th>Banner Message</th>
+                    <td>
+                        <textarea name="<?php echo self::OPTION_NAME; ?>[welcome_banner_message]"
+                                  rows="4"
+                                  class="large-text"
+                                  placeholder="Write a helpful getting started message for new members..."><?php echo esc_textarea( $settings['welcome_banner_message'] ); ?></textarea>
+                        <p class="description">Explain how the portal works and what members should do first.</p>
+                    </td>
+                </tr>
+                <tr>
+                    <th>Background Color</th>
+                    <td>
+                        <div class="framt-color-row">
+                            <input type="text" name="<?php echo self::OPTION_NAME; ?>[welcome_banner_bg_color]"
+                                   class="framt-color-picker"
+                                   value="<?php echo esc_attr( $settings['welcome_banner_bg_color'] ); ?>">
+                            <div class="framt-color-preview" style="background-color: <?php echo esc_attr( $settings['welcome_banner_bg_color'] ); ?>"></div>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <th>Border Color</th>
+                    <td>
+                        <div class="framt-color-row">
+                            <input type="text" name="<?php echo self::OPTION_NAME; ?>[welcome_banner_border_color]"
+                                   class="framt-color-picker"
+                                   value="<?php echo esc_attr( $settings['welcome_banner_border_color'] ); ?>">
+                            <div class="framt-color-preview" style="background-color: <?php echo esc_attr( $settings['welcome_banner_border_color'] ); ?>"></div>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+
+            <!-- Preview -->
+            <div style="margin-top: 20px;">
+                <h4>Preview:</h4>
+                <div id="welcome-banner-preview" style="padding: 16px 20px; border-radius: 8px; border-width: 2px; border-style: solid; background-color: <?php echo esc_attr( $settings['welcome_banner_bg_color'] ); ?>; border-color: <?php echo esc_attr( $settings['welcome_banner_border_color'] ); ?>;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div>
+                            <strong style="font-size: 16px; display: block; margin-bottom: 8px;"><?php echo esc_html( $settings['welcome_banner_title'] ); ?></strong>
+                            <p style="margin: 0; color: #374151;"><?php echo esc_html( $settings['welcome_banner_message'] ); ?></p>
+                        </div>
+                        <button type="button" style="background: none; border: none; cursor: pointer; padding: 4px; opacity: 0.6;">✕</button>
+                    </div>
+                </div>
+            </div>
         </div>
         <?php
     }

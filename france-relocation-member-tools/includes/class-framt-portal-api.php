@@ -73,6 +73,17 @@ class FRAMT_Portal_API {
             )
         );
 
+        // Welcome banner dismiss endpoint
+        register_rest_route(
+            self::NAMESPACE,
+            '/welcome-banner/dismiss',
+            array(
+                'methods'             => 'POST',
+                'callback'            => array( $this, 'dismiss_welcome_banner' ),
+                'permission_callback' => array( $this, 'check_member_permission' ),
+            )
+        );
+
         // Projects endpoints
         register_rest_route(
             self::NAMESPACE,
@@ -886,6 +897,20 @@ class FRAMT_Portal_API {
             'retiree'         => 'Retiree Visa',
         );
 
+        // Get welcome banner settings
+        $portal_settings = FRAMT_Portal_Settings::get_settings();
+        $banner_dismissed = get_user_meta( $user_id, 'framt_welcome_banner_dismissed', true );
+
+        $welcome_banner = null;
+        if ( ! empty( $portal_settings['welcome_banner_enabled'] ) && ! $banner_dismissed ) {
+            $welcome_banner = array(
+                'title'        => $portal_settings['welcome_banner_title'] ?? '',
+                'message'      => $portal_settings['welcome_banner_message'] ?? '',
+                'bg_color'     => $portal_settings['welcome_banner_bg_color'] ?? '#ecfdf5',
+                'border_color' => $portal_settings['welcome_banner_border_color'] ?? '#10b981',
+            );
+        }
+
         $response = array(
             'project'              => $project->to_array(),
             'stages'               => $project->get_stage_progress(),
@@ -894,6 +919,7 @@ class FRAMT_Portal_API {
             'profile_visa_label'   => ! empty( $profile_visa_type ) && isset( $visa_type_labels[ $profile_visa_type ] )
                 ? $visa_type_labels[ $profile_visa_type ]
                 : null,
+            'welcome_banner'       => $welcome_banner,
             'upcoming_tasks'       => array_map(
                 function( $task ) {
                     return $task->to_array();
@@ -915,6 +941,19 @@ class FRAMT_Portal_API {
         );
 
         return rest_ensure_response( $response );
+    }
+
+    /**
+     * Dismiss welcome banner for the current user
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response
+     */
+    public function dismiss_welcome_banner( $request ) {
+        $user_id = get_current_user_id();
+        update_user_meta( $user_id, 'framt_welcome_banner_dismissed', true );
+
+        return rest_ensure_response( array( 'success' => true ) );
     }
 
     /**
