@@ -3580,32 +3580,39 @@ Signature:
      * @return WP_REST_Response
      */
     public function send_chat_message( $request ) {
-        $params   = $request->get_json_params();
-        $message  = $params['message'] ?? '';
-        $category = $params['category'] ?? 'general';
-        $user_id  = get_current_user_id();
+        $params           = $request->get_json_params();
+        $message          = $params['message'] ?? '';
+        $context          = $params['context'] ?? 'general';
+        $include_practice = $params['include_practice'] ?? true;
+        $user_id          = get_current_user_id();
 
         if ( empty( $message ) ) {
-            return new WP_Error( 'empty_message', 'Message is required.', array( 'status' => 400 ) );
+            return rest_ensure_response( array(
+                'success' => false,
+                'error'   => 'Message is required.',
+            ) );
         }
 
         // In production, this would call an AI service
-        // For now, return contextual responses based on category
+        // For now, return contextual responses based on context
+        $response_text = $this->generate_chat_response( $message, $context, $include_practice );
 
-        $response_text = $this->generate_chat_response( $message, $category );
+        // Generate relevant sources based on the query
+        $sources = $this->get_chat_sources( $message, $context );
 
         // Save chat history
         $history = get_user_meta( $user_id, 'fra_chat_history', true ) ?: array();
         $history[] = array(
             'role'      => 'user',
             'message'   => $message,
-            'category'  => $category,
+            'context'   => $context,
             'timestamp' => current_time( 'mysql' ),
         );
         $history[] = array(
             'role'      => 'assistant',
             'message'   => $response_text,
-            'category'  => $category,
+            'context'   => $context,
+            'sources'   => $sources,
             'timestamp' => current_time( 'mysql' ),
         );
 
@@ -3616,8 +3623,9 @@ Signature:
         update_user_meta( $user_id, 'fra_chat_history', $history );
 
         return rest_ensure_response( array(
+            'success'   => true,
             'message'   => $response_text,
-            'category'  => $category,
+            'sources'   => $sources,
             'timestamp' => current_time( 'mysql' ),
         ) );
     }
@@ -3630,12 +3638,83 @@ Signature:
      */
     public function get_chat_categories( $request ) {
         $categories = array(
-            array( 'id' => 'visa', 'label' => 'Visa & Immigration', 'icon' => 'FileText' ),
-            array( 'id' => 'healthcare', 'label' => 'Healthcare', 'icon' => 'Heart' ),
-            array( 'id' => 'housing', 'label' => 'Housing', 'icon' => 'Home' ),
-            array( 'id' => 'banking', 'label' => 'Banking', 'icon' => 'CreditCard' ),
-            array( 'id' => 'admin', 'label' => 'Administrative', 'icon' => 'Building' ),
-            array( 'id' => 'general', 'label' => 'General Questions', 'icon' => 'HelpCircle' ),
+            array(
+                'id'          => 'visas',
+                'title'       => 'Visa & Immigration',
+                'icon'        => 'FileText',
+                'description' => 'Questions about French visas, residence permits, and immigration procedures',
+                'topics'      => array(
+                    array( 'id' => 'vls-ts', 'title' => 'VLS-TS Long Stay Visa', 'keywords' => array( 'visa', 'vls', 'long stay' ), 'is_premium' => false ),
+                    array( 'id' => 'ofii', 'title' => 'OFII Validation Process', 'keywords' => array( 'ofii', 'validate', 'stamp' ), 'is_premium' => false ),
+                    array( 'id' => 'renewal', 'title' => 'Visa Renewal', 'keywords' => array( 'renew', 'extend', 'titre de séjour' ), 'is_premium' => true ),
+                ),
+            ),
+            array(
+                'id'          => 'healthcare',
+                'title'       => 'Healthcare',
+                'icon'        => 'Heart',
+                'description' => 'French healthcare system, Carte Vitale, and medical coverage',
+                'topics'      => array(
+                    array( 'id' => 'carte-vitale', 'title' => 'Carte Vitale Registration', 'keywords' => array( 'carte vitale', 'cpam', 'health card' ), 'is_premium' => false ),
+                    array( 'id' => 'mutuelle', 'title' => 'Complementary Insurance (Mutuelle)', 'keywords' => array( 'mutuelle', 'insurance', 'top-up' ), 'is_premium' => false ),
+                    array( 'id' => 'doctors', 'title' => 'Finding Doctors', 'keywords' => array( 'doctor', 'médecin', 'appointment' ), 'is_premium' => false ),
+                ),
+            ),
+            array(
+                'id'          => 'property',
+                'title'       => 'Housing & Property',
+                'icon'        => 'Home',
+                'description' => 'Renting, buying property, and understanding French housing',
+                'topics'      => array(
+                    array( 'id' => 'renting', 'title' => 'Renting in France', 'keywords' => array( 'rent', 'apartment', 'lease', 'bail' ), 'is_premium' => false ),
+                    array( 'id' => 'buying', 'title' => 'Buying Property', 'keywords' => array( 'buy', 'purchase', 'notaire', 'mortgage' ), 'is_premium' => true ),
+                    array( 'id' => 'utilities', 'title' => 'Setting Up Utilities', 'keywords' => array( 'electricity', 'gas', 'water', 'internet' ), 'is_premium' => false ),
+                ),
+            ),
+            array(
+                'id'          => 'banking',
+                'title'       => 'Banking & Finance',
+                'icon'        => 'Building',
+                'description' => 'French bank accounts, money transfers, and financial matters',
+                'topics'      => array(
+                    array( 'id' => 'bank-account', 'title' => 'Opening a Bank Account', 'keywords' => array( 'bank', 'account', 'rib' ), 'is_premium' => false ),
+                    array( 'id' => 'transfers', 'title' => 'International Transfers', 'keywords' => array( 'transfer', 'wire', 'exchange' ), 'is_premium' => false ),
+                    array( 'id' => 'credit', 'title' => 'Credit in France', 'keywords' => array( 'credit', 'loan', 'mortgage' ), 'is_premium' => true ),
+                ),
+            ),
+            array(
+                'id'          => 'taxes',
+                'title'       => 'Taxes',
+                'icon'        => 'DollarSign',
+                'description' => 'French taxation, US-France tax treaty, and filing requirements',
+                'topics'      => array(
+                    array( 'id' => 'tax-residency', 'title' => 'Tax Residency', 'keywords' => array( 'residency', 'fiscal', 'domicile' ), 'is_premium' => false ),
+                    array( 'id' => 'tax-treaty', 'title' => 'US-France Tax Treaty', 'keywords' => array( 'treaty', 'double taxation', 'totalization' ), 'is_premium' => true ),
+                    array( 'id' => 'filing', 'title' => 'Tax Filing', 'keywords' => array( 'file', 'declaration', 'impôts' ), 'is_premium' => true ),
+                ),
+            ),
+            array(
+                'id'          => 'driving',
+                'title'       => 'Driving',
+                'icon'        => 'Car',
+                'description' => 'Driving licenses, car registration, and transportation',
+                'topics'      => array(
+                    array( 'id' => 'license-exchange', 'title' => 'License Exchange', 'keywords' => array( 'license', 'exchange', 'permis' ), 'is_premium' => false ),
+                    array( 'id' => 'car-registration', 'title' => 'Car Registration', 'keywords' => array( 'registration', 'carte grise', 'immatriculation' ), 'is_premium' => false ),
+                    array( 'id' => 'insurance', 'title' => 'Car Insurance', 'keywords' => array( 'insurance', 'assurance', 'vehicle' ), 'is_premium' => false ),
+                ),
+            ),
+            array(
+                'id'          => 'settling',
+                'title'       => 'Settling In',
+                'icon'        => 'MapPin',
+                'description' => 'Daily life, culture, language, and practical tips for living in France',
+                'topics'      => array(
+                    array( 'id' => 'language', 'title' => 'Learning French', 'keywords' => array( 'french', 'language', 'learn', 'class' ), 'is_premium' => false ),
+                    array( 'id' => 'culture', 'title' => 'French Culture', 'keywords' => array( 'culture', 'customs', 'etiquette' ), 'is_premium' => false ),
+                    array( 'id' => 'community', 'title' => 'Expat Communities', 'keywords' => array( 'expat', 'community', 'groups', 'meetup' ), 'is_premium' => false ),
+                ),
+            ),
         );
 
         return rest_ensure_response( $categories );
@@ -3651,11 +3730,14 @@ Signature:
         $query = $request->get_param( 'q' ) ?? '';
 
         $topics = array(
-            array( 'id' => 1, 'title' => 'How to validate VLS-TS visa?', 'category' => 'visa' ),
-            array( 'id' => 2, 'title' => 'Opening a French bank account', 'category' => 'banking' ),
-            array( 'id' => 3, 'title' => 'Registering for Carte Vitale', 'category' => 'healthcare' ),
-            array( 'id' => 4, 'title' => 'Finding rental accommodation', 'category' => 'housing' ),
-            array( 'id' => 5, 'title' => 'OFII appointment process', 'category' => 'admin' ),
+            array( 'id' => '1', 'title' => 'How to validate VLS-TS visa?', 'category' => 'visas', 'is_premium' => false ),
+            array( 'id' => '2', 'title' => 'Opening a French bank account', 'category' => 'banking', 'is_premium' => false ),
+            array( 'id' => '3', 'title' => 'Registering for Carte Vitale', 'category' => 'healthcare', 'is_premium' => false ),
+            array( 'id' => '4', 'title' => 'Finding rental accommodation', 'category' => 'property', 'is_premium' => false ),
+            array( 'id' => '5', 'title' => 'OFII appointment process', 'category' => 'visas', 'is_premium' => false ),
+            array( 'id' => '6', 'title' => 'US-France tax treaty overview', 'category' => 'taxes', 'is_premium' => true ),
+            array( 'id' => '7', 'title' => 'Exchanging driving license', 'category' => 'driving', 'is_premium' => false ),
+            array( 'id' => '8', 'title' => 'International money transfers', 'category' => 'banking', 'is_premium' => false ),
         );
 
         if ( ! empty( $query ) ) {
@@ -3664,34 +3746,170 @@ Signature:
             } );
         }
 
-        return rest_ensure_response( array_values( $topics ) );
+        return rest_ensure_response( array(
+            'results' => array_values( $topics ),
+        ) );
     }
 
     /**
-     * Generate chat response based on message and category
+     * Generate chat response based on message and context
      *
-     * @param string $message User message
-     * @param string $category Category
+     * @param string $message          User message
+     * @param string $context          Context/category
+     * @param bool   $include_practice Include real-world practice insights
      * @return string Response
      */
-    private function generate_chat_response( $message, $category ) {
+    private function generate_chat_response( $message, $context, $include_practice = true ) {
         // Simple keyword-based responses for now
         $lower_message = strtolower( $message );
+        $practice_note = $include_practice ? "\n\n**Real-world tip:** " : '';
 
         if ( strpos( $lower_message, 'vls-ts' ) !== false || strpos( $lower_message, 'validate' ) !== false ) {
-            return 'To validate your VLS-TS visa, you must complete the online validation within 3 months of arriving in France. Visit the official website at administration-etrangers-en-france.interieur.gouv.fr, create an account, and follow the validation process. You\'ll need to pay the OFII fee online.';
+            $response = 'To validate your VLS-TS visa, you must complete the online validation within 3 months of arriving in France. Visit the official website at administration-etrangers-en-france.interieur.gouv.fr, create an account, and follow the validation process. You\'ll need to pay the OFII fee online.';
+            if ( $include_practice ) {
+                $response .= $practice_note . 'Many users report the website can be slow or have issues. Try early morning (French time) for best results. Keep screenshots of your confirmation as backup.';
+            }
+            return $response;
         }
 
         if ( strpos( $lower_message, 'bank' ) !== false || strpos( $lower_message, 'account' ) !== false ) {
-            return 'To open a French bank account, you\'ll typically need: valid ID/passport, proof of address (even a hotel confirmation works initially), and proof of income or student status. Consider online banks like Boursorama, N26, or Revolut for easier onboarding, or traditional banks like BNP Paribas or Société Générale for full services.';
+            $response = 'To open a French bank account, you\'ll typically need: valid ID/passport, proof of address (even a hotel confirmation works initially), and proof of income or student status. Consider online banks like Boursorama, N26, or Revolut for easier onboarding, or traditional banks like BNP Paribas or Société Générale for full services.';
+            if ( $include_practice ) {
+                $response .= $practice_note . 'Online banks like Boursorama often have the easiest onboarding for newcomers. Traditional banks may require an appointment and can be stricter about documentation.';
+            }
+            return $response;
         }
 
         if ( strpos( $lower_message, 'carte vitale' ) !== false || strpos( $lower_message, 'health' ) !== false ) {
-            return 'To get your Carte Vitale, first register with CPAM (ameli.fr). You\'ll need: your validated visa, birth certificate (translated), proof of address, and RIB. The process can take 2-3 months. In the meantime, you can get an attestation from Ameli to access healthcare.';
+            $response = 'To get your Carte Vitale, first register with CPAM (ameli.fr). You\'ll need: your validated visa, birth certificate (translated), proof of address, and RIB. The process can take 2-3 months. In the meantime, you can get an attestation from Ameli to access healthcare.';
+            if ( $include_practice ) {
+                $response .= $practice_note . 'Create your Ameli account as soon as you have your CPAM number. The attestation (paper) works just as well as the card for healthcare reimbursements.';
+            }
+            return $response;
+        }
+
+        if ( strpos( $lower_message, 'document' ) !== false || strpos( $lower_message, 'visa' ) !== false ) {
+            $response = 'For your visa application, you\'ll need several key documents: passport valid for at least 3 months beyond your planned stay, proof of financial resources, proof of accommodation, health insurance, and completed application forms. Each visa type has specific additional requirements.';
+            if ( $include_practice ) {
+                $response .= $practice_note . 'Always bring extra copies of everything. French administration loves paperwork, and having duplicates can save you from making multiple trips.';
+            }
+            return $response;
+        }
+
+        if ( strpos( $lower_message, 'tax' ) !== false || strpos( $lower_message, 'impôt' ) !== false ) {
+            $response = 'As a resident in France, you\'ll be subject to French income tax. The tax year runs from January to December, and declarations are typically due in May-June for the previous year. The US-France tax treaty helps prevent double taxation.';
+            if ( $include_practice ) {
+                $response .= $practice_note . 'Consider working with a tax professional who understands both US and French tax systems, especially for your first year. The FEIE (Foreign Earned Income Exclusion) can be valuable for Americans.';
+            }
+            return $response;
+        }
+
+        if ( strpos( $lower_message, 'license' ) !== false || strpos( $lower_message, 'drive' ) !== false || strpos( $lower_message, 'permis' ) !== false ) {
+            $response = 'US driving licenses can be used in France for up to one year. After that, you\'ll need to exchange it for a French license. Not all US states have reciprocal agreements with France, so check if your state qualifies for direct exchange.';
+            if ( $include_practice ) {
+                $response .= $practice_note . 'Start the exchange process early - it can take several months. Gather your documents before the 1-year deadline to avoid having to retake the driving test.';
+            }
+            return $response;
+        }
+
+        if ( strpos( $lower_message, 'rent' ) !== false || strpos( $lower_message, 'apartment' ) !== false || strpos( $lower_message, 'housing' ) !== false ) {
+            $response = 'Renting in France requires a dossier with: ID, proof of income (3x rent is typical), employer letter, previous landlord references, and a French guarantor (garant). Without a French work contract, consider services like GarantMe or Visale.';
+            if ( $include_practice ) {
+                $response .= $practice_note . 'The rental market moves fast, especially in Paris. Be ready with your complete dossier and respond quickly to listings. Some landlords prefer international guarantor services to French garants.';
+            }
+            return $response;
         }
 
         // Default response
-        return 'Thank you for your question about ' . $category . '. I can help you with various aspects of relocating to France including visa applications, healthcare registration, banking, housing, and administrative procedures. Could you provide more details about what specific information you\'re looking for?';
+        $category_display = ! empty( $context ) ? $context : 'relocating to France';
+        return 'Thank you for your question about ' . $category_display . '. I can help you with various aspects of relocating to France including visa applications, healthcare registration, banking, housing, and administrative procedures. Could you provide more details about what specific information you\'re looking for?';
+    }
+
+    /**
+     * Get relevant sources for a chat response
+     *
+     * @param string $message User message
+     * @param string $context Context/category
+     * @return array Sources array
+     */
+    private function get_chat_sources( $message, $context ) {
+        $lower_message = strtolower( $message );
+        $sources       = array();
+
+        // Match sources based on message content
+        if ( strpos( $lower_message, 'vls-ts' ) !== false || strpos( $lower_message, 'validate' ) !== false || strpos( $lower_message, 'visa' ) !== false ) {
+            $sources[] = array(
+                'title'     => 'VLS-TS Validation Guide',
+                'category'  => 'visas',
+                'relevance' => 0.95,
+            );
+            $sources[] = array(
+                'title'     => 'OFII Appointment Process',
+                'category'  => 'visas',
+                'relevance' => 0.80,
+            );
+        }
+
+        if ( strpos( $lower_message, 'bank' ) !== false || strpos( $lower_message, 'account' ) !== false ) {
+            $sources[] = array(
+                'title'     => 'French Banking Guide',
+                'category'  => 'banking',
+                'relevance' => 0.92,
+            );
+            $sources[] = array(
+                'title'     => 'Opening Your First Account',
+                'category'  => 'banking',
+                'relevance' => 0.85,
+            );
+        }
+
+        if ( strpos( $lower_message, 'carte vitale' ) !== false || strpos( $lower_message, 'health' ) !== false ) {
+            $sources[] = array(
+                'title'     => 'French Healthcare System',
+                'category'  => 'healthcare',
+                'relevance' => 0.93,
+            );
+            $sources[] = array(
+                'title'     => 'CPAM Registration Guide',
+                'category'  => 'healthcare',
+                'relevance' => 0.88,
+            );
+        }
+
+        if ( strpos( $lower_message, 'tax' ) !== false ) {
+            $sources[] = array(
+                'title'     => 'US-France Tax Treaty',
+                'category'  => 'taxes',
+                'relevance' => 0.90,
+            );
+        }
+
+        if ( strpos( $lower_message, 'license' ) !== false || strpos( $lower_message, 'drive' ) !== false ) {
+            $sources[] = array(
+                'title'     => 'License Exchange Process',
+                'category'  => 'driving',
+                'relevance' => 0.91,
+            );
+        }
+
+        if ( strpos( $lower_message, 'rent' ) !== false || strpos( $lower_message, 'apartment' ) !== false ) {
+            $sources[] = array(
+                'title'     => 'Renting in France Guide',
+                'category'  => 'property',
+                'relevance' => 0.89,
+            );
+        }
+
+        // If no specific sources matched, add a general one based on context
+        if ( empty( $sources ) && ! empty( $context ) ) {
+            $sources[] = array(
+                'title'     => ucfirst( $context ) . ' Overview',
+                'category'  => $context,
+                'relevance' => 0.70,
+            );
+        }
+
+        return $sources;
     }
 
     // =========================================================================
