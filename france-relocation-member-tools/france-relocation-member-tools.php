@@ -465,6 +465,9 @@ final class FRA_Member_Tools {
         add_action('framt_cleanup_generated_document', array($this, 'cleanup_generated_document'), 10, 3);
         add_action('framt_daily_cleanup', array($this, 'cleanup_expired_documents'));
         add_action('wp_ajax_framt_clear_health_insurance_verification', array($this, 'ajax_clear_health_insurance_verification'));
+
+        // Portal login (available to non-logged-in users)
+        add_action('wp_ajax_nopriv_framt_portal_login', array($this, 'ajax_portal_login'));
     }
     
     /**
@@ -4224,6 +4227,47 @@ Please provide a helpful, accurate answer about their health insurance coverage 
     }
 
     /**
+     * AJAX: Handle portal login
+     *
+     * @return void
+     */
+    public function ajax_portal_login() {
+        // Verify nonce
+        if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), 'portal_login_nonce' ) ) {
+            wp_send_json_error( __( 'Security check failed. Please refresh the page and try again.', 'fra-member-tools' ) );
+            return;
+        }
+
+        $username = sanitize_user( wp_unslash( $_POST['username'] ?? '' ) );
+        $password = isset( $_POST['password'] ) ? $_POST['password'] : ''; // Don't sanitize password
+        $remember = ! empty( $_POST['remember'] );
+
+        if ( empty( $username ) || empty( $password ) ) {
+            wp_send_json_error( __( 'Please enter both username and password.', 'fra-member-tools' ) );
+            return;
+        }
+
+        // Attempt login
+        $creds = array(
+            'user_login'    => $username,
+            'user_password' => $password,
+            'remember'      => $remember,
+        );
+
+        $user = wp_signon( $creds, is_ssl() );
+
+        if ( is_wp_error( $user ) ) {
+            // Generic error message for security
+            wp_send_json_error( __( 'Invalid username or password. Please try again.', 'fra-member-tools' ) );
+            return;
+        }
+
+        wp_send_json_success( array(
+            'message' => __( 'Login successful. Redirecting...', 'fra-member-tools' ),
+        ) );
+    }
+
+    /**
      * Plugin deactivation
      *
      * @return void
@@ -4231,7 +4275,7 @@ Please provide a helpful, accurate answer about their health insurance coverage 
     public function deactivate() {
         // Clear scheduled events if any
         wp_clear_scheduled_hook('framt_daily_cleanup');
-        
+
         // Flush rewrite rules
         flush_rewrite_rules();
     }

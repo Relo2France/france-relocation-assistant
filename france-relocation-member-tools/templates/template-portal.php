@@ -15,17 +15,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Check if user is logged in
-if ( ! is_user_logged_in() ) {
-    wp_redirect( wp_login_url( get_permalink() ) );
-    exit;
-}
+$is_logged_in = is_user_logged_in();
+$current_user = $is_logged_in ? wp_get_current_user() : null;
+$login_error = '';
 
-// Get current user
-$current_user = wp_get_current_user();
-
-// Check for membership (optional - can be configured)
+// Check for membership (optional - can be configured) - only if logged in
 $require_membership = get_option( 'framt_portal_require_membership', false );
-if ( $require_membership && class_exists( 'MeprUser' ) ) {
+if ( $is_logged_in && $require_membership && class_exists( 'MeprUser' ) ) {
     $mepr_user = new MeprUser( $current_user->ID );
     if ( empty( $mepr_user->active_product_subscriptions() ) ) {
         // Redirect to membership page
@@ -246,6 +242,178 @@ $react_settings = array(
             to { transform: rotate(360deg); }
         }
 
+        /* Login form styles */
+        .portal-login-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, <?php echo esc_attr( $settings['sidebar_bg_color'] ); ?> 0%, <?php echo esc_attr( framt_darken_color( $settings['sidebar_bg_color'], 20 ) ); ?> 100%);
+            padding: 20px;
+        }
+
+        .portal-login-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            padding: 48px;
+            width: 100%;
+            max-width: 420px;
+        }
+
+        .portal-login-logo {
+            display: block;
+            max-height: 60px;
+            max-width: 200px;
+            margin: 0 auto 24px;
+        }
+
+        .portal-login-title {
+            font-family: 'Inter', system-ui, sans-serif;
+            font-size: 28px;
+            font-weight: 700;
+            color: #111827;
+            text-align: center;
+            margin: 0 0 8px;
+        }
+
+        .portal-login-subtitle {
+            font-family: 'Inter', system-ui, sans-serif;
+            font-size: 15px;
+            color: #6b7280;
+            text-align: center;
+            margin: 0 0 32px;
+        }
+
+        .portal-login-error {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 20px;
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+
+        .portal-login-form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .portal-form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .portal-form-group label {
+            font-family: 'Inter', system-ui, sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            color: #374151;
+        }
+
+        .portal-form-group input {
+            font-family: 'Inter', system-ui, sans-serif;
+            font-size: 15px;
+            padding: 12px 16px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            outline: none;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+
+        .portal-form-group input:focus {
+            border-color: <?php echo esc_attr( $settings['primary_color'] ); ?>;
+            box-shadow: 0 0 0 3px <?php echo esc_attr( $settings['primary_color'] ); ?>20;
+        }
+
+        .portal-form-group input::placeholder {
+            color: #9ca3af;
+        }
+
+        .portal-form-options {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-family: 'Inter', system-ui, sans-serif;
+            font-size: 14px;
+        }
+
+        .portal-remember-me {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #4b5563;
+            cursor: pointer;
+        }
+
+        .portal-remember-me input {
+            width: 16px;
+            height: 16px;
+            accent-color: <?php echo esc_attr( $settings['primary_color'] ); ?>;
+        }
+
+        .portal-forgot-password {
+            color: <?php echo esc_attr( $settings['primary_color'] ); ?>;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .portal-forgot-password:hover {
+            text-decoration: underline;
+        }
+
+        .portal-login-button {
+            font-family: 'Inter', system-ui, sans-serif;
+            font-size: 15px;
+            font-weight: 600;
+            color: white;
+            background: <?php echo esc_attr( $settings['primary_color'] ); ?>;
+            border: none;
+            border-radius: 8px;
+            padding: 14px 24px;
+            cursor: pointer;
+            transition: background 0.15s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .portal-login-button:hover:not(:disabled) {
+            background: <?php echo esc_attr( $primary_dark ); ?>;
+        }
+
+        .portal-login-button:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        .portal-login-button .animate-spin {
+            animation: spin 1s linear infinite;
+        }
+
+        .portal-register-link {
+            font-family: 'Inter', system-ui, sans-serif;
+            font-size: 14px;
+            color: #6b7280;
+            text-align: center;
+            margin: 24px 0 0;
+        }
+
+        .portal-register-link a {
+            color: <?php echo esc_attr( $settings['primary_color'] ); ?>;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .portal-register-link a:hover {
+            text-decoration: underline;
+        }
+
         <?php if ( ! empty( $settings['custom_css'] ) ) : ?>
         /* Custom CSS */
         <?php echo $settings['custom_css']; ?>
@@ -258,31 +426,144 @@ $react_settings = array(
         <?php get_header(); ?>
     <?php endif; ?>
 
-    <!-- Portal settings for React -->
-    <script>
-        window.PORTAL_SETTINGS = <?php echo wp_json_encode( $react_settings ); ?>;
-        window.PORTAL_USER = <?php echo wp_json_encode( array(
-            'id'          => $current_user->ID,
-            'email'       => $current_user->user_email,
-            'displayName' => $current_user->display_name,
-            'firstName'   => $current_user->first_name,
-            'lastName'    => $current_user->last_name,
-            'avatar'      => get_avatar_url( $current_user->ID ),
-        ) ); ?>;
-        window.PORTAL_API = {
-            root: '<?php echo esc_url( rest_url() ); ?>',
-            nonce: '<?php echo esc_js( wp_create_nonce( 'wp_rest' ) ); ?>',
-        };
-    </script>
+    <?php if ( $is_logged_in ) : ?>
+        <!-- Portal settings for React -->
+        <script>
+            window.PORTAL_SETTINGS = <?php echo wp_json_encode( $react_settings ); ?>;
+            window.PORTAL_USER = <?php echo wp_json_encode( array(
+                'id'          => $current_user->ID,
+                'email'       => $current_user->user_email,
+                'displayName' => $current_user->display_name,
+                'firstName'   => $current_user->first_name,
+                'lastName'    => $current_user->last_name,
+                'avatar'      => get_avatar_url( $current_user->ID ),
+            ) ); ?>;
+            window.PORTAL_API = {
+                root: '<?php echo esc_url( rest_url() ); ?>',
+                nonce: '<?php echo esc_js( wp_create_nonce( 'wp_rest' ) ); ?>',
+            };
+        </script>
 
-    <!-- Portal root element -->
-    <div id="fra-portal-root">
-        <!-- Loading state shown before React mounts -->
-        <div class="portal-loading">
-            <div class="portal-loading-spinner"></div>
-            <p class="portal-loading-text">Loading <?php echo esc_html( $settings['portal_title'] ); ?>...</p>
+        <!-- Portal root element -->
+        <div id="fra-portal-root">
+            <!-- Loading state shown before React mounts -->
+            <div class="portal-loading">
+                <div class="portal-loading-spinner"></div>
+                <p class="portal-loading-text">Loading <?php echo esc_html( $settings['portal_title'] ); ?>...</p>
+            </div>
         </div>
-    </div>
+    <?php else : ?>
+        <!-- Login Form -->
+        <div class="portal-login-container">
+            <div class="portal-login-card">
+                <?php if ( ! empty( $settings['logo_url'] ) ) : ?>
+                    <img src="<?php echo esc_url( $settings['logo_url'] ); ?>" alt="<?php echo esc_attr( $settings['portal_title'] ); ?>" class="portal-login-logo">
+                <?php endif; ?>
+
+                <h1 class="portal-login-title"><?php echo esc_html( $settings['portal_title'] ); ?></h1>
+                <p class="portal-login-subtitle">Sign in to access your member portal</p>
+
+                <div id="portal-login-error" class="portal-login-error" style="display: none;"></div>
+
+                <form id="portal-login-form" class="portal-login-form" method="post">
+                    <div class="portal-form-group">
+                        <label for="portal-username">Email or Username</label>
+                        <input type="text" id="portal-username" name="username" required autocomplete="username" placeholder="Enter your email or username">
+                    </div>
+
+                    <div class="portal-form-group">
+                        <label for="portal-password">Password</label>
+                        <input type="password" id="portal-password" name="password" required autocomplete="current-password" placeholder="Enter your password">
+                    </div>
+
+                    <div class="portal-form-options">
+                        <label class="portal-remember-me">
+                            <input type="checkbox" name="remember" value="1">
+                            <span>Remember me</span>
+                        </label>
+                        <a href="<?php echo esc_url( wp_lostpassword_url( get_permalink() ) ); ?>" class="portal-forgot-password">Forgot password?</a>
+                    </div>
+
+                    <button type="submit" class="portal-login-button" id="portal-login-submit">
+                        <span class="button-text">Sign In</span>
+                        <span class="button-loading" style="display: none;">
+                            <svg class="animate-spin" width="20" height="20" viewBox="0 0 24 24" fill="none">
+                                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" stroke-opacity="0.25"></circle>
+                                <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" stroke-width="4" stroke-linecap="round"></path>
+                            </svg>
+                        </span>
+                    </button>
+
+                    <?php wp_nonce_field( 'portal_login_nonce', 'portal_nonce' ); ?>
+                </form>
+
+                <?php
+                // Check if registration is enabled
+                $registration_enabled = get_option( 'users_can_register' );
+                $registration_url = wp_registration_url();
+                ?>
+                <?php if ( $registration_enabled ) : ?>
+                    <p class="portal-register-link">
+                        Don't have an account? <a href="<?php echo esc_url( $registration_url ); ?>">Create one</a>
+                    </p>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <script>
+        (function() {
+            var form = document.getElementById('portal-login-form');
+            var errorDiv = document.getElementById('portal-login-error');
+            var submitBtn = document.getElementById('portal-login-submit');
+            var buttonText = submitBtn.querySelector('.button-text');
+            var buttonLoading = submitBtn.querySelector('.button-loading');
+
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                // Show loading state
+                buttonText.style.display = 'none';
+                buttonLoading.style.display = 'inline-flex';
+                submitBtn.disabled = true;
+                errorDiv.style.display = 'none';
+
+                var formData = new FormData();
+                formData.append('action', 'framt_portal_login');
+                formData.append('username', document.getElementById('portal-username').value);
+                formData.append('password', document.getElementById('portal-password').value);
+                formData.append('remember', form.querySelector('[name="remember"]').checked ? '1' : '0');
+                formData.append('nonce', document.querySelector('[name="portal_nonce"]').value);
+
+                fetch('<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>', {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'same-origin'
+                })
+                .then(function(response) { return response.json(); })
+                .then(function(data) {
+                    if (data.success) {
+                        // Reload page to show portal
+                        window.location.reload();
+                    } else {
+                        // Show error
+                        errorDiv.textContent = data.data || 'Invalid username or password. Please try again.';
+                        errorDiv.style.display = 'block';
+                        buttonText.style.display = 'inline';
+                        buttonLoading.style.display = 'none';
+                        submitBtn.disabled = false;
+                    }
+                })
+                .catch(function(error) {
+                    errorDiv.textContent = 'An error occurred. Please try again.';
+                    errorDiv.style.display = 'block';
+                    buttonText.style.display = 'inline';
+                    buttonLoading.style.display = 'none';
+                    submitBtn.disabled = false;
+                });
+            });
+        })();
+        </script>
+    <?php endif; ?>
 
     <?php if ( $settings['show_wp_footer'] ) : ?>
         <?php get_footer(); ?>
