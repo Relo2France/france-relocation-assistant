@@ -3932,8 +3932,12 @@ Please provide a helpful, accurate answer about their health insurance coverage 
         if (in_array($handle, $module_handles, true)) {
             // Remove any existing type attribute
             $tag = preg_replace('/\s+type=[\'"][^\'"]*[\'"]/i', '', $tag);
-            // Add type="module"
-            $tag = str_replace('<script ', '<script type="module" ', $tag);
+            // Add type="module" and attributes to prevent optimization plugins from combining this script
+            $tag = str_replace(
+                '<script ',
+                '<script type="module" data-no-optimize="1" data-no-minify="1" data-cfasync="false" ',
+                $tag
+            );
         }
 
         return $tag;
