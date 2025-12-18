@@ -236,9 +236,72 @@ class FRAMT_Portal_Settings {
             return;
         }
 
+        // Enqueue WordPress color picker with its dependencies
         wp_enqueue_style( 'wp-color-picker' );
-        wp_enqueue_script( 'wp-color-picker' );
+        wp_enqueue_script(
+            'wp-color-picker',
+            false, // Use WordPress default
+            array( 'jquery', 'wp-color-picker' ),
+            false,
+            true
+        );
+
+        // Enqueue media library for image uploads
         wp_enqueue_media();
+
+        // Register and enqueue our custom admin script
+        wp_register_script(
+            'framt-portal-settings',
+            '', // No external file, we'll add inline script
+            array( 'jquery', 'wp-color-picker', 'media-upload' ),
+            FRAMT_VERSION,
+            true
+        );
+
+        $inline_script = "
+            jQuery(document).ready(function($) {
+                // Check if wpColorPicker is available before initializing
+                if (typeof $.fn.wpColorPicker === 'function') {
+                    $('.framt-color-picker').wpColorPicker({
+                        change: function(event, ui) {
+                            $(this).closest('.framt-color-row').find('.framt-color-preview').css('background-color', ui.color.toString());
+                        },
+                        clear: function() {
+                            $(this).closest('.framt-color-row').find('.framt-color-preview').css('background-color', '');
+                        }
+                    });
+                } else {
+                    console.warn('WordPress Color Picker not available');
+                }
+
+                // Media uploader for logo/favicon
+                $(document).on('click', '.framt-upload-button', function(e) {
+                    e.preventDefault();
+                    var button = $(this);
+                    var targetInput = $(button.data('target'));
+
+                    if (typeof wp !== 'undefined' && typeof wp.media === 'function') {
+                        var frame = wp.media({
+                            title: 'Select Image',
+                            button: { text: 'Use this image' },
+                            multiple: false
+                        });
+
+                        frame.on('select', function() {
+                            var attachment = frame.state().get('selection').first().toJSON();
+                            targetInput.val(attachment.url);
+                            button.siblings('.framt-image-preview').attr('src', attachment.url).show();
+                        });
+
+                        frame.open();
+                    } else {
+                        alert('Media library not available. Please refresh the page.');
+                    }
+                });
+            });
+        ";
+
+        wp_add_inline_script( 'wp-color-picker', $inline_script );
     }
 
     /**
@@ -376,35 +439,7 @@ class FRAMT_Portal_Settings {
 
         <script>
         jQuery(document).ready(function($) {
-            // Initialize color pickers
-            $('.framt-color-picker').wpColorPicker({
-                change: function(event, ui) {
-                    $(this).siblings('.framt-color-preview').css('background-color', ui.color.toString());
-                }
-            });
-
-            // Media uploader for logo
-            $('.framt-upload-button').on('click', function(e) {
-                e.preventDefault();
-                var button = $(this);
-                var targetInput = $(button.data('target'));
-
-                var frame = wp.media({
-                    title: 'Select Image',
-                    button: { text: 'Use this image' },
-                    multiple: false
-                });
-
-                frame.on('select', function() {
-                    var attachment = frame.state().get('selection').first().toJSON();
-                    targetInput.val(attachment.url);
-                    button.siblings('.framt-image-preview').attr('src', attachment.url).show();
-                });
-
-                frame.open();
-            });
-
-            // Reset settings
+            // Reset settings button handler
             $('#framt-reset-settings').on('click', function() {
                 if (!confirm('Are you sure you want to reset all portal settings to defaults?')) {
                     return;
