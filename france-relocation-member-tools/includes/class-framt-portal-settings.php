@@ -57,26 +57,63 @@ class FRAMT_Portal_Settings {
         // Menu Items - visibility
         'menu_dashboard'      => true,
         'menu_tasks'          => true,
+        'menu_checklists'     => true,
         'menu_timeline'       => true,
         'menu_messages'       => true,
+        'menu_chat'           => true,
         'menu_documents'      => true,
         'menu_guides'         => true,
+        'menu_glossary'       => true,
         'menu_files'          => true,
+        'menu_profile'        => true,
         'menu_family'         => true,
+        'menu_membership'     => true,
         'menu_settings'       => true,
         'menu_help'           => true,
 
         // Menu Labels - customizable names
         'label_dashboard'     => 'Dashboard',
         'label_tasks'         => 'Tasks',
+        'label_checklists'    => 'Checklists',
         'label_timeline'      => 'Timeline',
         'label_messages'      => 'Messages',
+        'label_chat'          => 'Ask AI',
         'label_documents'     => 'Documents',
         'label_guides'        => 'Guides',
+        'label_glossary'      => 'Glossary',
         'label_files'         => 'Files',
+        'label_profile'       => 'My Profile',
         'label_family'        => 'Family Members',
+        'label_membership'    => 'Membership',
         'label_settings'      => 'Settings',
         'label_help'          => 'Help & Support',
+
+        // Menu Icons - customizable icons
+        'icon_dashboard'      => 'LayoutDashboard',
+        'icon_tasks'          => 'CheckSquare',
+        'icon_checklists'     => 'ClipboardList',
+        'icon_timeline'       => 'Calendar',
+        'icon_messages'       => 'MessageSquare',
+        'icon_chat'           => 'Bot',
+        'icon_documents'      => 'FileText',
+        'icon_guides'         => 'BookOpen',
+        'icon_glossary'       => 'BookMarked',
+        'icon_files'          => 'FolderOpen',
+        'icon_profile'        => 'User',
+        'icon_family'         => 'Users',
+        'icon_membership'     => 'CreditCard',
+        'icon_settings'       => 'Settings',
+        'icon_help'           => 'HelpCircle',
+
+        // Menu Section Order (JSON encoded arrays)
+        'menu_order_project'   => 'dashboard,tasks,checklists,timeline,messages',
+        'menu_order_resources' => 'chat,documents,guides,glossary,files',
+        'menu_order_account'   => 'profile,family,membership,settings,help',
+
+        // Section Labels
+        'section_label_project'   => 'PROJECT',
+        'section_label_resources' => 'RESOURCES',
+        'section_label_account'   => 'ACCOUNT',
 
         // Features
         'enable_notifications' => true,
@@ -85,6 +122,41 @@ class FRAMT_Portal_Settings {
 
         // Custom CSS
         'custom_css'          => '',
+    );
+
+    /**
+     * Available icons for menu items.
+     *
+     * @var array
+     */
+    private $available_icons = array(
+        'LayoutDashboard' => 'Dashboard',
+        'CheckSquare'     => 'Check Square',
+        'ClipboardList'   => 'Clipboard List',
+        'Calendar'        => 'Calendar',
+        'MessageSquare'   => 'Message',
+        'Bot'             => 'AI Bot',
+        'FileText'        => 'Document',
+        'BookOpen'        => 'Book Open',
+        'BookMarked'      => 'Bookmark',
+        'FolderOpen'      => 'Folder',
+        'User'            => 'User',
+        'Users'           => 'Users',
+        'CreditCard'      => 'Credit Card',
+        'Settings'        => 'Settings Gear',
+        'HelpCircle'      => 'Help Circle',
+        'Home'            => 'Home',
+        'Star'            => 'Star',
+        'Heart'           => 'Heart',
+        'Bell'            => 'Bell',
+        'Mail'            => 'Mail',
+        'Search'          => 'Search',
+        'Map'             => 'Map',
+        'Briefcase'       => 'Briefcase',
+        'GraduationCap'   => 'Graduation Cap',
+        'Plane'           => 'Plane',
+        'Building'        => 'Building',
+        'Globe'           => 'Globe',
     );
 
     /**
@@ -190,27 +262,59 @@ class FRAMT_Portal_Settings {
             }
         }
 
-        // Booleans
+        // Booleans (menu visibility)
         $bool_fields = array(
             'show_wp_header', 'show_wp_footer', 'show_promo_banner',
             'sidebar_collapsed', 'enable_notifications', 'enable_file_upload',
-            'enable_ai_assistant', 'menu_dashboard', 'menu_tasks', 'menu_timeline',
-            'menu_messages', 'menu_documents', 'menu_guides', 'menu_files',
-            'menu_family', 'menu_settings', 'menu_help'
+            'enable_ai_assistant',
+            'menu_dashboard', 'menu_tasks', 'menu_checklists', 'menu_timeline',
+            'menu_messages', 'menu_chat', 'menu_documents', 'menu_guides',
+            'menu_glossary', 'menu_files', 'menu_profile', 'menu_family',
+            'menu_membership', 'menu_settings', 'menu_help'
         );
         foreach ( $bool_fields as $field ) {
             $sanitized[ $field ] = ! empty( $input[ $field ] );
         }
 
-        // Text fields
+        // Text fields (labels and section labels)
         $text_fields = array(
-            'portal_title', 'label_dashboard', 'label_tasks', 'label_timeline',
-            'label_messages', 'label_documents', 'label_guides', 'label_files',
-            'label_family', 'label_settings', 'label_help'
+            'portal_title',
+            'label_dashboard', 'label_tasks', 'label_checklists', 'label_timeline',
+            'label_messages', 'label_chat', 'label_documents', 'label_guides',
+            'label_glossary', 'label_files', 'label_profile', 'label_family',
+            'label_membership', 'label_settings', 'label_help',
+            'section_label_project', 'section_label_resources', 'section_label_account'
         );
         foreach ( $text_fields as $field ) {
             if ( isset( $input[ $field ] ) ) {
                 $sanitized[ $field ] = sanitize_text_field( $input[ $field ] );
+            }
+        }
+
+        // Icon fields - validate against available icons
+        $icon_fields = array(
+            'icon_dashboard', 'icon_tasks', 'icon_checklists', 'icon_timeline',
+            'icon_messages', 'icon_chat', 'icon_documents', 'icon_guides',
+            'icon_glossary', 'icon_files', 'icon_profile', 'icon_family',
+            'icon_membership', 'icon_settings', 'icon_help'
+        );
+        foreach ( $icon_fields as $field ) {
+            if ( isset( $input[ $field ] ) ) {
+                $icon = sanitize_text_field( $input[ $field ] );
+                // Validate icon exists in available icons
+                if ( array_key_exists( $icon, $this->available_icons ) ) {
+                    $sanitized[ $field ] = $icon;
+                }
+            }
+        }
+
+        // Menu order fields (comma-separated item IDs)
+        $order_fields = array( 'menu_order_project', 'menu_order_resources', 'menu_order_account' );
+        foreach ( $order_fields as $field ) {
+            if ( isset( $input[ $field ] ) ) {
+                // Sanitize as comma-separated list of valid menu item IDs
+                $items = array_map( 'sanitize_key', explode( ',', $input[ $field ] ) );
+                $sanitized[ $field ] = implode( ',', array_filter( $items ) );
             }
         }
 
@@ -256,6 +360,9 @@ class FRAMT_Portal_Settings {
         if ( ! $is_our_page ) {
             return;
         }
+
+        // Enqueue jQuery UI Sortable for drag-and-drop
+        wp_enqueue_script( 'jquery-ui-sortable' );
 
         // Enqueue WordPress color picker with its dependencies
         wp_enqueue_style( 'wp-color-picker' );
@@ -500,12 +607,25 @@ class FRAMT_Portal_Settings {
                 'sidebar_position', 'sidebar_collapsed',
             ),
             'menu' => array(
-                'menu_dashboard', 'menu_tasks', 'menu_timeline', 'menu_messages',
-                'menu_documents', 'menu_guides', 'menu_files', 'menu_family',
-                'menu_settings', 'menu_help',
-                'label_dashboard', 'label_tasks', 'label_timeline', 'label_messages',
-                'label_documents', 'label_guides', 'label_files', 'label_family',
-                'label_settings', 'label_help',
+                // Visibility
+                'menu_dashboard', 'menu_tasks', 'menu_checklists', 'menu_timeline',
+                'menu_messages', 'menu_chat', 'menu_documents', 'menu_guides',
+                'menu_glossary', 'menu_files', 'menu_profile', 'menu_family',
+                'menu_membership', 'menu_settings', 'menu_help',
+                // Labels
+                'label_dashboard', 'label_tasks', 'label_checklists', 'label_timeline',
+                'label_messages', 'label_chat', 'label_documents', 'label_guides',
+                'label_glossary', 'label_files', 'label_profile', 'label_family',
+                'label_membership', 'label_settings', 'label_help',
+                // Icons
+                'icon_dashboard', 'icon_tasks', 'icon_checklists', 'icon_timeline',
+                'icon_messages', 'icon_chat', 'icon_documents', 'icon_guides',
+                'icon_glossary', 'icon_files', 'icon_profile', 'icon_family',
+                'icon_membership', 'icon_settings', 'icon_help',
+                // Order
+                'menu_order_project', 'menu_order_resources', 'menu_order_account',
+                // Section labels
+                'section_label_project', 'section_label_resources', 'section_label_account',
             ),
             'branding' => array(
                 'portal_title', 'logo_url', 'favicon_url',
@@ -530,9 +650,10 @@ class FRAMT_Portal_Settings {
         $bool_fields = array(
             'show_wp_header', 'show_wp_footer', 'show_promo_banner', 'sidebar_collapsed',
             'enable_notifications', 'enable_file_upload', 'enable_ai_assistant',
-            'menu_dashboard', 'menu_tasks', 'menu_timeline', 'menu_messages',
-            'menu_documents', 'menu_guides', 'menu_files', 'menu_family',
-            'menu_settings', 'menu_help',
+            'menu_dashboard', 'menu_tasks', 'menu_checklists', 'menu_timeline',
+            'menu_messages', 'menu_chat', 'menu_documents', 'menu_guides',
+            'menu_glossary', 'menu_files', 'menu_profile', 'menu_family',
+            'menu_membership', 'menu_settings', 'menu_help',
         );
 
         // Output hidden fields
@@ -680,41 +801,312 @@ class FRAMT_Portal_Settings {
      * @param array $settings Current settings.
      */
     private function render_menu_tab( $settings ) {
-        $menu_items = array(
-            'dashboard' => array( 'icon' => '📊', 'default' => 'Dashboard' ),
-            'tasks'     => array( 'icon' => '✓', 'default' => 'Tasks' ),
-            'timeline'  => array( 'icon' => '📅', 'default' => 'Timeline' ),
-            'messages'  => array( 'icon' => '💬', 'default' => 'Messages' ),
-            'documents' => array( 'icon' => '📄', 'default' => 'Documents' ),
-            'guides'    => array( 'icon' => '📚', 'default' => 'Guides' ),
-            'files'     => array( 'icon' => '📁', 'default' => 'Files' ),
-            'family'    => array( 'icon' => '👥', 'default' => 'Family Members' ),
-            'settings'  => array( 'icon' => '⚙️', 'default' => 'Settings' ),
-            'help'      => array( 'icon' => '❓', 'default' => 'Help & Support' ),
+        // Define all menu items with their defaults
+        $all_menu_items = array(
+            'dashboard'  => array( 'default_label' => 'Dashboard', 'default_icon' => 'LayoutDashboard' ),
+            'tasks'      => array( 'default_label' => 'Tasks', 'default_icon' => 'CheckSquare' ),
+            'checklists' => array( 'default_label' => 'Checklists', 'default_icon' => 'ClipboardList' ),
+            'timeline'   => array( 'default_label' => 'Timeline', 'default_icon' => 'Calendar' ),
+            'messages'   => array( 'default_label' => 'Messages', 'default_icon' => 'MessageSquare' ),
+            'chat'       => array( 'default_label' => 'Ask AI', 'default_icon' => 'Bot' ),
+            'documents'  => array( 'default_label' => 'Documents', 'default_icon' => 'FileText' ),
+            'guides'     => array( 'default_label' => 'Guides', 'default_icon' => 'BookOpen' ),
+            'glossary'   => array( 'default_label' => 'Glossary', 'default_icon' => 'BookMarked' ),
+            'files'      => array( 'default_label' => 'Files', 'default_icon' => 'FolderOpen' ),
+            'profile'    => array( 'default_label' => 'My Profile', 'default_icon' => 'User' ),
+            'family'     => array( 'default_label' => 'Family Members', 'default_icon' => 'Users' ),
+            'membership' => array( 'default_label' => 'Membership', 'default_icon' => 'CreditCard' ),
+            'settings'   => array( 'default_label' => 'Settings', 'default_icon' => 'Settings' ),
+            'help'       => array( 'default_label' => 'Help & Support', 'default_icon' => 'HelpCircle' ),
+        );
+
+        // Define sections
+        $sections = array(
+            'project'   => array(
+                'label'    => $settings['section_label_project'] ?: 'PROJECT',
+                'items'    => explode( ',', $settings['menu_order_project'] ),
+            ),
+            'resources' => array(
+                'label'    => $settings['section_label_resources'] ?: 'RESOURCES',
+                'items'    => explode( ',', $settings['menu_order_resources'] ),
+            ),
+            'account'   => array(
+                'label'    => $settings['section_label_account'] ?: 'ACCOUNT',
+                'items'    => explode( ',', $settings['menu_order_account'] ),
+            ),
         );
         ?>
-        <div class="framt-settings-card">
-            <h2>Menu Items</h2>
-            <p>Enable or disable menu items, and customize their labels.</p>
 
-            <?php foreach ( $menu_items as $key => $item ) : ?>
-            <div class="framt-menu-item">
-                <input type="checkbox"
-                       name="<?php echo self::OPTION_NAME; ?>[menu_<?php echo $key; ?>]"
-                       id="menu_<?php echo $key; ?>"
-                       value="1"
-                       <?php checked( $settings[ 'menu_' . $key ] ); ?>>
-                <label for="menu_<?php echo $key; ?>">
-                    <span style="margin-right: 8px;"><?php echo $item['icon']; ?></span>
-                    <?php echo esc_html( $item['default'] ); ?>
-                </label>
-                <input type="text"
-                       name="<?php echo self::OPTION_NAME; ?>[label_<?php echo $key; ?>]"
-                       value="<?php echo esc_attr( $settings[ 'label_' . $key ] ); ?>"
-                       placeholder="<?php echo esc_attr( $item['default'] ); ?>">
+        <div class="framt-settings-card">
+            <h2>Menu Configuration</h2>
+            <p>Customize your portal sidebar menu. Drag items to reorder within each section. Toggle visibility, customize labels, and choose icons.</p>
+
+            <!-- Section Labels -->
+            <div style="margin-bottom: 30px; padding: 15px; background: #f0f0f1; border-radius: 4px;">
+                <h3 style="margin-top: 0;">Section Labels</h3>
+                <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                    <div>
+                        <label for="section_label_project"><strong>Project Section:</strong></label><br>
+                        <input type="text" id="section_label_project"
+                               name="<?php echo self::OPTION_NAME; ?>[section_label_project]"
+                               value="<?php echo esc_attr( $settings['section_label_project'] ); ?>"
+                               placeholder="PROJECT" style="width: 150px;">
+                    </div>
+                    <div>
+                        <label for="section_label_resources"><strong>Resources Section:</strong></label><br>
+                        <input type="text" id="section_label_resources"
+                               name="<?php echo self::OPTION_NAME; ?>[section_label_resources]"
+                               value="<?php echo esc_attr( $settings['section_label_resources'] ); ?>"
+                               placeholder="RESOURCES" style="width: 150px;">
+                    </div>
+                    <div>
+                        <label for="section_label_account"><strong>Account Section:</strong></label><br>
+                        <input type="text" id="section_label_account"
+                               name="<?php echo self::OPTION_NAME; ?>[section_label_account]"
+                               value="<?php echo esc_attr( $settings['section_label_account'] ); ?>"
+                               placeholder="ACCOUNT" style="width: 150px;">
+                    </div>
+                </div>
+            </div>
+
+            <?php foreach ( $sections as $section_id => $section ) : ?>
+            <div class="framt-menu-section" data-section="<?php echo esc_attr( $section_id ); ?>">
+                <div class="framt-menu-section-header">
+                    <h3><?php echo esc_html( $section['label'] ); ?></h3>
+                    <span class="framt-drag-hint">Drag to reorder</span>
+                </div>
+
+                <div class="framt-menu-sortable" id="sortable-<?php echo esc_attr( $section_id ); ?>">
+                    <?php
+                    foreach ( $section['items'] as $item_id ) :
+                        $item_id = trim( $item_id );
+                        if ( empty( $item_id ) || ! isset( $all_menu_items[ $item_id ] ) ) continue;
+                        $item = $all_menu_items[ $item_id ];
+                        $is_enabled = ! empty( $settings[ 'menu_' . $item_id ] );
+                        $label = $settings[ 'label_' . $item_id ] ?: $item['default_label'];
+                        $icon = $settings[ 'icon_' . $item_id ] ?: $item['default_icon'];
+                    ?>
+                    <div class="framt-menu-item-row <?php echo $is_enabled ? '' : 'framt-menu-disabled'; ?>"
+                         data-item-id="<?php echo esc_attr( $item_id ); ?>">
+                        <div class="framt-menu-drag-handle">
+                            <span class="dashicons dashicons-menu"></span>
+                        </div>
+
+                        <div class="framt-menu-visibility">
+                            <label class="framt-switch">
+                                <input type="checkbox"
+                                       name="<?php echo self::OPTION_NAME; ?>[menu_<?php echo esc_attr( $item_id ); ?>]"
+                                       value="1"
+                                       class="framt-visibility-toggle"
+                                       <?php checked( $is_enabled ); ?>>
+                                <span class="framt-switch-slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="framt-menu-icon-select">
+                            <select name="<?php echo self::OPTION_NAME; ?>[icon_<?php echo esc_attr( $item_id ); ?>]"
+                                    class="framt-icon-dropdown">
+                                <?php foreach ( $this->available_icons as $icon_key => $icon_label ) : ?>
+                                <option value="<?php echo esc_attr( $icon_key ); ?>"
+                                        <?php selected( $icon, $icon_key ); ?>>
+                                    <?php echo esc_html( $icon_label ); ?>
+                                </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+
+                        <div class="framt-menu-label-input">
+                            <input type="text"
+                                   name="<?php echo self::OPTION_NAME; ?>[label_<?php echo esc_attr( $item_id ); ?>]"
+                                   value="<?php echo esc_attr( $label ); ?>"
+                                   placeholder="<?php echo esc_attr( $item['default_label'] ); ?>">
+                        </div>
+
+                        <div class="framt-menu-item-id">
+                            <code><?php echo esc_html( $item_id ); ?></code>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+
+                <!-- Hidden field to store order -->
+                <input type="hidden"
+                       name="<?php echo self::OPTION_NAME; ?>[menu_order_<?php echo esc_attr( $section_id ); ?>]"
+                       id="menu_order_<?php echo esc_attr( $section_id ); ?>"
+                       value="<?php echo esc_attr( implode( ',', $section['items'] ) ); ?>"
+                       class="framt-menu-order-field">
             </div>
             <?php endforeach; ?>
         </div>
+
+        <style>
+            .framt-menu-section {
+                margin-bottom: 30px;
+                border: 1px solid #c3c4c7;
+                border-radius: 4px;
+                background: #fff;
+            }
+            .framt-menu-section-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 12px 15px;
+                background: #f0f0f1;
+                border-bottom: 1px solid #c3c4c7;
+            }
+            .framt-menu-section-header h3 {
+                margin: 0;
+                font-size: 13px;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                color: #1d2327;
+            }
+            .framt-drag-hint {
+                font-size: 11px;
+                color: #787c82;
+                font-style: italic;
+            }
+            .framt-menu-sortable {
+                padding: 10px;
+            }
+            .framt-menu-item-row {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                padding: 10px 12px;
+                margin-bottom: 8px;
+                background: #f9f9f9;
+                border: 1px solid #dcdcde;
+                border-radius: 4px;
+                cursor: move;
+                transition: all 0.2s ease;
+            }
+            .framt-menu-item-row:hover {
+                background: #f0f6fc;
+                border-color: #2271b1;
+            }
+            .framt-menu-item-row.ui-sortable-helper {
+                background: #fff;
+                box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+            }
+            .framt-menu-item-row.ui-sortable-placeholder {
+                background: #e7f3ff;
+                border: 2px dashed #2271b1;
+                visibility: visible !important;
+            }
+            .framt-menu-disabled {
+                opacity: 0.5;
+                background: #f0f0f1;
+            }
+            .framt-menu-drag-handle {
+                color: #787c82;
+                cursor: move;
+            }
+            .framt-menu-drag-handle .dashicons {
+                font-size: 18px;
+                width: 18px;
+                height: 18px;
+            }
+            .framt-menu-visibility {
+                flex-shrink: 0;
+            }
+            .framt-switch {
+                position: relative;
+                display: inline-block;
+                width: 40px;
+                height: 22px;
+            }
+            .framt-switch input {
+                opacity: 0;
+                width: 0;
+                height: 0;
+            }
+            .framt-switch-slider {
+                position: absolute;
+                cursor: pointer;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: #ccc;
+                transition: 0.3s;
+                border-radius: 22px;
+            }
+            .framt-switch-slider:before {
+                position: absolute;
+                content: "";
+                height: 16px;
+                width: 16px;
+                left: 3px;
+                bottom: 3px;
+                background-color: white;
+                transition: 0.3s;
+                border-radius: 50%;
+            }
+            .framt-switch input:checked + .framt-switch-slider {
+                background-color: #2271b1;
+            }
+            .framt-switch input:checked + .framt-switch-slider:before {
+                transform: translateX(18px);
+            }
+            .framt-menu-icon-select select {
+                width: 140px;
+                padding: 4px 8px;
+            }
+            .framt-menu-label-input {
+                flex: 1;
+            }
+            .framt-menu-label-input input {
+                width: 100%;
+                padding: 6px 10px;
+            }
+            .framt-menu-item-id {
+                flex-shrink: 0;
+            }
+            .framt-menu-item-id code {
+                font-size: 11px;
+                color: #787c82;
+                background: #f0f0f1;
+                padding: 2px 6px;
+                border-radius: 3px;
+            }
+        </style>
+
+        <script>
+        jQuery(document).ready(function($) {
+            // Initialize sortable for each section
+            $('.framt-menu-sortable').sortable({
+                handle: '.framt-menu-drag-handle',
+                placeholder: 'framt-menu-item-row ui-sortable-placeholder',
+                forcePlaceholderSize: true,
+                tolerance: 'pointer',
+                update: function(event, ui) {
+                    updateMenuOrder($(this));
+                }
+            });
+
+            // Update hidden field with new order
+            function updateMenuOrder($sortable) {
+                var sectionId = $sortable.attr('id').replace('sortable-', '');
+                var order = [];
+                $sortable.find('.framt-menu-item-row').each(function() {
+                    order.push($(this).data('item-id'));
+                });
+                $('#menu_order_' + sectionId).val(order.join(','));
+            }
+
+            // Toggle visibility styling
+            $(document).on('change', '.framt-visibility-toggle', function() {
+                var $row = $(this).closest('.framt-menu-item-row');
+                if ($(this).is(':checked')) {
+                    $row.removeClass('framt-menu-disabled');
+                } else {
+                    $row.addClass('framt-menu-disabled');
+                }
+            });
+        });
+        </script>
         <?php
     }
 
