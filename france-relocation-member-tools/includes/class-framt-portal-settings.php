@@ -222,7 +222,17 @@ class FRAMT_Portal_Settings {
      * @param string $hook Current admin page hook.
      */
     public function enqueue_admin_scripts( $hook ) {
-        if ( 'fra-member-tools_page_framt-portal-settings' !== $hook ) {
+        // Check for various possible hook names depending on menu structure
+        $valid_hooks = array(
+            'fra-member-tools_page_framt-portal-settings',
+            'france-relocation-assistant_page_framt-portal-settings',
+            'admin_page_framt-portal-settings',
+        );
+
+        // Also check if hook contains our page slug
+        $is_our_page = in_array( $hook, $valid_hooks, true ) || strpos( $hook, 'framt-portal-settings' ) !== false;
+
+        if ( ! $is_our_page ) {
             return;
         }
 
@@ -281,6 +291,11 @@ class FRAMT_Portal_Settings {
 
             <form method="post" action="options.php">
                 <?php settings_fields( 'framt_portal_settings_group' ); ?>
+
+                <?php
+                // Output hidden fields for all settings to preserve values from other tabs
+                $this->render_hidden_fields( $settings, $active_tab );
+                ?>
 
                 <div class="tab-content" style="margin-top: 20px;">
                     <?php
@@ -410,6 +425,74 @@ class FRAMT_Portal_Settings {
         });
         </script>
         <?php
+    }
+
+    /**
+     * Render hidden fields for settings not on the current tab.
+     * This preserves all settings when saving from any tab.
+     *
+     * @param array  $settings   Current settings.
+     * @param string $active_tab Currently active tab.
+     */
+    private function render_hidden_fields( $settings, $active_tab ) {
+        // Define which fields belong to which tab
+        $tab_fields = array(
+            'appearance' => array(
+                'primary_color', 'secondary_color', 'sidebar_bg_color',
+                'sidebar_text_color', 'header_bg_color', 'accent_color',
+                'show_wp_header', 'show_wp_footer', 'show_promo_banner',
+                'sidebar_position', 'sidebar_collapsed',
+            ),
+            'menu' => array(
+                'menu_dashboard', 'menu_tasks', 'menu_timeline', 'menu_messages',
+                'menu_documents', 'menu_guides', 'menu_files', 'menu_family',
+                'menu_settings', 'menu_help',
+                'label_dashboard', 'label_tasks', 'label_timeline', 'label_messages',
+                'label_documents', 'label_guides', 'label_files', 'label_family',
+                'label_settings', 'label_help',
+            ),
+            'branding' => array(
+                'portal_title', 'logo_url', 'favicon_url',
+            ),
+            'features' => array(
+                'enable_notifications', 'enable_file_upload', 'enable_ai_assistant',
+            ),
+            'advanced' => array(
+                'custom_css',
+            ),
+        );
+
+        // Get fields that are NOT on the current tab
+        $hidden_fields = array();
+        foreach ( $tab_fields as $tab => $fields ) {
+            if ( $tab !== $active_tab ) {
+                $hidden_fields = array_merge( $hidden_fields, $fields );
+            }
+        }
+
+        // Boolean fields that need special handling
+        $bool_fields = array(
+            'show_wp_header', 'show_wp_footer', 'show_promo_banner', 'sidebar_collapsed',
+            'enable_notifications', 'enable_file_upload', 'enable_ai_assistant',
+            'menu_dashboard', 'menu_tasks', 'menu_timeline', 'menu_messages',
+            'menu_documents', 'menu_guides', 'menu_files', 'menu_family',
+            'menu_settings', 'menu_help',
+        );
+
+        // Output hidden fields
+        foreach ( $hidden_fields as $field ) {
+            $value = isset( $settings[ $field ] ) ? $settings[ $field ] : '';
+
+            if ( in_array( $field, $bool_fields, true ) ) {
+                // For boolean fields, only output if true (checkboxes)
+                if ( $value ) {
+                    echo '<input type="hidden" name="' . esc_attr( self::OPTION_NAME ) . '[' . esc_attr( $field ) . ']" value="1">';
+                }
+            } else {
+                // For other fields, output the value
+                echo '<input type="hidden" name="' . esc_attr( self::OPTION_NAME ) . '[' . esc_attr( $field ) . ']" value="' . esc_attr( $value ) . '">';
+            }
+        }
     }
 
     /**
