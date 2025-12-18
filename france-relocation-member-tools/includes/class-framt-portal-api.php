@@ -1423,6 +1423,7 @@ class FRAMT_Portal_API {
             'language'            => 'en',
             'timezone'            => wp_timezone_string(),
             'date_format'         => 'M j, Y',
+            'menu_order'          => null, // Custom menu order (null = use defaults)
         );
 
         $settings = get_user_meta( $user_id, 'fra_portal_settings', true );
@@ -1466,6 +1467,24 @@ class FRAMT_Portal_API {
                 } else {
                     $settings[ $key ] = sanitize_text_field( $params[ $key ] );
                 }
+            }
+        }
+
+        // Handle menu_order separately (it's an object/array)
+        if ( isset( $params['menu_order'] ) && is_array( $params['menu_order'] ) ) {
+            $menu_order = array();
+            $allowed_sections = array( 'project', 'resources', 'account' );
+
+            foreach ( $allowed_sections as $section ) {
+                if ( isset( $params['menu_order'][ $section ] ) && is_array( $params['menu_order'][ $section ] ) ) {
+                    // Sanitize each item ID in the section
+                    $menu_order[ $section ] = array_map( 'sanitize_key', $params['menu_order'][ $section ] );
+                }
+            }
+
+            // Only save if we have valid data
+            if ( ! empty( $menu_order ) ) {
+                $settings['menu_order'] = $menu_order;
             }
         }
 

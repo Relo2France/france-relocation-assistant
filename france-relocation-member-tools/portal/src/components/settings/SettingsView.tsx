@@ -11,6 +11,22 @@ import {
   ChevronUp,
   AlertTriangle,
   Trash2,
+  Menu,
+  GripVertical,
+  LayoutDashboard,
+  CheckSquare,
+  MessageSquare,
+  Calendar,
+  BookOpen,
+  HelpCircle,
+  FolderOpen,
+  ClipboardList,
+  BookMarked,
+  Bot,
+  CreditCard,
+  Users,
+  Settings,
+  LucideIcon,
 } from 'lucide-react';
 import {
   useCurrentUser,
@@ -23,9 +39,29 @@ import {
   useDeleteAccount,
 } from '@/hooks/useApi';
 import { usePortalStore } from '@/store';
-import type { UserSettings, MemberProfile } from '@/types';
+import type { UserSettings, MemberProfile, MenuSectionOrder } from '@/types';
 
-type SettingsTab = 'portal-account' | 'visa-profile' | 'notifications';
+type SettingsTab = 'portal-account' | 'visa-profile' | 'notifications' | 'menu';
+
+// Icon mapping for menu items
+const menuIcons: Record<string, LucideIcon> = {
+  LayoutDashboard,
+  CheckSquare,
+  MessageSquare,
+  Calendar,
+  BookOpen,
+  HelpCircle,
+  FolderOpen,
+  ClipboardList,
+  BookMarked,
+  Bot,
+  CreditCard,
+  Users,
+  Settings,
+  FileText,
+  User,
+  Bell,
+};
 
 // Field type for Visa Profile sections
 interface ProfileField {
@@ -50,7 +86,7 @@ export default function SettingsView() {
 
   // Handle navigation from other components (e.g., Dashboard)
   useEffect(() => {
-    if (settingsTab && ['portal-account', 'visa-profile', 'notifications'].includes(settingsTab)) {
+    if (settingsTab && ['portal-account', 'visa-profile', 'notifications', 'menu'].includes(settingsTab)) {
       setActiveTab(settingsTab as SettingsTab);
       setSettingsTab(null); // Clear after using
     }
@@ -60,6 +96,7 @@ export default function SettingsView() {
     { id: 'portal-account' as SettingsTab, label: 'Portal Account', icon: User },
     { id: 'visa-profile' as SettingsTab, label: 'Visa Profile', icon: FileText },
     { id: 'notifications' as SettingsTab, label: 'Notifications', icon: Bell },
+    { id: 'menu' as SettingsTab, label: 'Menu', icon: Menu },
   ];
 
   return (
@@ -102,6 +139,7 @@ export default function SettingsView() {
           {activeTab === 'portal-account' && <PortalAccountSection />}
           {activeTab === 'visa-profile' && <VisaProfileSection />}
           {activeTab === 'notifications' && <NotificationsSection />}
+          {activeTab === 'menu' && <MenuSection />}
         </div>
       </div>
     </div>
@@ -841,6 +879,216 @@ function NotificationsSection() {
               <option value="America/Los_Angeles">Los Angeles (PST)</option>
               <option value="Asia/Tokyo">Tokyo (JST)</option>
             </select>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Menu Section - Drag and drop menu ordering
+function MenuSection() {
+  const { settings } = usePortalStore();
+  const { data: userSettings, isLoading } = useUserSettings();
+  const updateUserSettings = useUpdateSettings();
+
+  // Default section definitions
+  const defaultSections: Record<string, { label: string; itemIds: string[] }> = {
+    project: {
+      label: 'PROJECT',
+      itemIds: ['dashboard', 'tasks', 'checklists', 'timeline', 'messages'],
+    },
+    resources: {
+      label: 'RESOURCES',
+      itemIds: ['chat', 'documents', 'guides', 'glossary', 'files'],
+    },
+    account: {
+      label: 'ACCOUNT',
+      itemIds: ['profile', 'family', 'membership', 'settings', 'help'],
+    },
+  };
+
+  // Get menu item details from settings
+  const menuItemsMap = settings.menu.reduce((acc, item) => {
+    acc[item.id] = item;
+    return acc;
+  }, {} as Record<string, typeof settings.menu[0]>);
+
+  // Initialize section order from user settings or defaults
+  const [sectionOrder, setSectionOrder] = useState<MenuSectionOrder>(() => {
+    if (userSettings?.menu_order) {
+      return userSettings.menu_order;
+    }
+    return {
+      project: defaultSections.project.itemIds,
+      resources: defaultSections.resources.itemIds,
+      account: defaultSections.account.itemIds,
+    };
+  });
+
+  // Update local state when user settings load
+  useEffect(() => {
+    if (userSettings?.menu_order) {
+      setSectionOrder(userSettings.menu_order);
+    }
+  }, [userSettings]);
+
+  // Drag state
+  const [draggedItem, setDraggedItem] = useState<{ sectionId: string; itemId: string } | null>(null);
+  const [dragOverItem, setDragOverItem] = useState<{ sectionId: string; index: number } | null>(null);
+
+  const handleDragStart = (sectionId: string, itemId: string) => {
+    setDraggedItem({ sectionId, itemId });
+  };
+
+  const handleDragOver = (e: React.DragEvent, sectionId: string, index: number) => {
+    e.preventDefault();
+    // Only allow dragging within same section
+    if (draggedItem && draggedItem.sectionId === sectionId) {
+      setDragOverItem({ sectionId, index });
+    }
+  };
+
+  const handleDragEnd = () => {
+    if (draggedItem && dragOverItem && draggedItem.sectionId === dragOverItem.sectionId) {
+      const sectionId = draggedItem.sectionId as keyof MenuSectionOrder;
+      const items = [...sectionOrder[sectionId]];
+      const fromIndex = items.indexOf(draggedItem.itemId);
+      const toIndex = dragOverItem.index;
+
+      if (fromIndex !== -1 && fromIndex !== toIndex) {
+        items.splice(fromIndex, 1);
+        items.splice(toIndex, 0, draggedItem.itemId);
+
+        const newOrder = { ...sectionOrder, [sectionId]: items };
+        setSectionOrder(newOrder);
+      }
+    }
+    setDraggedItem(null);
+    setDragOverItem(null);
+  };
+
+  const handleSave = () => {
+    updateUserSettings.mutate({ menu_order: sectionOrder });
+  };
+
+  const handleReset = () => {
+    const defaultOrder: MenuSectionOrder = {
+      project: defaultSections.project.itemIds,
+      resources: defaultSections.resources.itemIds,
+      account: defaultSections.account.itemIds,
+    };
+    setSectionOrder(defaultOrder);
+    updateUserSettings.mutate({ menu_order: defaultOrder });
+  };
+
+  if (isLoading) {
+    return <SettingsSkeleton />;
+  }
+
+  const sections = [
+    { id: 'project', label: 'PROJECT' },
+    { id: 'resources', label: 'RESOURCES' },
+    { id: 'account', label: 'ACCOUNT' },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <div className="card p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Menu Order</h2>
+            <p className="text-sm text-gray-500 mt-1">
+              Drag and drop menu items to reorder them within each section
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          {sections.map((section) => (
+            <div key={section.id} className="border border-gray-200 rounded-lg overflow-hidden">
+              <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
+                <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                  {section.label}
+                </h3>
+              </div>
+              <div className="p-2">
+                {sectionOrder[section.id as keyof MenuSectionOrder].map((itemId, index) => {
+                  const item = menuItemsMap[itemId];
+                  if (!item) return null;
+
+                  const Icon = menuIcons[item.icon] || LayoutDashboard;
+                  const isDragging = draggedItem?.itemId === itemId;
+                  const isDragOver = dragOverItem?.sectionId === section.id && dragOverItem?.index === index;
+
+                  return (
+                    <div
+                      key={itemId}
+                      draggable
+                      onDragStart={() => handleDragStart(section.id, itemId)}
+                      onDragOver={(e) => handleDragOver(e, section.id, index)}
+                      onDragEnd={handleDragEnd}
+                      className={clsx(
+                        'flex items-center gap-3 px-3 py-2 rounded-lg cursor-move transition-all',
+                        isDragging && 'opacity-50 bg-primary-50',
+                        isDragOver && 'border-t-2 border-primary-500',
+                        !isDragging && !isDragOver && 'hover:bg-gray-50'
+                      )}
+                    >
+                      <GripVertical className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                      <Icon className="w-5 h-5 text-gray-500 flex-shrink-0" />
+                      <span className="text-sm font-medium text-gray-700">{item.label}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Action buttons */}
+        <div className="flex items-center gap-3 mt-6 pt-6 border-t border-gray-200">
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={updateUserSettings.isPending}
+            className="btn btn-primary flex items-center gap-2"
+          >
+            {updateUserSettings.isPending ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : updateUserSettings.isSuccess ? (
+              <Check className="w-4 h-4" />
+            ) : (
+              <Save className="w-4 h-4" />
+            )}
+            {updateUserSettings.isPending ? 'Saving...' : updateUserSettings.isSuccess ? 'Saved!' : 'Save Order'}
+          </button>
+          <button
+            type="button"
+            onClick={handleReset}
+            className="btn btn-secondary"
+          >
+            Reset to Default
+          </button>
+          {updateUserSettings.isError && (
+            <span className="text-sm text-red-600">
+              Failed to save. Please try again.
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Help text */}
+      <div className="card p-4 bg-blue-50 border-blue-200">
+        <div className="flex items-start gap-3">
+          <Menu className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+          <div>
+            <h4 className="font-medium text-blue-900 mb-1">How it works</h4>
+            <p className="text-sm text-blue-700">
+              Drag items up or down within each section to change their order in the sidebar.
+              Items can only be reordered within their own section (Project, Resources, or Account).
+              Your changes will be saved and applied immediately when you click "Save Order".
+            </p>
           </div>
         </div>
       </div>

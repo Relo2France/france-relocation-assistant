@@ -21,7 +21,8 @@ import {
   CreditCard,
 } from 'lucide-react';
 import { usePortalStore } from '@/store';
-import type { MenuItem } from '@/types';
+import { useUserSettings } from '@/hooks/useApi';
+import type { MenuItem, MenuSectionOrder } from '@/types';
 
 // Map icon names to components
 const iconComponents: Record<string, LucideIcon> = {
@@ -44,38 +45,57 @@ const iconComponents: Record<string, LucideIcon> = {
   CreditCard,
 };
 
+// Default section order
+const defaultSectionOrder: MenuSectionOrder = {
+  project: ['dashboard', 'tasks', 'checklists', 'timeline', 'messages'],
+  resources: ['chat', 'documents', 'guides', 'glossary', 'files'],
+  account: ['profile', 'family', 'membership', 'settings', 'help'],
+};
+
 // Group menu items into sections for display
-const groupMenuItems = (items: MenuItem[]) => {
+const groupMenuItems = (items: MenuItem[], customOrder?: MenuSectionOrder) => {
+  const order = customOrder || defaultSectionOrder;
+
   const sections = [
     {
       id: 'project',
       label: 'PROJECT',
-      itemIds: ['dashboard', 'tasks', 'checklists', 'timeline', 'messages'],
+      itemIds: order.project,
     },
     {
       id: 'resources',
       label: 'RESOURCES',
-      itemIds: ['chat', 'documents', 'guides', 'glossary', 'files'],
+      itemIds: order.resources,
     },
     {
       id: 'account',
       label: 'ACCOUNT',
-      itemIds: ['profile', 'family', 'membership', 'settings', 'help'],
+      itemIds: order.account,
     },
   ];
+
+  // Create a map for quick item lookup
+  const itemsMap = items.reduce((acc, item) => {
+    acc[item.id] = item;
+    return acc;
+  }, {} as Record<string, MenuItem>);
 
   return sections
     .map((section) => ({
       ...section,
-      items: items.filter((item) => section.itemIds.includes(item.id)),
+      // Map itemIds to actual items in order, filtering out any missing items
+      items: section.itemIds
+        .map((id) => itemsMap[id])
+        .filter((item): item is MenuItem => item !== undefined),
     }))
     .filter((section) => section.items.length > 0);
 };
 
 export default function Sidebar() {
   const { sidebarCollapsed, toggleSidebar, activeView, setActiveView, settings } = usePortalStore();
+  const { data: userSettings } = useUserSettings();
   const menuItems = settings.menu;
-  const sections = groupMenuItems(menuItems);
+  const sections = groupMenuItems(menuItems, userSettings?.menu_order);
 
   // Apply custom colors from settings
   const sidebarStyle = {
