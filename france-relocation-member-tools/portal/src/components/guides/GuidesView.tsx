@@ -31,7 +31,7 @@ import {
   useMemberProfile,
   useProfileCompletion,
 } from '@/hooks/useApi';
-import type { PersonalizedGuide, GuideType } from '@/types';
+import type { GuideType } from '@/types';
 
 interface Guide {
   id: string;
@@ -230,7 +230,7 @@ export default function GuidesView() {
   const [selectedPersonalizedGuide, setSelectedPersonalizedGuide] = useState<GuideType | null>(null);
 
   // API hooks
-  const { data: apiGuides, isLoading: guidesLoading } = useGuides();
+  const { data: _apiGuides, isLoading: _guidesLoading } = useGuides();
   const { data: profile } = useMemberProfile();
   const { data: profileCompletion } = useProfileCompletion();
 
@@ -659,7 +659,7 @@ interface PersonalizedGuideDetailProps {
 
 function PersonalizedGuideDetail({ guideType, onBack }: PersonalizedGuideDetailProps) {
   const { data: guide, isLoading, error } = usePersonalizedGuide(guideType);
-  const { data: profile } = useMemberProfile();
+  const { data: _profile } = useMemberProfile();
   const generateGuide = useGenerateAIGuide();
 
   const handleGenerateGuide = () => {

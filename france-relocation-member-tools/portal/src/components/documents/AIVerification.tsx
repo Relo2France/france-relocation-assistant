@@ -76,7 +76,7 @@ const statusConfig: Record<VerificationStatus, {
 
 export default function AIVerification({
   projectId,
-  existingFileId,
+  existingFileId: _existingFileId,
   onClose,
 }: AIVerificationProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
