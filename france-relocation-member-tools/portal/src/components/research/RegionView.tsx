@@ -1,13 +1,15 @@
 /**
  * RegionView Component
  *
- * Displays region details with a list of departments.
+ * Displays region details with a map of departments.
  * Allows users to drill down into departments or generate region reports.
  */
 
 import { useState, useEffect } from 'react';
 import { ArrowLeft, FileText, MapPin, Users, Building2, Thermometer, Loader2 } from 'lucide-react';
 import { getDepartmentsByRegion } from '@/config/research';
+import { hasRegionMap } from '@/config/regionMaps';
+import RegionMapView from './RegionMapView';
 import type { FranceRegion, FranceDepartment } from '@/types';
 
 interface RegionViewProps {
@@ -133,10 +135,20 @@ export default function RegionView({
         </div>
       </div>
 
+      {/* Regional Map (if available) */}
+      {!loading && hasRegionMap(region.code) && (
+        <RegionMapView
+          regionCode={region.code}
+          regionName={region.name}
+          departments={departments}
+          onDepartmentSelect={onDepartmentSelect}
+        />
+      )}
+
       {/* Departments Section */}
       <div>
         <h3 className="text-lg font-semibold text-gray-900 mb-4">
-          Departments in {region.name}
+          {hasRegionMap(region.code) ? 'All Departments' : `Departments in ${region.name}`}
         </h3>
 
         {loading ? (

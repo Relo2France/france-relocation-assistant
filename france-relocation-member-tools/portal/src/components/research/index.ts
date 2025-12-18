@@ -7,6 +7,8 @@
 export { default as ResearchView } from './ResearchView';
 export { default as FranceMap } from './FranceMap';
 export { default as RegionView } from './RegionView';
+export { default as RegionMapView } from './RegionMapView';
 export { default as DepartmentView } from './DepartmentView';
+export { default as DepartmentMapView } from './DepartmentMapView';
 export { default as LocationSearch } from './LocationSearch';
 export { default as GenerateReportModal } from './GenerateReportModal';
