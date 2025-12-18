@@ -55,7 +55,7 @@ const groupMenuItems = (items: MenuItem[]) => {
     {
       id: 'resources',
       label: 'RESOURCES',
-      itemIds: ['documents', 'guides', 'glossary', 'chat', 'files'],
+      itemIds: ['chat', 'documents', 'guides', 'glossary', 'files'],
     },
     {
       id: 'account',
