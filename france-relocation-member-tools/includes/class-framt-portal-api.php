@@ -5832,13 +5832,87 @@ Keep responses concise but informative. Use **bold** for important terms. If men
             return new WP_Error( 'report_not_found', 'Research report not found.', array( 'status' => 404 ) );
         }
 
-        $pdf_url = $this->generate_report_pdf( $report );
+        // Parse the report content
+        $content = is_string( $report['content'] ) ? json_decode( $report['content'], true ) : $report['content'];
 
-        return rest_ensure_response( array(
-            'success'      => true,
-            'download_url' => $pdf_url,
-            'filename'     => sanitize_file_name( $report['location_name'] . '-research-report.pdf' ),
-        ) );
+        // Load PDF class
+        require_once FRAMT_PLUGIN_DIR . 'vendor/class-simple-pdf.php';
+
+        $pdf = new FRAMT_Simple_PDF();
+        $pdf->addPage();
+
+        // Write header
+        $title = $content['header']['title'] ?? $report['location_name'];
+        $pdf->writeTitle( $title );
+
+        if ( ! empty( $content['header']['tagline'] ) ) {
+            $pdf->write( $content['header']['tagline'] );
+        }
+        $pdf->addSpace( 1 );
+
+        // Write key stats if available
+        if ( ! empty( $content['header']['key_stats'] ) ) {
+            $pdf->write( 'Key Statistics:', true );
+            foreach ( $content['header']['key_stats'] as $key => $value ) {
+                if ( $value ) {
+                    $label = ucwords( str_replace( '_', ' ', $key ) );
+                    $formatted = is_numeric( $value ) ? number_format( $value ) : $value;
+                    $pdf->write( "  {$label}: {$formatted}" );
+                }
+            }
+            $pdf->addSpace( 1 );
+        }
+
+        // Write sections
+        if ( ! empty( $content['sections'] ) ) {
+            foreach ( $content['sections'] as $section_id => $section ) {
+                // Section title
+                $pdf->write( $section['title'] ?? ucwords( str_replace( '_', ' ', $section_id ) ), true );
+                $pdf->addSpace( 0.5 );
+
+                // Section content
+                if ( ! empty( $section['content'] ) ) {
+                    $pdf->write( $section['content'] );
+                    $pdf->addSpace( 0.5 );
+                }
+
+                // Subsections
+                if ( ! empty( $section['subsections'] ) ) {
+                    foreach ( $section['subsections'] as $sub_id => $subsection ) {
+                        if ( ! empty( $subsection['title'] ) ) {
+                            $pdf->write( '  ' . $subsection['title'], true );
+                        }
+                        if ( ! empty( $subsection['content'] ) ) {
+                            $pdf->write( '  ' . $subsection['content'] );
+                        }
+                        $pdf->addSpace( 0.5 );
+                    }
+                }
+
+                $pdf->addSpace( 1 );
+            }
+        }
+
+        // Footer
+        $pdf->addSpace( 2 );
+        $pdf->write( 'Generated: ' . gmdate( 'F j, Y' ) );
+        if ( ! empty( $content['footer']['data_sources'] ) ) {
+            $pdf->write( 'Data sources: ' . implode( ', ', $content['footer']['data_sources'] ) );
+        }
+
+        // Generate PDF content
+        $pdf_content = $pdf->output();
+        $filename = sanitize_file_name( $report['location_name'] . '-relocation-report.pdf' );
+
+        // Output PDF directly
+        header( 'Content-Type: application/pdf' );
+        header( 'Content-Disposition: attachment; filename="' . $filename . '"' );
+        header( 'Content-Length: ' . strlen( $pdf_content ) );
+        header( 'Cache-Control: private, max-age=0, must-revalidate' );
+        header( 'Pragma: public' );
+
+        echo $pdf_content;
+        exit;
     }
 
     /**
@@ -6517,15 +6591,5 @@ PROMPT;
         ) );
 
         return $result ? $wpdb->insert_id : null;
-    }
-
-    /**
-     * Generate PDF for report (placeholder)
-     *
-     * @param array $report Report data.
-     * @return string PDF URL.
-     */
-    private function generate_report_pdf( $report ) {
-        return rest_url( self::NAMESPACE . '/research/report/' . $report['id'] . '/pdf' );
     }
 }
