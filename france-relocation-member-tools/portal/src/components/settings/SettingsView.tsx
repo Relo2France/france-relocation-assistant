@@ -9,6 +9,8 @@ import {
   FileText,
   ChevronDown,
   ChevronUp,
+  AlertTriangle,
+  Trash2,
 } from 'lucide-react';
 import {
   useCurrentUser,
@@ -18,6 +20,7 @@ import {
   useMemberProfile,
   useUpdateMemberProfile,
   useProfileCompletion,
+  useDeleteAccount,
 } from '@/hooks/useApi';
 import type { UserSettings, MemberProfile } from '@/types';
 
@@ -98,6 +101,7 @@ export default function SettingsView() {
 function PortalAccountSection() {
   const { data: user, isLoading: userLoading } = useCurrentUser();
   const updateProfile = useUpdateProfile();
+  const deleteAccount = useDeleteAccount();
 
   const [formData, setFormData] = useState({
     first_name: '',
@@ -105,6 +109,8 @@ function PortalAccountSection() {
     display_name: '',
   });
   const [initialized, setInitialized] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
 
   // Initialize form when user data loads
   if (user && !initialized) {
@@ -120,6 +126,17 @@ function PortalAccountSection() {
     e.preventDefault();
     updateProfile.mutate(formData);
   };
+
+  const handleDeleteAccount = () => {
+    deleteAccount.mutate(deleteConfirmText, {
+      onSuccess: () => {
+        // Redirect to homepage after successful deletion
+        window.location.href = window.fraPortalData?.siteUrl || '/';
+      },
+    });
+  };
+
+  const isDeleteEnabled = deleteConfirmText === 'DELETE MY ACCOUNT';
 
   if (userLoading) {
     return <SettingsSkeleton />;
@@ -281,13 +298,93 @@ function PortalAccountSection() {
         <h2 className="text-lg font-semibold text-red-600 mb-4">Danger Zone</h2>
 
         <div className="p-4 bg-red-50 rounded-lg">
-          <h3 className="font-medium text-gray-900">Delete Account</h3>
-          <p className="text-sm text-gray-600 mt-1">
-            Once you delete your account, there is no going back. All your data will be permanently removed.
-          </p>
-          <p className="text-sm text-gray-600 mt-2">
-            To delete your account, please contact support.
-          </p>
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <h3 className="font-medium text-gray-900">Delete Account</h3>
+              <p className="text-sm text-gray-600 mt-1">
+                Once you delete your account, there is no going back. All your data, documents, tasks, and profile information will be permanently removed.
+              </p>
+
+              {!showDeleteConfirm ? (
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="mt-4 px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Delete My Account
+                </button>
+              ) : (
+                <div className="mt-4 space-y-4">
+                  <div className="p-3 bg-red-100 border border-red-200 rounded-lg">
+                    <p className="text-sm font-medium text-red-800">
+                      This action cannot be undone. This will permanently delete your account and remove all associated data.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label htmlFor="delete-confirm" className="block text-sm font-medium text-gray-700 mb-1">
+                      Type <span className="font-mono bg-gray-100 px-1 rounded">DELETE MY ACCOUNT</span> to confirm:
+                    </label>
+                    <input
+                      type="text"
+                      id="delete-confirm"
+                      value={deleteConfirmText}
+                      onChange={(e) => setDeleteConfirmText(e.target.value)}
+                      placeholder="DELETE MY ACCOUNT"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                      autoComplete="off"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={handleDeleteAccount}
+                      disabled={!isDeleteEnabled || deleteAccount.isPending}
+                      className={clsx(
+                        'px-4 py-2 text-sm font-medium rounded-lg flex items-center gap-2 transition-colors',
+                        isDeleteEnabled && !deleteAccount.isPending
+                          ? 'bg-red-600 text-white hover:bg-red-700'
+                          : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      )}
+                    >
+                      {deleteAccount.isPending ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Deleting...
+                        </>
+                      ) : (
+                        <>
+                          <Trash2 className="w-4 h-4" />
+                          Permanently Delete Account
+                        </>
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowDeleteConfirm(false);
+                        setDeleteConfirmText('');
+                      }}
+                      className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+
+                  {deleteAccount.isError && (
+                    <p className="text-sm text-red-600">
+                      {deleteAccount.error instanceof Error
+                        ? deleteAccount.error.message
+                        : 'Failed to delete account. Please try again or contact support.'}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>

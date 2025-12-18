@@ -113,6 +113,12 @@ export function useUpdateSettings() {
   });
 }
 
+export function useDeleteAccount() {
+  return useMutation({
+    mutationFn: (confirmation: string) => userApi.deleteAccount(confirmation),
+  });
+}
+
 // Projects hooks
 export function useProjects() {
   return useQuery({
