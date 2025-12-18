@@ -1,13 +1,50 @@
 /**
  * RegionMapView Component
  *
- * Displays an SVG map of a region showing its departments.
- * Departments are clickable to drill down further.
+ * Displays an interactive map of a region showing its departments
+ * using react-simple-maps with official GeoJSON data.
  */
 
-import { useState } from 'react';
-import { getRegionMap, DEPARTMENT_MAP_COLORS, type DepartmentMapData } from '@/config/regionMaps';
+import { useState, useMemo } from 'react';
+import { ComposableMap, Geographies, Geography, ZoomableGroup } from 'react-simple-maps';
 import type { FranceDepartment } from '@/types';
+
+// GeoJSON URL for French departments (from gregoiredavid/france-geojson)
+const FRANCE_DEPARTMENTS_GEO_URL =
+  'https://raw.githubusercontent.com/gregoiredavid/france-geojson/master/departements.geojson';
+
+// Color palette for departments
+const DEPARTMENT_COLORS = [
+  { fill: '#93C5FD', hover: '#60A5FA' }, // Blue
+  { fill: '#86EFAC', hover: '#4ADE80' }, // Green
+  { fill: '#FCA5A5', hover: '#F87171' }, // Red
+  { fill: '#FCD34D', hover: '#FBBF24' }, // Yellow
+  { fill: '#C4B5FD', hover: '#A78BFA' }, // Purple
+  { fill: '#67E8F9', hover: '#22D3EE' }, // Cyan
+  { fill: '#FDBA74', hover: '#FB923C' }, // Orange
+  { fill: '#F9A8D4', hover: '#F472B6' }, // Pink
+  { fill: '#A5B4FC', hover: '#818CF8' }, // Indigo
+  { fill: '#99F6E4', hover: '#5EEAD4' }, // Teal
+  { fill: '#FDE68A', hover: '#FCD34D' }, // Amber
+  { fill: '#D8B4FE', hover: '#C084FC' }, // Violet
+];
+
+// Region center coordinates and zoom scales
+const REGION_CENTERS: Record<string, { center: [number, number]; scale: number }> = {
+  '11': { center: [2.5, 48.7], scale: 18000 },      // Île-de-France
+  '24': { center: [1.7, 47.3], scale: 8000 },       // Centre-Val de Loire
+  '27': { center: [5.0, 47.0], scale: 7000 },       // Bourgogne-Franche-Comté
+  '28': { center: [-0.3, 49.0], scale: 9000 },      // Normandie
+  '32': { center: [2.8, 49.9], scale: 9000 },       // Hauts-de-France
+  '44': { center: [5.5, 48.7], scale: 6000 },       // Grand Est
+  '52': { center: [-0.8, 47.5], scale: 9000 },      // Pays de la Loire
+  '53': { center: [-3.0, 48.2], scale: 10000 },     // Bretagne
+  '75': { center: [0.0, 45.5], scale: 5500 },       // Nouvelle-Aquitaine
+  '76': { center: [2.0, 43.8], scale: 5500 },       // Occitanie
+  '84': { center: [4.5, 45.5], scale: 5500 },       // Auvergne-Rhône-Alpes
+  '93': { center: [6.0, 44.0], scale: 8000 },       // Provence-Alpes-Côte d'Azur
+  '94': { center: [9.1, 42.0], scale: 12000 },      // Corse
+};
 
 interface RegionMapViewProps {
   regionCode: string;
@@ -23,13 +60,22 @@ export default function RegionMapView({
   onDepartmentSelect,
 }: RegionMapViewProps) {
   const [hoveredDept, setHoveredDept] = useState<string | null>(null);
+  const [tooltipContent, setTooltipContent] = useState<FranceDepartment | null>(null);
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
 
-  const mapData = getRegionMap(regionCode);
+  // Get region's center and scale
+  const regionConfig = REGION_CENTERS[regionCode] || { center: [2.5, 46.5], scale: 5000 };
 
-  if (!mapData) {
-    return null;
-  }
+  // Get department codes for this region
+  const regionDeptCodes = useMemo(() => {
+    return departments.map(d => d.code);
+  }, [departments]);
+
+  // Map department code to color
+  const getDeptColor = (code: string) => {
+    const index = regionDeptCodes.indexOf(code);
+    return DEPARTMENT_COLORS[index % DEPARTMENT_COLORS.length];
+  };
 
   const handleDepartmentClick = (deptCode: string) => {
     const dept = departments.find((d) => d.code === deptCode);
@@ -38,176 +84,119 @@ export default function RegionMapView({
     }
   };
 
-  const handleMouseMove = (e: React.MouseEvent, deptCode: string) => {
-    const rect = e.currentTarget.closest('svg')?.getBoundingClientRect();
-    if (rect) {
-      setTooltipPos({
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top - 10,
-      });
+  const handleMouseEnter = (
+    geo: { properties: { code: string } },
+    event: React.MouseEvent
+  ) => {
+    const code = geo.properties.code;
+    setHoveredDept(code);
+    const dept = departments.find((d) => d.code === code);
+    if (dept) {
+      setTooltipContent(dept);
+      const rect = event.currentTarget.closest('.map-container')?.getBoundingClientRect();
+      if (rect) {
+        setTooltipPos({
+          x: event.clientX - rect.left,
+          y: event.clientY - rect.top,
+        });
+      }
     }
-    setHoveredDept(deptCode);
   };
 
-  const hoveredDeptData = hoveredDept
-    ? departments.find((d) => d.code === hoveredDept)
-    : null;
+  const handleMouseLeave = () => {
+    setHoveredDept(null);
+    setTooltipContent(null);
+  };
 
-  const hoveredMapData = hoveredDept
-    ? mapData.departments.find((d) => d.code === hoveredDept)
-    : null;
+  const handleMouseMove = (event: React.MouseEvent) => {
+    const rect = event.currentTarget.closest('.map-container')?.getBoundingClientRect();
+    if (rect) {
+      setTooltipPos({
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top,
+      });
+    }
+  };
 
   return (
     <div className="relative mb-6">
       <h3 className="text-sm font-medium text-gray-700 mb-3">
-        Map of {regionName}
+        Departments of {regionName}
       </h3>
 
-      <div className="relative bg-gradient-to-br from-sky-50 to-blue-100 rounded-xl overflow-hidden shadow-inner border border-blue-200">
-        <svg
-          viewBox={mapData.viewBox}
-          className="w-full h-auto"
-          style={{ maxHeight: '400px', minHeight: '280px' }}
-          aria-label={`Map of ${regionName} showing departments`}
-          role="img"
+      <div className="map-container relative bg-gradient-to-br from-sky-50 to-blue-100 rounded-xl overflow-hidden shadow-inner border border-blue-200">
+        <ComposableMap
+          projection="geoMercator"
+          projectionConfig={{
+            center: regionConfig.center,
+            scale: regionConfig.scale,
+          }}
+          style={{ width: '100%', height: 'auto', minHeight: '350px', maxHeight: '450px' }}
         >
-          {/* Definitions */}
-          <defs>
-            <filter id="deptShadow" x="-10%" y="-10%" width="120%" height="120%">
-              <feDropShadow dx="1" dy="1" stdDeviation="2" floodOpacity="0.15" />
-            </filter>
-            <filter id="deptGlow">
-              <feGaussianBlur stdDeviation="2" result="coloredBlur" />
-              <feMerge>
-                <feMergeNode in="coloredBlur" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-          </defs>
+          <ZoomableGroup center={regionConfig.center} zoom={1}>
+            <Geographies geography={FRANCE_DEPARTMENTS_GEO_URL}>
+              {({ geographies }) =>
+                geographies
+                  .filter((geo) => regionDeptCodes.includes(geo.properties.code))
+                  .map((geo) => {
+                    const deptCode = geo.properties.code;
+                    const colors = getDeptColor(deptCode);
+                    const isHovered = hoveredDept === deptCode;
 
-          {/* Ocean/background */}
-          <rect
-            x="-10"
-            y="-10"
-            width="120%"
-            height="120%"
-            fill="#DBEAFE"
-          />
-
-          {/* Department paths */}
-          <g filter="url(#deptShadow)">
-            {mapData.departments.map((deptMap: DepartmentMapData, index: number) => {
-              const colors = DEPARTMENT_MAP_COLORS[index % DEPARTMENT_MAP_COLORS.length];
-              const isHovered = hoveredDept === deptMap.code;
-              const deptData = departments.find((d) => d.code === deptMap.code);
-
-              return (
-                <g key={deptMap.code}>
-                  <path
-                    d={deptMap.path}
-                    fill={isHovered ? colors.hover : colors.fill}
-                    stroke={colors.border}
-                    strokeWidth={isHovered ? 2.5 : 1.5}
-                    strokeLinejoin="round"
-                    className="cursor-pointer transition-all duration-150"
-                    style={{
-                      filter: isHovered ? 'url(#deptGlow)' : 'none',
-                    }}
-                    onClick={() => handleDepartmentClick(deptMap.code)}
-                    onMouseMove={(e) => handleMouseMove(e, deptMap.code)}
-                    onMouseLeave={() => setHoveredDept(null)}
-                    role="button"
-                    aria-label={deptData?.name || deptMap.name}
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        handleDepartmentClick(deptMap.code);
-                      }
-                    }}
-                  />
-
-                  {/* Department label */}
-                  <text
-                    x={deptMap.labelPosition.x}
-                    y={deptMap.labelPosition.y}
-                    textAnchor="middle"
-                    fontSize="10"
-                    fontWeight="600"
-                    fill="#1F2937"
-                    className="pointer-events-none select-none"
-                    style={{
-                      textShadow: '1px 1px 2px white, -1px -1px 2px white',
-                    }}
-                  >
-                    {deptMap.code}
-                  </text>
-                </g>
-              );
-            })}
-          </g>
-
-          {/* City markers */}
-          {mapData.departments.map((deptMap: DepartmentMapData) =>
-            deptMap.cities?.map((city) => (
-              <g key={`${deptMap.code}-${city.name}`} className="pointer-events-none">
-                <circle
-                  cx={city.x}
-                  cy={city.y}
-                  r={city.isCapital ? 4 : 3}
-                  fill={city.isCapital ? '#DC2626' : '#1F2937'}
-                  stroke="white"
-                  strokeWidth="1.5"
-                />
-                <text
-                  x={city.x}
-                  y={city.y - 6}
-                  textAnchor="middle"
-                  fontSize={city.isCapital ? '9' : '8'}
-                  fontWeight={city.isCapital ? '600' : '500'}
-                  fill="#374151"
-                  className="select-none"
-                  style={{
-                    textShadow: '1px 1px 1px white, -1px -1px 1px white',
-                  }}
-                >
-                  {city.name}
-                </text>
-              </g>
-            ))
-          )}
-        </svg>
+                    return (
+                      <Geography
+                        key={geo.rsmKey}
+                        geography={geo}
+                        fill={isHovered ? colors.hover : colors.fill}
+                        stroke="#FFFFFF"
+                        strokeWidth={1.5}
+                        style={{
+                          default: { outline: 'none' },
+                          hover: { outline: 'none', cursor: 'pointer' },
+                          pressed: { outline: 'none' },
+                        }}
+                        onClick={() => handleDepartmentClick(deptCode)}
+                        onMouseEnter={(event) => handleMouseEnter(geo, event)}
+                        onMouseLeave={handleMouseLeave}
+                        onMouseMove={handleMouseMove}
+                      />
+                    );
+                  })
+              }
+            </Geographies>
+          </ZoomableGroup>
+        </ComposableMap>
 
         {/* Hover Tooltip */}
-        {hoveredDeptData && hoveredMapData && (
+        {tooltipContent && (
           <div
-            className="absolute bg-white rounded-lg shadow-xl border border-gray-200 p-3 pointer-events-none z-20 min-w-[200px]"
+            className="absolute bg-white rounded-lg shadow-xl border border-gray-200 p-3 pointer-events-none z-20 min-w-[220px]"
             style={{
-              left: Math.min(Math.max(tooltipPos.x, 100), 300),
-              top: Math.max(tooltipPos.y, 40),
+              left: Math.min(Math.max(tooltipPos.x, 110), 320),
+              top: Math.max(tooltipPos.y - 10, 60),
               transform: 'translate(-50%, -100%)',
             }}
           >
             <div className="flex items-center gap-2 mb-1">
               <span className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
-                {hoveredDeptData.code}
+                {tooltipContent.code}
               </span>
-              <h4 className="font-bold text-gray-900">{hoveredDeptData.name}</h4>
+              <h4 className="font-bold text-gray-900">{tooltipContent.name}</h4>
             </div>
             <p className="text-sm text-gray-500 mb-2">
-              Prefecture: {hoveredDeptData.prefecture}
+              Prefecture: {tooltipContent.prefecture}
             </p>
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div>
                 <span className="text-gray-400 text-xs block">Population</span>
                 <span className="font-semibold text-gray-900">
-                  {hoveredDeptData.population.toLocaleString()}
+                  {tooltipContent.population.toLocaleString()}
                 </span>
               </div>
               <div>
                 <span className="text-gray-400 text-xs block">Area</span>
                 <span className="font-semibold text-gray-900">
-                  {hoveredDeptData.area_km2.toLocaleString()} km²
+                  {tooltipContent.area_km2.toLocaleString()} km²
                 </span>
               </div>
             </div>
@@ -222,31 +211,29 @@ export default function RegionMapView({
 
       {/* Map Legend */}
       <div className="mt-3 flex flex-wrap gap-2">
-        {mapData.departments.map((deptMap: DepartmentMapData, index: number) => {
-          const colors = DEPARTMENT_MAP_COLORS[index % DEPARTMENT_MAP_COLORS.length];
-          const deptData = departments.find((d) => d.code === deptMap.code);
-          const isHovered = hoveredDept === deptMap.code;
+        {departments.map((dept) => {
+          const colors = getDeptColor(dept.code);
+          const isHovered = hoveredDept === dept.code;
 
           return (
             <button
-              key={deptMap.code}
-              onClick={() => handleDepartmentClick(deptMap.code)}
-              onMouseEnter={() => setHoveredDept(deptMap.code)}
+              key={dept.code}
+              onClick={() => onDepartmentSelect(dept)}
+              onMouseEnter={() => setHoveredDept(dept.code)}
               onMouseLeave={() => setHoveredDept(null)}
               className={`flex items-center gap-1.5 px-2 py-1 rounded text-xs transition-all ${
                 isHovered ? 'bg-gray-100 shadow-sm' : 'hover:bg-gray-50'
               }`}
             >
               <span
-                className="w-3 h-3 rounded-sm border"
+                className="w-3 h-3 rounded-sm border border-white shadow-sm"
                 style={{
                   backgroundColor: colors.fill,
-                  borderColor: colors.border,
                 }}
               />
-              <span className="font-mono text-gray-500">{deptMap.code}</span>
+              <span className="font-mono text-gray-500">{dept.code}</span>
               <span className={`truncate ${isHovered ? 'font-medium' : ''}`}>
-                {deptData?.name || deptMap.name}
+                {dept.name}
               </span>
             </button>
           );
