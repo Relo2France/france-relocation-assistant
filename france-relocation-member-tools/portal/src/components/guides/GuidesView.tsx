@@ -31,6 +31,7 @@ import {
   useMemberProfile,
   useProfileCompletion,
 } from '@/hooks/useApi';
+import { usePortalStore } from '@/store';
 import type { GuideType } from '@/types';
 
 interface Guide {
@@ -229,6 +230,9 @@ export default function GuidesView() {
   const [selectedGuide, setSelectedGuide] = useState<Guide | null>(null);
   const [selectedPersonalizedGuide, setSelectedPersonalizedGuide] = useState<GuideType | null>(null);
 
+  // Store hook for navigation
+  const { setActiveView } = usePortalStore();
+
   // API hooks
   const { data: _apiGuides, isLoading: _guidesLoading } = useGuides();
   const { data: profile } = useMemberProfile();
@@ -346,12 +350,12 @@ export default function GuidesView() {
                 Fill out your profile to get customized guides based on your visa type, location, and personal circumstances.
                 Your profile is currently {profileCompletion.percentage}% complete.
               </p>
-              <a
-                href="/member-portal#/profile"
+              <button
+                onClick={() => setActiveView('settings')}
                 className="text-sm font-medium text-blue-600 hover:text-blue-700 underline"
               >
                 Complete your profile
-              </a>
+              </button>
             </div>
           </div>
         </div>
