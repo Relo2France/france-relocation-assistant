@@ -2308,6 +2308,11 @@ class FRAMT_Portal_API {
             'marriage_cert_apostilled',
         );
 
+        // Track old values for fields that trigger task generation
+        $old_visa_type  = get_user_meta( $user_id, 'fra_visa_type', true );
+        $old_has_pets   = get_user_meta( $user_id, 'fra_has_pets', true );
+        $old_applicants = get_user_meta( $user_id, 'fra_applicants', true );
+
         // Update each field if provided
         foreach ( $allowed_fields as $field ) {
             if ( isset( $params[ $field ] ) ) {
@@ -2324,6 +2329,25 @@ class FRAMT_Portal_API {
 
         // Update timestamp
         update_user_meta( $user_id, 'fra_profile_updated', current_time( 'mysql' ) );
+
+        // Get new values
+        $new_visa_type  = get_user_meta( $user_id, 'fra_visa_type', true );
+        $new_has_pets   = get_user_meta( $user_id, 'fra_has_pets', true );
+        $new_applicants = get_user_meta( $user_id, 'fra_applicants', true );
+
+        // Sync project visa type and generate tasks if visa type changed
+        if ( ! empty( $new_visa_type ) && $new_visa_type !== $old_visa_type ) {
+            $this->sync_project_visa_type( $user_id, $new_visa_type );
+            $this->generate_visa_tasks( $user_id, $new_visa_type );
+        }
+
+        // Generate conditional tasks based on profile changes
+        $this->generate_conditional_tasks( $user_id, array(
+            'old_has_pets'   => $old_has_pets,
+            'new_has_pets'   => $new_has_pets,
+            'old_applicants' => $old_applicants,
+            'new_applicants' => $new_applicants,
+        ) );
 
         return $this->get_member_profile( $request );
     }
@@ -4373,5 +4397,647 @@ Signature:
         }
 
         return $sanitized;
+    }
+
+    // =========================================================================
+    // Task Generation Helper Methods
+    // =========================================================================
+
+    /**
+     * Sync project visa type with profile visa type
+     *
+     * @param int    $user_id   User ID
+     * @param string $visa_type Visa type
+     * @return bool Success
+     */
+    private function sync_project_visa_type( $user_id, $visa_type ) {
+        $project = FRAMT_Project::get_or_create( $user_id );
+
+        if ( ! $project || ! $project->id ) {
+            return false;
+        }
+
+        $project->visa_type = sanitize_key( $visa_type );
+        return $project->save();
+    }
+
+    /**
+     * Generate pre-defined tasks for a visa type
+     *
+     * @param int    $user_id   User ID
+     * @param string $visa_type Visa type
+     * @return int Number of tasks created
+     */
+    private function generate_visa_tasks( $user_id, $visa_type ) {
+        $project = FRAMT_Project::get_or_create( $user_id );
+
+        if ( ! $project || ! $project->id ) {
+            return 0;
+        }
+
+        // Get task templates for this visa type
+        $templates = $this->get_visa_task_templates( $visa_type );
+
+        if ( empty( $templates ) ) {
+            return 0;
+        }
+
+        $tasks_created = 0;
+
+        foreach ( $templates as $template ) {
+            // Check if task with same title already exists for this project
+            if ( $this->task_exists( $project->id, $template['title'] ) ) {
+                continue;
+            }
+
+            $task             = new FRAMT_Task();
+            $task->project_id = $project->id;
+            $task->user_id    = $user_id;
+            $task->title      = sanitize_text_field( $template['title'] );
+            $task->description = wp_kses_post( $template['description'] ?? '' );
+            $task->stage      = sanitize_key( $template['stage'] ?? 'pre-arrival' );
+            $task->status     = 'todo';
+            $task->priority   = sanitize_key( $template['priority'] ?? 'medium' );
+            $task->task_type  = sanitize_key( $template['task_type'] ?? 'task' );
+
+            if ( $task->save() ) {
+                $tasks_created++;
+            }
+        }
+
+        return $tasks_created;
+    }
+
+    /**
+     * Generate conditional tasks based on profile changes
+     *
+     * @param int   $user_id User ID
+     * @param array $changes Array of old/new values
+     * @return int Number of tasks created
+     */
+    private function generate_conditional_tasks( $user_id, $changes ) {
+        $project = FRAMT_Project::get_or_create( $user_id );
+
+        if ( ! $project || ! $project->id ) {
+            return 0;
+        }
+
+        $tasks_created = 0;
+
+        // Pet-related tasks
+        if ( ! empty( $changes['new_has_pets'] ) && $changes['new_has_pets'] !== $changes['old_has_pets'] ) {
+            $pet_tasks = $this->get_pet_task_templates();
+            foreach ( $pet_tasks as $template ) {
+                if ( ! $this->task_exists( $project->id, $template['title'] ) ) {
+                    $tasks_created += $this->create_task_from_template( $project->id, $user_id, $template );
+                }
+            }
+        }
+
+        // Family/applicant-related tasks
+        $old_applicants = $changes['old_applicants'] ?? '';
+        $new_applicants = $changes['new_applicants'] ?? '';
+
+        if ( $new_applicants !== $old_applicants ) {
+            // Check for spouse
+            if ( in_array( $new_applicants, array( 'spouse', 'family' ), true ) ) {
+                $spouse_tasks = $this->get_spouse_task_templates();
+                foreach ( $spouse_tasks as $template ) {
+                    if ( ! $this->task_exists( $project->id, $template['title'] ) ) {
+                        $tasks_created += $this->create_task_from_template( $project->id, $user_id, $template );
+                    }
+                }
+            }
+
+            // Check for children (family includes children)
+            if ( 'family' === $new_applicants ) {
+                $child_tasks = $this->get_children_task_templates();
+                foreach ( $child_tasks as $template ) {
+                    if ( ! $this->task_exists( $project->id, $template['title'] ) ) {
+                        $tasks_created += $this->create_task_from_template( $project->id, $user_id, $template );
+                    }
+                }
+            }
+        }
+
+        return $tasks_created;
+    }
+
+    /**
+     * Check if a task with given title already exists for a project
+     *
+     * @param int    $project_id Project ID
+     * @param string $title      Task title
+     * @return bool
+     */
+    private function task_exists( $project_id, $title ) {
+        global $wpdb;
+
+        $exists = $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT COUNT(*) FROM {$wpdb->prefix}framt_tasks WHERE project_id = %d AND title = %s",
+                $project_id,
+                $title
+            )
+        );
+
+        return (int) $exists > 0;
+    }
+
+    /**
+     * Create a task from a template array
+     *
+     * @param int   $project_id Project ID
+     * @param int   $user_id    User ID
+     * @param array $template   Task template
+     * @return int 1 on success, 0 on failure
+     */
+    private function create_task_from_template( $project_id, $user_id, $template ) {
+        $task             = new FRAMT_Task();
+        $task->project_id = $project_id;
+        $task->user_id    = $user_id;
+        $task->title      = sanitize_text_field( $template['title'] );
+        $task->description = wp_kses_post( $template['description'] ?? '' );
+        $task->stage      = sanitize_key( $template['stage'] ?? 'pre-arrival' );
+        $task->status     = 'todo';
+        $task->priority   = sanitize_key( $template['priority'] ?? 'medium' );
+        $task->task_type  = sanitize_key( $template['task_type'] ?? 'task' );
+
+        return $task->save() ? 1 : 0;
+    }
+
+    /**
+     * Get task templates for a visa type
+     *
+     * @param string $visa_type Visa type
+     * @return array Task templates
+     */
+    private function get_visa_task_templates( $visa_type ) {
+        // Common tasks for all visa types
+        $common_tasks = array(
+            // Pre-arrival stage
+            array(
+                'title'       => 'Gather all required documents',
+                'description' => 'Collect passport, birth certificate, marriage certificate (if applicable), proof of income, and other supporting documents.',
+                'stage'       => 'pre-arrival',
+                'priority'    => 'high',
+                'task_type'   => 'document',
+            ),
+            array(
+                'title'       => 'Get documents apostilled',
+                'description' => 'Have your official documents apostilled for French recognition.',
+                'stage'       => 'pre-arrival',
+                'priority'    => 'high',
+                'task_type'   => 'document',
+            ),
+            array(
+                'title'       => 'Get documents translated',
+                'description' => 'Have all documents translated by a certified translator.',
+                'stage'       => 'pre-arrival',
+                'priority'    => 'high',
+                'task_type'   => 'document',
+            ),
+            array(
+                'title'       => 'Open French bank account',
+                'description' => 'Research and open a French bank account. Some can be opened remotely before arrival.',
+                'stage'       => 'pre-arrival',
+                'priority'    => 'medium',
+                'task_type'   => 'financial',
+            ),
+            array(
+                'title'       => 'Research health insurance options',
+                'description' => 'Understand French healthcare and research private insurance options for the interim period.',
+                'stage'       => 'pre-arrival',
+                'priority'    => 'high',
+                'task_type'   => 'task',
+            ),
+            array(
+                'title'       => 'Book temporary accommodation',
+                'description' => 'Arrange initial housing for your first weeks in France.',
+                'stage'       => 'pre-arrival',
+                'priority'    => 'high',
+                'task_type'   => 'task',
+            ),
+
+            // Arrival stage
+            array(
+                'title'       => 'Validate visa (if VLS-TS)',
+                'description' => 'Validate your long-stay visa within 3 months of arrival at the OFII.',
+                'stage'       => 'arrival',
+                'priority'    => 'high',
+                'task_type'   => 'appointment',
+            ),
+            array(
+                'title'       => 'Register for social security',
+                'description' => 'Apply for your French social security number (numéro de sécurité sociale).',
+                'stage'       => 'arrival',
+                'priority'    => 'high',
+                'task_type'   => 'task',
+            ),
+            array(
+                'title'       => 'Find permanent housing',
+                'description' => 'Search for and secure long-term accommodation. Gather required dossier documents.',
+                'stage'       => 'arrival',
+                'priority'    => 'high',
+                'task_type'   => 'task',
+            ),
+            array(
+                'title'       => 'Set up utilities',
+                'description' => 'Arrange electricity, gas, internet, and other utilities for your new home.',
+                'stage'       => 'arrival',
+                'priority'    => 'medium',
+                'task_type'   => 'task',
+            ),
+
+            // Settlement stage
+            array(
+                'title'       => 'Get Carte Vitale',
+                'description' => 'Once registered with social security, apply for your Carte Vitale health card.',
+                'stage'       => 'settlement',
+                'priority'    => 'medium',
+                'task_type'   => 'document',
+            ),
+            array(
+                'title'       => 'Apply for CAF benefits',
+                'description' => 'Apply for housing assistance (APL) and other applicable CAF benefits.',
+                'stage'       => 'settlement',
+                'priority'    => 'medium',
+                'task_type'   => 'financial',
+            ),
+            array(
+                'title'       => 'Exchange driving license',
+                'description' => 'Apply to exchange your foreign driving license for a French one.',
+                'stage'       => 'settlement',
+                'priority'    => 'low',
+                'task_type'   => 'document',
+            ),
+
+            // Integration stage
+            array(
+                'title'       => 'Enroll in French language classes',
+                'description' => 'Sign up for French language courses to improve integration.',
+                'stage'       => 'integration',
+                'priority'    => 'medium',
+                'task_type'   => 'task',
+            ),
+            array(
+                'title'       => 'File French tax return',
+                'description' => 'Understand your tax obligations and file your first French tax return.',
+                'stage'       => 'integration',
+                'priority'    => 'medium',
+                'task_type'   => 'financial',
+            ),
+        );
+
+        // Visa-specific tasks
+        $visa_specific_tasks = array();
+
+        switch ( $visa_type ) {
+            case 'visitor':
+                $visa_specific_tasks = array(
+                    array(
+                        'title'       => 'Prepare proof of financial resources',
+                        'description' => 'Document sufficient funds to support yourself without working (bank statements, investments, pension, etc.).',
+                        'stage'       => 'pre-arrival',
+                        'priority'    => 'high',
+                        'task_type'   => 'document',
+                    ),
+                    array(
+                        'title'       => 'Sign declaration not to work',
+                        'description' => 'Prepare the attestation that you will not engage in professional activity in France.',
+                        'stage'       => 'pre-arrival',
+                        'priority'    => 'high',
+                        'task_type'   => 'document',
+                    ),
+                    array(
+                        'title'       => 'Arrange comprehensive health insurance',
+                        'description' => 'Obtain private health insurance covering the entire stay as required for visitor visa.',
+                        'stage'       => 'pre-arrival',
+                        'priority'    => 'high',
+                        'task_type'   => 'task',
+                    ),
+                );
+                break;
+
+            case 'talent_passport':
+                $visa_specific_tasks = array(
+                    array(
+                        'title'       => 'Gather employment documentation',
+                        'description' => 'Collect employment contract, company registration, salary details meeting the threshold requirements.',
+                        'stage'       => 'pre-arrival',
+                        'priority'    => 'high',
+                        'task_type'   => 'document',
+                    ),
+                    array(
+                        'title'       => 'Prepare diploma/qualification proof',
+                        'description' => 'Get your master\'s degree or equivalent qualifications certified and translated.',
+                        'stage'       => 'pre-arrival',
+                        'priority'    => 'high',
+                        'task_type'   => 'document',
+                    ),
+                    array(
+                        'title'       => 'Register with URSSAF',
+                        'description' => 'If self-employed, register your business activity with URSSAF.',
+                        'stage'       => 'arrival',
+                        'priority'    => 'high',
+                        'task_type'   => 'task',
+                    ),
+                );
+                break;
+
+            case 'employee':
+                $visa_specific_tasks = array(
+                    array(
+                        'title'       => 'Obtain work permit (if required)',
+                        'description' => 'Employer must obtain work authorization from DIRECCTE before visa application.',
+                        'stage'       => 'pre-arrival',
+                        'priority'    => 'high',
+                        'task_type'   => 'document',
+                    ),
+                    array(
+                        'title'       => 'Get employment contract certified',
+                        'description' => 'Have your French employment contract reviewed and certified.',
+                        'stage'       => 'pre-arrival',
+                        'priority'    => 'high',
+                        'task_type'   => 'document',
+                    ),
+                    array(
+                        'title'       => 'Understand French labor rights',
+                        'description' => 'Learn about French employment law, RTT, mutuelle, and employee rights.',
+                        'stage'       => 'arrival',
+                        'priority'    => 'medium',
+                        'task_type'   => 'task',
+                    ),
+                );
+                break;
+
+            case 'entrepreneur':
+                $visa_specific_tasks = array(
+                    array(
+                        'title'       => 'Prepare business plan',
+                        'description' => 'Create a detailed business plan demonstrating viability and economic contribution.',
+                        'stage'       => 'pre-arrival',
+                        'priority'    => 'high',
+                        'task_type'   => 'document',
+                    ),
+                    array(
+                        'title'       => 'Prove business funding',
+                        'description' => 'Document minimum investment capital and financial resources for your business.',
+                        'stage'       => 'pre-arrival',
+                        'priority'    => 'high',
+                        'task_type'   => 'financial',
+                    ),
+                    array(
+                        'title'       => 'Register business in France',
+                        'description' => 'Register your business with the appropriate French authorities (CFE, INSEE).',
+                        'stage'       => 'arrival',
+                        'priority'    => 'high',
+                        'task_type'   => 'task',
+                    ),
+                    array(
+                        'title'       => 'Set up business bank account',
+                        'description' => 'Open a professional bank account for your French business.',
+                        'stage'       => 'arrival',
+                        'priority'    => 'high',
+                        'task_type'   => 'financial',
+                    ),
+                );
+                break;
+
+            case 'student':
+                $visa_specific_tasks = array(
+                    array(
+                        'title'       => 'Get university acceptance letter',
+                        'description' => 'Secure admission to a French educational institution.',
+                        'stage'       => 'pre-arrival',
+                        'priority'    => 'high',
+                        'task_type'   => 'document',
+                    ),
+                    array(
+                        'title'       => 'Register on Campus France',
+                        'description' => 'Complete the Campus France procedure for your country.',
+                        'stage'       => 'pre-arrival',
+                        'priority'    => 'high',
+                        'task_type'   => 'task',
+                    ),
+                    array(
+                        'title'       => 'Prove financial resources for studies',
+                        'description' => 'Document sufficient funds (€615/month minimum) for your study period.',
+                        'stage'       => 'pre-arrival',
+                        'priority'    => 'high',
+                        'task_type'   => 'financial',
+                    ),
+                    array(
+                        'title'       => 'Apply for CROUS housing',
+                        'description' => 'Apply for student housing through CROUS if available.',
+                        'stage'       => 'pre-arrival',
+                        'priority'    => 'medium',
+                        'task_type'   => 'task',
+                    ),
+                    array(
+                        'title'       => 'Complete university enrollment',
+                        'description' => 'Finalize your inscription at the university upon arrival.',
+                        'stage'       => 'arrival',
+                        'priority'    => 'high',
+                        'task_type'   => 'task',
+                    ),
+                );
+                break;
+
+            case 'retiree':
+                $visa_specific_tasks = array(
+                    array(
+                        'title'       => 'Document pension income',
+                        'description' => 'Gather proof of pension or retirement income meeting French requirements.',
+                        'stage'       => 'pre-arrival',
+                        'priority'    => 'high',
+                        'task_type'   => 'document',
+                    ),
+                    array(
+                        'title'       => 'Arrange pension transfer',
+                        'description' => 'Set up international transfer of pension payments to France.',
+                        'stage'       => 'pre-arrival',
+                        'priority'    => 'medium',
+                        'task_type'   => 'financial',
+                    ),
+                    array(
+                        'title'       => 'Research S1 health form',
+                        'description' => 'If from EU/UK, investigate S1 form for healthcare coverage.',
+                        'stage'       => 'pre-arrival',
+                        'priority'    => 'high',
+                        'task_type'   => 'task',
+                    ),
+                );
+                break;
+
+            default:
+                // For undecided or other types, just use common tasks
+                break;
+        }
+
+        return array_merge( $common_tasks, $visa_specific_tasks );
+    }
+
+    /**
+     * Get pet-related task templates
+     *
+     * @return array Task templates for pet owners
+     */
+    private function get_pet_task_templates() {
+        return array(
+            array(
+                'title'       => 'Get pet microchipped',
+                'description' => 'Ensure your pet has an ISO-compliant microchip (15 digits).',
+                'stage'       => 'pre-arrival',
+                'priority'    => 'high',
+                'task_type'   => 'task',
+            ),
+            array(
+                'title'       => 'Update pet vaccinations',
+                'description' => 'Ensure rabies vaccination is current (administered at least 21 days before travel).',
+                'stage'       => 'pre-arrival',
+                'priority'    => 'high',
+                'task_type'   => 'appointment',
+            ),
+            array(
+                'title'       => 'Get EU pet passport or health certificate',
+                'description' => 'Obtain required pet documentation from your veterinarian.',
+                'stage'       => 'pre-arrival',
+                'priority'    => 'high',
+                'task_type'   => 'document',
+            ),
+            array(
+                'title'       => 'Research pet travel requirements',
+                'description' => 'Check airline pet policies and French import requirements for your pet type.',
+                'stage'       => 'pre-arrival',
+                'priority'    => 'medium',
+                'task_type'   => 'task',
+            ),
+            array(
+                'title'       => 'Book pet-friendly accommodation',
+                'description' => 'Ensure your French housing allows pets.',
+                'stage'       => 'pre-arrival',
+                'priority'    => 'high',
+                'task_type'   => 'task',
+            ),
+            array(
+                'title'       => 'Find a French veterinarian',
+                'description' => 'Research and register with a local veterinarian in France.',
+                'stage'       => 'arrival',
+                'priority'    => 'medium',
+                'task_type'   => 'task',
+            ),
+        );
+    }
+
+    /**
+     * Get spouse-related task templates
+     *
+     * @return array Task templates for applicants with spouse
+     */
+    private function get_spouse_task_templates() {
+        return array(
+            array(
+                'title'       => 'Get marriage certificate apostilled',
+                'description' => 'Have your marriage certificate apostilled for French recognition.',
+                'stage'       => 'pre-arrival',
+                'priority'    => 'high',
+                'task_type'   => 'document',
+            ),
+            array(
+                'title'       => 'Translate marriage certificate',
+                'description' => 'Get a certified French translation of your marriage certificate.',
+                'stage'       => 'pre-arrival',
+                'priority'    => 'high',
+                'task_type'   => 'document',
+            ),
+            array(
+                'title'       => 'Gather spouse documents',
+                'description' => 'Collect passport, birth certificate, and other required documents for your spouse.',
+                'stage'       => 'pre-arrival',
+                'priority'    => 'high',
+                'task_type'   => 'document',
+            ),
+            array(
+                'title'       => 'Apply for spouse visa',
+                'description' => 'Submit visa application for your spouse (if required).',
+                'stage'       => 'pre-arrival',
+                'priority'    => 'high',
+                'task_type'   => 'task',
+            ),
+            array(
+                'title'       => 'Register spouse for social security',
+                'description' => 'Register your spouse as an ayant droit for health coverage.',
+                'stage'       => 'arrival',
+                'priority'    => 'medium',
+                'task_type'   => 'task',
+            ),
+        );
+    }
+
+    /**
+     * Get children-related task templates
+     *
+     * @return array Task templates for applicants with children
+     */
+    private function get_children_task_templates() {
+        return array(
+            array(
+                'title'       => 'Get birth certificates apostilled',
+                'description' => 'Have children\'s birth certificates apostilled for French recognition.',
+                'stage'       => 'pre-arrival',
+                'priority'    => 'high',
+                'task_type'   => 'document',
+            ),
+            array(
+                'title'       => 'Translate birth certificates',
+                'description' => 'Get certified French translations of children\'s birth certificates.',
+                'stage'       => 'pre-arrival',
+                'priority'    => 'high',
+                'task_type'   => 'document',
+            ),
+            array(
+                'title'       => 'Gather children vaccination records',
+                'description' => 'Collect immunization records - France requires specific vaccinations for school.',
+                'stage'       => 'pre-arrival',
+                'priority'    => 'high',
+                'task_type'   => 'document',
+            ),
+            array(
+                'title'       => 'Research French schools',
+                'description' => 'Research public, private, and international school options in your target area.',
+                'stage'       => 'pre-arrival',
+                'priority'    => 'medium',
+                'task_type'   => 'task',
+            ),
+            array(
+                'title'       => 'Apply for child visas',
+                'description' => 'Submit visa applications for dependent children.',
+                'stage'       => 'pre-arrival',
+                'priority'    => 'high',
+                'task_type'   => 'task',
+            ),
+            array(
+                'title'       => 'Enroll children in school',
+                'description' => 'Complete school registration with your local mairie or chosen private school.',
+                'stage'       => 'arrival',
+                'priority'    => 'high',
+                'task_type'   => 'task',
+            ),
+            array(
+                'title'       => 'Apply for family CAF benefits',
+                'description' => 'Apply for allocations familiales and other family benefits through CAF.',
+                'stage'       => 'settlement',
+                'priority'    => 'medium',
+                'task_type'   => 'financial',
+            ),
+            array(
+                'title'       => 'Register children for health coverage',
+                'description' => 'Add children as ayants droit for French health insurance.',
+                'stage'       => 'arrival',
+                'priority'    => 'high',
+                'task_type'   => 'task',
+            ),
+        );
     }
 }
