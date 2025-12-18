@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { clsx } from 'clsx';
 import { useCurrentUser } from '@/hooks/useApi';
 import { usePortalStore } from '@/store';
+import ErrorBoundary from '@/components/shared/ErrorBoundary';
 import Sidebar from '@/components/layout/Sidebar';
 import Header from '@/components/layout/Header';
 import Dashboard from '@/components/dashboard/Dashboard';
@@ -89,7 +90,9 @@ export default function App() {
 
         {/* Page content */}
         <main className="min-h-[calc(100vh-4rem)]">
-          <ViewRouter />
+          <ErrorBoundary>
+            <ViewRouter />
+          </ErrorBoundary>
         </main>
       </div>
     </div>
