@@ -1872,7 +1872,7 @@ class FRAMT_Portal_API {
             );
         }
 
-        if ( $note->user_id != get_current_user_id() && ! current_user_can( 'manage_options' ) ) {
+        if ( (int) $note->user_id !== get_current_user_id() && ! current_user_can( 'manage_options' ) ) {
             return new WP_Error(
                 'rest_forbidden',
                 'You do not have permission to access this note.',
@@ -2295,12 +2295,12 @@ class FRAMT_Portal_API {
             }
         }
 
-        // Handle array fields separately
+        // Handle array fields separately with deep sanitization
         if ( isset( $params['dependents'] ) && is_array( $params['dependents'] ) ) {
-            update_user_meta( $user_id, 'fra_dependents', $params['dependents'] );
+            update_user_meta( $user_id, 'fra_dependents', $this->sanitize_array_recursive( $params['dependents'] ) );
         }
         if ( isset( $params['previous_visas'] ) && is_array( $params['previous_visas'] ) ) {
-            update_user_meta( $user_id, 'fra_previous_visas', $params['previous_visas'] );
+            update_user_meta( $user_id, 'fra_previous_visas', $this->sanitize_array_recursive( $params['previous_visas'] ) );
         }
 
         // Update timestamp
@@ -2869,7 +2869,7 @@ class FRAMT_Portal_API {
         $table = FRAMT_Portal_Schema::get_table( 'generated_documents' );
 
         // Check if table exists, if not use files table
-        $table_exists = $wpdb->get_var( "SHOW TABLES LIKE '$table'" ) === $table;
+        $table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) === $table;
 
         if ( $table_exists ) {
             $wpdb->insert(
@@ -2935,7 +2935,7 @@ class FRAMT_Portal_API {
         $table      = FRAMT_Portal_Schema::get_table( 'generated_documents' );
 
         // Check if custom table exists
-        $table_exists = $wpdb->get_var( "SHOW TABLES LIKE '$table'" ) === $table;
+        $table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) === $table;
 
         if ( $table_exists ) {
             $docs = $wpdb->get_results( $wpdb->prepare(
@@ -2996,12 +2996,12 @@ class FRAMT_Portal_API {
         $doc_id = $request->get_param( 'id' );
         $table  = FRAMT_Portal_Schema::get_table( 'generated_documents' );
 
-        $table_exists = $wpdb->get_var( "SHOW TABLES LIKE '$table'" ) === $table;
+        $table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) === $table;
 
         if ( $table_exists ) {
             $doc = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE id = %d", $doc_id ) );
 
-            if ( ! $doc || $doc->user_id != get_current_user_id() ) {
+            if ( ! $doc || (int) $doc->user_id !== get_current_user_id() ) {
                 return new WP_Error( 'rest_doc_not_found', 'Document not found.', array( 'status' => 404 ) );
             }
 
@@ -3014,7 +3014,7 @@ class FRAMT_Portal_API {
         } else {
             $post = get_post( $doc_id );
 
-            if ( ! $post || $post->post_author != get_current_user_id() ) {
+            if ( ! $post || (int) $post->post_author !== get_current_user_id() ) {
                 return new WP_Error( 'rest_doc_not_found', 'Document not found.', array( 'status' => 404 ) );
             }
 
@@ -3083,12 +3083,14 @@ Signature:
             return new WP_Error( 'invalid_type', 'Invalid document type.', array( 'status' => 400 ) );
         }
 
-        // Replace placeholders
+        // Replace placeholders with sanitized values
         $data['date'] = date_i18n( 'F j, Y' );
 
         foreach ( $data as $key => $value ) {
-            $template = str_replace( '{' . $key . '}', $value, $template );
-            $template = str_replace( '[' . $key . ']', $value, $template );
+            // Sanitize value to prevent XSS - use esc_html for text content
+            $safe_value = is_string( $value ) ? esc_html( $value ) : esc_html( (string) $value );
+            $template   = str_replace( '{' . $key . '}', $safe_value, $template );
+            $template   = str_replace( '[' . $key . ']', $safe_value, $template );
         }
 
         return trim( $template );
@@ -3828,7 +3830,7 @@ Signature:
 
         $subscription = new MeprSubscription( $sub_id );
 
-        if ( $subscription->user_id != $user_id && ! current_user_can( 'manage_options' ) ) {
+        if ( (int) $subscription->user_id !== $user_id && ! current_user_can( 'manage_options' ) ) {
             return new WP_Error( 'unauthorized', 'You cannot cancel this subscription.', array( 'status' => 403 ) );
         }
 
@@ -3858,7 +3860,7 @@ Signature:
 
         $subscription = new MeprSubscription( $sub_id );
 
-        if ( $subscription->user_id != $user_id && ! current_user_can( 'manage_options' ) ) {
+        if ( (int) $subscription->user_id !== $user_id && ! current_user_can( 'manage_options' ) ) {
             return new WP_Error( 'unauthorized', 'You cannot suspend this subscription.', array( 'status' => 403 ) );
         }
 
@@ -3888,7 +3890,7 @@ Signature:
 
         $subscription = new MeprSubscription( $sub_id );
 
-        if ( $subscription->user_id != $user_id && ! current_user_can( 'manage_options' ) ) {
+        if ( (int) $subscription->user_id !== $user_id && ! current_user_can( 'manage_options' ) ) {
             return new WP_Error( 'unauthorized', 'You cannot resume this subscription.', array( 'status' => 403 ) );
         }
 
@@ -3965,5 +3967,35 @@ Signature:
     private function get_product_features( $product_id ) {
         $features = get_post_meta( $product_id, '_fra_product_features', true );
         return is_array( $features ) ? $features : array();
+    }
+
+    /**
+     * Recursively sanitize array values
+     *
+     * @param array $array Array to sanitize
+     * @return array Sanitized array
+     */
+    private function sanitize_array_recursive( $array ) {
+        $sanitized = array();
+
+        foreach ( $array as $key => $value ) {
+            $sanitized_key = sanitize_key( $key );
+
+            if ( is_array( $value ) ) {
+                $sanitized[ $sanitized_key ] = $this->sanitize_array_recursive( $value );
+            } elseif ( is_string( $value ) ) {
+                $sanitized[ $sanitized_key ] = sanitize_text_field( $value );
+            } elseif ( is_int( $value ) ) {
+                $sanitized[ $sanitized_key ] = absint( $value );
+            } elseif ( is_float( $value ) ) {
+                $sanitized[ $sanitized_key ] = floatval( $value );
+            } elseif ( is_bool( $value ) ) {
+                $sanitized[ $sanitized_key ] = (bool) $value;
+            } else {
+                $sanitized[ $sanitized_key ] = sanitize_text_field( (string) $value );
+            }
+        }
+
+        return $sanitized;
     }
 }

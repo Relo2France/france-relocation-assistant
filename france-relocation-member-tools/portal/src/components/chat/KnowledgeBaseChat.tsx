@@ -224,9 +224,13 @@ export default function KnowledgeBaseChat() {
                 <ChatMessage key={message.id} message={message} />
               ))}
               {isStreaming && (
-                <div className="flex items-center gap-2 text-gray-500 text-sm">
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  AI is thinking...
+                <div
+                  role="status"
+                  aria-live="polite"
+                  className="flex items-center gap-2 text-gray-500 text-sm"
+                >
+                  <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
+                  <span>AI is thinking...</span>
                 </div>
               )}
               <div ref={messagesEndRef} />
@@ -518,14 +522,21 @@ function MessageContent({ content }: { content: string }) {
     // Regular paragraphs
     else if (line.trim()) {
       flushList();
-      // Check for bold text **text**
-      const boldFormatted = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      // Parse bold text **text** safely without dangerouslySetInnerHTML
+      const parts = line.split(/(\*\*.*?\*\*)/g);
+      const formattedParts = parts.map((part, i) => {
+        if (part.startsWith('**') && part.endsWith('**')) {
+          return <strong key={i}>{part.slice(2, -2)}</strong>;
+        }
+        return part;
+      });
       elements.push(
         <p
           key={elements.length}
           className="text-gray-700 leading-relaxed mb-2"
-          dangerouslySetInnerHTML={{ __html: boldFormatted }}
-        />
+        >
+          {formattedParts}
+        </p>
       );
     }
     // Empty lines
