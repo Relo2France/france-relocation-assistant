@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { X, FileText, Download, Save, Loader2, CheckCircle, Clock, AlertCircle, RefreshCw } from 'lucide-react';
+import { X, FileText, Save, Loader2, CheckCircle, Clock, AlertCircle, RefreshCw } from 'lucide-react';
 import { researchApi } from '@/api/client';
 import type { ResearchLevel } from '@/types';
 
@@ -99,13 +99,12 @@ export default function GenerateReportModal({
     }
   };
 
-  // Download PDF - append nonce for authentication
-  const handleDownload = () => {
-    if (!report?.download_url) return;
-    const wpData = window.fraPortalData || { nonce: '' };
-    const separator = report.download_url.includes('?') ? '&' : '?';
-    const urlWithNonce = `${report.download_url}${separator}_wpnonce=${wpData.nonce}`;
-    window.open(urlWithNonce, '_blank');
+  // View HTML report (can be printed/saved as PDF via browser)
+  const handleViewReport = () => {
+    if (!report?.id) return;
+    const wpData = window.fraPortalData || { nonce: '', apiUrl: '/wp-json/fra-portal/v1' };
+    const htmlUrl = `${wpData.apiUrl}/research/report/${report.id}/html?_wpnonce=${wpData.nonce}`;
+    window.open(htmlUrl, '_blank');
   };
 
   if (!isOpen) return null;
@@ -240,11 +239,11 @@ export default function GenerateReportModal({
               {/* Actions */}
               <div className="space-y-3">
                 <button
-                  onClick={handleDownload}
+                  onClick={handleViewReport}
                   className="btn btn-primary w-full"
                 >
-                  <Download className="w-4 h-4" />
-                  Download PDF
+                  <FileText className="w-4 h-4" />
+                  View Report
                 </button>
 
                 <button
@@ -305,11 +304,11 @@ export default function GenerateReportModal({
 
               <div className="space-y-3">
                 <button
-                  onClick={handleDownload}
+                  onClick={handleViewReport}
                   className="btn btn-primary w-full"
                 >
-                  <Download className="w-4 h-4" />
-                  Download PDF
+                  <FileText className="w-4 h-4" />
+                  View Report
                 </button>
                 <button onClick={onClose} className="btn btn-outline w-full">
                   Close
