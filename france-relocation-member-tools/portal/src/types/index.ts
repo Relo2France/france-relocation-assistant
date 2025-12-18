@@ -141,6 +141,14 @@ export interface UserSettings {
   language: string;
   timezone: string;
   date_format: string;
+  menu_order?: MenuSectionOrder;
+}
+
+// Menu section ordering for drag-and-drop
+export interface MenuSectionOrder {
+  project: string[];
+  resources: string[];
+  account: string[];
 }
 
 export interface UpdateProfileData {
