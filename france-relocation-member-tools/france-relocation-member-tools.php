@@ -284,6 +284,9 @@ final class FRA_Member_Tools {
         add_action('wp_enqueue_scripts', array($this, 'enqueue_portal_assets'));
         add_action('wp_enqueue_scripts', array($this, 'enqueue_homepage_assets'));
 
+        // Add type="module" for ES module scripts (needed for Vite builds)
+        add_filter('script_loader_tag', array($this, 'add_module_type_to_scripts'), 10, 2);
+
         // Register AJAX handlers
         $this->register_ajax_handlers();
         
@@ -3858,16 +3861,6 @@ Please provide a helpful, accurate answer about their health insurance coverage 
                     }
                 }
 
-                // Add type="module" to production scripts (required for ES modules)
-                add_filter('script_loader_tag', function($tag, $handle) {
-                    if ($handle === 'fra-portal') {
-                        // Remove any existing type attribute and add type="module"
-                        $tag = preg_replace('/\s+type=[\'"][^\'"]*[\'"]/i', '', $tag);
-                        $tag = str_replace('<script ', '<script type="module" ', $tag);
-                        return $tag;
-                    }
-                    return $tag;
-                }, 10, 2);
             }
         } else {
             // Development mode - load from Vite dev server
@@ -3887,16 +3880,6 @@ Please provide a helpful, accurate answer about their health insurance coverage 
                 true
             );
 
-            // Add type="module" to scripts
-            add_filter('script_loader_tag', function($tag, $handle) {
-                if (in_array($handle, ['fra-portal-vite', 'fra-portal'])) {
-                    // Remove any existing type attribute and add type="module"
-                    $tag = preg_replace('/\s+type=[\'"][^\'"]*[\'"]/i', '', $tag);
-                    $tag = str_replace('<script ', '<script type="module" ', $tag);
-                    return $tag;
-                }
-                return $tag;
-            }, 10, 2);
         }
 
         // Localize script with WordPress data
@@ -3933,6 +3916,27 @@ Please provide a helpful, accurate answer about their health insurance coverage 
             array(),
             FRAMT_VERSION
         );
+    }
+
+    /**
+     * Add type="module" to portal scripts for ES module support
+     *
+     * @param string $tag The script tag.
+     * @param string $handle The script handle.
+     * @return string Modified script tag.
+     */
+    public function add_module_type_to_scripts($tag, $handle) {
+        // Only modify portal-related scripts
+        $module_handles = array('fra-portal', 'fra-portal-vite');
+
+        if (in_array($handle, $module_handles, true)) {
+            // Remove any existing type attribute
+            $tag = preg_replace('/\s+type=[\'"][^\'"]*[\'"]/i', '', $tag);
+            // Add type="module"
+            $tag = str_replace('<script ', '<script type="module" ', $tag);
+        }
+
+        return $tag;
     }
 
     /**
