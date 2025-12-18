@@ -1,7 +1,6 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { clsx } from 'clsx';
 import {
-  CheckCircle2,
   Circle,
   ListChecks,
   Filter,

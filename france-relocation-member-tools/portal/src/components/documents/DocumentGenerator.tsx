@@ -644,7 +644,7 @@ function DocumentWizard({
 
       {/* Questions */}
       <div className="space-y-6">
-        {questions.map((question, index) => (
+        {questions.map((question, _index) => (
           <div key={question.id}>
             <label className="block text-sm font-medium text-gray-900 mb-2">
               {question.label}

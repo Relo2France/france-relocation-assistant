@@ -493,7 +493,7 @@ function MessageContent({ content }: { content: string }) {
     }
   };
 
-  lines.forEach((line, index) => {
+  lines.forEach((line, _index) => {
     // Bullet points
     if (line.match(/^[\-\*•]\s/)) {
       if (currentListType !== 'ul') flushList();

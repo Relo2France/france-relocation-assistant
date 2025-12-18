@@ -21,7 +21,7 @@ import {
   useResumeSubscription,
   useUpgradeOptions,
 } from '@/hooks/useApi';
-import type { Subscription, Payment, SubscriptionStatus, PaymentStatus } from '@/types';
+import type { SubscriptionStatus, PaymentStatus } from '@/types';
 import Modal from '@/components/shared/Modal';
 
 interface ConfirmModalProps {
