@@ -2159,85 +2159,62 @@ class FRAMT_Portal_API {
         $user_id = get_current_user_id();
         $user    = get_userdata( $user_id );
 
-        // Get all profile meta
-        $profile_fields = array(
+        // Get all profile meta - using frontend field names
+        $profile = array(
             // Personal Information
-            'first_name'           => $user->first_name,
-            'last_name'            => $user->last_name,
-            'email'                => $user->user_email,
-            'date_of_birth'        => get_user_meta( $user_id, 'fra_date_of_birth', true ),
-            'place_of_birth'       => get_user_meta( $user_id, 'fra_place_of_birth', true ),
-            'country_of_birth'     => get_user_meta( $user_id, 'fra_country_of_birth', true ),
-            'nationality'          => get_user_meta( $user_id, 'fra_nationality', true ),
-            'secondary_nationality' => get_user_meta( $user_id, 'fra_secondary_nationality', true ),
-            'gender'               => get_user_meta( $user_id, 'fra_gender', true ),
-            'marital_status'       => get_user_meta( $user_id, 'fra_marital_status', true ),
+            'legal_first_name'      => get_user_meta( $user_id, 'fra_legal_first_name', true ),
+            'legal_middle_name'     => get_user_meta( $user_id, 'fra_legal_middle_name', true ),
+            'legal_last_name'       => get_user_meta( $user_id, 'fra_legal_last_name', true ),
+            'date_of_birth'         => get_user_meta( $user_id, 'fra_date_of_birth', true ),
+            'nationality'           => get_user_meta( $user_id, 'fra_nationality', true ),
+            'passport_number'       => get_user_meta( $user_id, 'fra_passport_number', true ),
+            'passport_expiry'       => get_user_meta( $user_id, 'fra_passport_expiry', true ),
 
-            // Passport Information
-            'passport_number'      => get_user_meta( $user_id, 'fra_passport_number', true ),
-            'passport_issue_date'  => get_user_meta( $user_id, 'fra_passport_issue_date', true ),
-            'passport_expiry_date' => get_user_meta( $user_id, 'fra_passport_expiry_date', true ),
-            'passport_issue_place' => get_user_meta( $user_id, 'fra_passport_issue_place', true ),
+            // Applicant Information
+            'applicants'                => get_user_meta( $user_id, 'fra_applicants', true ),
+            'spouse_legal_first_name'   => get_user_meta( $user_id, 'fra_spouse_legal_first_name', true ),
+            'spouse_legal_last_name'    => get_user_meta( $user_id, 'fra_spouse_legal_last_name', true ),
+            'spouse_date_of_birth'      => get_user_meta( $user_id, 'fra_spouse_date_of_birth', true ),
+            'num_children'              => (int) get_user_meta( $user_id, 'fra_num_children', true ),
+            'children_ages'             => get_user_meta( $user_id, 'fra_children_ages', true ),
+            'has_pets'                  => get_user_meta( $user_id, 'fra_has_pets', true ),
+            'pet_details'               => get_user_meta( $user_id, 'fra_pet_details', true ),
 
-            // Contact Information
-            'phone'                => get_user_meta( $user_id, 'fra_phone', true ),
-            'phone_secondary'      => get_user_meta( $user_id, 'fra_phone_secondary', true ),
+            // Visa & Employment
+            'visa_type'             => get_user_meta( $user_id, 'fra_visa_type', true ),
+            'employment_status'     => get_user_meta( $user_id, 'fra_employment_status', true ),
+            'work_in_france'        => get_user_meta( $user_id, 'fra_work_in_france', true ),
+            'industry'              => get_user_meta( $user_id, 'fra_industry', true ),
+            'employer_name'         => get_user_meta( $user_id, 'fra_employer_name', true ),
+            'job_title'             => get_user_meta( $user_id, 'fra_job_title', true ),
 
-            // Current Address
-            'current_address'      => get_user_meta( $user_id, 'fra_current_address', true ),
-            'current_city'         => get_user_meta( $user_id, 'fra_current_city', true ),
-            'current_state'        => get_user_meta( $user_id, 'fra_current_state', true ),
-            'current_postal_code'  => get_user_meta( $user_id, 'fra_current_postal_code', true ),
-            'current_country'      => get_user_meta( $user_id, 'fra_current_country', true ),
+            // Location Information
+            'current_state'         => get_user_meta( $user_id, 'fra_current_state', true ),
+            'birth_state'           => get_user_meta( $user_id, 'fra_birth_state', true ),
+            'birth_state_other'     => get_user_meta( $user_id, 'fra_birth_state_other', true ),
+            'target_location'       => get_user_meta( $user_id, 'fra_target_location', true ),
+            'housing_plan'          => get_user_meta( $user_id, 'fra_housing_plan', true ),
 
-            // French Address (if applicable)
-            'french_address'       => get_user_meta( $user_id, 'fra_french_address', true ),
-            'french_city'          => get_user_meta( $user_id, 'fra_french_city', true ),
-            'french_postal_code'   => get_user_meta( $user_id, 'fra_french_postal_code', true ),
-            'french_department'    => get_user_meta( $user_id, 'fra_french_department', true ),
+            // Timeline
+            'timeline'              => get_user_meta( $user_id, 'fra_timeline', true ),
+            'target_move_date'      => get_user_meta( $user_id, 'fra_target_move_date', true ),
+            'application_location'  => get_user_meta( $user_id, 'fra_application_location', true ),
 
-            // Employment/Financial
-            'occupation'           => get_user_meta( $user_id, 'fra_occupation', true ),
-            'employer'             => get_user_meta( $user_id, 'fra_employer', true ),
-            'annual_income'        => get_user_meta( $user_id, 'fra_annual_income', true ),
-            'income_currency'      => get_user_meta( $user_id, 'fra_income_currency', true ),
+            // Financial
+            'french_proficiency'    => get_user_meta( $user_id, 'fra_french_proficiency', true ),
+            'french_mortgage'       => get_user_meta( $user_id, 'fra_french_mortgage', true ),
 
-            // Family Information
-            'spouse_name'          => get_user_meta( $user_id, 'fra_spouse_name', true ),
-            'spouse_nationality'   => get_user_meta( $user_id, 'fra_spouse_nationality', true ),
-            'spouse_dob'           => get_user_meta( $user_id, 'fra_spouse_dob', true ),
-            'number_of_dependents' => get_user_meta( $user_id, 'fra_number_of_dependents', true ),
-            'dependents'           => get_user_meta( $user_id, 'fra_dependents', true ) ?: array(),
+            // Documents
+            'has_birth_cert'        => get_user_meta( $user_id, 'fra_has_birth_cert', true ),
+            'birth_cert_apostilled' => get_user_meta( $user_id, 'fra_birth_cert_apostilled', true ),
+            'has_marriage_cert'     => get_user_meta( $user_id, 'fra_has_marriage_cert', true ),
+            'marriage_cert_apostilled' => get_user_meta( $user_id, 'fra_marriage_cert_apostilled', true ),
 
-            // Visa/Immigration
-            'visa_type_applying'   => get_user_meta( $user_id, 'fra_visa_type_applying', true ),
-            'previous_visas'       => get_user_meta( $user_id, 'fra_previous_visas', true ) ?: array(),
-            'previous_france_visits' => get_user_meta( $user_id, 'fra_previous_france_visits', true ),
-            'schengen_history'     => get_user_meta( $user_id, 'fra_schengen_history', true ),
-
-            // Health Insurance
-            'health_insurance_provider' => get_user_meta( $user_id, 'fra_health_insurance_provider', true ),
-            'health_insurance_policy'   => get_user_meta( $user_id, 'fra_health_insurance_policy', true ),
-            'health_insurance_expiry'   => get_user_meta( $user_id, 'fra_health_insurance_expiry', true ),
-
-            // Emergency Contact
-            'emergency_contact_name'    => get_user_meta( $user_id, 'fra_emergency_contact_name', true ),
-            'emergency_contact_phone'   => get_user_meta( $user_id, 'fra_emergency_contact_phone', true ),
-            'emergency_contact_relation' => get_user_meta( $user_id, 'fra_emergency_contact_relation', true ),
-
-            // Preferences
-            'preferred_language'   => get_user_meta( $user_id, 'fra_preferred_language', true ) ?: 'en',
-            'timezone'             => get_user_meta( $user_id, 'fra_timezone', true ) ?: wp_timezone_string(),
+            // Metadata
+            'updated_at'            => get_user_meta( $user_id, 'fra_profile_updated', true ),
         );
 
-        $response = array(
-            'id'         => $user_id,
-            'avatar_url' => get_avatar_url( $user_id, array( 'size' => 200 ) ),
-            'fields'     => $profile_fields,
-            'updated_at' => get_user_meta( $user_id, 'fra_profile_updated', true ),
-        );
-
-        return rest_ensure_response( $response );
+        return rest_ensure_response( $profile );
     }
 
     /**
@@ -2250,57 +2227,70 @@ class FRAMT_Portal_API {
         $user_id = get_current_user_id();
         $params  = $request->get_json_params();
 
-        // Fields that map to WP user table
-        $wp_user_fields = array( 'first_name', 'last_name', 'email' );
+        // All fields that can be updated - matches frontend field names
+        $allowed_fields = array(
+            // Personal Information
+            'legal_first_name',
+            'legal_middle_name',
+            'legal_last_name',
+            'date_of_birth',
+            'nationality',
+            'passport_number',
+            'passport_expiry',
 
-        // Update WP user fields
-        $user_data = array( 'ID' => $user_id );
-        foreach ( $wp_user_fields as $field ) {
-            if ( isset( $params[ $field ] ) ) {
-                if ( 'email' === $field ) {
-                    $user_data['user_email'] = sanitize_email( $params[ $field ] );
-                } else {
-                    $user_data[ $field ] = sanitize_text_field( $params[ $field ] );
-                }
-            }
-        }
+            // Applicant Information
+            'applicants',
+            'spouse_legal_first_name',
+            'spouse_legal_last_name',
+            'spouse_date_of_birth',
+            'num_children',
+            'children_ages',
+            'has_pets',
+            'pet_details',
 
-        if ( count( $user_data ) > 1 ) {
-            $result = wp_update_user( $user_data );
-            if ( is_wp_error( $result ) ) {
-                return $result;
-            }
-        }
+            // Visa & Employment
+            'visa_type',
+            'employment_status',
+            'work_in_france',
+            'industry',
+            'employer_name',
+            'job_title',
 
-        // All other fields go to user meta
-        $meta_fields = array(
-            'date_of_birth', 'place_of_birth', 'country_of_birth', 'nationality',
-            'secondary_nationality', 'gender', 'marital_status',
-            'passport_number', 'passport_issue_date', 'passport_expiry_date', 'passport_issue_place',
-            'phone', 'phone_secondary',
-            'current_address', 'current_city', 'current_state', 'current_postal_code', 'current_country',
-            'french_address', 'french_city', 'french_postal_code', 'french_department',
-            'occupation', 'employer', 'annual_income', 'income_currency',
-            'spouse_name', 'spouse_nationality', 'spouse_dob', 'number_of_dependents',
-            'visa_type_applying', 'previous_france_visits', 'schengen_history',
-            'health_insurance_provider', 'health_insurance_policy', 'health_insurance_expiry',
-            'emergency_contact_name', 'emergency_contact_phone', 'emergency_contact_relation',
-            'preferred_language', 'timezone',
+            // Location Information
+            'current_state',
+            'birth_state',
+            'birth_state_other',
+            'target_location',
+            'housing_plan',
+
+            // Timeline
+            'timeline',
+            'target_move_date',
+            'application_location',
+
+            // Financial
+            'french_proficiency',
+            'french_mortgage',
+
+            // Documents
+            'has_birth_cert',
+            'birth_cert_apostilled',
+            'has_marriage_cert',
+            'marriage_cert_apostilled',
         );
 
-        foreach ( $meta_fields as $field ) {
+        // Update each field if provided
+        foreach ( $allowed_fields as $field ) {
             if ( isset( $params[ $field ] ) ) {
-                $value = is_array( $params[ $field ] ) ? $params[ $field ] : sanitize_text_field( $params[ $field ] );
+                $value = $params[ $field ];
+                // Sanitize based on type
+                if ( is_numeric( $value ) ) {
+                    $value = intval( $value );
+                } elseif ( is_string( $value ) ) {
+                    $value = sanitize_text_field( $value );
+                }
                 update_user_meta( $user_id, 'fra_' . $field, $value );
             }
-        }
-
-        // Handle array fields separately with deep sanitization
-        if ( isset( $params['dependents'] ) && is_array( $params['dependents'] ) ) {
-            update_user_meta( $user_id, 'fra_dependents', $this->sanitize_array_recursive( $params['dependents'] ) );
-        }
-        if ( isset( $params['previous_visas'] ) && is_array( $params['previous_visas'] ) ) {
-            update_user_meta( $user_id, 'fra_previous_visas', $this->sanitize_array_recursive( $params['previous_visas'] ) );
         }
 
         // Update timestamp
@@ -2318,76 +2308,52 @@ class FRAMT_Portal_API {
     public function get_profile_completion( $request ) {
         $user_id = get_current_user_id();
 
-        // Define required fields by category
-        $categories = array(
-            'personal' => array(
-                'label'  => 'Personal Information',
-                'fields' => array( 'first_name', 'last_name', 'date_of_birth', 'nationality', 'gender' ),
-            ),
-            'passport' => array(
-                'label'  => 'Passport Details',
-                'fields' => array( 'passport_number', 'passport_issue_date', 'passport_expiry_date' ),
-            ),
-            'contact' => array(
-                'label'  => 'Contact Information',
-                'fields' => array( 'phone', 'current_address', 'current_city', 'current_country' ),
-            ),
-            'employment' => array(
-                'label'  => 'Employment & Financial',
-                'fields' => array( 'occupation', 'annual_income' ),
-            ),
-            'insurance' => array(
-                'label'  => 'Health Insurance',
-                'fields' => array( 'health_insurance_provider', 'health_insurance_policy' ),
-            ),
-            'emergency' => array(
-                'label'  => 'Emergency Contact',
-                'fields' => array( 'emergency_contact_name', 'emergency_contact_phone' ),
-            ),
+        // Define required fields that count toward completion - using new field names
+        $required_fields = array(
+            // Personal - most important
+            'legal_first_name',
+            'legal_last_name',
+            'date_of_birth',
+            'nationality',
+            'passport_number',
+            'passport_expiry',
+
+            // Applicant info
+            'applicants',
+
+            // Visa & Employment
+            'visa_type',
+            'employment_status',
+
+            // Location
+            'current_state',
+            'target_location',
+
+            // Timeline
+            'timeline',
+            'application_location',
         );
 
-        $user           = get_userdata( $user_id );
-        $completion     = array();
-        $total_fields   = 0;
         $filled_fields  = 0;
+        $total_fields   = count( $required_fields );
+        $missing_fields = array();
 
-        foreach ( $categories as $key => $category ) {
-            $cat_filled = 0;
-            $cat_total  = count( $category['fields'] );
-            $missing    = array();
+        foreach ( $required_fields as $field ) {
+            $value = get_user_meta( $user_id, 'fra_' . $field, true );
 
-            foreach ( $category['fields'] as $field ) {
-                $total_fields++;
-                $value = '';
-
-                if ( in_array( $field, array( 'first_name', 'last_name' ), true ) ) {
-                    $value = $user->$field;
-                } else {
-                    $value = get_user_meta( $user_id, 'fra_' . $field, true );
-                }
-
-                if ( ! empty( $value ) ) {
-                    $cat_filled++;
-                    $filled_fields++;
-                } else {
-                    $missing[] = $field;
-                }
+            if ( ! empty( $value ) ) {
+                $filled_fields++;
+            } else {
+                $missing_fields[] = $field;
             }
-
-            $completion[ $key ] = array(
-                'label'      => $category['label'],
-                'completed'  => $cat_filled,
-                'total'      => $cat_total,
-                'percentage' => $cat_total > 0 ? round( ( $cat_filled / $cat_total ) * 100 ) : 0,
-                'missing'    => $missing,
-            );
         }
 
+        $percentage = $total_fields > 0 ? round( ( $filled_fields / $total_fields ) * 100 ) : 0;
+
+        // Response format matches frontend expectation
         $response = array(
-            'overall_percentage' => $total_fields > 0 ? round( ( $filled_fields / $total_fields ) * 100 ) : 0,
-            'filled_fields'      => $filled_fields,
-            'total_fields'       => $total_fields,
-            'categories'         => $completion,
+            'percentage'     => $percentage,
+            'missing_fields' => $missing_fields,
         );
 
         return rest_ensure_response( $response );
