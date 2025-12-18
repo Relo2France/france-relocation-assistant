@@ -3861,7 +3861,10 @@ Please provide a helpful, accurate answer about their health insurance coverage 
                 // Add type="module" to production scripts (required for ES modules)
                 add_filter('script_loader_tag', function($tag, $handle) {
                     if ($handle === 'fra-portal') {
-                        return str_replace(' src', ' type="module" src', $tag);
+                        // Remove any existing type attribute and add type="module"
+                        $tag = preg_replace('/\s+type=[\'"][^\'"]*[\'"]/i', '', $tag);
+                        $tag = str_replace('<script ', '<script type="module" ', $tag);
+                        return $tag;
                     }
                     return $tag;
                 }, 10, 2);
@@ -3887,7 +3890,10 @@ Please provide a helpful, accurate answer about their health insurance coverage 
             // Add type="module" to scripts
             add_filter('script_loader_tag', function($tag, $handle) {
                 if (in_array($handle, ['fra-portal-vite', 'fra-portal'])) {
-                    return str_replace(' src', ' type="module" src', $tag);
+                    // Remove any existing type attribute and add type="module"
+                    $tag = preg_replace('/\s+type=[\'"][^\'"]*[\'"]/i', '', $tag);
+                    $tag = str_replace('<script ', '<script type="module" ', $tag);
+                    return $tag;
                 }
                 return $tag;
             }, 10, 2);
