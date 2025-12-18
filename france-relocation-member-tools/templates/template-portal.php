@@ -442,6 +442,14 @@ $react_settings = array(
                 root: '<?php echo esc_url( rest_url() ); ?>',
                 nonce: '<?php echo esc_js( wp_create_nonce( 'wp_rest' ) ); ?>',
             };
+            window.fraPortalData = {
+                apiUrl: '<?php echo esc_url( rest_url( 'fra-portal/v1' ) ); ?>',
+                nonce: '<?php echo esc_js( wp_create_nonce( 'wp_rest' ) ); ?>',
+                userId: <?php echo (int) get_current_user_id(); ?>,
+                siteUrl: '<?php echo esc_url( home_url() ); ?>',
+                pluginUrl: '<?php echo esc_url( FRAMT_PLUGIN_URL ); ?>',
+                isAdmin: <?php echo current_user_can( 'manage_options' ) ? 'true' : 'false'; ?>
+            };
         </script>
 
         <!-- Portal root element -->
@@ -452,6 +460,20 @@ $react_settings = array(
                 <p class="portal-loading-text">Loading <?php echo esc_html( $settings['portal_title'] ); ?>...</p>
             </div>
         </div>
+
+        <?php
+        // Load portal script directly to bypass WordPress.com script combining
+        $manifest_path = FRAMT_PLUGIN_DIR . 'assets/portal/.vite/manifest.json';
+        if ( file_exists( $manifest_path ) ) {
+            $manifest = json_decode( file_get_contents( $manifest_path ), true );
+            if ( isset( $manifest['index.html']['file'] ) ) {
+                $script_url = FRAMT_PLUGIN_URL . 'assets/portal/' . $manifest['index.html']['file'];
+                ?>
+                <script type="module" src="<?php echo esc_url( $script_url ); ?>"></script>
+                <?php
+            }
+        }
+        ?>
     <?php else : ?>
         <!-- Login Form -->
         <div class="portal-login-container">
