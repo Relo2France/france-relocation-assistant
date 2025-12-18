@@ -51,26 +51,55 @@ $defaults = array(
     'sidebar_collapsed'   => false,
     'portal_title'        => 'Members Portal',
     'logo_url'            => '',
+    // Menu visibility
     'menu_dashboard'      => true,
     'menu_tasks'          => true,
+    'menu_checklists'     => true,
     'menu_timeline'       => true,
     'menu_messages'       => true,
+    'menu_chat'           => true,
     'menu_documents'      => true,
     'menu_guides'         => true,
+    'menu_glossary'       => true,
     'menu_files'          => true,
+    'menu_profile'        => true,
     'menu_family'         => true,
+    'menu_membership'     => true,
     'menu_settings'       => true,
     'menu_help'           => true,
+    // Menu labels
     'label_dashboard'     => 'Dashboard',
     'label_tasks'         => 'Tasks',
+    'label_checklists'    => 'Checklists',
     'label_timeline'      => 'Timeline',
     'label_messages'      => 'Messages',
+    'label_chat'          => 'Ask AI',
     'label_documents'     => 'Documents',
     'label_guides'        => 'Guides',
+    'label_glossary'      => 'Glossary',
     'label_files'         => 'Files',
+    'label_profile'       => 'My Profile',
     'label_family'        => 'Family Members',
+    'label_membership'    => 'Membership',
     'label_settings'      => 'Settings',
     'label_help'          => 'Help & Support',
+    // Menu icons
+    'icon_dashboard'      => 'LayoutDashboard',
+    'icon_tasks'          => 'CheckSquare',
+    'icon_checklists'     => 'ClipboardList',
+    'icon_timeline'       => 'Calendar',
+    'icon_messages'       => 'MessageSquare',
+    'icon_chat'           => 'Bot',
+    'icon_documents'      => 'FileText',
+    'icon_guides'         => 'BookOpen',
+    'icon_glossary'       => 'BookMarked',
+    'icon_files'          => 'FolderOpen',
+    'icon_profile'        => 'User',
+    'icon_family'         => 'Users',
+    'icon_membership'     => 'CreditCard',
+    'icon_settings'       => 'Settings',
+    'icon_help'           => 'HelpCircle',
+    // Features
     'enable_notifications' => true,
     'enable_file_upload'   => true,
     'custom_css'          => '',
@@ -121,28 +150,33 @@ $sidebar_hover  = framt_lighten_color( $settings['sidebar_bg_color'], 10 );
 $sidebar_active = framt_lighten_color( $settings['sidebar_bg_color'], 20 );
 $primary_dark   = framt_darken_color( $settings['primary_color'], 15 );
 
-// Build menu config for React
+// Build menu config for React - all available menu items
 $menu_config = array();
 $menu_items = array(
-    'dashboard' => array( 'icon' => 'LayoutDashboard', 'path' => '/dashboard' ),
-    'tasks'     => array( 'icon' => 'CheckSquare', 'path' => '/tasks' ),
-    'timeline'  => array( 'icon' => 'Calendar', 'path' => '/timeline' ),
-    'messages'  => array( 'icon' => 'MessageSquare', 'path' => '/messages' ),
-    'documents' => array( 'icon' => 'FileText', 'path' => '/documents' ),
-    'guides'    => array( 'icon' => 'BookOpen', 'path' => '/guides' ),
-    'files'     => array( 'icon' => 'FolderOpen', 'path' => '/files' ),
-    'family'    => array( 'icon' => 'Users', 'path' => '/family' ),
-    'settings'  => array( 'icon' => 'Settings', 'path' => '/settings' ),
-    'help'      => array( 'icon' => 'HelpCircle', 'path' => '/help' ),
+    'dashboard'  => '/dashboard',
+    'tasks'      => '/tasks',
+    'checklists' => '/checklists',
+    'timeline'   => '/timeline',
+    'messages'   => '/messages',
+    'chat'       => '/chat',
+    'documents'  => '/documents',
+    'guides'     => '/guides',
+    'glossary'   => '/glossary',
+    'files'      => '/files',
+    'profile'    => '/profile',
+    'family'     => '/family',
+    'membership' => '/membership',
+    'settings'   => '/settings',
+    'help'       => '/help',
 );
 
-foreach ( $menu_items as $key => $item ) {
+foreach ( $menu_items as $key => $path ) {
     if ( ! empty( $settings[ 'menu_' . $key ] ) ) {
         $menu_config[] = array(
             'id'    => $key,
             'label' => $settings[ 'label_' . $key ],
-            'icon'  => $item['icon'],
-            'path'  => $item['path'],
+            'icon'  => $settings[ 'icon_' . $key ],
+            'path'  => $path,
         );
     }
 }
