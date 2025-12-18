@@ -3798,7 +3798,82 @@ Signature:
      * @return string Response
      */
     private function generate_chat_response( $message, $context, $include_practice = true ) {
-        // Simple keyword-based responses for now
+        // Try to use the AI through the main plugin bridge
+        $ai_response = $this->call_ai_for_chat( $message, $context, $include_practice );
+
+        if ( ! is_wp_error( $ai_response ) && ! empty( $ai_response ) ) {
+            return $ai_response;
+        }
+
+        // Fallback to keyword-based responses if AI is unavailable
+        return $this->generate_fallback_response( $message, $context, $include_practice );
+    }
+
+    /**
+     * Call the AI service for chat responses
+     *
+     * @param string $message          User message
+     * @param string $context          Context/category
+     * @param bool   $include_practice Include real-world practice insights
+     * @return string|WP_Error AI response or error
+     */
+    private function call_ai_for_chat( $message, $context, $include_practice = true ) {
+        // Check if the main plugin bridge is available
+        if ( ! class_exists( 'FRAMT_Main_Plugin_Bridge' ) ) {
+            return new WP_Error( 'no_bridge', 'AI bridge not available' );
+        }
+
+        $bridge = FRAMT_Main_Plugin_Bridge::get_instance();
+
+        // Build the prompt with context
+        $category_context = '';
+        if ( ! empty( $context ) && $context !== 'general' ) {
+            $category_labels = array(
+                'visas'     => 'visa and immigration',
+                'healthcare' => 'French healthcare system',
+                'property'  => 'housing and property',
+                'banking'   => 'banking and finance',
+                'taxes'     => 'taxation',
+                'driving'   => 'driving and transportation',
+                'settling'  => 'settling in and daily life',
+            );
+            $category_context = isset( $category_labels[ $context ] )
+                ? " The user is specifically asking about {$category_labels[ $context ]}."
+                : '';
+        }
+
+        $practice_instruction = $include_practice
+            ? ' Include practical, real-world tips from people who have gone through the process - not just official requirements.'
+            : '';
+
+        $system_prompt = "You are a helpful assistant specializing in helping people relocate to France. You provide accurate, up-to-date information about French visa applications, immigration procedures, healthcare (Carte Vitale, CPAM), banking, housing, taxes, driving licenses, and daily life in France.{$category_context}{$practice_instruction}
+
+Keep responses concise but informative. Use **bold** for important terms. If mentioning official websites, use their full URLs. Focus on practical advice that will help the user succeed in their relocation journey.";
+
+        $full_prompt = $system_prompt . "\n\nUser question: " . $message;
+
+        $result = $bridge->proxy_api_request( $full_prompt, $context );
+
+        if ( is_wp_error( $result ) ) {
+            return $result;
+        }
+
+        if ( ! empty( $result['response'] ) ) {
+            return $result['response'];
+        }
+
+        return new WP_Error( 'empty_response', 'AI returned empty response' );
+    }
+
+    /**
+     * Generate fallback keyword-based response when AI is unavailable
+     *
+     * @param string $message          User message
+     * @param string $context          Context/category
+     * @param bool   $include_practice Include real-world practice insights
+     * @return string Response
+     */
+    private function generate_fallback_response( $message, $context, $include_practice = true ) {
         $lower_message = strtolower( $message );
         $practice_note = $include_practice ? "\n\n**Real-world tip:** " : '';
 
@@ -3859,7 +3934,7 @@ Signature:
         }
 
         // Default response
-        $category_display = ! empty( $context ) ? $context : 'relocating to France';
+        $category_display = ! empty( $context ) && $context !== 'general' ? $context : 'relocating to France';
         return 'Thank you for your question about ' . $category_display . '. I can help you with various aspects of relocating to France including visa applications, healthcare registration, banking, housing, and administrative procedures. Could you provide more details about what specific information you\'re looking for?';
     }
 
