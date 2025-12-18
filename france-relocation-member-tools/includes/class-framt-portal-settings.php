@@ -147,6 +147,27 @@ class FRAMT_Portal_Settings {
             self::OPTION_NAME,
             array( $this, 'sanitize_settings' )
         );
+
+        // Register membership-related options
+        register_setting(
+            'framt_portal_settings_group',
+            'framt_portal_require_membership',
+            array(
+                'type'              => 'boolean',
+                'sanitize_callback' => 'rest_sanitize_boolean',
+                'default'           => false,
+            )
+        );
+
+        register_setting(
+            'framt_portal_settings_group',
+            'framt_enable_demo_mode',
+            array(
+                'type'              => 'boolean',
+                'sanitize_callback' => 'rest_sanitize_boolean',
+                'default'           => false,
+            )
+        );
     }
 
     /**
@@ -759,7 +780,65 @@ class FRAMT_Portal_Settings {
      * @param array $settings Current settings.
      */
     private function render_features_tab( $settings ) {
+        // Get membership plugin status
+        $membership = class_exists( 'FRAMT_Membership' ) ? FRAMT_Membership::get_instance() : null;
+        $detected_plugin = $membership ? $membership->get_plugin() : false;
+        $require_membership = get_option( 'framt_portal_require_membership', false );
+        $demo_mode = get_option( 'framt_enable_demo_mode', false );
         ?>
+        <div class="framt-settings-card">
+            <h2>Membership Integration</h2>
+            <p>Configure membership requirements for portal access.</p>
+
+            <table class="form-table">
+                <tr>
+                    <th>Detected Plugin</th>
+                    <td>
+                        <?php if ( $detected_plugin ) : ?>
+                            <span style="color: #46b450;">
+                                <span class="dashicons dashicons-yes-alt"></span>
+                                <strong><?php echo esc_html( ucfirst( $detected_plugin ) ); ?></strong> detected and active
+                            </span>
+                        <?php else : ?>
+                            <span style="color: #dc3232;">
+                                <span class="dashicons dashicons-warning"></span>
+                                No membership plugin detected
+                            </span>
+                            <p class="description">
+                                Supported plugins: MemberPress (recommended), Paid Memberships Pro, Restrict Content Pro, WooCommerce Memberships
+                            </p>
+                        <?php endif; ?>
+                    </td>
+                </tr>
+                <tr>
+                    <th>Require Membership</th>
+                    <td>
+                        <label>
+                            <input type="checkbox" name="framt_portal_require_membership"
+                                   value="1" <?php checked( $require_membership ); ?>>
+                            Require active membership to access the portal
+                        </label>
+                        <p class="description">
+                            When enabled, users without an active membership will be redirected to the membership page.
+                        </p>
+                    </td>
+                </tr>
+                <tr>
+                    <th>Demo Mode</th>
+                    <td>
+                        <label>
+                            <input type="checkbox" name="framt_enable_demo_mode"
+                                   value="1" <?php checked( $demo_mode ); ?>>
+                            Enable demo mode (bypass membership check)
+                        </label>
+                        <p class="description">
+                            <strong style="color: #dc3232;">For testing only!</strong> When enabled, all logged-in users can access the portal regardless of membership status.
+                        </p>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
         <div class="framt-settings-card">
             <h2>Portal Features</h2>
 
