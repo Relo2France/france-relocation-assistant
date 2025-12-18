@@ -17,7 +17,7 @@
 @layer components {
   /* Sidebar styles */
   .sidebar {
-    @apply fixed left-0 top-0 h-screen bg-sidebar-bg text-sidebar-text transition-all duration-300;
+    @apply fixed left-0 top-0 h-screen bg-sidebar-bg text-sidebar-text transition-all duration-300 z-40;
   }
 
   .sidebar-collapsed {

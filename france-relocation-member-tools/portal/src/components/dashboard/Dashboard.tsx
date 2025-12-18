@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { clsx } from 'clsx';
 import {
   CheckCircle,
@@ -6,15 +7,19 @@ import {
   Calendar,
   ArrowRight,
 } from 'lucide-react';
-import { useDashboard } from '@/hooks/useApi';
+import { useDashboard, useUpdateProject } from '@/hooks/useApi';
 import { usePortalStore } from '@/store';
 import ProgressTracker from './ProgressTracker';
 import TaskCard from './TaskCard';
 import ActivityFeed from './ActivityFeed';
+import Modal from '@/components/shared/Modal';
 
 export default function Dashboard() {
   const { data, isLoading, error } = useDashboard();
   const { setActiveView } = usePortalStore();
+  const [showMoveDateModal, setShowMoveDateModal] = useState(false);
+  const [newMoveDate, setNewMoveDate] = useState('');
+  const updateProject = useUpdateProject();
 
   if (isLoading) {
     return <DashboardSkeleton />;
@@ -57,11 +62,72 @@ export default function Dashboard() {
             )}
           </p>
         </div>
-        <button className="btn btn-primary">
+        <button
+          className="btn btn-primary"
+          onClick={() => {
+            setNewMoveDate(project.target_move_date || '');
+            setShowMoveDateModal(true);
+          }}
+        >
           <Calendar className="w-4 h-4" />
           Update Move Date
         </button>
       </div>
+
+      {/* Update Move Date Modal */}
+      <Modal
+        isOpen={showMoveDateModal}
+        onClose={() => setShowMoveDateModal(false)}
+        title="Update Move Date"
+        size="sm"
+        footer={
+          <>
+            <button
+              className="btn btn-secondary"
+              onClick={() => setShowMoveDateModal(false)}
+            >
+              Cancel
+            </button>
+            <button
+              className="btn btn-primary"
+              onClick={() => {
+                if (newMoveDate && project.id) {
+                  updateProject.mutate(
+                    { id: project.id, data: { target_move_date: newMoveDate } },
+                    {
+                      onSuccess: () => {
+                        setShowMoveDateModal(false);
+                      },
+                    }
+                  );
+                }
+              }}
+              disabled={updateProject.isPending}
+            >
+              {updateProject.isPending ? 'Saving...' : 'Save'}
+            </button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <p className="text-gray-600">
+            When are you planning to move to France? This helps us prioritize your tasks and deadlines.
+          </p>
+          <div>
+            <label htmlFor="move-date" className="block text-sm font-medium text-gray-700 mb-1">
+              Target Move Date
+            </label>
+            <input
+              id="move-date"
+              type="date"
+              value={newMoveDate}
+              onChange={(e) => setNewMoveDate(e.target.value)}
+              className="input"
+              min={new Date().toISOString().split('T')[0]}
+            />
+          </div>
+        </div>
+      </Modal>
 
       {/* Progress tracker */}
       <ProgressTracker stages={stages} />
