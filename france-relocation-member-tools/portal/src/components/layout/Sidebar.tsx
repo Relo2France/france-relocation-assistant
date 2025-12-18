@@ -54,9 +54,21 @@ const defaultSectionOrder: MenuSectionOrder = {
   account: ['profile', 'family', 'membership', 'settings', 'help'],
 };
 
+// Merge custom order with defaults to ensure new items appear
+const mergeWithDefaults = (customOrder: MenuSectionOrder | undefined): MenuSectionOrder => {
+  if (!customOrder) return defaultSectionOrder;
+
+  // Ensure all default items are present in each section
+  return {
+    project: [...customOrder.project, ...defaultSectionOrder.project.filter(id => !customOrder.project.includes(id))],
+    resources: [...customOrder.resources, ...defaultSectionOrder.resources.filter(id => !customOrder.resources.includes(id))],
+    account: [...customOrder.account, ...defaultSectionOrder.account.filter(id => !customOrder.account.includes(id))],
+  };
+};
+
 // Group menu items into sections for display
 const groupMenuItems = (items: MenuItem[], customOrder?: MenuSectionOrder) => {
-  const order = customOrder || defaultSectionOrder;
+  const order = mergeWithDefaults(customOrder);
 
   const sections = [
     {
