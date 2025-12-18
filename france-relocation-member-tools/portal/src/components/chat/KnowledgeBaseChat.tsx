@@ -64,6 +64,15 @@ export default function KnowledgeBaseChat() {
   const { data: categories, isLoading: categoriesLoading } = useChatCategories();
   const sendMessage = useSendChatMessage();
 
+  // Handle category selection - clears messages to show new category topics
+  const handleSelectCategory = (categoryId: string | null) => {
+    if (categoryId !== selectedCategory) {
+      setMessages([]); // Clear messages when switching categories
+      setInputValue(''); // Clear any pending input
+    }
+    setSelectedCategory(categoryId);
+  };
+
   // Auto-scroll to latest message
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -181,7 +190,7 @@ export default function KnowledgeBaseChat() {
       <ChatSidebar
         categories={categories || []}
         selectedCategory={selectedCategory}
-        onSelectCategory={setSelectedCategory}
+        onSelectCategory={handleSelectCategory}
         onSelectTopic={handleSuggestedQuestion}
         isOpen={sidebarOpen}
         onToggle={() => setSidebarOpen(!sidebarOpen)}
