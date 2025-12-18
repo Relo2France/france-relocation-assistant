@@ -158,10 +158,19 @@ export default function Sidebar() {
                 const Icon = iconComponents[item.icon] || LayoutDashboard;
                 const isActive = activeView === item.id;
 
+                // Dashboard click triggers full page refresh to ensure fresh data
+                const handleClick = () => {
+                  if (item.id === 'dashboard') {
+                    window.location.reload();
+                  } else {
+                    setActiveView(item.id);
+                  }
+                };
+
                 return (
                   <li key={item.id}>
                     <button
-                      onClick={() => setActiveView(item.id)}
+                      onClick={handleClick}
                       className={clsx(
                         'nav-item w-full',
                         isActive && 'nav-item-active',
