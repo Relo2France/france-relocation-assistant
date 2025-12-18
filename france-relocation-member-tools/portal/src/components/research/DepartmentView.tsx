@@ -8,6 +8,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ArrowLeft, FileText, MapPin, Users, Search, Loader2, Building, Home, TreeDeciduous } from 'lucide-react';
 import { researchApi } from '@/api/client';
+import { hasDepartmentMap } from '@/config/departmentMaps';
+import DepartmentMapView from './DepartmentMapView';
 import type { FranceDepartment, FranceCommune, ResearchLevel } from '@/types';
 
 interface DepartmentViewProps {
@@ -167,6 +169,16 @@ export default function DepartmentView({
           </p>
         </div>
       </div>
+
+      {/* Department Map (if available) */}
+      {!loading && hasDepartmentMap(department.code) && (
+        <DepartmentMapView
+          departmentCode={department.code}
+          departmentName={department.name}
+          communes={communes}
+          onCommuneSelect={onCommuneSelect}
+        />
+      )}
 
       {/* Major Cities Quick Access */}
       {department.major_cities.length > 0 && (
