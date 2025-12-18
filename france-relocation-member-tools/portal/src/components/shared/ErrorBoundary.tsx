@@ -107,7 +107,7 @@ function ErrorFallback({ error, onRetry, onGoHome }: ErrorFallbackProps) {
         </p>
 
         {/* Error details (development only) */}
-        {error && process.env.NODE_ENV === 'development' && (
+        {error && import.meta.env.DEV && (
           <details className="mb-6 text-left">
             <summary className="text-sm text-gray-500 cursor-pointer hover:text-gray-700">
               Error details

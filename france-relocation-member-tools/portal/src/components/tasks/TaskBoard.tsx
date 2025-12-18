@@ -372,7 +372,7 @@ function TaskCard({
   task,
   index,
   totalTasks,
-  columnTitle,
+  columnTitle: _columnTitle,
   isBeingDragged,
   onClick,
   onDragStart,
