@@ -1,220 +1,145 @@
 /**
  * DepartmentMapView Component
  *
- * Displays an interactive map of a department showing its outline
- * and major cities using react-simple-maps with official GeoJSON data.
+ * Displays an interactive map of a department showing all communes
+ * (towns and villages) using react-simple-maps with official GeoJSON data.
+ * Includes zoom controls and clickable communes for report generation.
  */
 
-import { useState, useMemo } from 'react';
-import { ComposableMap, Geographies, Geography, Marker, ZoomableGroup } from 'react-simple-maps';
+import { useState, useMemo, useCallback } from 'react';
+import { ComposableMap, Geographies, Geography, ZoomableGroup } from 'react-simple-maps';
+import { FRANCE_DEPARTMENTS } from '@/config/research';
 import type { FranceCommune } from '@/types';
 
-// GeoJSON URL for French departments (from gregoiredavid/france-geojson)
-const FRANCE_DEPARTMENTS_GEO_URL =
-  'https://raw.githubusercontent.com/gregoiredavid/france-geojson/master/departements.geojson';
+// Base URL for commune GeoJSON files (per department)
+const getCommmuneGeoUrl = (deptCode: string) =>
+  `https://raw.githubusercontent.com/gregoiredavid/france-geojson/master/departements/${deptCode}/communes.geojson`;
 
-// Settlement type colors
-const SETTLEMENT_COLORS = {
-  city: { fill: '#3B82F6', stroke: '#1D4ED8', radius: 7 },
-  town: { fill: '#22C55E', stroke: '#16A34A', radius: 5 },
-  village: { fill: '#F59E0B', stroke: '#D97706', radius: 4 },
-};
+// Color palette for communes (alternating to distinguish neighbors)
+const COMMUNE_COLORS = [
+  '#93C5FD', '#86EFAC', '#FDE68A', '#C4B5FD', '#67E8F9',
+  '#FDBA74', '#F9A8D4', '#A5B4FC', '#99F6E4', '#FCA5A5',
+  '#D8B4FE', '#FCD34D', '#6EE7B7', '#A5F3FC', '#FBBF24',
+];
+
+// Hover color
+const HOVER_COLOR = '#3B82F6';
 
 // Department center coordinates and zoom scales
-// Using approximate centers for each department
-const DEPARTMENT_CENTERS: Record<string, { center: [number, number]; scale: number }> = {
+const DEPARTMENT_CENTERS: Record<string, { center: [number, number]; scale: number; minZoom: number; maxZoom: number }> = {
   // Île-de-France
-  '75': { center: [2.35, 48.86], scale: 150000 },  // Paris
-  '77': { center: [2.97, 48.55], scale: 30000 },   // Seine-et-Marne
-  '78': { center: [1.85, 48.80], scale: 40000 },   // Yvelines
-  '91': { center: [2.25, 48.53], scale: 45000 },   // Essonne
-  '92': { center: [2.22, 48.86], scale: 80000 },   // Hauts-de-Seine
-  '93': { center: [2.45, 48.92], scale: 80000 },   // Seine-Saint-Denis
-  '94': { center: [2.47, 48.78], scale: 70000 },   // Val-de-Marne
-  '95': { center: [2.15, 49.05], scale: 45000 },   // Val-d'Oise
+  '75': { center: [2.35, 48.86], scale: 250000, minZoom: 1, maxZoom: 8 },   // Paris
+  '77': { center: [2.97, 48.55], scale: 25000, minZoom: 1, maxZoom: 8 },    // Seine-et-Marne
+  '78': { center: [1.85, 48.80], scale: 35000, minZoom: 1, maxZoom: 8 },    // Yvelines
+  '91': { center: [2.25, 48.53], scale: 40000, minZoom: 1, maxZoom: 8 },    // Essonne
+  '92': { center: [2.22, 48.86], scale: 70000, minZoom: 1, maxZoom: 8 },    // Hauts-de-Seine
+  '93': { center: [2.45, 48.92], scale: 70000, minZoom: 1, maxZoom: 8 },    // Seine-Saint-Denis
+  '94': { center: [2.47, 48.78], scale: 60000, minZoom: 1, maxZoom: 8 },    // Val-de-Marne
+  '95': { center: [2.15, 49.05], scale: 40000, minZoom: 1, maxZoom: 8 },    // Val-d'Oise
   // Bretagne
-  '22': { center: [-2.98, 48.45], scale: 22000 },  // Côtes-d'Armor
-  '29': { center: [-4.15, 48.35], scale: 20000 },  // Finistère
-  '35': { center: [-1.68, 48.10], scale: 22000 },  // Ille-et-Vilaine
-  '56': { center: [-2.85, 47.75], scale: 22000 },  // Morbihan
+  '22': { center: [-2.98, 48.45], scale: 18000, minZoom: 1, maxZoom: 8 },   // Côtes-d'Armor
+  '29': { center: [-4.15, 48.35], scale: 16000, minZoom: 1, maxZoom: 8 },   // Finistère
+  '35': { center: [-1.68, 48.10], scale: 18000, minZoom: 1, maxZoom: 8 },   // Ille-et-Vilaine
+  '56': { center: [-2.85, 47.75], scale: 18000, minZoom: 1, maxZoom: 8 },   // Morbihan
   // Provence-Alpes-Côte d'Azur
-  '04': { center: [6.25, 44.05], scale: 18000 },   // Alpes-de-Haute-Provence
-  '05': { center: [6.35, 44.65], scale: 22000 },   // Hautes-Alpes
-  '06': { center: [7.20, 43.85], scale: 25000 },   // Alpes-Maritimes
-  '13': { center: [5.05, 43.55], scale: 25000 },   // Bouches-du-Rhône
-  '83': { center: [6.25, 43.45], scale: 22000 },   // Var
-  '84': { center: [5.15, 44.00], scale: 28000 },   // Vaucluse
+  '04': { center: [6.25, 44.05], scale: 14000, minZoom: 1, maxZoom: 8 },    // Alpes-de-Haute-Provence
+  '05': { center: [6.35, 44.65], scale: 18000, minZoom: 1, maxZoom: 8 },    // Hautes-Alpes
+  '06': { center: [7.20, 43.85], scale: 20000, minZoom: 1, maxZoom: 8 },    // Alpes-Maritimes
+  '13': { center: [5.05, 43.55], scale: 20000, minZoom: 1, maxZoom: 8 },    // Bouches-du-Rhône
+  '83': { center: [6.25, 43.45], scale: 18000, minZoom: 1, maxZoom: 8 },    // Var
+  '84': { center: [5.15, 44.00], scale: 22000, minZoom: 1, maxZoom: 8 },    // Vaucluse
   // Auvergne-Rhône-Alpes
-  '01': { center: [5.35, 46.10], scale: 22000 },   // Ain
-  '03': { center: [3.35, 46.35], scale: 20000 },   // Allier
-  '07': { center: [4.45, 44.75], scale: 22000 },   // Ardèche
-  '15': { center: [2.70, 45.05], scale: 22000 },   // Cantal
-  '26': { center: [5.15, 44.65], scale: 20000 },   // Drôme
-  '38': { center: [5.75, 45.25], scale: 18000 },   // Isère
-  '42': { center: [4.25, 45.75], scale: 25000 },   // Loire
-  '43': { center: [3.85, 45.05], scale: 25000 },   // Haute-Loire
-  '63': { center: [3.10, 45.75], scale: 18000 },   // Puy-de-Dôme
-  '69': { center: [4.65, 45.85], scale: 30000 },   // Rhône
-  '73': { center: [6.45, 45.50], scale: 20000 },   // Savoie
-  '74': { center: [6.45, 46.00], scale: 22000 },   // Haute-Savoie
+  '01': { center: [5.35, 46.10], scale: 18000, minZoom: 1, maxZoom: 8 },    // Ain
+  '03': { center: [3.35, 46.35], scale: 16000, minZoom: 1, maxZoom: 8 },    // Allier
+  '07': { center: [4.45, 44.75], scale: 18000, minZoom: 1, maxZoom: 8 },    // Ardèche
+  '15': { center: [2.70, 45.05], scale: 18000, minZoom: 1, maxZoom: 8 },    // Cantal
+  '26': { center: [5.15, 44.65], scale: 16000, minZoom: 1, maxZoom: 8 },    // Drôme
+  '38': { center: [5.75, 45.25], scale: 14000, minZoom: 1, maxZoom: 8 },    // Isère
+  '42': { center: [4.25, 45.75], scale: 20000, minZoom: 1, maxZoom: 8 },    // Loire
+  '43': { center: [3.85, 45.05], scale: 20000, minZoom: 1, maxZoom: 8 },    // Haute-Loire
+  '63': { center: [3.10, 45.75], scale: 14000, minZoom: 1, maxZoom: 8 },    // Puy-de-Dôme
+  '69': { center: [4.65, 45.85], scale: 25000, minZoom: 1, maxZoom: 8 },    // Rhône
+  '73': { center: [6.45, 45.50], scale: 16000, minZoom: 1, maxZoom: 8 },    // Savoie
+  '74': { center: [6.45, 46.00], scale: 18000, minZoom: 1, maxZoom: 8 },    // Haute-Savoie
   // Occitanie
-  '09': { center: [1.55, 42.95], scale: 25000 },   // Ariège
-  '11': { center: [2.35, 43.15], scale: 22000 },   // Aude
-  '12': { center: [2.65, 44.25], scale: 18000 },   // Aveyron
-  '30': { center: [4.20, 44.00], scale: 22000 },   // Gard
-  '31': { center: [1.45, 43.35], scale: 20000 },   // Haute-Garonne
-  '32': { center: [0.55, 43.70], scale: 22000 },   // Gers
-  '34': { center: [3.55, 43.60], scale: 22000 },   // Hérault
-  '46': { center: [1.65, 44.55], scale: 25000 },   // Lot
-  '48': { center: [3.50, 44.50], scale: 25000 },   // Lozère
-  '65': { center: [0.15, 43.05], scale: 25000 },   // Hautes-Pyrénées
-  '66': { center: [2.55, 42.60], scale: 25000 },   // Pyrénées-Orientales
-  '81': { center: [2.15, 43.85], scale: 25000 },   // Tarn
-  '82': { center: [1.35, 44.05], scale: 30000 },   // Tarn-et-Garonne
+  '09': { center: [1.55, 42.95], scale: 20000, minZoom: 1, maxZoom: 8 },    // Ariège
+  '11': { center: [2.35, 43.15], scale: 18000, minZoom: 1, maxZoom: 8 },    // Aude
+  '12': { center: [2.65, 44.25], scale: 14000, minZoom: 1, maxZoom: 8 },    // Aveyron
+  '30': { center: [4.20, 44.00], scale: 18000, minZoom: 1, maxZoom: 8 },    // Gard
+  '31': { center: [1.45, 43.35], scale: 16000, minZoom: 1, maxZoom: 8 },    // Haute-Garonne
+  '32': { center: [0.55, 43.70], scale: 18000, minZoom: 1, maxZoom: 8 },    // Gers
+  '34': { center: [3.55, 43.60], scale: 18000, minZoom: 1, maxZoom: 8 },    // Hérault
+  '46': { center: [1.65, 44.55], scale: 20000, minZoom: 1, maxZoom: 8 },    // Lot
+  '48': { center: [3.50, 44.50], scale: 20000, minZoom: 1, maxZoom: 8 },    // Lozère
+  '65': { center: [0.15, 43.05], scale: 20000, minZoom: 1, maxZoom: 8 },    // Hautes-Pyrénées
+  '66': { center: [2.55, 42.60], scale: 20000, minZoom: 1, maxZoom: 8 },    // Pyrénées-Orientales
+  '81': { center: [2.15, 43.85], scale: 20000, minZoom: 1, maxZoom: 8 },    // Tarn
+  '82': { center: [1.35, 44.05], scale: 25000, minZoom: 1, maxZoom: 8 },    // Tarn-et-Garonne
   // Nouvelle-Aquitaine
-  '16': { center: [0.20, 45.70], scale: 25000 },   // Charente
-  '17': { center: [-0.90, 45.90], scale: 20000 },  // Charente-Maritime
-  '19': { center: [1.85, 45.30], scale: 25000 },   // Corrèze
-  '23': { center: [2.05, 46.15], scale: 25000 },   // Creuse
-  '24': { center: [0.85, 45.10], scale: 18000 },   // Dordogne
-  '33': { center: [-0.60, 44.85], scale: 18000 },  // Gironde
-  '40': { center: [-0.85, 43.90], scale: 18000 },  // Landes
-  '47': { center: [0.50, 44.35], scale: 25000 },   // Lot-et-Garonne
-  '64': { center: [-0.85, 43.25], scale: 20000 },  // Pyrénées-Atlantiques
-  '79': { center: [-0.40, 46.55], scale: 25000 },  // Deux-Sèvres
-  '86': { center: [0.55, 46.55], scale: 22000 },   // Vienne
-  '87': { center: [1.30, 45.90], scale: 25000 },   // Haute-Vienne
+  '16': { center: [0.20, 45.70], scale: 20000, minZoom: 1, maxZoom: 8 },    // Charente
+  '17': { center: [-0.90, 45.90], scale: 16000, minZoom: 1, maxZoom: 8 },   // Charente-Maritime
+  '19': { center: [1.85, 45.30], scale: 20000, minZoom: 1, maxZoom: 8 },    // Corrèze
+  '23': { center: [2.05, 46.15], scale: 20000, minZoom: 1, maxZoom: 8 },    // Creuse
+  '24': { center: [0.85, 45.10], scale: 14000, minZoom: 1, maxZoom: 8 },    // Dordogne
+  '33': { center: [-0.60, 44.85], scale: 14000, minZoom: 1, maxZoom: 8 },   // Gironde
+  '40': { center: [-0.85, 43.90], scale: 14000, minZoom: 1, maxZoom: 8 },   // Landes
+  '47': { center: [0.50, 44.35], scale: 20000, minZoom: 1, maxZoom: 8 },    // Lot-et-Garonne
+  '64': { center: [-0.85, 43.25], scale: 16000, minZoom: 1, maxZoom: 8 },   // Pyrénées-Atlantiques
+  '79': { center: [-0.40, 46.55], scale: 20000, minZoom: 1, maxZoom: 8 },   // Deux-Sèvres
+  '86': { center: [0.55, 46.55], scale: 18000, minZoom: 1, maxZoom: 8 },    // Vienne
+  '87': { center: [1.30, 45.90], scale: 20000, minZoom: 1, maxZoom: 8 },    // Haute-Vienne
   // Grand Est
-  '08': { center: [4.65, 49.75], scale: 25000 },   // Ardennes
-  '10': { center: [4.10, 48.30], scale: 25000 },   // Aube
-  '51': { center: [4.20, 49.00], scale: 18000 },   // Marne
-  '52': { center: [5.20, 48.10], scale: 22000 },   // Haute-Marne
-  '54': { center: [6.20, 48.75], scale: 25000 },   // Meurthe-et-Moselle
-  '55': { center: [5.40, 49.00], scale: 22000 },   // Meuse
-  '57': { center: [6.65, 49.10], scale: 22000 },   // Moselle
-  '67': { center: [7.55, 48.65], scale: 25000 },   // Bas-Rhin
-  '68': { center: [7.25, 47.85], scale: 28000 },   // Haut-Rhin
-  '88': { center: [6.40, 48.20], scale: 25000 },   // Vosges
+  '08': { center: [4.65, 49.75], scale: 20000, minZoom: 1, maxZoom: 8 },    // Ardennes
+  '10': { center: [4.10, 48.30], scale: 20000, minZoom: 1, maxZoom: 8 },    // Aube
+  '51': { center: [4.20, 49.00], scale: 14000, minZoom: 1, maxZoom: 8 },    // Marne
+  '52': { center: [5.20, 48.10], scale: 18000, minZoom: 1, maxZoom: 8 },    // Haute-Marne
+  '54': { center: [6.20, 48.75], scale: 20000, minZoom: 1, maxZoom: 8 },    // Meurthe-et-Moselle
+  '55': { center: [5.40, 49.00], scale: 18000, minZoom: 1, maxZoom: 8 },    // Meuse
+  '57': { center: [6.65, 49.10], scale: 18000, minZoom: 1, maxZoom: 8 },    // Moselle
+  '67': { center: [7.55, 48.65], scale: 20000, minZoom: 1, maxZoom: 8 },    // Bas-Rhin
+  '68': { center: [7.25, 47.85], scale: 22000, minZoom: 1, maxZoom: 8 },    // Haut-Rhin
+  '88': { center: [6.40, 48.20], scale: 20000, minZoom: 1, maxZoom: 8 },    // Vosges
   // Bourgogne-Franche-Comté
-  '21': { center: [4.85, 47.35], scale: 18000 },   // Côte-d'Or
-  '25': { center: [6.35, 47.15], scale: 25000 },   // Doubs
-  '39': { center: [5.70, 46.75], scale: 25000 },   // Jura
-  '58': { center: [3.50, 47.10], scale: 20000 },   // Nièvre
-  '70': { center: [6.15, 47.65], scale: 25000 },   // Haute-Saône
-  '71': { center: [4.55, 46.65], scale: 18000 },   // Saône-et-Loire
-  '89': { center: [3.55, 47.80], scale: 20000 },   // Yonne
-  '90': { center: [6.90, 47.65], scale: 60000 },   // Territoire de Belfort
+  '21': { center: [4.85, 47.35], scale: 14000, minZoom: 1, maxZoom: 8 },    // Côte-d'Or
+  '25': { center: [6.35, 47.15], scale: 20000, minZoom: 1, maxZoom: 8 },    // Doubs
+  '39': { center: [5.70, 46.75], scale: 20000, minZoom: 1, maxZoom: 8 },    // Jura
+  '58': { center: [3.50, 47.10], scale: 16000, minZoom: 1, maxZoom: 8 },    // Nièvre
+  '70': { center: [6.15, 47.65], scale: 20000, minZoom: 1, maxZoom: 8 },    // Haute-Saône
+  '71': { center: [4.55, 46.65], scale: 14000, minZoom: 1, maxZoom: 8 },    // Saône-et-Loire
+  '89': { center: [3.55, 47.80], scale: 16000, minZoom: 1, maxZoom: 8 },    // Yonne
+  '90': { center: [6.90, 47.65], scale: 50000, minZoom: 1, maxZoom: 8 },    // Territoire de Belfort
   // Centre-Val de Loire
-  '18': { center: [2.45, 46.95], scale: 20000 },   // Cher
-  '28': { center: [1.45, 48.30], scale: 22000 },   // Eure-et-Loir
-  '36': { center: [1.70, 46.75], scale: 22000 },   // Indre
-  '37': { center: [0.75, 47.25], scale: 22000 },   // Indre-et-Loire
-  '41': { center: [1.35, 47.55], scale: 22000 },   // Loir-et-Cher
-  '45': { center: [2.35, 47.90], scale: 20000 },   // Loiret
+  '18': { center: [2.45, 46.95], scale: 16000, minZoom: 1, maxZoom: 8 },    // Cher
+  '28': { center: [1.45, 48.30], scale: 18000, minZoom: 1, maxZoom: 8 },    // Eure-et-Loir
+  '36': { center: [1.70, 46.75], scale: 18000, minZoom: 1, maxZoom: 8 },    // Indre
+  '37': { center: [0.75, 47.25], scale: 18000, minZoom: 1, maxZoom: 8 },    // Indre-et-Loire
+  '41': { center: [1.35, 47.55], scale: 18000, minZoom: 1, maxZoom: 8 },    // Loir-et-Cher
+  '45': { center: [2.35, 47.90], scale: 16000, minZoom: 1, maxZoom: 8 },    // Loiret
   // Normandie
-  '14': { center: [-0.40, 49.10], scale: 25000 },  // Calvados
-  '27': { center: [0.95, 49.10], scale: 22000 },   // Eure
-  '50': { center: [-1.30, 49.10], scale: 22000 },  // Manche
-  '61': { center: [0.15, 48.55], scale: 22000 },   // Orne
-  '76': { center: [0.95, 49.65], scale: 22000 },   // Seine-Maritime
+  '14': { center: [-0.40, 49.10], scale: 20000, minZoom: 1, maxZoom: 8 },   // Calvados
+  '27': { center: [0.95, 49.10], scale: 18000, minZoom: 1, maxZoom: 8 },    // Eure
+  '50': { center: [-1.30, 49.10], scale: 18000, minZoom: 1, maxZoom: 8 },   // Manche
+  '61': { center: [0.15, 48.55], scale: 18000, minZoom: 1, maxZoom: 8 },    // Orne
+  '76': { center: [0.95, 49.65], scale: 18000, minZoom: 1, maxZoom: 8 },    // Seine-Maritime
   // Hauts-de-France
-  '02': { center: [3.65, 49.55], scale: 20000 },   // Aisne
-  '59': { center: [3.25, 50.35], scale: 20000 },   // Nord
-  '60': { center: [2.45, 49.40], scale: 25000 },   // Oise
-  '62': { center: [2.35, 50.50], scale: 20000 },   // Pas-de-Calais
-  '80': { center: [2.35, 49.90], scale: 22000 },   // Somme
+  '02': { center: [3.65, 49.55], scale: 16000, minZoom: 1, maxZoom: 8 },    // Aisne
+  '59': { center: [3.25, 50.35], scale: 16000, minZoom: 1, maxZoom: 8 },    // Nord
+  '60': { center: [2.45, 49.40], scale: 20000, minZoom: 1, maxZoom: 8 },    // Oise
+  '62': { center: [2.35, 50.50], scale: 16000, minZoom: 1, maxZoom: 8 },    // Pas-de-Calais
+  '80': { center: [2.35, 49.90], scale: 18000, minZoom: 1, maxZoom: 8 },    // Somme
   // Pays de la Loire
-  '44': { center: [-1.70, 47.25], scale: 20000 },  // Loire-Atlantique
-  '49': { center: [-0.55, 47.35], scale: 20000 },  // Maine-et-Loire
-  '53': { center: [-0.80, 48.10], scale: 25000 },  // Mayenne
-  '72': { center: [0.25, 47.95], scale: 22000 },   // Sarthe
-  '85': { center: [-1.35, 46.70], scale: 22000 },  // Vendée
+  '44': { center: [-1.70, 47.25], scale: 16000, minZoom: 1, maxZoom: 8 },   // Loire-Atlantique
+  '49': { center: [-0.55, 47.35], scale: 16000, minZoom: 1, maxZoom: 8 },   // Maine-et-Loire
+  '53': { center: [-0.80, 48.10], scale: 20000, minZoom: 1, maxZoom: 8 },   // Mayenne
+  '72': { center: [0.25, 47.95], scale: 18000, minZoom: 1, maxZoom: 8 },    // Sarthe
+  '85': { center: [-1.35, 46.70], scale: 18000, minZoom: 1, maxZoom: 8 },   // Vendée
   // Corse
-  '2A': { center: [8.95, 41.90], scale: 28000 },   // Corse-du-Sud
-  '2B': { center: [9.25, 42.45], scale: 25000 },   // Haute-Corse
+  '2A': { center: [8.95, 41.90], scale: 22000, minZoom: 1, maxZoom: 8 },    // Corse-du-Sud
+  '2B': { center: [9.25, 42.45], scale: 20000, minZoom: 1, maxZoom: 8 },    // Haute-Corse
 };
 
-// Major city coordinates by department
-const DEPARTMENT_CITIES: Record<string, Array<{
-  name: string;
-  coordinates: [number, number];
-  type: 'city' | 'town' | 'village';
-  isPrefecture?: boolean;
-  isSubprefecture?: boolean;
-  population?: number;
-}>> = {
-  // Paris
-  '75': [
-    { name: 'Paris', coordinates: [2.35, 48.86], type: 'city', isPrefecture: true, population: 2145906 },
-  ],
-  // Rhône
-  '69': [
-    { name: 'Lyon', coordinates: [4.84, 45.76], type: 'city', isPrefecture: true, population: 522969 },
-    { name: 'Villeurbanne', coordinates: [4.88, 45.77], type: 'city', population: 154781 },
-    { name: 'Vénissieux', coordinates: [4.89, 45.70], type: 'town', population: 66256 },
-  ],
-  // Bouches-du-Rhône
-  '13': [
-    { name: 'Marseille', coordinates: [5.37, 43.30], type: 'city', isPrefecture: true, population: 870731 },
-    { name: 'Aix-en-Provence', coordinates: [5.45, 43.53], type: 'city', isSubprefecture: true, population: 147122 },
-    { name: 'Arles', coordinates: [4.63, 43.68], type: 'town', isSubprefecture: true, population: 52510 },
-  ],
-  // Gironde
-  '33': [
-    { name: 'Bordeaux', coordinates: [-0.58, 44.84], type: 'city', isPrefecture: true, population: 260958 },
-    { name: 'Mérignac', coordinates: [-0.65, 44.84], type: 'city', population: 73197 },
-    { name: 'Pessac', coordinates: [-0.63, 44.80], type: 'town', population: 65447 },
-  ],
-  // Nord
-  '59': [
-    { name: 'Lille', coordinates: [3.06, 50.63], type: 'city', isPrefecture: true, population: 236234 },
-    { name: 'Roubaix', coordinates: [3.18, 50.69], type: 'city', isSubprefecture: true, population: 98828 },
-    { name: 'Tourcoing', coordinates: [3.16, 50.72], type: 'city', population: 99029 },
-    { name: 'Dunkerque', coordinates: [2.38, 51.03], type: 'city', isSubprefecture: true, population: 86279 },
-  ],
-  // Haute-Garonne
-  '31': [
-    { name: 'Toulouse', coordinates: [1.44, 43.60], type: 'city', isPrefecture: true, population: 498003 },
-    { name: 'Colomiers', coordinates: [1.34, 43.61], type: 'town', population: 40318 },
-    { name: 'Tournefeuille', coordinates: [1.35, 43.59], type: 'town', population: 28904 },
-  ],
-  // Alpes-Maritimes
-  '06': [
-    { name: 'Nice', coordinates: [7.26, 43.71], type: 'city', isPrefecture: true, population: 342669 },
-    { name: 'Antibes', coordinates: [7.12, 43.58], type: 'city', population: 72999 },
-    { name: 'Cannes', coordinates: [7.01, 43.55], type: 'city', isSubprefecture: true, population: 74545 },
-  ],
-  // Loire-Atlantique
-  '44': [
-    { name: 'Nantes', coordinates: [-1.55, 47.22], type: 'city', isPrefecture: true, population: 320732 },
-    { name: 'Saint-Nazaire', coordinates: [-2.21, 47.27], type: 'city', isSubprefecture: true, population: 72299 },
-    { name: 'Saint-Herblain', coordinates: [-1.65, 47.21], type: 'town', population: 47977 },
-  ],
-  // Bas-Rhin
-  '67': [
-    { name: 'Strasbourg', coordinates: [7.75, 48.57], type: 'city', isPrefecture: true, population: 290576 },
-    { name: 'Haguenau', coordinates: [7.79, 48.82], type: 'town', isSubprefecture: true, population: 35353 },
-    { name: 'Schiltigheim', coordinates: [7.75, 48.61], type: 'town', population: 34162 },
-  ],
-  // Hérault
-  '34': [
-    { name: 'Montpellier', coordinates: [3.88, 43.61], type: 'city', isPrefecture: true, population: 299096 },
-    { name: 'Béziers', coordinates: [3.21, 43.34], type: 'city', isSubprefecture: true, population: 79041 },
-    { name: 'Sète', coordinates: [3.70, 43.40], type: 'town', population: 44270 },
-  ],
-  // Ille-et-Vilaine
-  '35': [
-    { name: 'Rennes', coordinates: [-1.68, 48.11], type: 'city', isPrefecture: true, population: 222485 },
-    { name: 'Saint-Malo', coordinates: [-2.00, 48.65], type: 'town', isSubprefecture: true, population: 46342 },
-    { name: 'Fougères', coordinates: [-1.20, 48.35], type: 'town', isSubprefecture: true, population: 20078 },
-  ],
-  // Finistère
-  '29': [
-    { name: 'Quimper', coordinates: [-4.10, 47.99], type: 'city', isPrefecture: true, population: 63929 },
-    { name: 'Brest', coordinates: [-4.49, 48.39], type: 'city', isSubprefecture: true, population: 139342 },
-    { name: 'Concarneau', coordinates: [-3.92, 47.87], type: 'town', population: 19034 },
-  ],
-};
+// Default config for any department not in the list
+const DEFAULT_DEPT_CONFIG = { center: [2.5, 46.5] as [number, number], scale: 18000, minZoom: 1, maxZoom: 8 };
 
 interface DepartmentMapViewProps {
   departmentCode: string;
@@ -229,31 +154,65 @@ export default function DepartmentMapView({
   communes,
   onCommuneSelect,
 }: DepartmentMapViewProps) {
-  const [hoveredCity, setHoveredCity] = useState<string | null>(null);
+  const [hoveredCommune, setHoveredCommune] = useState<string | null>(null);
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
 
   // Get department's center and scale
-  const deptConfig = DEPARTMENT_CENTERS[departmentCode] || { center: [2.5, 46.5], scale: 20000 };
+  const deptConfig = DEPARTMENT_CENTERS[departmentCode] || DEFAULT_DEPT_CONFIG;
 
-  // Get cities for this department
-  const cities = DEPARTMENT_CITIES[departmentCode] || [];
+  // GeoJSON URL for this department's communes
+  const communeGeoUrl = useMemo(() => getCommmuneGeoUrl(departmentCode), [departmentCode]);
 
-  // Find matching commune for a city
-  const findCommune = (cityName: string) => {
+  // Get color for a commune (based on index for visual distinction)
+  const getCommuneColor = useCallback((index: number) => {
+    return COMMUNE_COLORS[index % COMMUNE_COLORS.length];
+  }, []);
+
+  // Find matching commune from our data
+  const findCommune = useCallback((communeName: string) => {
     return communes.find(
-      (c) => c.name.toLowerCase() === cityName.toLowerCase()
+      (c) => c.name.toLowerCase() === communeName.toLowerCase()
     );
-  };
+  }, [communes]);
 
-  const handleCityClick = (cityName: string) => {
-    const commune = findCommune(cityName);
-    if (commune) {
-      onCommuneSelect(commune);
+  // Get region info from department data
+  const departmentInfo = useMemo(() => {
+    return FRANCE_DEPARTMENTS.find(d => d.code === departmentCode);
+  }, [departmentCode]);
+
+  // Handle commune click
+  const handleCommuneClick = useCallback((communeName: string, communeCode: string) => {
+    // First try to find in our existing communes list
+    const existingCommune = findCommune(communeName);
+
+    if (existingCommune) {
+      onCommuneSelect(existingCommune);
+      return;
     }
-  };
 
-  const handleMouseEnter = (cityName: string, event: React.MouseEvent) => {
-    setHoveredCity(cityName);
+    // If not found, create a basic commune object from the GeoJSON data
+    const newCommune: FranceCommune = {
+      code: communeCode,
+      name: communeName,
+      department_code: departmentCode,
+      department_name: departmentName,
+      region_code: departmentInfo?.region_code || '',
+      region_name: departmentInfo?.region_name || '',
+      population: 0,
+      postal_codes: [],
+      type: 'town', // Default to town for unknown communes
+    };
+
+    onCommuneSelect(newCommune);
+  }, [findCommune, onCommuneSelect, departmentCode, departmentName, departmentInfo]);
+
+  // Handle mouse enter on commune
+  const handleMouseEnter = useCallback((
+    communeName: string,
+    event: React.MouseEvent
+  ) => {
+    setHoveredCommune(communeName);
     const rect = event.currentTarget.closest('.map-container')?.getBoundingClientRect();
     if (rect) {
       setTooltipPos({
@@ -261,191 +220,253 @@ export default function DepartmentMapView({
         y: event.clientY - rect.top,
       });
     }
-  };
+  }, []);
 
-  const hoveredCityData = useMemo(() => {
-    return cities.find(c => c.name === hoveredCity);
-  }, [cities, hoveredCity]);
+  // Handle mouse move for tooltip positioning
+  const handleMouseMove = useCallback((event: React.MouseEvent) => {
+    const rect = event.currentTarget.closest('.map-container')?.getBoundingClientRect();
+    if (rect) {
+      setTooltipPos({
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top,
+      });
+    }
+  }, []);
+
+  // Zoom controls
+  const handleZoomIn = useCallback(() => {
+    setZoom(prev => Math.min(prev * 1.5, deptConfig.maxZoom));
+  }, [deptConfig.maxZoom]);
+
+  const handleZoomOut = useCallback(() => {
+    setZoom(prev => Math.max(prev / 1.5, deptConfig.minZoom));
+  }, [deptConfig.minZoom]);
+
+  const handleResetZoom = useCallback(() => {
+    setZoom(1);
+  }, []);
+
+  // Handle move end to track zoom level
+  const handleMoveEnd = useCallback((pos: { coordinates: [number, number]; zoom: number }) => {
+    setZoom(pos.zoom);
+  }, []);
+
+  // Get commune data for tooltip
+  const hoveredCommuneData = useMemo(() => {
+    if (!hoveredCommune) return null;
+    return findCommune(hoveredCommune);
+  }, [hoveredCommune, findCommune]);
+
+  // Calculate label font size based on zoom
+  const labelFontSize = useMemo(() => {
+    if (zoom >= 4) return 8;
+    if (zoom >= 2.5) return 6;
+    if (zoom >= 1.5) return 5;
+    return 0; // Don't show labels at base zoom
+  }, [zoom]);
 
   return (
     <div className="relative mb-6">
       <h3 className="text-sm font-medium text-gray-700 mb-3">
-        Map of {departmentName}
+        Communes of {departmentName}
       </h3>
 
       <div className="map-container relative bg-gradient-to-br from-emerald-50 to-green-100 rounded-xl overflow-hidden shadow-inner border border-green-200">
+        {/* Zoom Controls */}
+        <div className="absolute top-3 right-3 z-10 flex flex-col gap-1">
+          <button
+            onClick={handleZoomIn}
+            className="w-8 h-8 bg-white rounded-lg shadow-md border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors text-gray-700 font-bold"
+            aria-label="Zoom in"
+          >
+            +
+          </button>
+          <button
+            onClick={handleZoomOut}
+            className="w-8 h-8 bg-white rounded-lg shadow-md border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors text-gray-700 font-bold"
+            aria-label="Zoom out"
+          >
+            −
+          </button>
+          <button
+            onClick={handleResetZoom}
+            className="w-8 h-8 bg-white rounded-lg shadow-md border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors text-gray-500 text-xs"
+            aria-label="Reset zoom"
+          >
+            ↺
+          </button>
+        </div>
+
+        {/* Zoom Level Indicator */}
+        <div className="absolute bottom-3 right-3 z-10 bg-white/80 backdrop-blur-sm px-2 py-1 rounded text-xs text-gray-600">
+          {zoom.toFixed(1)}x
+        </div>
+
+        {/* Instructions */}
+        <div className="absolute top-3 left-3 z-10 bg-white/90 backdrop-blur-sm px-3 py-2 rounded-lg text-xs text-gray-600 max-w-[200px]">
+          <p className="font-medium text-gray-700 mb-1">Navigate the map:</p>
+          <ul className="space-y-0.5">
+            <li>• Zoom in to see commune names</li>
+            <li>• Click any commune for details</li>
+            <li>• Drag to pan around</li>
+          </ul>
+        </div>
+
         <ComposableMap
           projection="geoMercator"
           projectionConfig={{
             center: deptConfig.center,
             scale: deptConfig.scale,
           }}
-          style={{ width: '100%', height: 'auto', minHeight: '350px', maxHeight: '450px' }}
+          style={{ width: '100%', height: 'auto', minHeight: '450px', maxHeight: '550px' }}
         >
-          <ZoomableGroup center={deptConfig.center} zoom={1}>
-            {/* Department boundary */}
-            <Geographies geography={FRANCE_DEPARTMENTS_GEO_URL}>
+          <ZoomableGroup
+            center={deptConfig.center}
+            zoom={zoom}
+            minZoom={deptConfig.minZoom}
+            maxZoom={deptConfig.maxZoom}
+            onMoveEnd={handleMoveEnd}
+          >
+            <Geographies geography={communeGeoUrl}>
               {({ geographies }) =>
-                geographies
-                  .filter((geo) => geo.properties.code === departmentCode)
-                  .map((geo) => (
+                geographies.map((geo, index) => {
+                  const communeName = geo.properties.nom;
+                  const communeCode = geo.properties.code;
+                  const isHovered = hoveredCommune === communeName;
+                  const fillColor = isHovered ? HOVER_COLOR : getCommuneColor(index);
+
+                  return (
                     <Geography
                       key={geo.rsmKey}
                       geography={geo}
-                      fill="#BBF7D0"
-                      stroke="#22C55E"
-                      strokeWidth={2}
+                      fill={fillColor}
+                      stroke="#FFFFFF"
+                      strokeWidth={0.5 / zoom}
                       style={{
                         default: { outline: 'none' },
-                        hover: { outline: 'none' },
+                        hover: { outline: 'none', cursor: 'pointer' },
                         pressed: { outline: 'none' },
                       }}
+                      onClick={() => handleCommuneClick(communeName, communeCode)}
+                      onMouseEnter={(e) => handleMouseEnter(communeName, e)}
+                      onMouseLeave={() => setHoveredCommune(null)}
+                      onMouseMove={handleMouseMove}
                     />
-                  ))
+                  );
+                })
               }
             </Geographies>
 
-            {/* City markers */}
-            {cities.map((city) => {
-              const colors = SETTLEMENT_COLORS[city.type];
-              const isHovered = hoveredCity === city.name;
-              const commune = findCommune(city.name);
-              const isClickable = !!commune;
-              const markerRadius = isHovered ? colors.radius + 2 : colors.radius;
+            {/* Commune labels (only visible when zoomed in) */}
+            {labelFontSize > 0 && (
+              <Geographies geography={communeGeoUrl}>
+                {({ geographies }) =>
+                  geographies.map((geo) => {
+                    const communeName = geo.properties.nom;
+                    // Calculate centroid of the commune for label placement
+                    // We'll use a simple approximation - the center of the bounding box
+                    const bounds = geo.geometry.coordinates;
+                    let centerLon = 0, centerLat = 0;
 
-              return (
-                <Marker key={city.name} coordinates={city.coordinates}>
-                  <circle
-                    r={markerRadius}
-                    fill={colors.fill}
-                    stroke={city.isPrefecture ? '#DC2626' : city.isSubprefecture ? '#9333EA' : colors.stroke}
-                    strokeWidth={city.isPrefecture ? 3 : city.isSubprefecture ? 2.5 : 2}
-                    className={`transition-all duration-150 ${isClickable ? 'cursor-pointer' : 'cursor-default'}`}
-                    onClick={() => isClickable && handleCityClick(city.name)}
-                    onMouseEnter={(e) => handleMouseEnter(city.name, e as unknown as React.MouseEvent)}
-                    onMouseLeave={() => setHoveredCity(null)}
-                  />
-                  {city.isPrefecture && (
-                    <text
-                      y={4}
-                      textAnchor="middle"
-                      fontSize="8"
-                      fontWeight="bold"
-                      fill="white"
-                      className="pointer-events-none"
-                    >
-                      ★
-                    </text>
-                  )}
-                  <text
-                    y={-markerRadius - 4}
-                    textAnchor="middle"
-                    fontSize={city.type === 'city' ? 10 : city.type === 'town' ? 9 : 8}
-                    fontWeight={city.type === 'city' ? 600 : 500}
-                    fill="#1F2937"
-                    className="pointer-events-none"
-                    style={{
-                      textShadow: '1px 1px 2px white, -1px -1px 2px white, 1px -1px 2px white, -1px 1px 2px white',
-                    }}
-                  >
-                    {city.name}
-                  </text>
-                </Marker>
-              );
-            })}
+                    try {
+                      // Handle both Polygon and MultiPolygon
+                      const coords = geo.geometry.type === 'MultiPolygon'
+                        ? bounds[0][0]
+                        : bounds[0];
+
+                      if (coords && coords.length > 0) {
+                        const lons = coords.map((c: number[]) => c[0]);
+                        const lats = coords.map((c: number[]) => c[1]);
+                        centerLon = (Math.min(...lons) + Math.max(...lons)) / 2;
+                        centerLat = (Math.min(...lats) + Math.max(...lats)) / 2;
+                      }
+                    } catch {
+                      return null;
+                    }
+
+                    return (
+                      <text
+                        key={`label-${geo.rsmKey}`}
+                        x={centerLon}
+                        y={centerLat}
+                        textAnchor="middle"
+                        fontSize={labelFontSize / zoom}
+                        fontWeight="500"
+                        fill="#1F2937"
+                        className="pointer-events-none select-none"
+                        style={{
+                          textShadow: '1px 1px 1px white, -1px -1px 1px white',
+                          transform: `translate(${centerLon}px, ${centerLat}px)`,
+                        }}
+                      >
+                        {communeName}
+                      </text>
+                    );
+                  })
+                }
+              </Geographies>
+            )}
           </ZoomableGroup>
         </ComposableMap>
 
         {/* Hover Tooltip */}
-        {hoveredCityData && (
+        {hoveredCommune && (
           <div
             className="absolute bg-white rounded-lg shadow-xl border border-gray-200 p-3 pointer-events-none z-20 min-w-[180px]"
             style={{
-              left: Math.min(Math.max(tooltipPos.x, 90), 280),
+              left: Math.min(Math.max(tooltipPos.x, 90), 320),
               top: Math.max(tooltipPos.y - 10, 60),
               transform: 'translate(-50%, -100%)',
             }}
           >
-            <div className="flex items-center gap-2 mb-1">
-              <span
-                className="w-3 h-3 rounded-full"
-                style={{
-                  backgroundColor: SETTLEMENT_COLORS[hoveredCityData.type].fill,
-                }}
-              />
-              <h4 className="font-bold text-gray-900">{hoveredCityData.name}</h4>
-            </div>
-            <p className="text-sm text-gray-500 capitalize mb-1">
-              {hoveredCityData.type}
-              {hoveredCityData.isPrefecture && ' (Prefecture)'}
-              {hoveredCityData.isSubprefecture && ' (Sub-prefecture)'}
-            </p>
-            {hoveredCityData.population && (
-              <p className="text-sm text-gray-600">
-                Pop: {hoveredCityData.population.toLocaleString()}
+            <h4 className="font-bold text-gray-900 mb-1">{hoveredCommune}</h4>
+            {hoveredCommuneData ? (
+              <>
+                {hoveredCommuneData.population > 0 && (
+                  <p className="text-sm text-gray-600">
+                    Population: {hoveredCommuneData.population.toLocaleString()}
+                  </p>
+                )}
+                {hoveredCommuneData.postal_codes.length > 0 && (
+                  <p className="text-sm text-gray-500">
+                    Postal: {hoveredCommuneData.postal_codes[0]}
+                  </p>
+                )}
+              </>
+            ) : (
+              <p className="text-sm text-gray-500">
+                {departmentName}
               </p>
             )}
             <div className="mt-2 pt-2 border-t border-gray-100">
               <span className="text-xs text-primary-600 font-medium">
-                {findCommune(hoveredCityData.name)
-                  ? 'Click for details →'
-                  : 'Details coming soon'}
+                Click to generate report →
               </span>
             </div>
           </div>
         )}
       </div>
 
-      {/* Legend */}
-      <div className="mt-3 flex flex-wrap items-center gap-4 text-xs text-gray-600">
-        <div className="flex items-center gap-1.5">
-          <span
-            className="w-3 h-3 rounded-full"
-            style={{ backgroundColor: SETTLEMENT_COLORS.city.fill }}
-          />
-          <span>City</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span
-            className="w-3 h-3 rounded-full"
-            style={{ backgroundColor: SETTLEMENT_COLORS.town.fill }}
-          />
-          <span>Town</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span
-            className="w-3 h-3 rounded-full"
-            style={{ backgroundColor: SETTLEMENT_COLORS.village.fill }}
-          />
-          <span>Village</span>
-        </div>
-        <div className="flex items-center gap-1.5 ml-2 pl-2 border-l border-gray-300">
-          <span className="w-3 h-3 rounded-full border-2 border-red-600 bg-blue-500" />
-          <span>Prefecture</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded-full border-2 border-purple-600 bg-blue-500" />
-          <span>Sub-prefecture</span>
-        </div>
-      </div>
-
-      {/* City list for departments without predefined markers */}
-      {cities.length === 0 && communes.length > 0 && (
-        <div className="mt-4">
-          <h4 className="text-sm font-medium text-gray-700 mb-2">Major Cities</h4>
-          <div className="flex flex-wrap gap-2">
-            {communes.slice(0, 10).map((commune) => (
-              <button
-                key={commune.code}
-                onClick={() => onCommuneSelect(commune)}
-                className="px-3 py-1.5 text-sm bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-colors"
-              >
-                {commune.name}
-              </button>
-            ))}
+      {/* Legend and Info */}
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-4 text-xs text-gray-600">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#3B82F6' }} />
+            <span>Hovered</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="flex gap-0.5">
+              {COMMUNE_COLORS.slice(0, 4).map((color, i) => (
+                <span key={i} className="w-2 h-3 rounded-sm" style={{ backgroundColor: color }} />
+              ))}
+            </div>
+            <span>Communes</span>
           </div>
         </div>
-      )}
+        <div className="text-gray-500">
+          Click any commune to view details and generate a relocation report
+        </div>
+      </div>
     </div>
   );
 }
