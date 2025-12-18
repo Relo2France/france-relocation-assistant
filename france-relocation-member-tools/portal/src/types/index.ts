@@ -103,6 +103,8 @@ export interface DashboardData {
   project: Project;
   stages: StageProgress[];
   task_stats: TaskStats;
+  profile_visa_type: string | null;
+  profile_visa_label: string | null;
   upcoming_tasks: Task[];
   overdue_tasks: Task[];
   recent_activity: Activity[];

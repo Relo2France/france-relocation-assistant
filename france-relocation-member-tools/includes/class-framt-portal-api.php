@@ -872,23 +872,41 @@ class FRAMT_Portal_API {
         $user_id = get_current_user_id();
         $project = FRAMT_Project::get_or_create( $user_id );
 
+        // Get user's visa type from their profile
+        $profile_visa_type = get_user_meta( $user_id, 'fra_visa_type', true );
+        $visa_type_labels  = array(
+            'undecided'       => 'Undecided / Need help choosing',
+            'visitor'         => 'Visitor Visa (VLS-TS Visiteur)',
+            'talent_passport' => 'Talent Passport',
+            'employee'        => 'Employee Visa',
+            'entrepreneur'    => 'Entrepreneur Visa',
+            'student'         => 'Student Visa',
+            'family'          => 'Family Reunification',
+            'spouse_french'   => 'Spouse of French National',
+            'retiree'         => 'Retiree Visa',
+        );
+
         $response = array(
-            'project'         => $project->to_array(),
-            'stages'          => $project->get_stage_progress(),
-            'task_stats'      => $project->get_task_stats(),
-            'upcoming_tasks'  => array_map(
+            'project'              => $project->to_array(),
+            'stages'               => $project->get_stage_progress(),
+            'task_stats'           => $project->get_task_stats(),
+            'profile_visa_type'    => $profile_visa_type ?: null,
+            'profile_visa_label'   => ! empty( $profile_visa_type ) && isset( $visa_type_labels[ $profile_visa_type ] )
+                ? $visa_type_labels[ $profile_visa_type ]
+                : null,
+            'upcoming_tasks'       => array_map(
                 function( $task ) {
                     return $task->to_array();
                 },
                 FRAMT_Task::get_upcoming( $project->id, 14, 5 )
             ),
-            'overdue_tasks'   => array_map(
+            'overdue_tasks'        => array_map(
                 function( $task ) {
                     return $task->to_array();
                 },
                 FRAMT_Task::get_overdue( $project->id )
             ),
-            'recent_activity' => array_map(
+            'recent_activity'      => array_map(
                 function( $activity ) {
                     return $activity->to_array();
                 },

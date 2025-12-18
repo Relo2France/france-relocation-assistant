@@ -6,6 +6,7 @@ import {
   AlertTriangle,
   Calendar,
   ArrowRight,
+  FileText,
 } from 'lucide-react';
 import { useDashboard, useUpdateProject } from '@/hooks/useApi';
 import { usePortalStore } from '@/store';
@@ -39,7 +40,7 @@ export default function Dashboard() {
 
   if (!data) return null;
 
-  const { project, stages, task_stats, upcoming_tasks, overdue_tasks, recent_activity } = data;
+  const { project, stages, task_stats, profile_visa_label, upcoming_tasks, overdue_tasks, recent_activity } = data;
 
   return (
     <div className="p-6 space-y-6">
@@ -48,7 +49,17 @@ export default function Dashboard() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">{project.title}</h1>
           <p className="text-gray-600 mt-1">
-            {project.visa_type_label}
+            {profile_visa_label ? (
+              <span>{profile_visa_label}</span>
+            ) : (
+              <button
+                onClick={() => setActiveView('settings')}
+                className="inline-flex items-center gap-1 text-primary-600 hover:text-primary-700 hover:underline"
+              >
+                <FileText className="w-4 h-4" />
+                <span>Set your visa type in your profile</span>
+              </button>
+            )}
             {project.target_move_date && (
               <>
                 <span className="mx-2">•</span>
