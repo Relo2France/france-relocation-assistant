@@ -3631,15 +3631,28 @@ Signature:
             ) );
         }
 
-        // In production, this would call an AI service
-        // For now, return contextual responses based on context
-        $response_text = $this->generate_chat_response( $message, $context, $include_practice );
+        // Get chat history to determine if this is a follow-up
+        $history       = get_user_meta( $user_id, 'fra_chat_history', true ) ?: array();
+        $is_follow_up  = $this->is_follow_up_question( $history, $message );
 
-        // Generate relevant sources based on the query
-        $sources = $this->get_chat_sources( $message, $context );
+        // Generate response based on whether this is initial or follow-up
+        $kb_results    = array();
+        $sources       = array();
+
+        if ( $is_follow_up ) {
+            // Follow-up: Use AI directly with conversation context
+            $response_text = $this->generate_follow_up_response( $message, $context, $include_practice, $history );
+            // Keep sources from previous response if available
+            $last_assistant = $this->get_last_assistant_message( $history );
+            $sources = $last_assistant['sources'] ?? array();
+        } else {
+            // Initial question: Search KB first, then enhance with AI
+            $kb_results    = $this->search_knowledge_base( $message, $context );
+            $response_text = $this->generate_kb_enhanced_response( $message, $context, $include_practice, $kb_results );
+            $sources       = $this->format_kb_sources( $kb_results );
+        }
 
         // Save chat history
-        $history = get_user_meta( $user_id, 'fra_chat_history', true ) ?: array();
         $history[] = array(
             'role'      => 'user',
             'message'   => $message,
@@ -3666,6 +3679,342 @@ Signature:
             'sources'   => $sources,
             'timestamp' => current_time( 'mysql' ),
         ) );
+    }
+
+    /**
+     * Check if this is a follow-up question in the same conversation
+     *
+     * @param array  $history Chat history
+     * @param string $message Current message
+     * @return bool True if follow-up
+     */
+    private function is_follow_up_question( $history, $message ) {
+        if ( empty( $history ) ) {
+            return false;
+        }
+
+        // Get the last message timestamp
+        $last_message = end( $history );
+        if ( empty( $last_message['timestamp'] ) ) {
+            return false;
+        }
+
+        // If last message was within 30 minutes, consider it a follow-up
+        $last_time    = strtotime( $last_message['timestamp'] );
+        $current_time = current_time( 'timestamp' );
+        $time_diff    = $current_time - $last_time;
+
+        if ( $time_diff > 1800 ) { // 30 minutes
+            return false;
+        }
+
+        // Check for follow-up indicators in the message
+        $lower_message     = strtolower( $message );
+        $follow_up_phrases = array(
+            'what about', 'how about', 'and what', 'also', 'additionally',
+            'follow up', 'followup', 'more about', 'tell me more',
+            'can you explain', 'what if', 'but what', 'however',
+            'in that case', 'so if', 'does that mean', 'is that',
+        );
+
+        foreach ( $follow_up_phrases as $phrase ) {
+            if ( strpos( $lower_message, $phrase ) !== false ) {
+                return true;
+            }
+        }
+
+        // If message is short (likely a clarification), treat as follow-up
+        if ( str_word_count( $message ) <= 5 ) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Get the last assistant message from history
+     *
+     * @param array $history Chat history
+     * @return array|null Last assistant message or null
+     */
+    private function get_last_assistant_message( $history ) {
+        for ( $i = count( $history ) - 1; $i >= 0; $i-- ) {
+            if ( isset( $history[ $i ]['role'] ) && $history[ $i ]['role'] === 'assistant' ) {
+                return $history[ $i ];
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Search the knowledge base for relevant articles
+     *
+     * @param string $message User message
+     * @param string $context Category context
+     * @return array Matching KB articles with relevance scores
+     */
+    private function search_knowledge_base( $message, $context = 'general' ) {
+        // Load the knowledge base
+        $kb_file = WP_PLUGIN_DIR . '/france-relocation-assistant/includes/knowledge-base-default.php';
+        if ( ! file_exists( $kb_file ) ) {
+            // Try alternate path
+            $kb_file = ABSPATH . 'wp-content/plugins/france-relocation-assistant-plugin/includes/knowledge-base-default.php';
+        }
+
+        if ( ! file_exists( $kb_file ) ) {
+            return array();
+        }
+
+        $knowledge_base = include $kb_file;
+        if ( ! is_array( $knowledge_base ) ) {
+            return array();
+        }
+
+        $results       = array();
+        $lower_message = strtolower( $message );
+        $message_words = preg_split( '/\s+/', $lower_message );
+
+        // If context is specified, prioritize that category
+        $categories_to_search = array_keys( $knowledge_base );
+        if ( $context !== 'general' && isset( $knowledge_base[ $context ] ) ) {
+            // Put the specified context first
+            $categories_to_search = array_merge(
+                array( $context ),
+                array_diff( $categories_to_search, array( $context ) )
+            );
+        }
+
+        foreach ( $categories_to_search as $category ) {
+            if ( ! isset( $knowledge_base[ $category ] ) ) {
+                continue;
+            }
+
+            foreach ( $knowledge_base[ $category ] as $topic_id => $article ) {
+                $relevance = $this->calculate_kb_relevance( $lower_message, $message_words, $article, $category === $context );
+
+                if ( $relevance > 0.2 ) { // Minimum relevance threshold
+                    $results[] = array(
+                        'category'  => $category,
+                        'topic_id'  => $topic_id,
+                        'title'     => $article['title'] ?? ucfirst( $topic_id ),
+                        'content'   => $article['content'] ?? '',
+                        'keywords'  => $article['keywords'] ?? array(),
+                        'sources'   => $article['sources'] ?? array(),
+                        'relevance' => $relevance,
+                    );
+                }
+            }
+        }
+
+        // Sort by relevance (highest first)
+        usort( $results, function( $a, $b ) {
+            return $b['relevance'] <=> $a['relevance'];
+        } );
+
+        // Return top 3 most relevant articles
+        return array_slice( $results, 0, 3 );
+    }
+
+    /**
+     * Calculate relevance score for a KB article
+     *
+     * @param string $lower_message Lowercase user message
+     * @param array  $message_words Words from the message
+     * @param array  $article KB article
+     * @param bool   $is_category_match Whether this is from the user's selected category
+     * @return float Relevance score 0-1
+     */
+    private function calculate_kb_relevance( $lower_message, $message_words, $article, $is_category_match = false ) {
+        $score = 0;
+
+        // Check keyword matches
+        $keywords = $article['keywords'] ?? array();
+        foreach ( $keywords as $keyword ) {
+            $keyword_lower = strtolower( $keyword );
+            if ( strpos( $lower_message, $keyword_lower ) !== false ) {
+                $score += 0.3;
+            }
+        }
+
+        // Check title match
+        $title_lower = strtolower( $article['title'] ?? '' );
+        foreach ( $message_words as $word ) {
+            if ( strlen( $word ) > 3 && strpos( $title_lower, $word ) !== false ) {
+                $score += 0.15;
+            }
+        }
+
+        // Check content match (lighter weight)
+        $content_lower = strtolower( $article['content'] ?? '' );
+        foreach ( $message_words as $word ) {
+            if ( strlen( $word ) > 4 && strpos( $content_lower, $word ) !== false ) {
+                $score += 0.05;
+            }
+        }
+
+        // Bonus for category match
+        if ( $is_category_match ) {
+            $score += 0.2;
+        }
+
+        // Cap at 1.0
+        return min( 1.0, $score );
+    }
+
+    /**
+     * Generate response using KB content enhanced with AI
+     *
+     * @param string $message          User message
+     * @param string $context          Context/category
+     * @param bool   $include_practice Include real-world tips
+     * @param array  $kb_results       KB search results
+     * @return string Response
+     */
+    private function generate_kb_enhanced_response( $message, $context, $include_practice, $kb_results ) {
+        // If no KB results, fall back to AI-only
+        if ( empty( $kb_results ) ) {
+            return $this->generate_chat_response( $message, $context, $include_practice );
+        }
+
+        // Build context from KB articles
+        $kb_context = "Here is relevant information from our knowledge base:\n\n";
+        foreach ( $kb_results as $result ) {
+            $kb_context .= "---\n";
+            $kb_context .= "**{$result['title']}** (Category: {$result['category']})\n";
+            $kb_context .= $result['content'] . "\n";
+        }
+
+        // Try AI-enhanced response
+        $ai_response = $this->call_ai_with_kb_context( $message, $context, $include_practice, $kb_context );
+
+        if ( ! is_wp_error( $ai_response ) && ! empty( $ai_response ) ) {
+            return $ai_response;
+        }
+
+        // Fallback: Return the most relevant KB article content directly
+        $best_match = $kb_results[0];
+        $response   = $best_match['content'];
+
+        if ( $include_practice ) {
+            $response .= "\n\n**Practical tip:** For the most current information, always verify details with official French government websites.";
+        }
+
+        return $response;
+    }
+
+    /**
+     * Call AI with KB context
+     *
+     * @param string $message          User message
+     * @param string $context          Category context
+     * @param bool   $include_practice Include real-world tips
+     * @param string $kb_context       Knowledge base context
+     * @return string|WP_Error AI response or error
+     */
+    private function call_ai_with_kb_context( $message, $context, $include_practice, $kb_context ) {
+        if ( ! class_exists( 'FRAMT_Main_Plugin_Bridge' ) ) {
+            return new WP_Error( 'no_bridge', 'AI bridge not available' );
+        }
+
+        $bridge = FRAMT_Main_Plugin_Bridge::get_instance();
+
+        $practice_instruction = $include_practice
+            ? ' Include practical, real-world tips based on the knowledge base content and common experiences.'
+            : '';
+
+        $system_prompt = "You are a helpful assistant for people relocating to France. Use the knowledge base information provided below to answer the user's question accurately. Base your response primarily on this information, but you can supplement with general knowledge where appropriate.{$practice_instruction}
+
+Keep your response concise but comprehensive. Use **bold** for important terms. If the knowledge base mentions official websites, include them in your response.
+
+{$kb_context}
+
+Now answer the following question based on the above information:";
+
+        $full_prompt = $system_prompt . "\n\nUser question: " . $message;
+
+        $result = $bridge->proxy_api_request( $full_prompt, $context );
+
+        if ( is_wp_error( $result ) ) {
+            return $result;
+        }
+
+        return $result['response'] ?? new WP_Error( 'empty_response', 'AI returned empty response' );
+    }
+
+    /**
+     * Generate follow-up response using AI directly with conversation history
+     *
+     * @param string $message          User message
+     * @param string $context          Category context
+     * @param bool   $include_practice Include real-world tips
+     * @param array  $history          Conversation history
+     * @return string Response
+     */
+    private function generate_follow_up_response( $message, $context, $include_practice, $history ) {
+        if ( ! class_exists( 'FRAMT_Main_Plugin_Bridge' ) ) {
+            return $this->generate_fallback_response( $message, $context, $include_practice );
+        }
+
+        $bridge = FRAMT_Main_Plugin_Bridge::get_instance();
+
+        // Build conversation context from recent history (last 6 messages)
+        $recent_history    = array_slice( $history, -6 );
+        $conversation_text = "";
+
+        foreach ( $recent_history as $msg ) {
+            $role = $msg['role'] === 'user' ? 'User' : 'Assistant';
+            $conversation_text .= "{$role}: {$msg['message']}\n\n";
+        }
+
+        $practice_instruction = $include_practice
+            ? ' Include practical real-world tips where relevant.'
+            : '';
+
+        $system_prompt = "You are a helpful assistant for people relocating to France. Continue the following conversation naturally, answering the user's follow-up question based on the previous context.{$practice_instruction}
+
+Keep your response concise but helpful. Use **bold** for important terms.
+
+Previous conversation:
+{$conversation_text}
+
+Now respond to this follow-up:";
+
+        $full_prompt = $system_prompt . "\n\nUser: " . $message;
+
+        $result = $bridge->proxy_api_request( $full_prompt, $context );
+
+        if ( is_wp_error( $result ) || empty( $result['response'] ) ) {
+            return $this->generate_fallback_response( $message, $context, $include_practice );
+        }
+
+        return $result['response'];
+    }
+
+    /**
+     * Format KB search results as sources for the response
+     *
+     * @param array $kb_results KB search results
+     * @return array Formatted sources
+     */
+    private function format_kb_sources( $kb_results ) {
+        $sources = array();
+
+        foreach ( $kb_results as $result ) {
+            $source = array(
+                'title'     => $result['title'],
+                'category'  => $result['category'],
+                'relevance' => round( $result['relevance'], 2 ),
+            );
+
+            // Include official source URLs if available
+            if ( ! empty( $result['sources'] ) && is_array( $result['sources'] ) ) {
+                $source['url'] = $result['sources'][0]['url'] ?? '';
+            }
+
+            $sources[] = $source;
+        }
+
+        return $sources;
     }
 
     /**
@@ -3936,93 +4285,6 @@ Keep responses concise but informative. Use **bold** for important terms. If men
         // Default response
         $category_display = ! empty( $context ) && $context !== 'general' ? $context : 'relocating to France';
         return 'Thank you for your question about ' . $category_display . '. I can help you with various aspects of relocating to France including visa applications, healthcare registration, banking, housing, and administrative procedures. Could you provide more details about what specific information you\'re looking for?';
-    }
-
-    /**
-     * Get relevant sources for a chat response
-     *
-     * @param string $message User message
-     * @param string $context Context/category
-     * @return array Sources array
-     */
-    private function get_chat_sources( $message, $context ) {
-        $lower_message = strtolower( $message );
-        $sources       = array();
-
-        // Match sources based on message content
-        if ( strpos( $lower_message, 'vls-ts' ) !== false || strpos( $lower_message, 'validate' ) !== false || strpos( $lower_message, 'visa' ) !== false ) {
-            $sources[] = array(
-                'title'     => 'VLS-TS Validation Guide',
-                'category'  => 'visas',
-                'relevance' => 0.95,
-            );
-            $sources[] = array(
-                'title'     => 'OFII Appointment Process',
-                'category'  => 'visas',
-                'relevance' => 0.80,
-            );
-        }
-
-        if ( strpos( $lower_message, 'bank' ) !== false || strpos( $lower_message, 'account' ) !== false ) {
-            $sources[] = array(
-                'title'     => 'French Banking Guide',
-                'category'  => 'banking',
-                'relevance' => 0.92,
-            );
-            $sources[] = array(
-                'title'     => 'Opening Your First Account',
-                'category'  => 'banking',
-                'relevance' => 0.85,
-            );
-        }
-
-        if ( strpos( $lower_message, 'carte vitale' ) !== false || strpos( $lower_message, 'health' ) !== false ) {
-            $sources[] = array(
-                'title'     => 'French Healthcare System',
-                'category'  => 'healthcare',
-                'relevance' => 0.93,
-            );
-            $sources[] = array(
-                'title'     => 'CPAM Registration Guide',
-                'category'  => 'healthcare',
-                'relevance' => 0.88,
-            );
-        }
-
-        if ( strpos( $lower_message, 'tax' ) !== false ) {
-            $sources[] = array(
-                'title'     => 'US-France Tax Treaty',
-                'category'  => 'taxes',
-                'relevance' => 0.90,
-            );
-        }
-
-        if ( strpos( $lower_message, 'license' ) !== false || strpos( $lower_message, 'drive' ) !== false ) {
-            $sources[] = array(
-                'title'     => 'License Exchange Process',
-                'category'  => 'driving',
-                'relevance' => 0.91,
-            );
-        }
-
-        if ( strpos( $lower_message, 'rent' ) !== false || strpos( $lower_message, 'apartment' ) !== false ) {
-            $sources[] = array(
-                'title'     => 'Renting in France Guide',
-                'category'  => 'property',
-                'relevance' => 0.89,
-            );
-        }
-
-        // If no specific sources matched, add a general one based on context
-        if ( empty( $sources ) && ! empty( $context ) ) {
-            $sources[] = array(
-                'title'     => ucfirst( $context ) . ' Overview',
-                'category'  => $context,
-                'relevance' => 0.70,
-            );
-        }
-
-        return $sources;
     }
 
     // =========================================================================
