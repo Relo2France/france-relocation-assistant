@@ -15,73 +15,72 @@ interface FranceMapProps {
   onGenerateReport: (code: string, name: string) => void;
 }
 
-// More accurate SVG paths for Metropolitan France regions
-// Based on simplified geographic boundaries, scaled to fit viewbox 0-500
+// Accurate SVG paths for Metropolitan France regions
+// Based on geographic boundaries, scaled to fit viewbox 0-500
 const REGION_PATHS: Record<string, string> = {
-  // Île-de-France - small region around Paris
-  '11': `M 247,152 Q 252,148 260,146 Q 270,145 278,148 Q 285,152 288,160
-         Q 290,168 287,176 Q 283,183 275,187 Q 267,190 258,188
-         Q 250,185 245,178 Q 242,170 244,162 Z`,
+  // Hauts-de-France (northern region)
+  '32': `M 245,58 L 262,52 L 285,48 L 308,52 L 328,62 L 340,75 L 345,92
+         L 342,108 L 332,122 L 315,132 L 295,138 L 275,140 L 258,138
+         L 248,132 L 242,120 L 238,105 L 235,88 L 238,72 Z`,
 
-  // Centre-Val de Loire - Loire valley region
-  '24': `M 195,188 Q 210,182 225,180 Q 242,178 258,188 Q 270,195 275,208
-         Q 278,222 272,238 Q 265,255 250,268 Q 232,280 212,278
-         Q 190,275 175,260 Q 162,245 165,225 Q 170,205 185,195 Z`,
+  // Normandie (northwestern coast)
+  '28': `M 142,95 L 165,88 L 188,85 L 210,88 L 232,95 L 242,108 L 248,122
+         L 248,138 L 242,152 L 228,162 L 210,168 L 188,170 L 165,165
+         L 148,155 L 138,140 L 135,122 L 138,108 Z`,
 
-  // Bourgogne-Franche-Comté - eastern central region
-  '27': `M 275,187 Q 288,180 305,178 Q 325,178 342,188 Q 358,200 365,218
-         Q 370,238 362,258 Q 352,278 335,290 Q 315,300 292,295
-         Q 272,290 260,275 Q 250,258 255,238 Q 262,215 275,200 Z`,
+  // Île-de-France (Paris region - small central)
+  '11': `M 248,138 L 262,135 L 278,138 L 290,148 L 295,162 L 290,178
+         L 278,188 L 262,192 L 248,188 L 238,178 L 235,162 L 238,148 Z`,
 
-  // Normandie - northwestern coast
-  '28': `M 128,108 Q 150,95 175,92 Q 202,90 225,100 Q 245,112 252,128
-         Q 257,142 252,152 Q 245,160 232,165 Q 215,170 195,168
-         Q 172,165 152,155 Q 135,142 130,125 Z`,
+  // Grand Est (northeastern region)
+  '44': `M 295,138 L 315,132 L 340,128 L 365,132 L 388,145 L 402,165
+         L 408,188 L 405,215 L 395,242 L 378,265 L 355,278 L 332,282
+         L 312,275 L 298,262 L 290,242 L 288,218 L 290,195 L 295,172
+         L 295,155 Z`,
 
-  // Hauts-de-France - northern region
-  '32': `M 225,100 Q 248,88 275,82 Q 305,78 330,88 Q 350,100 358,118
-         Q 362,135 352,150 Q 340,162 322,168 Q 300,172 280,168
-         Q 262,162 252,152 Q 245,138 248,122 Q 252,108 265,100 Z`,
+  // Bretagne (northwestern peninsula)
+  '53': `M 58,148 L 78,138 L 102,132 L 125,135 L 142,145 L 152,160
+         L 155,178 L 148,195 L 135,208 L 115,215 L 92,212 L 70,202
+         L 52,185 L 45,168 L 48,155 Z`,
 
-  // Grand Est - northeastern region
-  '44': `M 322,168 Q 342,158 362,155 Q 385,155 405,168 Q 420,182 425,202
-         Q 428,225 418,248 Q 405,268 385,278 Q 362,285 342,278
-         Q 325,270 318,252 Q 312,232 318,212 Q 325,192 338,178 Z`,
+  // Pays de la Loire (western region)
+  '52': `M 92,212 L 115,215 L 138,218 L 158,225 L 175,238 L 182,255
+         L 178,275 L 168,292 L 150,305 L 128,308 L 105,302 L 85,288
+         L 72,268 L 68,248 L 72,228 L 82,218 Z`,
 
-  // Bretagne - northwestern peninsula
-  '53': `M 55,148 Q 78,138 102,135 Q 128,135 148,145 Q 162,158 160,175
-         Q 155,192 138,202 Q 118,212 95,210 Q 70,205 52,190
-         Q 38,175 42,158 Z`,
+  // Centre-Val de Loire (central region)
+  '24': `M 178,192 L 200,188 L 222,188 L 242,195 L 255,208 L 262,228
+         L 258,252 L 248,272 L 232,288 L 210,295 L 188,292 L 168,280
+         L 158,262 L 158,242 L 165,222 L 172,205 Z`,
 
-  // Pays de la Loire - western region
-  '52': `M 95,210 Q 118,205 140,202 Q 162,200 180,208 Q 195,220 195,240
-         Q 192,262 175,280 Q 155,295 130,295 Q 105,292 85,278
-         Q 68,262 68,240 Q 72,220 85,212 Z`,
+  // Bourgogne-Franche-Comté (eastern central)
+  '27': `M 290,195 L 308,188 L 328,188 L 348,198 L 365,215 L 375,238
+         L 375,265 L 365,288 L 348,308 L 325,318 L 302,315 L 282,302
+         L 268,282 L 262,258 L 265,232 L 275,212 Z`,
 
-  // Nouvelle-Aquitaine - large southwestern region
-  '75': `M 85,278 Q 108,285 130,295 Q 155,305 172,320 Q 188,338 190,360
-         Q 190,385 178,408 Q 162,430 140,442 Q 115,452 88,445
-         Q 65,435 52,412 Q 42,388 48,360 Q 55,332 68,310 Q 78,292 88,282 Z`,
+  // Nouvelle-Aquitaine (large southwestern region)
+  '75': `M 72,288 L 95,302 L 118,312 L 142,325 L 158,342 L 168,365
+         L 172,392 L 165,418 L 152,442 L 132,458 L 108,465 L 85,458
+         L 68,442 L 58,418 L 55,392 L 58,362 L 65,335 L 68,312 Z`,
 
-  // Occitanie - southern region
-  '76': `M 140,442 Q 165,432 190,422 Q 218,415 248,418 Q 280,422 305,438
-         Q 325,455 328,475 Q 325,495 305,508 Q 280,518 250,515
-         Q 218,512 188,500 Q 162,485 148,465 Q 138,448 140,440 Z`,
+  // Auvergne-Rhône-Alpes (large southeastern region)
+  '84': `M 268,295 L 292,302 L 318,308 L 342,322 L 362,342 L 375,368
+         L 378,398 L 368,425 L 352,445 L 328,455 L 302,452 L 278,438
+         L 258,415 L 248,388 L 248,358 L 255,328 L 262,308 Z`,
 
-  // Auvergne-Rhône-Alpes - large eastern region with Alps
-  '84': `M 260,275 Q 285,268 310,270 Q 338,275 360,290 Q 378,308 385,332
-         Q 388,358 375,382 Q 358,405 335,415 Q 308,422 280,418
-         Q 255,412 238,395 Q 225,375 228,350 Q 235,322 250,300 Z`,
+  // Occitanie (southern region)
+  '76': `M 132,458 L 158,452 L 188,448 L 218,452 L 248,462 L 275,478
+         L 295,498 L 302,518 L 295,535 L 275,545 L 248,548 L 218,542
+         L 188,530 L 162,512 L 145,490 L 135,472 Z`,
 
-  // Provence-Alpes-Côte d'Azur - southeastern Mediterranean
-  '93': `M 308,415 Q 335,408 360,405 Q 388,405 412,418 Q 432,432 438,452
-         Q 440,472 425,488 Q 405,502 378,505 Q 350,505 325,495
-         Q 305,482 300,462 Q 298,442 305,425 Z`,
+  // Provence-Alpes-Côte d'Azur (Mediterranean southeast)
+  '93': `M 302,452 L 328,448 L 358,448 L 385,458 L 405,475 L 418,498
+         L 418,522 L 405,540 L 382,548 L 355,548 L 328,538 L 308,522
+         L 298,502 L 298,478 Z`,
 
-  // Corse - Mediterranean island
-  '94': `M 438,435 Q 448,428 460,430 Q 472,435 478,450 Q 482,468 478,488
-         Q 472,508 460,518 Q 448,525 438,518 Q 430,508 430,488
-         Q 432,465 438,448 Z`,
+  // Corse (island)
+  '94': `M 448,465 L 462,458 L 475,465 L 482,485 L 482,512 L 475,535
+         L 462,548 L 448,548 L 438,535 L 435,512 L 438,485 L 445,472 Z`,
 };
 
 // Region colors with border colors
@@ -101,24 +100,24 @@ const REGION_COLORS: Record<string, { fill: string; hover: string; border: strin
   '94': { fill: '#A5B4FC', hover: '#818CF8', border: '#6366F1' },
 };
 
-// Major cities positioned on the map
+// Major cities positioned on the map (updated for new paths)
 const MAJOR_CITIES = [
   { name: 'Paris', x: 265, y: 165, size: 'large' as const },
-  { name: 'Lyon', x: 320, y: 345, size: 'large' as const },
-  { name: 'Marseille', x: 365, y: 460, size: 'large' as const },
-  { name: 'Toulouse', x: 200, y: 435, size: 'large' as const },
-  { name: 'Bordeaux', x: 125, y: 365, size: 'large' as const },
-  { name: 'Nantes', x: 115, y: 248, size: 'medium' as const },
-  { name: 'Lille', x: 295, y: 95, size: 'medium' as const },
-  { name: 'Strasbourg', x: 405, y: 195, size: 'medium' as const },
-  { name: 'Nice', x: 420, y: 455, size: 'medium' as const },
-  { name: 'Rennes', x: 115, y: 175, size: 'medium' as const },
-  { name: 'Montpellier', x: 275, y: 462, size: 'medium' as const },
-  { name: 'Dijon', x: 328, y: 232, size: 'small' as const },
-  { name: 'Orléans', x: 232, y: 205, size: 'small' as const },
-  { name: 'Rouen', x: 195, y: 130, size: 'small' as const },
-  { name: 'Clermont-Fd', x: 275, y: 335, size: 'small' as const },
-  { name: 'Ajaccio', x: 458, y: 485, size: 'small' as const },
+  { name: 'Lyon', x: 330, y: 375, size: 'large' as const },
+  { name: 'Marseille', x: 355, y: 510, size: 'large' as const },
+  { name: 'Toulouse', x: 195, y: 490, size: 'large' as const },
+  { name: 'Bordeaux', x: 115, y: 385, size: 'large' as const },
+  { name: 'Nantes', x: 120, y: 260, size: 'medium' as const },
+  { name: 'Lille', x: 295, y: 78, size: 'medium' as const },
+  { name: 'Strasbourg', x: 388, y: 188, size: 'medium' as const },
+  { name: 'Nice', x: 398, y: 495, size: 'medium' as const },
+  { name: 'Rennes', x: 108, y: 178, size: 'medium' as const },
+  { name: 'Montpellier', x: 278, y: 505, size: 'medium' as const },
+  { name: 'Dijon', x: 328, y: 255, size: 'small' as const },
+  { name: 'Orléans', x: 218, y: 238, size: 'small' as const },
+  { name: 'Rouen', x: 198, y: 128, size: 'small' as const },
+  { name: 'Clermont-Fd', x: 268, y: 365, size: 'small' as const },
+  { name: 'Ajaccio', x: 458, y: 515, size: 'small' as const },
 ];
 
 export default function FranceMap({ onRegionSelect, onGenerateReport }: FranceMapProps) {
@@ -160,9 +159,9 @@ export default function FranceMap({ onRegionSelect, onGenerateReport }: FranceMa
       {/* Map Container */}
       <div className="relative bg-gradient-to-b from-sky-50 to-blue-100 rounded-xl mx-4 overflow-hidden shadow-inner border border-blue-200">
         <svg
-          viewBox="20 60 480 480"
+          viewBox="20 30 480 550"
           className="w-full h-auto"
-          style={{ maxHeight: '60vh', minHeight: '400px' }}
+          style={{ maxHeight: '65vh', minHeight: '450px' }}
           aria-label="Interactive map of Metropolitan France"
           role="img"
         >
@@ -189,8 +188,8 @@ export default function FranceMap({ onRegionSelect, onGenerateReport }: FranceMa
           </defs>
 
           {/* Ocean background */}
-          <rect x="20" y="60" width="480" height="480" fill="#DBEAFE" />
-          <rect x="20" y="60" width="480" height="480" fill="url(#waterPattern)" />
+          <rect x="20" y="30" width="480" height="550" fill="#DBEAFE" />
+          <rect x="20" y="30" width="480" height="550" fill="url(#waterPattern)" />
 
           {/* Region paths with shadow layer first */}
           <g filter="url(#regionShadow)">
@@ -273,7 +272,7 @@ export default function FranceMap({ onRegionSelect, onGenerateReport }: FranceMa
           })}
 
           {/* Compass */}
-          <g transform="translate(455, 95)">
+          <g transform="translate(465, 55)">
             <circle cx="0" cy="0" r="20" fill="white" stroke="#CBD5E1" strokeWidth="1" opacity="0.95" />
             <text x="0" y="-5" textAnchor="middle" fontSize="11" fontWeight="bold" fill="#334155">N</text>
             <path d="M 0 -14 L 4 -4 L 0 0 L -4 -4 Z" fill="#DC2626" />
@@ -281,7 +280,7 @@ export default function FranceMap({ onRegionSelect, onGenerateReport }: FranceMa
           </g>
 
           {/* Scale bar */}
-          <g transform="translate(50, 520)">
+          <g transform="translate(50, 560)">
             <rect x="0" y="0" width="80" height="3" fill="#64748B" />
             <rect x="0" y="0" width="40" height="3" fill="#334155" />
             <text x="0" y="12" fontSize="8" fill="#64748B">0</text>
