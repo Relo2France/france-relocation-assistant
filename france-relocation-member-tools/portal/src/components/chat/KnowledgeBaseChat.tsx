@@ -182,6 +182,7 @@ export default function KnowledgeBaseChat() {
         categories={categories || []}
         selectedCategory={selectedCategory}
         onSelectCategory={setSelectedCategory}
+        onSelectTopic={handleSuggestedQuestion}
         isOpen={sidebarOpen}
         onToggle={() => setSidebarOpen(!sidebarOpen)}
         isLoading={categoriesLoading}
@@ -267,6 +268,7 @@ interface ChatSidebarProps {
   }>;
   selectedCategory: string | null;
   onSelectCategory: (id: string | null) => void;
+  onSelectTopic: (question: string) => void;
   isOpen: boolean;
   onToggle: () => void;
   isLoading: boolean;
@@ -276,6 +278,7 @@ function ChatSidebar({
   categories,
   selectedCategory,
   onSelectCategory,
+  onSelectTopic,
   isOpen,
   isLoading,
 }: ChatSidebarProps) {
@@ -365,13 +368,14 @@ function ChatSidebar({
             </h3>
             <div className="space-y-2">
               {popularTopics.slice(0, 6).map((topic, index) => (
-                <div
+                <button
                   key={index}
-                  className="text-sm text-gray-600 hover:text-primary-600 cursor-pointer py-1 line-clamp-1"
-                  title={topic.title}
+                  onClick={() => onSelectTopic(`Tell me about ${topic.title}`)}
+                  className="text-sm text-gray-600 hover:text-primary-600 cursor-pointer py-1 line-clamp-1 text-left w-full"
+                  title={`Ask about: ${topic.title}`}
                 >
                   {topic.title}
-                </div>
+                </button>
               ))}
             </div>
           </div>
