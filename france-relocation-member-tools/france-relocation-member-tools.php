@@ -3832,24 +3832,14 @@ Please provide a helpful, accurate answer about their health insurance coverage 
         $manifest_path = FRAMT_PLUGIN_DIR . 'assets/portal/.vite/manifest.json';
 
         if (file_exists($manifest_path)) {
-            // Production mode - load from built assets
+            // Production mode - load CSS from built assets
+            // Note: JS is loaded directly in template to bypass WordPress.com script combining
             $manifest = json_decode(file_get_contents($manifest_path), true);
 
             if (isset($manifest['index.html'])) {
                 $entry = $manifest['index.html'];
 
-                // Enqueue main JS
-                if (isset($entry['file'])) {
-                    wp_enqueue_script(
-                        'fra-portal',
-                        FRAMT_PLUGIN_URL . 'assets/portal/' . $entry['file'],
-                        array(),
-                        FRAMT_VERSION,
-                        true
-                    );
-                }
-
-                // Enqueue CSS
+                // Enqueue CSS only (JS loaded in template with type="module")
                 if (isset($entry['css'])) {
                     foreach ($entry['css'] as $css_file) {
                         wp_enqueue_style(
@@ -3880,17 +3870,17 @@ Please provide a helpful, accurate answer about their health insurance coverage 
                 true
             );
 
+            // Localize script with WordPress data (dev mode only, production uses template inline script)
+            wp_localize_script('fra-portal', 'fraPortalData', array(
+                'apiUrl' => rest_url('fra-portal/v1'),
+                'nonce' => wp_create_nonce('wp_rest'),
+                'userId' => get_current_user_id(),
+                'siteUrl' => home_url(),
+                'pluginUrl' => FRAMT_PLUGIN_URL,
+                'isAdmin' => current_user_can('manage_options'),
+            ));
         }
-
-        // Localize script with WordPress data
-        wp_localize_script('fra-portal', 'fraPortalData', array(
-            'apiUrl' => rest_url('fra-portal/v1'),
-            'nonce' => wp_create_nonce('wp_rest'),
-            'userId' => get_current_user_id(),
-            'siteUrl' => home_url(),
-            'pluginUrl' => FRAMT_PLUGIN_URL,
-            'isAdmin' => current_user_can('manage_options'),
-        ));
+        // Note: In production, fraPortalData is set inline in template-portal.php
     }
 
     /**
