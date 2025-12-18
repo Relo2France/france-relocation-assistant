@@ -563,3 +563,49 @@ export const membershipApi = {
       '/membership/upgrade-options'
     ),
 };
+
+// Research API
+export const researchApi = {
+  // Communes search
+  searchCommunes: (params: { department?: string; q?: string; limit?: number }, signal?: AbortSignal) => {
+    const queryParams = new URLSearchParams();
+    if (params.department) queryParams.set('department', params.department);
+    if (params.q) queryParams.set('q', params.q);
+    if (params.limit) queryParams.set('limit', String(params.limit));
+    return apiFetch<{ communes: Array<{ code: string; name: string; postal_codes: string[]; department_code: string; department_name: string; region_code: string; region_name: string; population: number; type: 'city' | 'town' | 'village'; }> }>(
+      `/research/communes/search?${queryParams.toString()}`,
+      { signal }
+    );
+  },
+
+  // Generate report
+  generateReport: (data: { location_type: string; location_code: string; location_name: string; force_refresh?: boolean }) =>
+    apiFetch<{
+      report: {
+        id: number;
+        location_type: string;
+        location_code: string;
+        location_name: string;
+        content: Record<string, unknown>;
+        version: number;
+        generated_at: string;
+        updated_at: string;
+        download_url: string;
+      };
+      cached: boolean;
+      cache_age?: string;
+    }>('/research/report/generate', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // Save report to documents
+  saveReport: (reportId: number) =>
+    apiFetch<{ success: boolean; message: string }>(`/research/report/${reportId}/save`, {
+      method: 'POST',
+    }),
+
+  // Get saved reports
+  getSavedReports: () =>
+    apiFetch<{ reports: Array<{ id: number; location_name: string; location_type: string; updated_at: string; download_url: string; }> }>('/research/saved'),
+};

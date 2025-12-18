@@ -613,6 +613,115 @@ export interface UpgradeOption {
   features: string[];
 }
 
+// France Research Tool types
+export interface FranceRegion {
+  code: string;              // "84" (Auvergne-Rhône-Alpes)
+  name: string;              // "Auvergne-Rhône-Alpes"
+  capital: string;           // "Lyon"
+  population: number;
+  area_km2: number;
+  departments: string[];     // ["01", "03", "07", ...]
+  climate: ClimateType;
+  description: string;
+}
+
+export interface FranceDepartment {
+  code: string;              // "33"
+  name: string;              // "Gironde"
+  region_code: string;       // "75"
+  region_name: string;       // "Nouvelle-Aquitaine"
+  prefecture: string;        // "Bordeaux"
+  population: number;
+  area_km2: number;
+  major_cities: string[];    // Top cities
+}
+
+export interface FranceCommune {
+  code: string;              // "33063" (INSEE code)
+  name: string;              // "Bordeaux"
+  postal_codes: string[];    // ["33000", "33100", ...]
+  department_code: string;
+  department_name: string;
+  region_code: string;
+  region_name: string;
+  population: number;
+  type: CommuneType;
+  coordinates?: {
+    lat: number;
+    lng: number;
+  };
+}
+
+export type ClimateType = 'oceanic' | 'continental' | 'mediterranean' | 'mountain' | 'semi-oceanic';
+export type CommuneType = 'city' | 'town' | 'village';
+export type ResearchLevel = 'region' | 'department' | 'commune';
+
+export interface LocationBreadcrumb {
+  level: ResearchLevel;
+  code: string;
+  name: string;
+}
+
+// Research Report types
+export interface ResearchReport {
+  id: number;
+  location_type: ResearchLevel;
+  location_code: string;
+  location_name: string;
+  region_name?: string;
+  department_name?: string;
+  content: ReportContent;
+  version: number;
+  generated_at: string;
+  updated_at: string;
+  download_url: string;
+}
+
+export interface ReportContent {
+  title: string;
+  subtitle: string;
+  generated_date: string;
+  sections: ReportSection[];
+}
+
+export interface ReportSection {
+  id: string;
+  title: string;
+  content: string;
+  subsections?: ReportSubsection[];
+}
+
+export interface ReportSubsection {
+  title: string;
+  content: string;
+  data?: Record<string, string | number>;
+}
+
+export interface GenerateReportRequest {
+  location_type: ResearchLevel;
+  location_code: string;
+  save_to_documents?: boolean;
+}
+
+export interface GenerateReportResponse {
+  success: boolean;
+  report?: ResearchReport;
+  cached?: boolean;
+  saved_to_documents?: boolean;
+  document_id?: number;
+  error?: string;
+}
+
+export interface SavedResearchDocument {
+  id: number;
+  report_id: number;
+  location_type: ResearchLevel;
+  location_code: string;
+  location_name: string;
+  report_updated_at: string;
+  saved_at: string;
+}
+
 // WordPress global types
 declare global {
   interface Window {

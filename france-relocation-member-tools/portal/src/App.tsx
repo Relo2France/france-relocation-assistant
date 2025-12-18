@@ -20,6 +20,7 @@ import { ChecklistsView } from '@/components/checklists';
 import { GlossaryView } from '@/components/glossary';
 import { KnowledgeBaseChat } from '@/components/chat';
 import { MembershipView } from '@/components/membership';
+import { ResearchView } from '@/components/research';
 
 // View router
 function ViewRouter() {
@@ -57,6 +58,8 @@ function ViewRouter() {
       return <KnowledgeBaseChat />;
     case 'membership':
       return <MembershipView />;
+    case 'research':
+      return <ResearchView />;
     default:
       return <Dashboard />;
   }

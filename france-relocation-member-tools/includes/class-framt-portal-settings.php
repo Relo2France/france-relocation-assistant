@@ -64,6 +64,7 @@ class FRAMT_Portal_Settings {
         'menu_documents'      => true,
         'menu_guides'         => true,
         'menu_glossary'       => true,
+        'menu_research'       => true,
         'menu_files'          => true,
         'menu_profile'        => true,
         'menu_family'         => true,
@@ -81,6 +82,7 @@ class FRAMT_Portal_Settings {
         'label_documents'     => 'Documents',
         'label_guides'        => 'Guides',
         'label_glossary'      => 'Glossary',
+        'label_research'      => 'Explore France',
         'label_files'         => 'Files',
         'label_profile'       => 'My Profile',
         'label_family'        => 'Family Members',
@@ -98,6 +100,7 @@ class FRAMT_Portal_Settings {
         'icon_documents'      => 'FileText',
         'icon_guides'         => 'BookOpen',
         'icon_glossary'       => 'BookMarked',
+        'icon_research'       => 'MapPin',
         'icon_files'          => 'FolderOpen',
         'icon_profile'        => 'User',
         'icon_family'         => 'Users',
@@ -107,7 +110,7 @@ class FRAMT_Portal_Settings {
 
         // Menu Section Order (JSON encoded arrays)
         'menu_order_project'   => 'dashboard,tasks,checklists,timeline,messages',
-        'menu_order_resources' => 'chat,documents,guides,glossary,files',
+        'menu_order_resources' => 'chat,documents,guides,glossary,research,files',
         'menu_order_account'   => 'profile,family,membership,settings,help',
 
         // Section Labels
@@ -159,6 +162,7 @@ class FRAMT_Portal_Settings {
         'Mail'            => 'Mail',
         'Search'          => 'Search',
         'Map'             => 'Map',
+        'MapPin'          => 'Map Pin',
         'Briefcase'       => 'Briefcase',
         'GraduationCap'   => 'Graduation Cap',
         'Plane'           => 'Plane',
@@ -277,7 +281,7 @@ class FRAMT_Portal_Settings {
             'enable_ai_assistant', 'welcome_banner_enabled',
             'menu_dashboard', 'menu_tasks', 'menu_checklists', 'menu_timeline',
             'menu_messages', 'menu_chat', 'menu_documents', 'menu_guides',
-            'menu_glossary', 'menu_files', 'menu_profile', 'menu_family',
+            'menu_glossary', 'menu_research', 'menu_files', 'menu_profile', 'menu_family',
             'menu_membership', 'menu_settings', 'menu_help'
         );
         foreach ( $bool_fields as $field ) {
@@ -289,7 +293,7 @@ class FRAMT_Portal_Settings {
             'portal_title', 'welcome_banner_title',
             'label_dashboard', 'label_tasks', 'label_checklists', 'label_timeline',
             'label_messages', 'label_chat', 'label_documents', 'label_guides',
-            'label_glossary', 'label_files', 'label_profile', 'label_family',
+            'label_glossary', 'label_research', 'label_files', 'label_profile', 'label_family',
             'label_membership', 'label_settings', 'label_help',
             'section_label_project', 'section_label_resources', 'section_label_account'
         );
@@ -308,7 +312,7 @@ class FRAMT_Portal_Settings {
         $icon_fields = array(
             'icon_dashboard', 'icon_tasks', 'icon_checklists', 'icon_timeline',
             'icon_messages', 'icon_chat', 'icon_documents', 'icon_guides',
-            'icon_glossary', 'icon_files', 'icon_profile', 'icon_family',
+            'icon_glossary', 'icon_research', 'icon_files', 'icon_profile', 'icon_family',
             'icon_membership', 'icon_settings', 'icon_help'
         );
         foreach ( $icon_fields as $field ) {
@@ -623,17 +627,17 @@ class FRAMT_Portal_Settings {
                 // Visibility
                 'menu_dashboard', 'menu_tasks', 'menu_checklists', 'menu_timeline',
                 'menu_messages', 'menu_chat', 'menu_documents', 'menu_guides',
-                'menu_glossary', 'menu_files', 'menu_profile', 'menu_family',
+                'menu_glossary', 'menu_research', 'menu_files', 'menu_profile', 'menu_family',
                 'menu_membership', 'menu_settings', 'menu_help',
                 // Labels
                 'label_dashboard', 'label_tasks', 'label_checklists', 'label_timeline',
                 'label_messages', 'label_chat', 'label_documents', 'label_guides',
-                'label_glossary', 'label_files', 'label_profile', 'label_family',
+                'label_glossary', 'label_research', 'label_files', 'label_profile', 'label_family',
                 'label_membership', 'label_settings', 'label_help',
                 // Icons
                 'icon_dashboard', 'icon_tasks', 'icon_checklists', 'icon_timeline',
                 'icon_messages', 'icon_chat', 'icon_documents', 'icon_guides',
-                'icon_glossary', 'icon_files', 'icon_profile', 'icon_family',
+                'icon_glossary', 'icon_research', 'icon_files', 'icon_profile', 'icon_family',
                 'icon_membership', 'icon_settings', 'icon_help',
                 // Order
                 'menu_order_project', 'menu_order_resources', 'menu_order_account',
@@ -668,7 +672,7 @@ class FRAMT_Portal_Settings {
             'welcome_banner_enabled',
             'menu_dashboard', 'menu_tasks', 'menu_checklists', 'menu_timeline',
             'menu_messages', 'menu_chat', 'menu_documents', 'menu_guides',
-            'menu_glossary', 'menu_files', 'menu_profile', 'menu_family',
+            'menu_glossary', 'menu_research', 'menu_files', 'menu_profile', 'menu_family',
             'menu_membership', 'menu_settings', 'menu_help',
         );
 
@@ -828,6 +832,7 @@ class FRAMT_Portal_Settings {
             'documents'  => array( 'default_label' => 'Documents', 'default_icon' => 'FileText' ),
             'guides'     => array( 'default_label' => 'Guides', 'default_icon' => 'BookOpen' ),
             'glossary'   => array( 'default_label' => 'Glossary', 'default_icon' => 'BookMarked' ),
+            'research'   => array( 'default_label' => 'Explore France', 'default_icon' => 'MapPin' ),
             'files'      => array( 'default_label' => 'Files', 'default_icon' => 'FolderOpen' ),
             'profile'    => array( 'default_label' => 'My Profile', 'default_icon' => 'User' ),
             'family'     => array( 'default_label' => 'Family Members', 'default_icon' => 'Users' ),
