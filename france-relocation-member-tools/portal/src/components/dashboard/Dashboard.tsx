@@ -17,7 +17,7 @@ import Modal from '@/components/shared/Modal';
 
 export default function Dashboard() {
   const { data, isLoading, error } = useDashboard();
-  const { setActiveView } = usePortalStore();
+  const { setActiveView, setSettingsTab } = usePortalStore();
   const [showMoveDateModal, setShowMoveDateModal] = useState(false);
   const [newMoveDate, setNewMoveDate] = useState('');
   const updateProject = useUpdateProject();
@@ -53,7 +53,10 @@ export default function Dashboard() {
               <span>{profile_visa_label}</span>
             ) : (
               <button
-                onClick={() => setActiveView('settings')}
+                onClick={() => {
+                  setSettingsTab('visa-profile');
+                  setActiveView('settings');
+                }}
                 className="inline-flex items-center gap-1 text-primary-600 hover:text-primary-700 hover:underline"
               >
                 <FileText className="w-4 h-4" />

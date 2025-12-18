@@ -78,6 +78,10 @@ interface PortalState {
   activeView: string;
   setActiveView: (view: string) => void;
 
+  // Settings tab navigation
+  settingsTab: string | null;
+  setSettingsTab: (tab: string | null) => void;
+
   // Task filters
   taskFilters: {
     stage: string | null;
@@ -125,6 +129,10 @@ export const usePortalStore = create<PortalState>((set, get) => {
     // Active view
     activeView: 'dashboard',
     setActiveView: (activeView) => set({ activeView }),
+
+    // Settings tab navigation
+    settingsTab: null,
+    setSettingsTab: (settingsTab) => set({ settingsTab }),
 
     // Task filters
     taskFilters: {

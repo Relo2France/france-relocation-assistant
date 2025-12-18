@@ -22,6 +22,7 @@ import {
   useProfileCompletion,
   useDeleteAccount,
 } from '@/hooks/useApi';
+import { usePortalStore } from '@/store';
 import type { UserSettings, MemberProfile } from '@/types';
 
 type SettingsTab = 'portal-account' | 'visa-profile' | 'notifications';
@@ -44,7 +45,16 @@ interface ProfileSection {
 }
 
 export default function SettingsView() {
+  const { settingsTab, setSettingsTab } = usePortalStore();
   const [activeTab, setActiveTab] = useState<SettingsTab>('portal-account');
+
+  // Handle navigation from other components (e.g., Dashboard)
+  useEffect(() => {
+    if (settingsTab && ['portal-account', 'visa-profile', 'notifications'].includes(settingsTab)) {
+      setActiveTab(settingsTab as SettingsTab);
+      setSettingsTab(null); // Clear after using
+    }
+  }, [settingsTab, setSettingsTab]);
 
   const tabs = [
     { id: 'portal-account' as SettingsTab, label: 'Portal Account', icon: User },
