@@ -3857,6 +3857,14 @@ Please provide a helpful, accurate answer about their health insurance coverage 
                         );
                     }
                 }
+
+                // Add type="module" to production scripts (required for ES modules)
+                add_filter('script_loader_tag', function($tag, $handle) {
+                    if ($handle === 'fra-portal') {
+                        return str_replace(' src', ' type="module" src', $tag);
+                    }
+                    return $tag;
+                }, 10, 2);
             }
         } else {
             // Development mode - load from Vite dev server
