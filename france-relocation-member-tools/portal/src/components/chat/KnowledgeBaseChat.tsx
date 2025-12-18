@@ -285,9 +285,12 @@ function ChatSidebar({
   const [topicSearch, setTopicSearch] = useState('');
   const { data: searchResults } = useSearchChatTopics(topicSearch);
 
+  // Filter topics based on selected category
   const popularTopics =
     searchResults?.results ||
-    categories.flatMap((cat) => cat.topics.slice(0, 2)).slice(0, 6);
+    (selectedCategory
+      ? categories.find((c) => c.id === selectedCategory)?.topics.slice(0, 6) || []
+      : categories.flatMap((cat) => cat.topics.slice(0, 2)).slice(0, 6));
 
   return (
     <div
@@ -364,7 +367,9 @@ function ChatSidebar({
           <div className="mt-6 pt-6 border-t border-gray-200">
             <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
               <Lightbulb className="w-4 h-4 text-yellow-500" />
-              Popular Topics
+              {selectedCategory
+                ? `${categories.find((c) => c.id === selectedCategory)?.title || 'Category'} Topics`
+                : 'Popular Topics'}
             </h3>
             <div className="space-y-2">
               {popularTopics.slice(0, 6).map((topic, index) => (
