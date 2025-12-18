@@ -356,6 +356,17 @@ class FRAMT_Portal_API {
             )
         );
 
+        // Account deletion endpoint
+        register_rest_route(
+            self::NAMESPACE,
+            '/account/delete',
+            array(
+                'methods'             => 'POST',
+                'callback'            => array( $this, 'delete_account' ),
+                'permission_callback' => array( $this, 'check_member_permission' ),
+            )
+        );
+
         // ============================================
         // Checklists endpoints
         // ============================================
@@ -4151,6 +4162,169 @@ Signature:
     private function get_product_features( $product_id ) {
         $features = get_post_meta( $product_id, '_fra_product_features', true );
         return is_array( $features ) ? $features : array();
+    }
+
+    /**
+     * Delete user account
+     *
+     * Permanently deletes the current user's account and all associated data.
+     * Requires confirmation phrase to prevent accidental deletion.
+     *
+     * @param WP_REST_Request $request Request object
+     * @return WP_REST_Response|WP_Error
+     */
+    public function delete_account( $request ) {
+        $user_id = get_current_user_id();
+
+        if ( ! $user_id ) {
+            return new WP_Error(
+                'rest_not_logged_in',
+                'You must be logged in to delete your account.',
+                array( 'status' => 401 )
+            );
+        }
+
+        // Get confirmation phrase from request
+        $confirmation = sanitize_text_field( $request->get_param( 'confirmation' ) );
+
+        // Require exact phrase "DELETE MY ACCOUNT" for confirmation
+        if ( 'DELETE MY ACCOUNT' !== $confirmation ) {
+            return new WP_Error(
+                'rest_confirmation_required',
+                'Please type "DELETE MY ACCOUNT" to confirm account deletion.',
+                array( 'status' => 400 )
+            );
+        }
+
+        // Prevent admin account deletion through this endpoint
+        $user = get_userdata( $user_id );
+        if ( $user && in_array( 'administrator', $user->roles, true ) ) {
+            return new WP_Error(
+                'rest_admin_delete_forbidden',
+                'Administrator accounts cannot be deleted through this endpoint.',
+                array( 'status' => 403 )
+            );
+        }
+
+        // Cancel any MemberPress subscriptions
+        if ( class_exists( 'MeprUser' ) ) {
+            $mepr_user = new MeprUser( $user_id );
+            $subscriptions = $mepr_user->active_product_subscriptions();
+            foreach ( $subscriptions as $subscription_id ) {
+                $subscription = new MeprSubscription( $subscription_id );
+                if ( $subscription->id ) {
+                    $subscription->status = MeprSubscription::$cancelled_str;
+                    $subscription->store();
+                }
+            }
+        }
+
+        // Delete user's portal data
+        global $wpdb;
+
+        // Get user's projects
+        $projects = $wpdb->get_col(
+            $wpdb->prepare(
+                "SELECT id FROM {$wpdb->prefix}framt_projects WHERE user_id = %d",
+                $user_id
+            )
+        );
+
+        // Delete tasks, notes, files, and task checklists for user's projects
+        if ( ! empty( $projects ) ) {
+            $project_ids = implode( ',', array_map( 'intval', $projects ) );
+
+            // Delete task checklists for tasks in user's projects
+            $wpdb->query(
+                "DELETE tc FROM {$wpdb->prefix}framt_task_checklists tc
+                 INNER JOIN {$wpdb->prefix}framt_tasks t ON tc.task_id = t.id
+                 WHERE t.project_id IN ($project_ids)"
+            );
+
+            // Delete tasks
+            $wpdb->query(
+                $wpdb->prepare(
+                    "DELETE FROM {$wpdb->prefix}framt_tasks WHERE project_id IN ($project_ids)"
+                )
+            );
+
+            // Delete notes
+            $wpdb->query(
+                $wpdb->prepare(
+                    "DELETE FROM {$wpdb->prefix}framt_notes WHERE project_id IN ($project_ids)"
+                )
+            );
+
+            // Delete files
+            $files = $wpdb->get_results(
+                "SELECT id, file_path FROM {$wpdb->prefix}framt_files WHERE project_id IN ($project_ids)"
+            );
+            foreach ( $files as $file ) {
+                // Delete physical file
+                if ( ! empty( $file->file_path ) && file_exists( $file->file_path ) ) {
+                    wp_delete_file( $file->file_path );
+                }
+            }
+            $wpdb->query(
+                "DELETE FROM {$wpdb->prefix}framt_files WHERE project_id IN ($project_ids)"
+            );
+
+            // Delete projects
+            $wpdb->query(
+                $wpdb->prepare(
+                    "DELETE FROM {$wpdb->prefix}framt_projects WHERE user_id = %d",
+                    $user_id
+                )
+            );
+        }
+
+        // Delete support messages and replies
+        $messages = $wpdb->get_col(
+            $wpdb->prepare(
+                "SELECT id FROM {$wpdb->prefix}framt_messages WHERE user_id = %d",
+                $user_id
+            )
+        );
+        if ( ! empty( $messages ) ) {
+            $message_ids = implode( ',', array_map( 'intval', $messages ) );
+            $wpdb->query( "DELETE FROM {$wpdb->prefix}framt_message_replies WHERE message_id IN ($message_ids)" );
+            $wpdb->query(
+                $wpdb->prepare(
+                    "DELETE FROM {$wpdb->prefix}framt_messages WHERE user_id = %d",
+                    $user_id
+                )
+            );
+        }
+
+        // Delete user meta (profile data, checklist progress, etc.)
+        $wpdb->query(
+            $wpdb->prepare(
+                "DELETE FROM {$wpdb->usermeta} WHERE user_id = %d AND meta_key LIKE 'fra_%%'",
+                $user_id
+            )
+        );
+
+        // Log out the user before deletion
+        wp_logout();
+
+        // Finally, delete the WordPress user
+        require_once ABSPATH . 'wp-admin/includes/user.php';
+        $deleted = wp_delete_user( $user_id );
+
+        if ( ! $deleted ) {
+            return new WP_Error(
+                'rest_delete_failed',
+                'Failed to delete account. Please contact support.',
+                array( 'status' => 500 )
+            );
+        }
+
+        return rest_ensure_response(
+            array(
+                'deleted' => true,
+                'message' => 'Your account has been permanently deleted.',
+            )
+        );
     }
 
     /**

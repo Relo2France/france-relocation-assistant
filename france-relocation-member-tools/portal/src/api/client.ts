@@ -246,6 +246,12 @@ export const userApi = {
       method: 'PUT',
       body: JSON.stringify(data),
     }),
+
+  deleteAccount: (confirmation: string) =>
+    apiFetch<{ deleted: boolean; message: string }>('/account/delete', {
+      method: 'POST',
+      body: JSON.stringify({ confirmation }),
+    }),
 };
 
 // Files API
