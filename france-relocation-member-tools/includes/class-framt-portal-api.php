@@ -713,6 +713,109 @@ class FRAMT_Portal_API {
                 'permission_callback' => array( $this, 'check_member_permission' ),
             )
         );
+
+        // ============================================
+        // France Research Tool endpoints
+        // ============================================
+        register_rest_route(
+            self::NAMESPACE,
+            '/research/regions',
+            array(
+                'methods'             => 'GET',
+                'callback'            => array( $this, 'get_france_regions' ),
+                'permission_callback' => array( $this, 'check_member_permission' ),
+            )
+        );
+
+        register_rest_route(
+            self::NAMESPACE,
+            '/research/regions/(?P<code>[0-9A-Za-z]+)',
+            array(
+                'methods'             => 'GET',
+                'callback'            => array( $this, 'get_france_region' ),
+                'permission_callback' => array( $this, 'check_member_permission' ),
+            )
+        );
+
+        register_rest_route(
+            self::NAMESPACE,
+            '/research/departments',
+            array(
+                'methods'             => 'GET',
+                'callback'            => array( $this, 'get_france_departments' ),
+                'permission_callback' => array( $this, 'check_member_permission' ),
+            )
+        );
+
+        register_rest_route(
+            self::NAMESPACE,
+            '/research/departments/(?P<code>[0-9A-Za-z]+)',
+            array(
+                'methods'             => 'GET',
+                'callback'            => array( $this, 'get_france_department' ),
+                'permission_callback' => array( $this, 'check_member_permission' ),
+            )
+        );
+
+        register_rest_route(
+            self::NAMESPACE,
+            '/research/communes/search',
+            array(
+                'methods'             => 'GET',
+                'callback'            => array( $this, 'search_communes' ),
+                'permission_callback' => array( $this, 'check_member_permission' ),
+            )
+        );
+
+        register_rest_route(
+            self::NAMESPACE,
+            '/research/report/generate',
+            array(
+                'methods'             => 'POST',
+                'callback'            => array( $this, 'generate_research_report' ),
+                'permission_callback' => array( $this, 'check_member_permission' ),
+            )
+        );
+
+        register_rest_route(
+            self::NAMESPACE,
+            '/research/report/(?P<id>\d+)',
+            array(
+                'methods'             => 'GET',
+                'callback'            => array( $this, 'get_research_report' ),
+                'permission_callback' => array( $this, 'check_member_permission' ),
+            )
+        );
+
+        register_rest_route(
+            self::NAMESPACE,
+            '/research/report/(?P<id>\d+)/download',
+            array(
+                'methods'             => 'GET',
+                'callback'            => array( $this, 'download_research_report' ),
+                'permission_callback' => array( $this, 'check_member_permission' ),
+            )
+        );
+
+        register_rest_route(
+            self::NAMESPACE,
+            '/research/report/(?P<id>\d+)/save',
+            array(
+                'methods'             => 'POST',
+                'callback'            => array( $this, 'save_report_to_documents' ),
+                'permission_callback' => array( $this, 'check_member_permission' ),
+            )
+        );
+
+        register_rest_route(
+            self::NAMESPACE,
+            '/research/saved',
+            array(
+                'methods'             => 'GET',
+                'callback'            => array( $this, 'get_saved_research_reports' ),
+                'permission_callback' => array( $this, 'check_member_permission' ),
+            )
+        );
     }
 
     /**
@@ -5434,5 +5537,676 @@ Keep responses concise but informative. Use **bold** for important terms. If men
                 'task_type'   => 'task',
             ),
         );
+    }
+
+    // ============================================
+    // France Research Tool Methods
+    // ============================================
+
+    /**
+     * Get all France regions
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response
+     */
+    public function get_france_regions( $request ) {
+        $regions = $this->get_regions_data();
+
+        return rest_ensure_response( array(
+            'success' => true,
+            'regions' => $regions,
+        ) );
+    }
+
+    /**
+     * Get a single France region with its departments
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response|WP_Error
+     */
+    public function get_france_region( $request ) {
+        $code = sanitize_text_field( $request->get_param( 'code' ) );
+        $regions = $this->get_regions_data();
+
+        $region = null;
+        foreach ( $regions as $r ) {
+            if ( $r['code'] === $code ) {
+                $region = $r;
+                break;
+            }
+        }
+
+        if ( ! $region ) {
+            return new WP_Error(
+                'rest_region_not_found',
+                'Region not found.',
+                array( 'status' => 404 )
+            );
+        }
+
+        // Get departments for this region
+        $all_departments = $this->get_departments_data();
+        $departments = array_filter( $all_departments, function( $d ) use ( $code ) {
+            return $d['region_code'] === $code;
+        } );
+
+        $region['departments_data'] = array_values( $departments );
+
+        return rest_ensure_response( array(
+            'success' => true,
+            'region'  => $region,
+        ) );
+    }
+
+    /**
+     * Get all France departments
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response
+     */
+    public function get_france_departments( $request ) {
+        $region_code = $request->get_param( 'region' );
+        $departments = $this->get_departments_data();
+
+        if ( $region_code ) {
+            $region_code = sanitize_text_field( $region_code );
+            $departments = array_filter( $departments, function( $d ) use ( $region_code ) {
+                return $d['region_code'] === $region_code;
+            } );
+            $departments = array_values( $departments );
+        }
+
+        return rest_ensure_response( array(
+            'success'     => true,
+            'departments' => $departments,
+        ) );
+    }
+
+    /**
+     * Get a single France department
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response|WP_Error
+     */
+    public function get_france_department( $request ) {
+        $code = sanitize_text_field( $request->get_param( 'code' ) );
+        $departments = $this->get_departments_data();
+
+        $department = null;
+        foreach ( $departments as $d ) {
+            if ( $d['code'] === $code ) {
+                $department = $d;
+                break;
+            }
+        }
+
+        if ( ! $department ) {
+            return new WP_Error(
+                'rest_department_not_found',
+                'Department not found.',
+                array( 'status' => 404 )
+            );
+        }
+
+        return rest_ensure_response( array(
+            'success'    => true,
+            'department' => $department,
+        ) );
+    }
+
+    /**
+     * Search communes by name or postal code
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response
+     */
+    public function search_communes( $request ) {
+        $query = sanitize_text_field( $request->get_param( 'q' ) );
+        $department_code = sanitize_text_field( $request->get_param( 'department' ) );
+        $limit = absint( $request->get_param( 'limit' ) ) ?: 20;
+
+        if ( strlen( $query ) < 2 ) {
+            return rest_ensure_response( array(
+                'success'  => true,
+                'communes' => array(),
+                'message'  => 'Search query must be at least 2 characters.',
+            ) );
+        }
+
+        $communes = $this->search_communes_data( $query, $department_code, $limit );
+
+        return rest_ensure_response( array(
+            'success'  => true,
+            'communes' => $communes,
+            'total'    => count( $communes ),
+        ) );
+    }
+
+    /**
+     * Generate a research report for a location
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response|WP_Error
+     */
+    public function generate_research_report( $request ) {
+        $location_type = sanitize_text_field( $request->get_param( 'location_type' ) );
+        $location_code = sanitize_text_field( $request->get_param( 'location_code' ) );
+        $save_to_docs  = (bool) $request->get_param( 'save_to_documents' );
+
+        if ( ! in_array( $location_type, array( 'region', 'department', 'commune' ), true ) ) {
+            return new WP_Error(
+                'invalid_location_type',
+                'Invalid location type. Must be region, department, or commune.',
+                array( 'status' => 400 )
+            );
+        }
+
+        $location_name = $this->get_location_name( $location_type, $location_code );
+        if ( ! $location_name ) {
+            return new WP_Error(
+                'location_not_found',
+                'Location not found.',
+                array( 'status' => 404 )
+            );
+        }
+
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'framt_research_reports';
+
+        $this->maybe_create_research_tables();
+
+        // Check for cached report
+        $cached_report = $wpdb->get_row(
+            $wpdb->prepare(
+                "SELECT * FROM {$table_name} WHERE location_type = %s AND location_code = %s ORDER BY version DESC LIMIT 1",
+                $location_type,
+                $location_code
+            ),
+            ARRAY_A
+        );
+
+        // Return cached if less than 30 days old
+        if ( $cached_report && strtotime( $cached_report['updated_at'] ) > strtotime( '-30 days' ) ) {
+            $report = $this->format_report_response( $cached_report );
+
+            $document_id = null;
+            if ( $save_to_docs ) {
+                $document_id = $this->save_report_link_to_documents( $cached_report['id'], get_current_user_id() );
+            }
+
+            return rest_ensure_response( array(
+                'success'            => true,
+                'report'             => $report,
+                'cached'             => true,
+                'saved_to_documents' => $save_to_docs,
+                'document_id'        => $document_id,
+            ) );
+        }
+
+        // Generate new report
+        $report_content = $this->generate_ai_report( $location_type, $location_code, $location_name );
+
+        if ( is_wp_error( $report_content ) ) {
+            return $report_content;
+        }
+
+        $report_data = array(
+            'location_type' => $location_type,
+            'location_code' => $location_code,
+            'location_name' => $location_name,
+            'content'       => wp_json_encode( $report_content ),
+            'version'       => $cached_report ? ( (int) $cached_report['version'] + 1 ) : 1,
+            'updated_at'    => current_time( 'mysql' ),
+        );
+
+        if ( $cached_report ) {
+            $wpdb->update( $table_name, $report_data, array( 'id' => $cached_report['id'] ) );
+            $report_id = $cached_report['id'];
+        } else {
+            $report_data['generated_at'] = current_time( 'mysql' );
+            $wpdb->insert( $table_name, $report_data );
+            $report_id = $wpdb->insert_id;
+        }
+
+        $report = $this->format_report_response( array_merge( $report_data, array( 'id' => $report_id ) ) );
+
+        $document_id = null;
+        if ( $save_to_docs ) {
+            $document_id = $this->save_report_link_to_documents( $report_id, get_current_user_id() );
+        }
+
+        return rest_ensure_response( array(
+            'success'            => true,
+            'report'             => $report,
+            'cached'             => false,
+            'saved_to_documents' => $save_to_docs,
+            'document_id'        => $document_id,
+        ) );
+    }
+
+    /**
+     * Get a specific research report
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response|WP_Error
+     */
+    public function get_research_report( $request ) {
+        $report_id = absint( $request->get_param( 'id' ) );
+
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'framt_research_reports';
+
+        $report = $wpdb->get_row(
+            $wpdb->prepare( "SELECT * FROM {$table_name} WHERE id = %d", $report_id ),
+            ARRAY_A
+        );
+
+        if ( ! $report ) {
+            return new WP_Error( 'report_not_found', 'Research report not found.', array( 'status' => 404 ) );
+        }
+
+        return rest_ensure_response( array(
+            'success' => true,
+            'report'  => $this->format_report_response( $report ),
+        ) );
+    }
+
+    /**
+     * Download a research report as PDF
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response|WP_Error
+     */
+    public function download_research_report( $request ) {
+        $report_id = absint( $request->get_param( 'id' ) );
+
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'framt_research_reports';
+
+        $report = $wpdb->get_row(
+            $wpdb->prepare( "SELECT * FROM {$table_name} WHERE id = %d", $report_id ),
+            ARRAY_A
+        );
+
+        if ( ! $report ) {
+            return new WP_Error( 'report_not_found', 'Research report not found.', array( 'status' => 404 ) );
+        }
+
+        $pdf_url = $this->generate_report_pdf( $report );
+
+        return rest_ensure_response( array(
+            'success'      => true,
+            'download_url' => $pdf_url,
+            'filename'     => sanitize_file_name( $report['location_name'] . '-research-report.pdf' ),
+        ) );
+    }
+
+    /**
+     * Save a research report link to user's documents
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response|WP_Error
+     */
+    public function save_report_to_documents( $request ) {
+        $report_id = absint( $request->get_param( 'id' ) );
+        $user_id   = get_current_user_id();
+
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'framt_research_reports';
+
+        $report = $wpdb->get_row(
+            $wpdb->prepare( "SELECT * FROM {$table_name} WHERE id = %d", $report_id ),
+            ARRAY_A
+        );
+
+        if ( ! $report ) {
+            return new WP_Error( 'report_not_found', 'Research report not found.', array( 'status' => 404 ) );
+        }
+
+        $document_id = $this->save_report_link_to_documents( $report_id, $user_id );
+
+        if ( ! $document_id ) {
+            return new WP_Error( 'save_failed', 'Failed to save report to documents.', array( 'status' => 500 ) );
+        }
+
+        return rest_ensure_response( array(
+            'success'     => true,
+            'document_id' => $document_id,
+            'message'     => 'Report saved to your documents.',
+        ) );
+    }
+
+    /**
+     * Get user's saved research reports
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response
+     */
+    public function get_saved_research_reports( $request ) {
+        $user_id = get_current_user_id();
+
+        global $wpdb;
+        $links_table   = $wpdb->prefix . 'framt_research_report_links';
+        $reports_table = $wpdb->prefix . 'framt_research_reports';
+
+        $this->maybe_create_research_tables();
+
+        $saved = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT l.id, l.report_id, l.saved_at, r.location_type, r.location_code, r.location_name, r.updated_at as report_updated_at
+                 FROM {$links_table} l
+                 JOIN {$reports_table} r ON l.report_id = r.id
+                 WHERE l.user_id = %d
+                 ORDER BY l.saved_at DESC",
+                $user_id
+            ),
+            ARRAY_A
+        );
+
+        return rest_ensure_response( array(
+            'success' => true,
+            'saved'   => $saved ?: array(),
+        ) );
+    }
+
+    /**
+     * Get regions data
+     *
+     * @return array
+     */
+    private function get_regions_data() {
+        return array(
+            array( 'code' => '84', 'name' => 'Auvergne-Rhône-Alpes', 'capital' => 'Lyon', 'population' => 8078652, 'area_km2' => 69711, 'climate' => 'continental', 'description' => 'Features the French Alps, the Rhône Valley, and historic Lyon.' ),
+            array( 'code' => '27', 'name' => 'Bourgogne-Franche-Comté', 'capital' => 'Dijon', 'population' => 2805580, 'area_km2' => 47784, 'climate' => 'continental', 'description' => 'Famous for Burgundy wines and medieval heritage.' ),
+            array( 'code' => '53', 'name' => 'Bretagne', 'capital' => 'Rennes', 'population' => 3373835, 'area_km2' => 27208, 'climate' => 'oceanic', 'description' => 'Celtic peninsula with dramatic coastlines.' ),
+            array( 'code' => '24', 'name' => 'Centre-Val de Loire', 'capital' => 'Orléans', 'population' => 2576252, 'area_km2' => 39151, 'climate' => 'semi-oceanic', 'description' => 'Loire Valley châteaux and vineyards.' ),
+            array( 'code' => '94', 'name' => 'Corse', 'capital' => 'Ajaccio', 'population' => 344679, 'area_km2' => 8680, 'climate' => 'mediterranean', 'description' => 'The Island of Beauty with mountains and beaches.' ),
+            array( 'code' => '44', 'name' => 'Grand Est', 'capital' => 'Strasbourg', 'population' => 5561287, 'area_km2' => 57433, 'climate' => 'continental', 'description' => 'Blends French and Germanic influences.' ),
+            array( 'code' => '32', 'name' => 'Hauts-de-France', 'capital' => 'Lille', 'population' => 6009976, 'area_km2' => 31813, 'climate' => 'oceanic', 'description' => 'Northern France with Flemish heritage.' ),
+            array( 'code' => '11', 'name' => 'Île-de-France', 'capital' => 'Paris', 'population' => 12271794, 'area_km2' => 12012, 'climate' => 'semi-oceanic', 'description' => 'The Paris region - heart of France.' ),
+            array( 'code' => '28', 'name' => 'Normandie', 'capital' => 'Rouen', 'population' => 3327477, 'area_km2' => 29907, 'climate' => 'oceanic', 'description' => 'D-Day beaches and medieval abbeys.' ),
+            array( 'code' => '75', 'name' => 'Nouvelle-Aquitaine', 'capital' => 'Bordeaux', 'population' => 6033952, 'area_km2' => 84036, 'climate' => 'oceanic', 'description' => 'Largest region with Bordeaux wines and beaches.' ),
+            array( 'code' => '76', 'name' => 'Occitanie', 'capital' => 'Toulouse', 'population' => 5973969, 'area_km2' => 72724, 'climate' => 'mediterranean', 'description' => 'From the Pyrenees to the Mediterranean.' ),
+            array( 'code' => '52', 'name' => 'Pays de la Loire', 'capital' => 'Nantes', 'population' => 3838614, 'area_km2' => 32082, 'climate' => 'oceanic', 'description' => 'Atlantic coast with dynamic Nantes.' ),
+            array( 'code' => '93', 'name' => "Provence-Alpes-Côte d'Azur", 'capital' => 'Marseille', 'population' => 5081101, 'area_km2' => 31400, 'climate' => 'mediterranean', 'description' => 'The French Riviera and Provence lavender.' ),
+        );
+    }
+
+    /**
+     * Get departments data (subset for common areas)
+     *
+     * @return array
+     */
+    private function get_departments_data() {
+        return array(
+            array( 'code' => '75', 'name' => 'Paris', 'region_code' => '11', 'region_name' => 'Île-de-France', 'prefecture' => 'Paris', 'population' => 2145906, 'area_km2' => 105, 'major_cities' => array( 'Paris' ) ),
+            array( 'code' => '92', 'name' => 'Hauts-de-Seine', 'region_code' => '11', 'region_name' => 'Île-de-France', 'prefecture' => 'Nanterre', 'population' => 1624357, 'area_km2' => 176, 'major_cities' => array( 'Boulogne-Billancourt', 'Nanterre' ) ),
+            array( 'code' => '33', 'name' => 'Gironde', 'region_code' => '75', 'region_name' => 'Nouvelle-Aquitaine', 'prefecture' => 'Bordeaux', 'population' => 1623749, 'area_km2' => 10000, 'major_cities' => array( 'Bordeaux', 'Mérignac', 'Pessac' ) ),
+            array( 'code' => '24', 'name' => 'Dordogne', 'region_code' => '75', 'region_name' => 'Nouvelle-Aquitaine', 'prefecture' => 'Périgueux', 'population' => 413223, 'area_km2' => 9060, 'major_cities' => array( 'Périgueux', 'Bergerac', 'Sarlat-la-Canéda' ) ),
+            array( 'code' => '06', 'name' => 'Alpes-Maritimes', 'region_code' => '93', 'region_name' => "Provence-Alpes-Côte d'Azur", 'prefecture' => 'Nice', 'population' => 1083310, 'area_km2' => 4299, 'major_cities' => array( 'Nice', 'Antibes', 'Cannes' ) ),
+            array( 'code' => '13', 'name' => 'Bouches-du-Rhône', 'region_code' => '93', 'region_name' => "Provence-Alpes-Côte d'Azur", 'prefecture' => 'Marseille', 'population' => 2043110, 'area_km2' => 5087, 'major_cities' => array( 'Marseille', 'Aix-en-Provence' ) ),
+            array( 'code' => '31', 'name' => 'Haute-Garonne', 'region_code' => '76', 'region_name' => 'Occitanie', 'prefecture' => 'Toulouse', 'population' => 1415757, 'area_km2' => 6309, 'major_cities' => array( 'Toulouse', 'Colomiers' ) ),
+            array( 'code' => '34', 'name' => 'Hérault', 'region_code' => '76', 'region_name' => 'Occitanie', 'prefecture' => 'Montpellier', 'population' => 1176145, 'area_km2' => 6101, 'major_cities' => array( 'Montpellier', 'Béziers', 'Sète' ) ),
+            array( 'code' => '69', 'name' => 'Rhône', 'region_code' => '84', 'region_name' => 'Auvergne-Rhône-Alpes', 'prefecture' => 'Lyon', 'population' => 1876051, 'area_km2' => 3249, 'major_cities' => array( 'Lyon', 'Villeurbanne' ) ),
+            array( 'code' => '74', 'name' => 'Haute-Savoie', 'region_code' => '84', 'region_name' => 'Auvergne-Rhône-Alpes', 'prefecture' => 'Annecy', 'population' => 826105, 'area_km2' => 4388, 'major_cities' => array( 'Annecy', 'Annemasse' ) ),
+            array( 'code' => '35', 'name' => 'Ille-et-Vilaine', 'region_code' => '53', 'region_name' => 'Bretagne', 'prefecture' => 'Rennes', 'population' => 1082052, 'area_km2' => 6775, 'major_cities' => array( 'Rennes', 'Saint-Malo' ) ),
+            array( 'code' => '44', 'name' => 'Loire-Atlantique', 'region_code' => '52', 'region_name' => 'Pays de la Loire', 'prefecture' => 'Nantes', 'population' => 1429272, 'area_km2' => 6815, 'major_cities' => array( 'Nantes', 'Saint-Nazaire' ) ),
+            array( 'code' => '67', 'name' => 'Bas-Rhin', 'region_code' => '44', 'region_name' => 'Grand Est', 'prefecture' => 'Strasbourg', 'population' => 1140939, 'area_km2' => 4755, 'major_cities' => array( 'Strasbourg', 'Haguenau' ) ),
+            array( 'code' => '59', 'name' => 'Nord', 'region_code' => '32', 'region_name' => 'Hauts-de-France', 'prefecture' => 'Lille', 'population' => 2608346, 'area_km2' => 5743, 'major_cities' => array( 'Lille', 'Roubaix', 'Tourcoing' ) ),
+        );
+    }
+
+    /**
+     * Search communes data
+     *
+     * @param string $query Search query.
+     * @param string $department_code Optional department filter.
+     * @param int    $limit Max results.
+     * @return array
+     */
+    private function search_communes_data( $query, $department_code = '', $limit = 20 ) {
+        $communes = array(
+            array( 'code' => '33063', 'name' => 'Bordeaux', 'postal_codes' => array( '33000' ), 'department_code' => '33', 'department_name' => 'Gironde', 'region_code' => '75', 'region_name' => 'Nouvelle-Aquitaine', 'population' => 260958, 'type' => 'city' ),
+            array( 'code' => '75056', 'name' => 'Paris', 'postal_codes' => array( '75001' ), 'department_code' => '75', 'department_name' => 'Paris', 'region_code' => '11', 'region_name' => 'Île-de-France', 'population' => 2145906, 'type' => 'city' ),
+            array( 'code' => '13055', 'name' => 'Marseille', 'postal_codes' => array( '13001' ), 'department_code' => '13', 'department_name' => 'Bouches-du-Rhône', 'region_code' => '93', 'region_name' => "Provence-Alpes-Côte d'Azur", 'population' => 870731, 'type' => 'city' ),
+            array( 'code' => '69123', 'name' => 'Lyon', 'postal_codes' => array( '69001' ), 'department_code' => '69', 'department_name' => 'Rhône', 'region_code' => '84', 'region_name' => 'Auvergne-Rhône-Alpes', 'population' => 522969, 'type' => 'city' ),
+            array( 'code' => '31555', 'name' => 'Toulouse', 'postal_codes' => array( '31000' ), 'department_code' => '31', 'department_name' => 'Haute-Garonne', 'region_code' => '76', 'region_name' => 'Occitanie', 'population' => 493465, 'type' => 'city' ),
+            array( 'code' => '06088', 'name' => 'Nice', 'postal_codes' => array( '06000' ), 'department_code' => '06', 'department_name' => 'Alpes-Maritimes', 'region_code' => '93', 'region_name' => "Provence-Alpes-Côte d'Azur", 'population' => 342669, 'type' => 'city' ),
+            array( 'code' => '44109', 'name' => 'Nantes', 'postal_codes' => array( '44000' ), 'department_code' => '44', 'department_name' => 'Loire-Atlantique', 'region_code' => '52', 'region_name' => 'Pays de la Loire', 'population' => 320732, 'type' => 'city' ),
+            array( 'code' => '67482', 'name' => 'Strasbourg', 'postal_codes' => array( '67000' ), 'department_code' => '67', 'department_name' => 'Bas-Rhin', 'region_code' => '44', 'region_name' => 'Grand Est', 'population' => 287228, 'type' => 'city' ),
+            array( 'code' => '24322', 'name' => 'Monsac', 'postal_codes' => array( '24440' ), 'department_code' => '24', 'department_name' => 'Dordogne', 'region_code' => '75', 'region_name' => 'Nouvelle-Aquitaine', 'population' => 385, 'type' => 'village' ),
+        );
+
+        $query_lower = strtolower( $query );
+        $results = array_filter( $communes, function( $c ) use ( $query_lower, $department_code ) {
+            $name_match = strpos( strtolower( $c['name'] ), $query_lower ) !== false;
+            if ( $department_code && $c['department_code'] !== $department_code ) {
+                return false;
+            }
+            return $name_match;
+        } );
+
+        return array_slice( array_values( $results ), 0, $limit );
+    }
+
+    /**
+     * Get location name by type and code
+     *
+     * @param string $type Location type.
+     * @param string $code Location code.
+     * @return string|null
+     */
+    private function get_location_name( $type, $code ) {
+        if ( 'region' === $type ) {
+            foreach ( $this->get_regions_data() as $r ) {
+                if ( $r['code'] === $code ) {
+                    return $r['name'];
+                }
+            }
+        } elseif ( 'department' === $type ) {
+            foreach ( $this->get_departments_data() as $d ) {
+                if ( $d['code'] === $code ) {
+                    return $d['name'];
+                }
+            }
+        } elseif ( 'commune' === $type ) {
+            foreach ( $this->search_communes_data( '', '', 100 ) as $c ) {
+                if ( $c['code'] === $code ) {
+                    return $c['name'];
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Create research tables if they don't exist
+     */
+    private function maybe_create_research_tables() {
+        global $wpdb;
+        $charset_collate = $wpdb->get_charset_collate();
+        $reports_table = $wpdb->prefix . 'framt_research_reports';
+        $links_table   = $wpdb->prefix . 'framt_research_report_links';
+
+        if ( $wpdb->get_var( "SHOW TABLES LIKE '{$reports_table}'" ) !== $reports_table ) {
+            $sql = "CREATE TABLE {$reports_table} (
+                id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+                location_type varchar(20) NOT NULL,
+                location_code varchar(10) NOT NULL,
+                location_name varchar(255) NOT NULL,
+                content longtext NOT NULL,
+                version int(11) NOT NULL DEFAULT 1,
+                generated_at datetime NOT NULL,
+                updated_at datetime NOT NULL,
+                PRIMARY KEY (id),
+                UNIQUE KEY location_idx (location_type, location_code)
+            ) {$charset_collate};";
+
+            require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+            dbDelta( $sql );
+        }
+
+        if ( $wpdb->get_var( "SHOW TABLES LIKE '{$links_table}'" ) !== $links_table ) {
+            $sql = "CREATE TABLE {$links_table} (
+                id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+                user_id bigint(20) unsigned NOT NULL,
+                report_id bigint(20) unsigned NOT NULL,
+                saved_at datetime NOT NULL,
+                PRIMARY KEY (id),
+                UNIQUE KEY user_report_idx (user_id, report_id)
+            ) {$charset_collate};";
+
+            require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+            dbDelta( $sql );
+        }
+    }
+
+    /**
+     * Format report response
+     *
+     * @param array $report Raw report data.
+     * @return array
+     */
+    private function format_report_response( $report ) {
+        $content = is_string( $report['content'] ) ? json_decode( $report['content'], true ) : $report['content'];
+        return array(
+            'id'            => (int) $report['id'],
+            'location_type' => $report['location_type'],
+            'location_code' => $report['location_code'],
+            'location_name' => $report['location_name'],
+            'content'       => $content,
+            'version'       => (int) ( $report['version'] ?? 1 ),
+            'generated_at'  => $report['generated_at'] ?? $report['updated_at'],
+            'updated_at'    => $report['updated_at'],
+            'download_url'  => rest_url( self::NAMESPACE . '/research/report/' . $report['id'] . '/download' ),
+        );
+    }
+
+    /**
+     * Generate AI report content
+     *
+     * @param string $type Location type.
+     * @param string $code Location code.
+     * @param string $name Location name.
+     * @return array|WP_Error
+     */
+    private function generate_ai_report( $type, $code, $name ) {
+        $ai_api_key = get_option( 'fra_openai_api_key' );
+
+        if ( empty( $ai_api_key ) ) {
+            return $this->generate_placeholder_report( $type, $code, $name );
+        }
+
+        $prompt = $this->build_report_prompt( $type, $code, $name );
+
+        $response = wp_remote_post(
+            'https://api.openai.com/v1/chat/completions',
+            array(
+                'timeout' => 120,
+                'headers' => array(
+                    'Authorization' => 'Bearer ' . $ai_api_key,
+                    'Content-Type'  => 'application/json',
+                ),
+                'body' => wp_json_encode( array(
+                    'model'       => 'gpt-4',
+                    'messages'    => array(
+                        array( 'role' => 'system', 'content' => 'You are an expert on French regions and relocation. Generate comprehensive reports with historical context. Return JSON format.' ),
+                        array( 'role' => 'user', 'content' => $prompt ),
+                    ),
+                    'temperature' => 0.7,
+                    'max_tokens'  => 4000,
+                ) ),
+            )
+        );
+
+        if ( is_wp_error( $response ) ) {
+            return $this->generate_placeholder_report( $type, $code, $name );
+        }
+
+        $body = json_decode( wp_remote_retrieve_body( $response ), true );
+        if ( ! isset( $body['choices'][0]['message']['content'] ) ) {
+            return $this->generate_placeholder_report( $type, $code, $name );
+        }
+
+        $content = json_decode( $body['choices'][0]['message']['content'], true );
+        return $content ?: $this->generate_placeholder_report( $type, $code, $name );
+    }
+
+    /**
+     * Build AI prompt for report generation
+     *
+     * @param string $type Location type.
+     * @param string $code Location code.
+     * @param string $name Location name.
+     * @return string
+     */
+    private function build_report_prompt( $type, $code, $name ) {
+        $type_label = ucfirst( $type );
+        return "Generate a relocation research report for {$name} ({$type_label} in France). Include: Overview, History, Climate, Cost of Living, Healthcare, Transportation, and Daily Life. Return as JSON with title, subtitle, generated_date, and sections array.";
+    }
+
+    /**
+     * Generate placeholder report when AI unavailable
+     *
+     * @param string $type Location type.
+     * @param string $code Location code.
+     * @param string $name Location name.
+     * @return array
+     */
+    private function generate_placeholder_report( $type, $code, $name ) {
+        return array(
+            'title'          => "{$name} Relocation Guide",
+            'subtitle'       => "Guide for relocating to {$name}, France",
+            'generated_date' => gmdate( 'Y-m-d' ),
+            'sections'       => array(
+                array( 'id' => 'overview', 'title' => 'Overview', 'content' => "Welcome to {$name}. This area offers a wonderful blend of French culture, history, and modern amenities." ),
+                array( 'id' => 'history', 'title' => 'History', 'content' => "{$name} has a rich history dating back centuries, shaped by various cultural influences from ancient times to the present." ),
+                array( 'id' => 'climate', 'title' => 'Climate', 'content' => "The climate varies by season with warm summers and mild to cool winters typical of the region." ),
+                array( 'id' => 'cost_of_living', 'title' => 'Cost of Living', 'content' => "Housing, food, and daily expenses should be considered when planning your relocation budget." ),
+                array( 'id' => 'healthcare', 'title' => 'Healthcare', 'content' => "France has an excellent healthcare system with good access to hospitals and clinics in this area." ),
+                array( 'id' => 'transport', 'title' => 'Transportation', 'content' => "Good transportation infrastructure including rail, bus, and road networks connect this area to other parts of France." ),
+                array( 'id' => 'lifestyle', 'title' => 'Daily Life', 'content' => "Life here offers a wonderful blend of French culture with markets, restaurants, and community activities." ),
+            ),
+        );
+    }
+
+    /**
+     * Save report link to user's documents
+     *
+     * @param int $report_id Report ID.
+     * @param int $user_id User ID.
+     * @return int|null
+     */
+    private function save_report_link_to_documents( $report_id, $user_id ) {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'framt_research_report_links';
+
+        $existing = $wpdb->get_var( $wpdb->prepare(
+            "SELECT id FROM {$table_name} WHERE user_id = %d AND report_id = %d",
+            $user_id, $report_id
+        ) );
+
+        if ( $existing ) {
+            $wpdb->update( $table_name, array( 'saved_at' => current_time( 'mysql' ) ), array( 'id' => $existing ) );
+            return (int) $existing;
+        }
+
+        $result = $wpdb->insert( $table_name, array(
+            'user_id'   => $user_id,
+            'report_id' => $report_id,
+            'saved_at'  => current_time( 'mysql' ),
+        ) );
+
+        return $result ? $wpdb->insert_id : null;
+    }
+
+    /**
+     * Generate PDF for report (placeholder)
+     *
+     * @param array $report Report data.
+     * @return string PDF URL.
+     */
+    private function generate_report_pdf( $report ) {
+        return rest_url( self::NAMESPACE . '/research/report/' . $report['id'] . '/pdf' );
     }
 }
