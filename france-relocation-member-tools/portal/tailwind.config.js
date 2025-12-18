@@ -7,25 +7,38 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Match LaunchBay's color scheme
+        // Primary color - uses CSS variable from portal settings
         primary: {
           50: '#f0fdf4',
           100: '#dcfce7',
           200: '#bbf7d0',
           300: '#86efac',
           400: '#4ade80',
-          500: '#22c55e', // Main green
-          600: '#16a34a',
+          500: 'var(--portal-primary, #22c55e)', // Main - from portal settings
+          600: 'var(--portal-primary-dark, #16a34a)',
           700: '#15803d',
           800: '#166534',
           900: '#14532d',
         },
+        // Secondary color - uses CSS variable from portal settings
+        secondary: {
+          500: 'var(--portal-secondary, #3b82f6)',
+        },
+        // Accent color - uses CSS variable from portal settings
+        accent: {
+          500: 'var(--portal-accent, #f59e0b)',
+        },
+        // Sidebar colors - use CSS variables from portal settings
         sidebar: {
-          bg: '#0f172a',      // Dark navy
-          hover: '#1e293b',
-          active: '#334155',
-          text: '#94a3b8',
-          textActive: '#f8fafc',
+          bg: 'var(--portal-sidebar-bg, #1f2937)',
+          hover: 'var(--portal-sidebar-hover, #374151)',
+          active: 'var(--portal-sidebar-active, #4b5563)',
+          text: 'var(--portal-sidebar-text, #ffffff)',
+          textActive: 'var(--portal-sidebar-text-active, #ffffff)',
+        },
+        // Header background
+        header: {
+          bg: 'var(--portal-header-bg, #ffffff)',
         },
         // Status colors
         status: {

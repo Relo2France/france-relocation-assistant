@@ -82,6 +82,49 @@ $defaults = array(
 
 $settings = wp_parse_args( $portal_settings, $defaults );
 
+// Helper function to lighten a hex color
+if ( ! function_exists( 'framt_lighten_color' ) ) {
+    function framt_lighten_color( $hex, $percent ) {
+        $hex = ltrim( $hex, '#' );
+        if ( strlen( $hex ) === 3 ) {
+            $hex = $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2];
+        }
+        $r = hexdec( substr( $hex, 0, 2 ) );
+        $g = hexdec( substr( $hex, 2, 2 ) );
+        $b = hexdec( substr( $hex, 4, 2 ) );
+
+        $r = min( 255, $r + ( 255 - $r ) * $percent / 100 );
+        $g = min( 255, $g + ( 255 - $g ) * $percent / 100 );
+        $b = min( 255, $b + ( 255 - $b ) * $percent / 100 );
+
+        return sprintf( '#%02x%02x%02x', $r, $g, $b );
+    }
+}
+
+// Helper function to darken a hex color
+if ( ! function_exists( 'framt_darken_color' ) ) {
+    function framt_darken_color( $hex, $percent ) {
+        $hex = ltrim( $hex, '#' );
+        if ( strlen( $hex ) === 3 ) {
+            $hex = $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2];
+        }
+        $r = hexdec( substr( $hex, 0, 2 ) );
+        $g = hexdec( substr( $hex, 2, 2 ) );
+        $b = hexdec( substr( $hex, 4, 2 ) );
+
+        $r = max( 0, $r * ( 100 - $percent ) / 100 );
+        $g = max( 0, $g * ( 100 - $percent ) / 100 );
+        $b = max( 0, $b * ( 100 - $percent ) / 100 );
+
+        return sprintf( '#%02x%02x%02x', $r, $g, $b );
+    }
+}
+
+// Calculate derived colors
+$sidebar_hover  = framt_lighten_color( $settings['sidebar_bg_color'], 10 );
+$sidebar_active = framt_lighten_color( $settings['sidebar_bg_color'], 20 );
+$primary_dark   = framt_darken_color( $settings['primary_color'], 15 );
+
 // Build menu config for React
 $menu_config = array();
 $menu_items = array(
@@ -159,10 +202,14 @@ $react_settings = array(
         /* Critical CSS for loading state */
         :root {
             --portal-primary: <?php echo esc_attr( $settings['primary_color'] ); ?>;
+            --portal-primary-dark: <?php echo esc_attr( $primary_dark ); ?>;
             --portal-secondary: <?php echo esc_attr( $settings['secondary_color'] ); ?>;
             --portal-accent: <?php echo esc_attr( $settings['accent_color'] ); ?>;
             --portal-sidebar-bg: <?php echo esc_attr( $settings['sidebar_bg_color'] ); ?>;
+            --portal-sidebar-hover: <?php echo esc_attr( $sidebar_hover ); ?>;
+            --portal-sidebar-active: <?php echo esc_attr( $sidebar_active ); ?>;
             --portal-sidebar-text: <?php echo esc_attr( $settings['sidebar_text_color'] ); ?>;
+            --portal-sidebar-text-active: <?php echo esc_attr( $settings['sidebar_text_color'] ); ?>;
             --portal-header-bg: <?php echo esc_attr( $settings['header_bg_color'] ); ?>;
         }
 

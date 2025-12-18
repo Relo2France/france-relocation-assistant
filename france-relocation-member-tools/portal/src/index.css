@@ -2,6 +2,20 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Default CSS variables - will be overridden by portal settings in production */
+:root {
+  --portal-primary: #22c55e;
+  --portal-primary-dark: #16a34a;
+  --portal-secondary: #3b82f6;
+  --portal-accent: #f59e0b;
+  --portal-sidebar-bg: #1f2937;
+  --portal-sidebar-hover: #374151;
+  --portal-sidebar-active: #4b5563;
+  --portal-sidebar-text: #ffffff;
+  --portal-sidebar-text-active: #ffffff;
+  --portal-header-bg: #ffffff;
+}
+
 /* Custom base styles */
 @layer base {
   html {
