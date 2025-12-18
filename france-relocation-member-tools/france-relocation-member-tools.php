@@ -14,7 +14,7 @@
  * Plugin Name: France Relocation Member Tools
  * Plugin URI:  https://relo2france.com
  * Description: Premium member features including the Members Portal with project management, task tracking, document generation, checklists, guides, and personalized relocation planning.
- * Version:     2.0.0
+ * Version:     2.1.0
  * Author:      Relo2France
  * Author URI:  https://relo2france.com
  * License:     GPL v2 or later
@@ -31,7 +31,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Plugin constants.
-define( 'FRAMT_VERSION', '2.0.0' );
+define( 'FRAMT_VERSION', '2.1.0' );
 define('FRAMT_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('FRAMT_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('FRAMT_PLUGIN_BASENAME', plugin_basename(__FILE__));

@@ -20,7 +20,7 @@
 | Component | Version | Main File |
 |-----------|---------|-----------|
 | Main Plugin | v2.9.83 | `france-relocation-assistant-plugin/france-relocation-assistant.php` |
-| Member Tools | v1.0.80 | `france-relocation-member-tools/france-relocation-member-tools.php` |
+| Member Tools | v2.1.0 | `france-relocation-member-tools/france-relocation-member-tools.php` |
 | Theme | v1.2.3 | `relo2france-theme/functions.php` |
 
 ---
@@ -152,6 +152,20 @@ User meta keys (prefix: `fra_`):
 ---
 
 ## Recent Development History
+
+### December 18, 2025 - Dynamic Task Generation System
+- **Auto-generated Tasks**: Tasks automatically created when user selects visa type
+  - 15 common tasks for all visa types (document prep, banking, housing, OFII validation, etc.)
+  - Visa-specific tasks: Visitor (3), Talent Passport (3), Employee (3), Entrepreneur (4), Student (5), Retiree (3)
+- **Conditional Task Generation**: Dynamic tasks based on profile fields
+  - Pet owners: 6 tasks (microchip, vaccinations, EU passport, pet-friendly housing, etc.)
+  - Applicants with spouse: 5 tasks (marriage cert apostille/translation, spouse visa, etc.)
+  - Families with children: 8 tasks (birth certs, school enrollment, vaccinations, CAF benefits, etc.)
+- **Project-Profile Sync**: Project visa_type automatically syncs when profile visa_type is updated
+- **Duplicate Prevention**: Tasks only created if they don't already exist (by title match)
+- **Portal Account Settings**: Combined Profile & Account into single "Portal Account" tab
+- **Self-Service Account Deletion**: Users can delete their own account with confirmation phrase
+- **Dashboard Visa Display**: Shows visa type from profile with link to set if empty
 
 ### December 18, 2025 - Outstanding Improvements Completed
 - **Component Refactoring**: Split ProfileView (1135→183 lines) and DocumentGenerator (963→402 lines)
