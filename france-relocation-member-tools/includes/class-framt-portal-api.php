@@ -797,6 +797,17 @@ class FRAMT_Portal_API {
             )
         );
 
+        // HTML report view (styled, printable)
+        register_rest_route(
+            self::NAMESPACE,
+            '/research/report/(?P<id>\d+)/html',
+            array(
+                'methods'             => 'GET',
+                'callback'            => array( $this, 'view_research_report_html' ),
+                'permission_callback' => array( $this, 'check_member_permission' ),
+            )
+        );
+
         register_rest_route(
             self::NAMESPACE,
             '/research/report/(?P<id>\d+)/save',
@@ -5913,6 +5924,500 @@ Keep responses concise but informative. Use **bold** for important terms. If men
 
         echo $pdf_content;
         exit;
+    }
+
+    /**
+     * View research report as styled HTML (printable to PDF)
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return void Outputs HTML directly
+     */
+    public function view_research_report_html( $request ) {
+        $report_id = absint( $request->get_param( 'id' ) );
+
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'framt_research_reports';
+
+        $report = $wpdb->get_row(
+            $wpdb->prepare( "SELECT * FROM {$table_name} WHERE id = %d", $report_id ),
+            ARRAY_A
+        );
+
+        if ( ! $report ) {
+            wp_die( 'Research report not found.', 'Report Not Found', array( 'response' => 404 ) );
+        }
+
+        // Parse the report content
+        $content = is_string( $report['content'] ) ? json_decode( $report['content'], true ) : $report['content'];
+
+        // Generate and output HTML
+        $html = $this->generate_report_html( $report, $content );
+
+        header( 'Content-Type: text/html; charset=utf-8' );
+        echo $html;
+        exit;
+    }
+
+    /**
+     * Generate styled HTML report matching relo2france template
+     *
+     * @param array $report Report database row.
+     * @param array $content Parsed report content.
+     * @return string Complete HTML document
+     */
+    private function generate_report_html( $report, $content ) {
+        $title = $content['header']['title'] ?? $report['location_name'];
+        $french_name = $content['header']['french_name'] ?? '';
+        $tagline = $content['header']['tagline'] ?? 'A Comprehensive Guide for Those Considering Relocation';
+        $key_stats = $content['header']['key_stats'] ?? array();
+        $sections = $content['sections'] ?? array();
+        $footer = $content['footer'] ?? array();
+        $location_type = ucfirst( $report['location_type'] );
+
+        // Format key stats for display
+        $stats_html = '';
+        $stat_items = array(
+            'area_km2' => array( 'label' => 'Area', 'format' => 'number', 'suffix' => ' km²' ),
+            'population' => array( 'label' => 'Population', 'format' => 'number', 'suffix' => '' ),
+            'gdp_per_capita' => array( 'label' => 'GDP per capita', 'format' => 'currency', 'suffix' => '' ),
+            'life_expectancy' => array( 'label' => 'Life Expectancy', 'format' => 'decimal', 'suffix' => ' years' ),
+            'median_income' => array( 'label' => 'Median Income', 'format' => 'currency', 'suffix' => '' ),
+            'unemployment_rate' => array( 'label' => 'Unemployment', 'format' => 'percent', 'suffix' => '%' ),
+            'density_per_km2' => array( 'label' => 'Density', 'format' => 'number', 'suffix' => '/km²' ),
+            'average_rent' => array( 'label' => 'Avg. Rent', 'format' => 'currency', 'suffix' => '/mo' ),
+        );
+
+        $displayed_stats = 0;
+        foreach ( $stat_items as $key => $config ) {
+            if ( isset( $key_stats[ $key ] ) && $key_stats[ $key ] && $displayed_stats < 4 ) {
+                $value = $key_stats[ $key ];
+                switch ( $config['format'] ) {
+                    case 'number':
+                        $formatted = number_format( $value );
+                        break;
+                    case 'currency':
+                        $formatted = '€' . number_format( $value );
+                        break;
+                    case 'decimal':
+                        $formatted = number_format( $value, 1 );
+                        break;
+                    case 'percent':
+                        $formatted = number_format( $value, 1 );
+                        break;
+                    default:
+                        $formatted = $value;
+                }
+                $stats_html .= '<div class="stat-item"><span class="stat-value">' . esc_html( $formatted . $config['suffix'] ) . '</span><span class="stat-label">' . esc_html( $config['label'] ) . '</span></div>';
+                $displayed_stats++;
+            }
+        }
+
+        // Build sections HTML
+        $sections_html = '';
+        foreach ( $sections as $section_id => $section ) {
+            $section_title = $section['title'] ?? ucwords( str_replace( '_', ' ', $section_id ) );
+            $section_content = $section['content'] ?? '';
+
+            $sections_html .= '<section class="report-section">';
+            $sections_html .= '<h2 class="section-title">' . esc_html( $section_title ) . '</h2>';
+
+            if ( $section_content ) {
+                $sections_html .= '<div class="section-content">' . wp_kses_post( nl2br( $section_content ) ) . '</div>';
+            }
+
+            // Handle items (key-value pairs)
+            if ( ! empty( $section['items'] ) ) {
+                $sections_html .= '<ul class="info-list">';
+                foreach ( $section['items'] as $item ) {
+                    $sections_html .= '<li><strong>' . esc_html( $item['label'] ) . ':</strong> ' . esc_html( $item['value'] ) . '</li>';
+                }
+                $sections_html .= '</ul>';
+            }
+
+            // Handle subsections
+            if ( ! empty( $section['subsections'] ) ) {
+                foreach ( $section['subsections'] as $sub_id => $subsection ) {
+                    $sub_title = $subsection['title'] ?? ucwords( str_replace( '_', ' ', $sub_id ) );
+                    $sub_content = $subsection['content'] ?? '';
+
+                    $sections_html .= '<div class="subsection">';
+                    $sections_html .= '<h3 class="subsection-title">' . esc_html( $sub_title ) . '</h3>';
+
+                    if ( $sub_content ) {
+                        $sections_html .= '<div class="subsection-content">' . wp_kses_post( nl2br( $sub_content ) ) . '</div>';
+                    }
+
+                    // Subsection items
+                    if ( ! empty( $subsection['items'] ) ) {
+                        $sections_html .= '<ul class="info-list">';
+                        foreach ( $subsection['items'] as $item ) {
+                            $sections_html .= '<li><strong>' . esc_html( $item['label'] ) . ':</strong> ' . esc_html( $item['value'] ) . '</li>';
+                        }
+                        $sections_html .= '</ul>';
+                    }
+
+                    $sections_html .= '</div>';
+                }
+            }
+
+            $sections_html .= '</section>';
+        }
+
+        // Build footer HTML
+        $data_sources = $footer['data_sources'] ?? array( 'INSEE', 'Eurostat', 'French government sources' );
+        $generated_date = $footer['generated_date'] ?? gmdate( 'F j, Y' );
+        $version = $footer['version'] ?? $report['version'] ?? 1;
+
+        // Logo URL - use site logo or placeholder
+        $logo_url = 'https://relo2france.com/wp-content/uploads/2024/01/relo2france-logo.png';
+
+        $html = '<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>' . esc_attr( $title ) . ' - Relocation Report | relo2france</title>
+    <style>
+        /* Reset and Base */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Georgia", "Times New Roman", serif;
+            font-size: 11pt;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+        }
+
+        /* Print container */
+        .report-container {
+            max-width: 850px;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+
+        /* Header */
+        .report-header {
+            background: linear-gradient(135deg, #1a365d 0%, #2c5282 100%);
+            color: white;
+            padding: 30px 40px;
+            position: relative;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+
+        .logo {
+            height: 50px;
+            width: auto;
+        }
+
+        .report-type-badge {
+            background: rgba(255,255,255,0.2);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .report-title {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 5px;
+            font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+        }
+
+        .french-name {
+            font-size: 18px;
+            font-style: italic;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+
+        .tagline {
+            font-size: 14px;
+            opacity: 0.85;
+            max-width: 500px;
+        }
+
+        /* Key Stats Bar */
+        .key-stats {
+            display: flex;
+            background: #0d9488;
+            padding: 20px 40px;
+        }
+
+        .stat-item {
+            flex: 1;
+            text-align: center;
+            color: white;
+            border-right: 1px solid rgba(255,255,255,0.3);
+        }
+
+        .stat-item:last-child {
+            border-right: none;
+        }
+
+        .stat-value {
+            display: block;
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 3px;
+        }
+
+        .stat-label {
+            display: block;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            opacity: 0.9;
+        }
+
+        /* Content */
+        .report-content {
+            padding: 40px;
+        }
+
+        /* Sections */
+        .report-section {
+            margin-bottom: 30px;
+            page-break-inside: avoid;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #b8860b;
+            border-bottom: 2px solid #b8860b;
+            padding-bottom: 8px;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-family: "Helvetica Neue", Arial, sans-serif;
+        }
+
+        .section-content {
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+
+        /* Subsections */
+        .subsection {
+            margin: 15px 0 20px 0;
+        }
+
+        .subsection-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #1a365d;
+            margin-bottom: 8px;
+            font-family: "Helvetica Neue", Arial, sans-serif;
+        }
+
+        .subsection-content {
+            margin-bottom: 10px;
+        }
+
+        /* Info Lists */
+        .info-list {
+            list-style: none;
+            padding: 0;
+            margin: 10px 0;
+        }
+
+        .info-list li {
+            padding: 5px 0 5px 20px;
+            position: relative;
+        }
+
+        .info-list li::before {
+            content: "•";
+            color: #b8860b;
+            font-weight: bold;
+            position: absolute;
+            left: 0;
+        }
+
+        /* Footer */
+        .report-footer {
+            background: #f8f9fa;
+            border-top: 1px solid #e5e7eb;
+            padding: 25px 40px;
+            font-size: 10px;
+            color: #666;
+        }
+
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .data-sources {
+            flex: 2;
+        }
+
+        .data-sources strong {
+            display: block;
+            margin-bottom: 3px;
+        }
+
+        .footer-meta {
+            text-align: right;
+            flex: 1;
+        }
+
+        .footer-meta p {
+            margin: 2px 0;
+        }
+
+        /* Print Button */
+        .print-banner {
+            background: #22c55e;
+            color: white;
+            text-align: center;
+            padding: 15px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .print-banner button {
+            background: white;
+            color: #22c55e;
+            border: none;
+            padding: 10px 30px;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-left: 15px;
+        }
+
+        .print-banner button:hover {
+            background: #f0fdf4;
+        }
+
+        /* Print Styles */
+        @media print {
+            body {
+                background: white;
+            }
+
+            .report-container {
+                box-shadow: none;
+                max-width: none;
+            }
+
+            .print-banner {
+                display: none;
+            }
+
+            .report-section {
+                page-break-inside: avoid;
+            }
+
+            .section-title {
+                page-break-after: avoid;
+            }
+
+            @page {
+                margin: 0.5in;
+                size: letter;
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .report-header {
+                padding: 20px;
+            }
+
+            .report-title {
+                font-size: 28px;
+            }
+
+            .key-stats {
+                flex-wrap: wrap;
+                padding: 15px 20px;
+            }
+
+            .stat-item {
+                flex: 0 0 50%;
+                padding: 10px 0;
+                border-right: none;
+            }
+
+            .report-content {
+                padding: 20px;
+            }
+
+            .footer-content {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .footer-meta {
+                text-align: left;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="print-banner">
+        <span>To save as PDF, use your browser\'s Print function (Ctrl+P / Cmd+P) and select "Save as PDF"</span>
+        <button onclick="window.print()">Print / Save PDF</button>
+    </div>
+
+    <div class="report-container">
+        <header class="report-header">
+            <div class="header-top">
+                <img src="' . esc_url( $logo_url ) . '" alt="relo2france" class="logo" onerror="this.style.display=\'none\'">
+                <span class="report-type-badge">' . esc_html( $location_type ) . ' Report</span>
+            </div>
+            <h1 class="report-title">' . esc_html( $title ) . '</h1>';
+
+        if ( $french_name ) {
+            $html .= '<p class="french-name">' . esc_html( $french_name ) . '</p>';
+        }
+
+        $html .= '<p class="tagline">' . esc_html( $tagline ) . '</p>
+        </header>';
+
+        if ( $stats_html ) {
+            $html .= '<div class="key-stats">' . $stats_html . '</div>';
+        }
+
+        $html .= '<main class="report-content">' . $sections_html . '</main>
+
+        <footer class="report-footer">
+            <div class="footer-content">
+                <div class="data-sources">
+                    <strong>Data Sources:</strong>
+                    ' . esc_html( implode( ' • ', $data_sources ) ) . '
+                </div>
+                <div class="footer-meta">
+                    <p><strong>Generated:</strong> ' . esc_html( $generated_date ) . '</p>
+                    <p><strong>Version:</strong> ' . esc_html( $version ) . '</p>
+                    <p>© ' . esc_html( gmdate( 'Y' ) ) . ' relo2france.com</p>
+                </div>
+            </div>
+        </footer>
+    </div>
+</body>
+</html>';
+
+        return $html;
     }
 
     /**
