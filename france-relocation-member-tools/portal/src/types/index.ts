@@ -99,12 +99,20 @@ export interface ActivityGroup {
 }
 
 // Dashboard types
+export interface WelcomeBanner {
+  title: string;
+  message: string;
+  bg_color: string;
+  border_color: string;
+}
+
 export interface DashboardData {
   project: Project;
   stages: StageProgress[];
   task_stats: TaskStats;
   profile_visa_type: string | null;
   profile_visa_label: string | null;
+  welcome_banner: WelcomeBanner | null;
   upcoming_tasks: Task[];
   overdue_tasks: Task[];
   recent_activity: Activity[];

@@ -712,11 +712,6 @@ function CategoryTopicsView({ category, onSelectTopic }: CategoryTopicsViewProps
                     </p>
                   )}
                 </div>
-                {topic.is_premium && (
-                  <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">
-                    Premium
-                  </span>
-                )}
               </div>
             </button>
           ))}

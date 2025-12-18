@@ -142,6 +142,7 @@ export function isAbortError(error: unknown): boolean {
 // Dashboard API
 export const dashboardApi = {
   get: () => apiFetch<DashboardData>('/dashboard'),
+  dismissWelcomeBanner: () => apiFetch<{ success: boolean }>('/welcome-banner/dismiss', { method: 'POST' }),
 };
 
 // Projects API

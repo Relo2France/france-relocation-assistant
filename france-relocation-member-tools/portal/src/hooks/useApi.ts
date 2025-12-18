@@ -28,6 +28,7 @@ import type {
   ChecklistItemStatus,
   DocumentGenerationRequest,
   ChatRequest,
+  DashboardData,
 } from '@/types';
 
 // Query keys
@@ -71,6 +72,21 @@ export function useDashboard() {
     queryKey: queryKeys.dashboard,
     queryFn: dashboardApi.get,
     staleTime: 30000, // 30 seconds
+  });
+}
+
+export function useDismissWelcomeBanner() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: dashboardApi.dismissWelcomeBanner,
+    onSuccess: () => {
+      // Update the dashboard data to remove the banner
+      queryClient.setQueryData(queryKeys.dashboard, (oldData: DashboardData | undefined) => {
+        if (!oldData) return oldData;
+        return { ...oldData, welcome_banner: null };
+      });
+    },
   });
 }
 
