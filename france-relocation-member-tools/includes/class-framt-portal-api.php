@@ -6099,6 +6099,18 @@ Keep responses concise but informative. Use **bold** for important terms. If men
 
         $prompt = $this->build_report_prompt( $type, $code, $name );
 
+        $system_message = <<<SYSTEM
+You are an expert on French geography, demographics, and relocation. You create comprehensive, data-driven reports for people considering relocating to France.
+
+Your reports must:
+1. Use accurate, current data from INSEE, Eurostat, and French government sources
+2. Include specific numbers, prices (in euros), and statistics
+3. Be practical and informative for someone planning to relocate
+4. Cover both positives and realistic challenges/considerations
+
+CRITICAL: You must respond with ONLY valid JSON. No markdown, no code blocks, no explanation text - just the JSON object.
+SYSTEM;
+
         $response = wp_remote_post(
             'https://api.openai.com/v1/chat/completions',
             array(
@@ -6108,13 +6120,14 @@ Keep responses concise but informative. Use **bold** for important terms. If men
                     'Content-Type'  => 'application/json',
                 ),
                 'body' => wp_json_encode( array(
-                    'model'       => 'gpt-4',
-                    'messages'    => array(
-                        array( 'role' => 'system', 'content' => 'You are an expert on French regions and relocation. Generate comprehensive reports with historical context. Return JSON format.' ),
+                    'model'           => 'gpt-4',
+                    'messages'        => array(
+                        array( 'role' => 'system', 'content' => $system_message ),
                         array( 'role' => 'user', 'content' => $prompt ),
                     ),
-                    'temperature' => 0.7,
-                    'max_tokens'  => 4000,
+                    'temperature'     => 0.7,
+                    'max_tokens'      => 6000,
+                    'response_format' => array( 'type' => 'json_object' ),
                 ) ),
             )
         );
@@ -6135,37 +6148,343 @@ Keep responses concise but informative. Use **bold** for important terms. If men
     /**
      * Build AI prompt for report generation
      *
-     * @param string $type Location type.
+     * Uses the relo2france template format with sections adapted per location level.
+     *
+     * @param string $type Location type (region, department, commune).
      * @param string $code Location code.
      * @param string $name Location name.
      * @return string
      */
     private function build_report_prompt( $type, $code, $name ) {
         $type_label = ucfirst( $type );
-        return "Generate a relocation research report for {$name} ({$type_label} in France). Include: Overview, History, Climate, Cost of Living, Healthcare, Transportation, and Daily Life. Return as JSON with title, subtitle, generated_date, and sections array.";
+
+        // Base sections for all report types
+        $base_sections = array(
+            'geography'        => 'Geography & Landscape: Physical description, terrain, borders, notable geographic features, major rivers and waterways',
+            'climate'          => 'Climate: Climate zones, seasonal temperatures (°C), rainfall, special weather phenomena (mistral, etc.)',
+            'economy'          => 'Economy: Key economic indicators (GDP if region, median income, unemployment rate), major industries, job market',
+            'food_wine'        => 'Food & Wine Culture: Regional specialties with specific dishes, local wines, markets and food shopping',
+            'culture_lifestyle' => 'Culture & Lifestyle: Work-life balance, social customs, expat community presence',
+            'quality_of_life'  => 'Quality of Life: Healthcare (hospitals, clinics), education (schools, international options), infrastructure (internet, utilities), practical considerations',
+            'transportation'   => 'Transportation: Public transit, train services (TGV, regional), nearest airports, driving conditions',
+            'environment'      => 'Environment & Natural Heritage: Natural highlights, parks, outdoor activities (hiking, cycling)',
+        );
+
+        // Add level-specific sections
+        $level_sections = array();
+
+        if ( 'region' === $type ) {
+            $level_sections = array(
+                'demographics'  => 'Demographics & Population: Total population, population density, major cities with metro populations, median age, urban vs rural split',
+                'language'      => 'Language & Communication: Regional dialects or languages, English proficiency levels',
+                'subdivisions'  => 'Departments: List key departments in this region with brief description of each',
+            );
+        } elseif ( 'department' === $type ) {
+            $level_sections = array(
+                'demographics'   => 'Demographics & Population: Total population, density, major communes/cities',
+                'housing'        => 'Housing & Real Estate: Average rent by property type (studio, 1-bed, 2-bed, house), buying prices per m², key neighborhoods/areas',
+                'practical_info' => 'Practical Information: Préfecture location, administrative offices, banking, emergency services',
+            );
+        } else { // commune
+            $level_sections = array(
+                'housing'        => 'Housing & Real Estate: Average rent (studio €X, 1-bed €X, 2-bed €X, house €X), buying prices €/m², neighborhood descriptions',
+                'practical_info' => 'Practical Information: Mairie location/hours, administrative services, banks, emergency contacts',
+            );
+        }
+
+        $all_sections = array_merge( $base_sections, $level_sections );
+        $sections_text = implode( "\n", array_map( function( $key, $desc ) {
+            return "- {$desc}";
+        }, array_keys( $all_sections ), array_values( $all_sections ) ) );
+
+        // Key stats to include based on level
+        $key_stats = array(
+            'region'     => 'area_km2, population, gdp_per_capita (€), life_expectancy (years)',
+            'department' => 'area_km2, population, median_income (€/year), unemployment_rate (%)',
+            'commune'    => 'area_km2, population, density_per_km2, average_rent (€/month)',
+        );
+
+        $taglines = array(
+            'region'     => 'A Comprehensive Guide for Those Considering Relocation',
+            'department' => 'Your Guide to Living and Working in This Area',
+            'commune'    => 'Everything You Need to Know About This Community',
+        );
+
+        $prompt = <<<PROMPT
+Generate a comprehensive relocation research report for {$name} ({$type_label} in France).
+
+This report is for people considering relocating to France and should be informative, practical, and data-driven.
+
+REQUIRED FORMAT - Return valid JSON with this exact structure:
+{
+  "header": {
+    "title": "{$name}",
+    "french_name": "[French official name if different]",
+    "tagline": "{$taglines[$type]}",
+    "key_stats": {
+      {$key_stats[$type]}
+    }
+  },
+  "sections": {
+    "section_id": {
+      "title": "Section Title",
+      "content": "Main paragraph content...",
+      "subsections": {
+        "subsection_id": {
+          "title": "Subsection Title",
+          "content": "Subsection content...",
+          "items": [{"label": "Item Name", "value": "Description"}]
+        }
+      },
+      "items": [{"label": "Item Name", "value": "Description"}]
+    }
+  },
+  "footer": {
+    "data_sources": ["INSEE", "Eurostat", "service-public.fr"],
+    "generated_date": "[today's date]"
+  }
+}
+
+SECTIONS TO INCLUDE:
+{$sections_text}
+
+WRITING STYLE:
+- Professional but accessible, like a high-quality travel/relocation guide
+- Include specific numbers, prices, and data where possible
+- Be accurate and factual - use real data from INSEE, Eurostat, and French government sources
+- Write in second person where appropriate ("You'll find...")
+- Include practical tips for newcomers
+- Mention both positives and realistic considerations/challenges
+
+IMPORTANT:
+- Use actual current data (population, prices, etc.) - do not make up numbers
+- Include specific place names, neighborhoods, and landmarks
+- Mention seasonal variations where relevant
+- For prices, use euros (€) and provide ranges where appropriate
+- Return ONLY valid JSON, no markdown or explanation
+PROMPT;
+
+        return $prompt;
     }
 
     /**
      * Generate placeholder report when AI unavailable
      *
-     * @param string $type Location type.
+     * Follows the relo2france template format with sections adapted per location level.
+     *
+     * @param string $type Location type (region, department, commune).
      * @param string $code Location code.
      * @param string $name Location name.
      * @return array
      */
     private function generate_placeholder_report( $type, $code, $name ) {
+        $taglines = array(
+            'region'     => 'A Comprehensive Guide for Those Considering Relocation',
+            'department' => 'Your Guide to Living and Working in This Area',
+            'commune'    => 'Everything You Need to Know About This Community',
+        );
+
+        $type_label = ucfirst( $type );
+
+        // Build sections based on location type
+        $sections = array(
+            'geography' => array(
+                'title'   => 'Geography & Landscape',
+                'content' => "{$name} is located in France with diverse terrain ranging from plains to hills. The landscape offers a variety of natural features that make this area attractive for both residents and visitors. The area is well-connected to surrounding regions and offers easy access to major transportation routes.",
+                'subsections' => array(
+                    'natural_features' => array(
+                        'title'   => 'Natural Features',
+                        'content' => 'The area features a mix of natural landscapes typical of this part of France.',
+                    ),
+                ),
+            ),
+            'climate' => array(
+                'title'   => 'Climate',
+                'content' => 'The climate is temperate with four distinct seasons. Summers are warm (20-30°C) and winters are cool to cold (2-10°C). Rainfall is distributed throughout the year with slightly wetter periods in autumn and spring.',
+                'subsections' => array(
+                    'seasonal' => array(
+                        'title'   => 'Seasonal Overview',
+                        'content' => 'Spring (March-May) brings mild temperatures and flowering landscapes. Summer (June-August) is warm and ideal for outdoor activities. Autumn (September-November) offers beautiful colors and harvest festivals. Winter (December-February) is cool with occasional frost.',
+                    ),
+                ),
+            ),
+            'economy' => array(
+                'title'   => 'Economy',
+                'content' => "The local economy is diverse with opportunities in various sectors. France's strong social safety net and labor protections apply throughout the country, providing stability for workers and businesses alike.",
+                'subsections' => array(
+                    'key_industries' => array(
+                        'title'   => 'Key Industries',
+                        'content' => 'The area has a mix of traditional and modern industries including services, retail, healthcare, and public sector employment.',
+                    ),
+                    'job_market' => array(
+                        'title'   => 'Job Market',
+                        'content' => 'Employment opportunities vary by sector. Knowledge of French is typically required for most positions, though some international companies may operate in English.',
+                    ),
+                ),
+            ),
+            'food_wine' => array(
+                'title'   => 'Food & Wine Culture',
+                'content' => 'French gastronomy is central to daily life. Local markets, boulangeries, and restaurants offer high-quality food. The French typically enjoy a light breakfast, substantial lunch, and dinner as the main social meal.',
+                'subsections' => array(
+                    'regional_specialties' => array(
+                        'title'   => 'Regional Specialties',
+                        'content' => 'Each area of France has its own culinary traditions. You\'ll find local cheeses, charcuterie, pastries, and seasonal dishes that reflect the region\'s agricultural heritage.',
+                    ),
+                    'markets' => array(
+                        'title'   => 'Markets & Shopping',
+                        'content' => 'Weekly markets are a cornerstone of French life, offering fresh produce, meats, cheeses, and local specialties directly from producers.',
+                    ),
+                ),
+            ),
+            'culture_lifestyle' => array(
+                'title'   => 'Culture & Lifestyle',
+                'content' => 'French culture emphasizes quality of life, with the legal 35-hour workweek and minimum 5 weeks paid vacation. Sunday closures are common, and August sees many businesses close for summer holidays.',
+                'subsections' => array(
+                    'social_customs' => array(
+                        'title'   => 'Social Customs',
+                        'content' => 'Greeting etiquette is important—always say "Bonjour" when entering shops. La bise (cheek kisses) varies by region. The French value privacy and friendships develop slowly but deeply.',
+                    ),
+                    'expat_community' => array(
+                        'title'   => 'Expat Community',
+                        'content' => 'France has established expat communities, particularly in major cities. English-speaking groups, international clubs, and online communities can help newcomers settle in.',
+                    ),
+                ),
+            ),
+            'quality_of_life' => array(
+                'title'   => 'Quality of Life',
+                'content' => 'France consistently ranks highly in quality of life indices, particularly for healthcare, work-life balance, infrastructure, and cultural offerings.',
+                'subsections' => array(
+                    'healthcare' => array(
+                        'title'   => 'Healthcare',
+                        'content' => 'Universal healthcare coverage through Assurance Maladie reimburses 70-100% of most care. Hospital care, prescription drugs, and specialist visits are affordable by international standards.',
+                    ),
+                    'education' => array(
+                        'title'   => 'Education',
+                        'content' => 'Free public education from age 3 through university. The école maternelle, primaire, collège, lycée system is standardized nationwide. International schools are available in larger cities.',
+                    ),
+                    'infrastructure' => array(
+                        'title'   => 'Infrastructure',
+                        'content' => 'Reliable postal service, expanding fiber internet coverage, and strong mobile networks. Administrative processes can be paper-heavy but are increasingly digitized.',
+                    ),
+                ),
+            ),
+            'transportation' => array(
+                'title'   => 'Transportation',
+                'content' => 'France has excellent transportation infrastructure including the TGV high-speed rail network, well-maintained roads, and reliable public transit in urban areas.',
+                'subsections' => array(
+                    'public_transit' => array(
+                        'title'   => 'Public Transit',
+                        'content' => 'Major cities have comprehensive bus and tram networks. Smaller towns typically have bus services connecting to larger centers.',
+                    ),
+                    'train' => array(
+                        'title'   => 'Train Services',
+                        'content' => 'SNCF operates regional TER trains and the TGV high-speed network. Many areas have good rail connections to Paris and other major cities.',
+                    ),
+                ),
+            ),
+            'environment' => array(
+                'title'   => 'Environment & Natural Heritage',
+                'content' => 'France maintains extensive protected areas including national parks and regional nature parks. Environmental consciousness has grown significantly with widespread recycling and growing organic farming.',
+                'subsections' => array(
+                    'outdoor_activities' => array(
+                        'title'   => 'Outdoor Activities',
+                        'content' => 'Hiking trails (sentiers de grande randonnée) crisscross the country. Cycling infrastructure continues expanding, and outdoor recreation is deeply embedded in French culture.',
+                    ),
+                ),
+            ),
+        );
+
+        // Add level-specific sections
+        if ( 'region' === $type ) {
+            $sections['demographics'] = array(
+                'title'   => 'Demographics & Population',
+                'content' => "This region is home to a diverse population. Like much of France, approximately 81% of residents live in urban areas. The median age reflects France's aging population, though urban centers tend to be younger.",
+                'subsections' => array(
+                    'major_cities' => array(
+                        'title'   => 'Major Cities',
+                        'content' => 'The region contains several significant urban centers offering different lifestyles from vibrant city life to quieter provincial towns.',
+                    ),
+                ),
+            );
+            $sections['language'] = array(
+                'title'   => 'Language & Communication',
+                'content' => 'French is the official language. Some regions have historical regional languages (Occitan, Breton, Alsatian, etc.) that may still be spoken locally. English proficiency has improved among younger generations but daily life requires functional French.',
+            );
+            $sections['subdivisions'] = array(
+                'title'   => 'Departments',
+                'content' => "This region is divided into several departments, each with its own préfecture and distinct character. Each department has a two-digit code used in postcodes and license plates.",
+            );
+        }
+
+        if ( in_array( $type, array( 'department', 'commune' ), true ) ) {
+            $sections['housing'] = array(
+                'title'   => 'Housing & Real Estate',
+                'content' => 'The housing market varies significantly by location. Rental and buying prices depend on proximity to city centers, transportation, and local amenities. Long-term rentals typically require French guarantors or deposit insurance.',
+                'subsections' => array(
+                    'rental_market' => array(
+                        'title'   => 'Rental Market',
+                        'content' => 'Rental prices vary by property type and location. Studios and small apartments are most common in city centers, while houses are more available in suburban and rural areas.',
+                    ),
+                    'neighborhoods' => array(
+                        'title'   => 'Neighborhoods',
+                        'content' => 'Each area has distinct neighborhoods with their own character, from historic centers to modern developments. Research specific quartiers to find the best fit for your lifestyle.',
+                    ),
+                ),
+            );
+            $sections['practical_info'] = array(
+                'title'   => 'Practical Information',
+                'content' => 'The mairie (town hall) is the center of local civic life, handling civil registration, elections, building permits, and local services. The préfecture handles department-level administration including residence permits.',
+                'subsections' => array(
+                    'administrative' => array(
+                        'title'   => 'Administrative Offices',
+                        'content' => 'Key offices include the mairie for local services, préfecture for residence permits, CAF for family benefits, and CPAM for health insurance.',
+                    ),
+                    'emergency' => array(
+                        'title'   => 'Emergency Services',
+                        'content' => 'Emergency numbers: 15 (SAMU medical), 17 (Police), 18 (Fire/Pompiers), 112 (European emergency). Pharmacies display green crosses and provide first-line medical advice.',
+                    ),
+                ),
+            );
+        }
+
+        // Build key stats based on level
+        $key_stats = array();
+        if ( 'region' === $type ) {
+            $key_stats = array(
+                'area_km2'        => 0,
+                'population'      => 0,
+                'gdp_per_capita'  => 0,
+                'life_expectancy' => 83.0,
+            );
+        } elseif ( 'department' === $type ) {
+            $key_stats = array(
+                'area_km2'          => 0,
+                'population'        => 0,
+                'median_income'     => 0,
+                'unemployment_rate' => 7.0,
+            );
+        } else {
+            $key_stats = array(
+                'area_km2'        => 0,
+                'population'      => 0,
+                'density_per_km2' => 0,
+                'average_rent'    => 0,
+            );
+        }
+
         return array(
-            'title'          => "{$name} Relocation Guide",
-            'subtitle'       => "Guide for relocating to {$name}, France",
-            'generated_date' => gmdate( 'Y-m-d' ),
-            'sections'       => array(
-                array( 'id' => 'overview', 'title' => 'Overview', 'content' => "Welcome to {$name}. This area offers a wonderful blend of French culture, history, and modern amenities." ),
-                array( 'id' => 'history', 'title' => 'History', 'content' => "{$name} has a rich history dating back centuries, shaped by various cultural influences from ancient times to the present." ),
-                array( 'id' => 'climate', 'title' => 'Climate', 'content' => "The climate varies by season with warm summers and mild to cool winters typical of the region." ),
-                array( 'id' => 'cost_of_living', 'title' => 'Cost of Living', 'content' => "Housing, food, and daily expenses should be considered when planning your relocation budget." ),
-                array( 'id' => 'healthcare', 'title' => 'Healthcare', 'content' => "France has an excellent healthcare system with good access to hospitals and clinics in this area." ),
-                array( 'id' => 'transport', 'title' => 'Transportation', 'content' => "Good transportation infrastructure including rail, bus, and road networks connect this area to other parts of France." ),
-                array( 'id' => 'lifestyle', 'title' => 'Daily Life', 'content' => "Life here offers a wonderful blend of French culture with markets, restaurants, and community activities." ),
+            'header' => array(
+                'title'       => $name,
+                'french_name' => $name,
+                'tagline'     => $taglines[ $type ],
+                'key_stats'   => $key_stats,
+            ),
+            'sections' => $sections,
+            'footer'   => array(
+                'data_sources'   => array( 'INSEE', 'Eurostat', 'service-public.fr' ),
+                'generated_date' => gmdate( 'Y-m-d' ),
+                'version'        => 1,
+                'note'           => 'This is a template report. AI-generated reports will include specific local data and details.',
             ),
         );
     }
