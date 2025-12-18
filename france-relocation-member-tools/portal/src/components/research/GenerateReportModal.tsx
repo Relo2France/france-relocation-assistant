@@ -99,10 +99,13 @@ export default function GenerateReportModal({
     }
   };
 
-  // Download PDF
+  // Download PDF - append nonce for authentication
   const handleDownload = () => {
     if (!report?.download_url) return;
-    window.open(report.download_url, '_blank');
+    const wpData = window.fraPortalData || { nonce: '' };
+    const separator = report.download_url.includes('?') ? '&' : '?';
+    const urlWithNonce = `${report.download_url}${separator}_wpnonce=${wpData.nonce}`;
+    window.open(urlWithNonce, '_blank');
   };
 
   if (!isOpen) return null;
