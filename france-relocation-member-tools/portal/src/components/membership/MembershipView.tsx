@@ -200,9 +200,12 @@ export default function MembershipView() {
         </p>
       </div>
 
-      {/* Toast notification */}
+      {/* Toast notification - accessible alert */}
       {toast.show && (
         <div
+          role="alert"
+          aria-live="assertive"
+          aria-atomic="true"
           className={clsx(
             'fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg animate-in slide-in-from-top-5 duration-300',
             toast.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
@@ -210,9 +213,9 @@ export default function MembershipView() {
         >
           <div className="flex items-center gap-2">
             {toast.type === 'success' ? (
-              <CheckCircle className="w-5 h-5" />
+              <CheckCircle className="w-5 h-5" aria-hidden="true" />
             ) : (
-              <XCircle className="w-5 h-5" />
+              <XCircle className="w-5 h-5" aria-hidden="true" />
             )}
             <span className="font-medium">{toast.message}</span>
           </div>
