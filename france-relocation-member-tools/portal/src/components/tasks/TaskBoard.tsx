@@ -1,4 +1,15 @@
-import { useState } from 'react';
+/**
+ * TaskBoard Component
+ *
+ * Kanban-style board for task management with drag-and-drop and keyboard navigation.
+ *
+ * Accessibility Features:
+ * - Full keyboard navigation (Tab, Arrow keys, Space/Enter)
+ * - Screen reader announcements for drag operations
+ * - ARIA attributes for drag-and-drop states
+ */
+
+import { useState, useRef, useCallback } from 'react';
 import { clsx } from 'clsx';
 import {
   Circle,
@@ -70,17 +81,32 @@ export default function TaskBoard({
 }: TaskBoardProps) {
   const [draggedTask, setDraggedTask] = useState<Task | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<TaskStatus | null>(null);
+  const [keyboardDragTask, setKeyboardDragTask] = useState<Task | null>(null);
+  const [announcement, setAnnouncement] = useState<string>('');
+  const announcementRef = useRef<HTMLDivElement>(null);
 
   const tasksByStatus = columns.reduce((acc, col) => {
     acc[col.id] = tasks.filter((t) => t.status === col.id);
     return acc;
   }, {} as Record<TaskStatus, Task[]>);
 
+  // Announce to screen readers
+  const announce = useCallback((message: string) => {
+    setAnnouncement(message);
+    // Clear after a brief delay to allow re-announcing the same message
+    setTimeout(() => setAnnouncement(''), 100);
+  }, []);
+
+  // Mouse drag handlers
   const handleDragStart = (task: Task) => {
     setDraggedTask(task);
+    announce(`Picked up task: ${task.title}`);
   };
 
   const handleDragEnd = () => {
+    if (draggedTask) {
+      announce(`Dropped task: ${draggedTask.title}`);
+    }
     setDraggedTask(null);
     setDragOverColumn(null);
   };
@@ -92,28 +118,103 @@ export default function TaskBoard({
 
   const handleDrop = (columnId: TaskStatus) => {
     if (draggedTask && draggedTask.status !== columnId) {
+      const columnTitle = columns.find(c => c.id === columnId)?.title || columnId;
+      announce(`Moved ${draggedTask.title} to ${columnTitle}`);
       onStatusChange?.(draggedTask.id, columnId);
     }
     setDraggedTask(null);
     setDragOverColumn(null);
   };
 
+  // Keyboard drag handlers
+  const handleKeyboardPickUp = (task: Task) => {
+    setKeyboardDragTask(task);
+    announce(`Picked up task: ${task.title}. Use left and right arrow keys to move between columns, then press Space or Enter to drop.`);
+  };
+
+  const handleKeyboardDrop = (columnId: TaskStatus) => {
+    if (keyboardDragTask && keyboardDragTask.status !== columnId) {
+      const columnTitle = columns.find(c => c.id === columnId)?.title || columnId;
+      announce(`Moved ${keyboardDragTask.title} to ${columnTitle}`);
+      onStatusChange?.(keyboardDragTask.id, columnId);
+    } else if (keyboardDragTask) {
+      announce(`Cancelled. ${keyboardDragTask.title} stays in current column.`);
+    }
+    setKeyboardDragTask(null);
+  };
+
+  const handleKeyboardCancel = () => {
+    if (keyboardDragTask) {
+      announce(`Cancelled moving ${keyboardDragTask.title}`);
+      setKeyboardDragTask(null);
+    }
+  };
+
+  const handleKeyboardMoveColumn = (direction: 'left' | 'right') => {
+    if (!keyboardDragTask) return;
+
+    const currentIndex = columns.findIndex(c => c.id === keyboardDragTask.status);
+    const newIndex = direction === 'left'
+      ? Math.max(0, currentIndex - 1)
+      : Math.min(columns.length - 1, currentIndex + 1);
+
+    if (newIndex !== currentIndex) {
+      const newColumn = columns[newIndex];
+      announce(`Over ${newColumn.title} column. Press Space or Enter to drop here.`);
+      setDragOverColumn(newColumn.id);
+    }
+  };
+
   return (
-    <div className="flex gap-4 overflow-x-auto pb-4">
-      {columns.map((column) => (
-        <BoardColumn
-          key={column.id}
-          column={column}
-          tasks={tasksByStatus[column.id]}
-          isDragOver={dragOverColumn === column.id}
-          onTaskClick={onTaskClick}
-          onDragStart={handleDragStart}
-          onDragEnd={handleDragEnd}
-          onDragOver={(e) => handleDragOver(e, column.id)}
-          onDrop={() => handleDrop(column.id)}
-          onAddTask={() => onAddTask?.(column.id)}
-        />
-      ))}
+    <div>
+      {/* Screen reader announcements */}
+      <div
+        ref={announcementRef}
+        className="sr-only"
+        role="status"
+        aria-live="assertive"
+        aria-atomic="true"
+      >
+        {announcement}
+      </div>
+
+      {/* Keyboard instructions (visible when dragging) */}
+      {keyboardDragTask && (
+        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800" role="status">
+          <strong>Moving: {keyboardDragTask.title}</strong>
+          <span className="ml-2">
+            Use ← → to select column, Space/Enter to drop, Escape to cancel
+          </span>
+        </div>
+      )}
+
+      {/* Board columns */}
+      <div
+        className="flex gap-4 overflow-x-auto pb-4"
+        role="region"
+        aria-label="Task board"
+      >
+        {columns.map((column) => (
+          <BoardColumn
+            key={column.id}
+            column={column}
+            tasks={tasksByStatus[column.id]}
+            isDragOver={dragOverColumn === column.id}
+            isKeyboardDragging={!!keyboardDragTask}
+            keyboardDragTask={keyboardDragTask}
+            onTaskClick={onTaskClick}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+            onDragOver={(e) => handleDragOver(e, column.id)}
+            onDrop={() => handleDrop(column.id)}
+            onAddTask={() => onAddTask?.(column.id)}
+            onKeyboardPickUp={handleKeyboardPickUp}
+            onKeyboardDrop={() => handleKeyboardDrop(column.id)}
+            onKeyboardCancel={handleKeyboardCancel}
+            onKeyboardMoveColumn={handleKeyboardMoveColumn}
+          />
+        ))}
+      </div>
     </div>
   );
 }
@@ -122,42 +223,86 @@ interface BoardColumnProps {
   column: Column;
   tasks: Task[];
   isDragOver: boolean;
+  isKeyboardDragging: boolean;
+  keyboardDragTask: Task | null;
   onTaskClick?: (task: Task) => void;
   onDragStart: (task: Task) => void;
   onDragEnd: () => void;
   onDragOver: (e: React.DragEvent) => void;
   onDrop: () => void;
   onAddTask: () => void;
+  onKeyboardPickUp: (task: Task) => void;
+  onKeyboardDrop: () => void;
+  onKeyboardCancel: () => void;
+  onKeyboardMoveColumn: (direction: 'left' | 'right') => void;
 }
 
 function BoardColumn({
   column,
   tasks,
   isDragOver,
+  isKeyboardDragging,
+  keyboardDragTask,
   onTaskClick,
   onDragStart,
   onDragEnd,
   onDragOver,
   onDrop,
   onAddTask,
+  onKeyboardPickUp,
+  onKeyboardDrop,
+  onKeyboardCancel,
+  onKeyboardMoveColumn,
 }: BoardColumnProps) {
   const Icon = column.icon;
+  const isDropTarget = isDragOver && keyboardDragTask?.status !== column.id;
+
+  // Handle keyboard events for the column (when keyboard dragging)
+  const handleColumnKeyDown = (e: React.KeyboardEvent) => {
+    if (!isKeyboardDragging) return;
+
+    switch (e.key) {
+      case 'ArrowLeft':
+        e.preventDefault();
+        onKeyboardMoveColumn('left');
+        break;
+      case 'ArrowRight':
+        e.preventDefault();
+        onKeyboardMoveColumn('right');
+        break;
+      case ' ':
+      case 'Enter':
+        e.preventDefault();
+        if (isDragOver) {
+          onKeyboardDrop();
+        }
+        break;
+      case 'Escape':
+        e.preventDefault();
+        onKeyboardCancel();
+        break;
+    }
+  };
 
   return (
     <div
       className={clsx(
         'flex-shrink-0 w-80 rounded-xl transition-colors',
         column.bgColor,
-        isDragOver && 'ring-2 ring-primary-500'
+        isDropTarget && 'ring-2 ring-primary-500'
       )}
       onDragOver={onDragOver}
       onDrop={onDrop}
+      onKeyDown={handleColumnKeyDown}
+      role="listbox"
+      aria-label={`${column.title} column, ${tasks.length} tasks`}
+      aria-dropeffect={isKeyboardDragging ? 'move' : undefined}
     >
       {/* Column header */}
       <div className={clsx('p-4 border-b', column.borderColor)}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Icon className={clsx('w-5 h-5', column.color)} />
+            <Icon className={clsx('w-5 h-5', column.color)} aria-hidden="true" />
             <h3 className="font-semibold text-gray-900">{column.title}</h3>
             <span className="text-sm text-gray-500 bg-white px-2 py-0.5 rounded-full">
               {tasks.length}
@@ -166,21 +311,30 @@ function BoardColumn({
           <button
             onClick={onAddTask}
             className="p-1 text-gray-400 hover:text-gray-600 hover:bg-white rounded transition-colors"
+            aria-label={`Add task to ${column.title}`}
           >
-            <Plus className="w-5 h-5" />
+            <Plus className="w-5 h-5" aria-hidden="true" />
           </button>
         </div>
       </div>
 
       {/* Task cards */}
       <div className="p-3 space-y-3 min-h-[200px]">
-        {tasks.map((task) => (
+        {tasks.map((task, index) => (
           <TaskCard
             key={task.id}
             task={task}
+            index={index}
+            totalTasks={tasks.length}
+            columnTitle={column.title}
+            isBeingDragged={keyboardDragTask?.id === task.id}
             onClick={() => onTaskClick?.(task)}
             onDragStart={() => onDragStart(task)}
             onDragEnd={onDragEnd}
+            onKeyboardPickUp={() => onKeyboardPickUp(task)}
+            onKeyboardDrop={onKeyboardDrop}
+            onKeyboardCancel={onKeyboardCancel}
+            onKeyboardMoveColumn={onKeyboardMoveColumn}
           />
         ))}
         {tasks.length === 0 && (
@@ -201,26 +355,110 @@ function BoardColumn({
 
 interface TaskCardProps {
   task: Task;
+  index: number;
+  totalTasks: number;
+  columnTitle: string;
+  isBeingDragged: boolean;
   onClick?: () => void;
   onDragStart: () => void;
   onDragEnd: () => void;
+  onKeyboardPickUp: () => void;
+  onKeyboardDrop: () => void;
+  onKeyboardCancel: () => void;
+  onKeyboardMoveColumn: (direction: 'left' | 'right') => void;
 }
 
-function TaskCard({ task, onClick, onDragStart, onDragEnd }: TaskCardProps) {
+function TaskCard({
+  task,
+  index,
+  totalTasks,
+  columnTitle,
+  isBeingDragged,
+  onClick,
+  onDragStart,
+  onDragEnd,
+  onKeyboardPickUp,
+  onKeyboardDrop,
+  onKeyboardCancel,
+  onKeyboardMoveColumn,
+}: TaskCardProps) {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    switch (e.key) {
+      case ' ':
+        // Space: Pick up or drop the task
+        e.preventDefault();
+        if (isBeingDragged) {
+          onKeyboardDrop();
+        } else {
+          onKeyboardPickUp();
+        }
+        break;
+      case 'Enter':
+        // Enter: Open task or drop if dragging
+        e.preventDefault();
+        if (isBeingDragged) {
+          onKeyboardDrop();
+        } else {
+          onClick?.();
+        }
+        break;
+      case 'Escape':
+        // Escape: Cancel drag
+        if (isBeingDragged) {
+          e.preventDefault();
+          onKeyboardCancel();
+        }
+        break;
+      case 'ArrowLeft':
+        // Move to previous column when dragging
+        if (isBeingDragged) {
+          e.preventDefault();
+          onKeyboardMoveColumn('left');
+        }
+        break;
+      case 'ArrowRight':
+        // Move to next column when dragging
+        if (isBeingDragged) {
+          e.preventDefault();
+          onKeyboardMoveColumn('right');
+        }
+        break;
+    }
+  };
+
   return (
     <div
       draggable
+      tabIndex={0}
+      role="option"
+      aria-selected={isBeingDragged}
+      aria-grabbed={isBeingDragged}
+      aria-label={`${task.title}${task.is_overdue ? ', overdue' : ''}, priority ${task.priority}${task.due_date ? `, due ${formatShortDate(task.due_date)}` : ''}`}
+      aria-describedby="drag-instructions"
+      aria-setsize={totalTasks}
+      aria-posinset={index + 1}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
       onClick={onClick}
+      onKeyDown={handleKeyDown}
       className={clsx(
-        'bg-white rounded-lg border p-3 cursor-pointer transition-shadow hover:shadow-md',
-        task.is_overdue ? 'border-red-200' : 'border-gray-200'
+        'bg-white rounded-lg border p-3 cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
+        task.is_overdue ? 'border-red-200' : 'border-gray-200',
+        isBeingDragged && 'opacity-50 ring-2 ring-primary-500',
+        !isBeingDragged && 'hover:shadow-md'
       )}
     >
+      {/* Hidden instructions for screen readers */}
+      <span id="drag-instructions" className="sr-only">
+        Press Space to pick up and move this task, or Enter to open task details
+      </span>
+
       {/* Drag handle */}
       <div className="flex items-start gap-2">
-        <GripVertical className="w-4 h-4 text-gray-300 flex-shrink-0 mt-0.5 cursor-grab" />
+        <GripVertical
+          className="w-4 h-4 text-gray-300 flex-shrink-0 mt-0.5 cursor-grab"
+          aria-hidden="true"
+        />
         <div className="flex-1 min-w-0">
           {/* Title */}
           <div className="flex items-center gap-2">
@@ -233,7 +471,10 @@ function TaskCard({ task, onClick, onDragStart, onDragEnd }: TaskCardProps) {
               {task.title}
             </h4>
             {task.is_overdue && (
-              <AlertTriangle className="w-3.5 h-3.5 text-red-500 flex-shrink-0" />
+              <AlertTriangle
+                className="w-3.5 h-3.5 text-red-500 flex-shrink-0"
+                aria-hidden="true"
+              />
             )}
           </div>
 
@@ -264,7 +505,7 @@ function TaskCard({ task, onClick, onDragStart, onDragEnd }: TaskCardProps) {
                   task.is_overdue ? 'text-red-600' : 'text-gray-500'
                 )}
               >
-                <Calendar className="w-3 h-3" />
+                <Calendar className="w-3 h-3" aria-hidden="true" />
                 {formatShortDate(task.due_date)}
               </span>
             )}
@@ -294,6 +535,7 @@ function PriorityDot({ priority }: { priority: string }) {
     <span
       className={clsx('w-2 h-2 rounded-full', colors[priority] || colors.medium)}
       title={`Priority: ${priority}`}
+      aria-label={`Priority: ${priority}`}
     />
   );
 }

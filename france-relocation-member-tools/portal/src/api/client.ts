@@ -49,21 +49,35 @@ function getWpData() {
 }
 
 /**
- * Base fetch function with WordPress authentication
+ * Extended request options with optional AbortSignal
+ */
+interface ApiRequestOptions extends Omit<RequestInit, 'signal'> {
+  signal?: AbortSignal;
+}
+
+/**
+ * Base fetch function with WordPress authentication and AbortController support
+ *
+ * @param endpoint - API endpoint (e.g., '/dashboard')
+ * @param options - Fetch options including optional AbortSignal
+ * @returns Promise resolving to the response data
+ * @throws Error if request fails or is aborted
  */
 async function apiFetch<T>(
   endpoint: string,
-  options: RequestInit = {}
+  options: ApiRequestOptions = {}
 ): Promise<T> {
   const wpData = getWpData();
   const url = `${wpData.apiUrl}${endpoint}`;
+  const { signal, ...restOptions } = options;
 
   const response = await fetch(url, {
-    ...options,
+    ...restOptions,
+    signal,
     headers: {
       'Content-Type': 'application/json',
       'X-WP-Nonce': wpData.nonce,
-      ...options.headers,
+      ...restOptions.headers,
     },
     credentials: 'same-origin',
   });
@@ -76,6 +90,53 @@ async function apiFetch<T>(
   }
 
   return response.json();
+}
+
+/**
+ * Create a cancellable API request
+ *
+ * Returns an object with the promise and an abort function.
+ * Useful for long-running operations or when you need to cancel
+ * on component unmount.
+ *
+ * @example
+ * const { promise, abort } = createCancellableRequest('/chat', {
+ *   method: 'POST',
+ *   body: JSON.stringify({ message: 'Hello' })
+ * });
+ *
+ * // Later, to cancel:
+ * abort();
+ *
+ * // In useEffect cleanup:
+ * useEffect(() => {
+ *   const { promise, abort } = createCancellableRequest('/long-operation');
+ *   promise.then(setData).catch(handleError);
+ *   return () => abort();
+ * }, []);
+ */
+export function createCancellableRequest<T>(
+  endpoint: string,
+  options: ApiRequestOptions = {}
+): { promise: Promise<T>; abort: () => void } {
+  const controller = new AbortController();
+
+  const promise = apiFetch<T>(endpoint, {
+    ...options,
+    signal: controller.signal,
+  });
+
+  return {
+    promise,
+    abort: () => controller.abort(),
+  };
+}
+
+/**
+ * Check if an error is an AbortError (request was cancelled)
+ */
+export function isAbortError(error: unknown): boolean {
+  return error instanceof Error && error.name === 'AbortError';
 }
 
 // Dashboard API
@@ -199,7 +260,19 @@ export const filesApi = {
 
   get: (id: number) => apiFetch<PortalFile>(`/files/${id}`),
 
-  upload: async (projectId: number, file: File, data?: { category?: FileCategory; description?: string }) => {
+  /**
+   * Upload a file with optional cancellation support
+   * @param projectId - Project ID
+   * @param file - File to upload
+   * @param data - Optional metadata (category, description)
+   * @param signal - Optional AbortSignal for cancellation
+   */
+  upload: async (
+    projectId: number,
+    file: File,
+    data?: { category?: FileCategory; description?: string },
+    signal?: AbortSignal
+  ) => {
     const wpData = getWpData();
     const formData = new FormData();
     formData.append('file', file);
@@ -213,6 +286,7 @@ export const filesApi = {
       },
       credentials: 'same-origin',
       body: formData,
+      signal,
     });
 
     if (!response.ok) {
@@ -423,17 +497,34 @@ export const guidesApi = {
 
 // Knowledge Base Chat API
 export const chatApi = {
-  send: (data: ChatRequest) =>
+  /**
+   * Send a chat message with optional cancellation support
+   * @param data - Chat request data
+   * @param signal - Optional AbortSignal for cancellation
+   */
+  send: (data: ChatRequest, signal?: AbortSignal) =>
     apiFetch<ChatResponse>('/chat', {
+      method: 'POST',
+      body: JSON.stringify(data),
+      signal,
+    }),
+
+  /**
+   * Create a cancellable chat request
+   * @returns Object with promise and abort function
+   */
+  sendCancellable: (data: ChatRequest) =>
+    createCancellableRequest<ChatResponse>('/chat', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
 
   getCategories: () => apiFetch<KnowledgeCategory[]>('/chat/categories'),
 
-  searchTopics: (query: string) =>
+  searchTopics: (query: string, signal?: AbortSignal) =>
     apiFetch<{ results: { title: string; category: string; is_premium: boolean }[] }>(
-      `/chat/search?q=${encodeURIComponent(query)}`
+      `/chat/search?q=${encodeURIComponent(query)}`,
+      { signal }
     ),
 };
 
