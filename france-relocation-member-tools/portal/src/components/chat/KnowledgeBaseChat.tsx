@@ -218,7 +218,14 @@ export default function KnowledgeBaseChat() {
         {/* Messages area */}
         <div className="flex-1 overflow-y-auto px-6 py-6">
           {messages.length === 0 ? (
-            <EmptyState onSelectQuestion={handleSuggestedQuestion} />
+            selectedCategory ? (
+              <CategoryTopicsView
+                category={categories?.find((c) => c.id === selectedCategory)}
+                onSelectTopic={handleSuggestedQuestion}
+              />
+            ) : (
+              <EmptyState onSelectQuestion={handleSuggestedQuestion} />
+            )
           ) : (
             <div className="max-w-4xl mx-auto space-y-6">
               {messages.map((message) => (
@@ -633,6 +640,88 @@ function EmptyState({ onSelectQuestion }: EmptyStateProps) {
             <p className="text-sm text-blue-700">
               Toggle "Include real-world insights" to get practical advice from people who have
               actually gone through the relocation process, not just official requirements.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Category topics view - shown when a category is selected
+interface CategoryTopicsViewProps {
+  category?: {
+    id: string;
+    title: string;
+    icon: string;
+    description: string;
+    topics: Array<{ id: string; title: string; keywords: string[]; is_premium: boolean }>;
+  };
+  onSelectTopic: (question: string) => void;
+}
+
+function CategoryTopicsView({ category, onSelectTopic }: CategoryTopicsViewProps) {
+  if (!category) {
+    return null;
+  }
+
+  const Icon = categoryIcons[category.id as keyof typeof categoryIcons] || MessageSquare;
+
+  return (
+    <div className="max-w-3xl mx-auto py-8">
+      {/* Category header */}
+      <div className="text-center mb-8">
+        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center">
+          <Icon className="w-8 h-8 text-white" />
+        </div>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">{category.title}</h2>
+        <p className="text-gray-600">{category.description}</p>
+      </div>
+
+      {/* Topics grid */}
+      <div className="mb-6">
+        <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center justify-center gap-2">
+          <Lightbulb className="w-4 h-4 text-yellow-500" />
+          Topics in {category.title}
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {category.topics.map((topic) => (
+            <button
+              key={topic.id}
+              onClick={() => onSelectTopic(`Tell me about ${topic.title}`)}
+              className="p-4 bg-white border border-gray-200 rounded-lg text-left hover:bg-gray-50 hover:border-primary-300 transition-colors group"
+            >
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center flex-shrink-0 group-hover:bg-primary-200 transition-colors">
+                  <FileText className="w-4 h-4 text-primary-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-medium text-gray-900 mb-1 line-clamp-1">{topic.title}</h4>
+                  {topic.keywords.length > 0 && (
+                    <p className="text-xs text-gray-500 line-clamp-1">
+                      {topic.keywords.slice(0, 3).join(' • ')}
+                    </p>
+                  )}
+                </div>
+                {topic.is_premium && (
+                  <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">
+                    Premium
+                  </span>
+                )}
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Hint */}
+      <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg text-left max-w-xl mx-auto">
+        <div className="flex items-start gap-3">
+          <Lightbulb className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+          <div>
+            <h4 className="font-medium text-blue-900 mb-1">Click a topic to ask about it</h4>
+            <p className="text-sm text-blue-700">
+              Select any topic above to start a conversation, or type your own question below.
             </p>
           </div>
         </div>
