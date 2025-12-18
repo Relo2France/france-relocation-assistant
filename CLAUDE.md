@@ -153,6 +153,19 @@ User meta keys (prefix: `fra_`):
 
 ## Recent Development History
 
+### December 18, 2025 - Outstanding Improvements Completed
+- **Component Refactoring**: Split ProfileView (1135→183 lines) and DocumentGenerator (963→402 lines)
+  - ProfileView now uses: PersonalSection, ApplicantSection, VisaSection, LocationSection, FinancialSection
+  - DocumentGenerator now uses: DocumentTypeSelector, DocumentWizard, DocumentPreviewStep, DownloadOptions
+  - Created shared SaveButton and ProfileSkeleton components
+  - Extracted constants to `config/profile.ts` and `config/documents.ts`
+- **Accessibility**: Added comprehensive ARIA labels, roles, and describedby attributes
+- **Error Handling**: Added ErrorBoundary component wrapping ViewRouter in App.tsx
+- **Keyboard Navigation**: Full keyboard support for TaskBoard drag-and-drop
+  - Space to pick up/drop, Arrow keys to move columns, Escape to cancel
+  - Screen reader announcements for all operations
+- **API Improvements**: Added AbortController support with `createCancellableRequest()` utility
+
 ### December 18, 2025 - Portal Feature Completion (Merged)
 - Added 8 missing portal features for feature parity
 - Created ProfileView, ChecklistsView, GlossaryView, KnowledgeBaseChat
@@ -171,16 +184,15 @@ User meta keys (prefix: `fra_`):
 
 ## Outstanding Work / Known Issues
 
-### Should Address (From Code Review)
-1. Split large components (ProfileView ~1135 lines, DocumentGenerator ~963 lines)
-2. Add more ARIA labels to form fields
-3. Implement keyboard navigation for drag-and-drop
-4. Add error boundaries at route level
-5. Request cancellation with AbortController for long operations
+### Completed (Previously Should Address)
+- ✅ Split large components (ProfileView, DocumentGenerator)
+- ✅ Add more ARIA labels to form fields
+- ✅ Implement keyboard navigation for drag-and-drop
+- ✅ Add error boundaries at route level
+- ✅ Request cancellation with AbortController for long operations
 
 ### Nice to Have
 - Virtual scrolling for long lists
-- Move hardcoded data (checklists, glossary) to config files
 - Bundle size optimization
 - Rate limiting for AI endpoints
 
@@ -256,6 +268,9 @@ cd france-relocation-member-tools/portal && npx tsc --noEmit
 | Portal Routes | `france-relocation-member-tools/portal/src/App.tsx` |
 | API Client | `france-relocation-member-tools/portal/src/api/client.ts` |
 | TypeScript Types | `france-relocation-member-tools/portal/src/types/index.ts` |
+| Profile Config | `france-relocation-member-tools/portal/src/config/profile.ts` |
+| Document Config | `france-relocation-member-tools/portal/src/config/documents.ts` |
+| Error Boundary | `france-relocation-member-tools/portal/src/components/shared/ErrorBoundary.tsx` |
 | In-Chat UI | `france-relocation-assistant-plugin/includes/shortcode-template.php` |
 | MemberPress Shortcodes | `france-relocation-assistant-plugin/france-relocation-assistant.php` |
 
