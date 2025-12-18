@@ -841,7 +841,13 @@ class FRAMT_Portal_Settings {
             'help'       => array( 'default_label' => 'Help & Support', 'default_icon' => 'HelpCircle' ),
         );
 
-        // Define sections
+        // Define sections with their default items
+        $default_section_items = array(
+            'project'   => array( 'dashboard', 'tasks', 'checklists', 'timeline', 'messages' ),
+            'resources' => array( 'research', 'chat', 'documents', 'guides', 'glossary', 'files' ),
+            'account'   => array( 'profile', 'family', 'membership', 'settings', 'help' ),
+        );
+
         $sections = array(
             'project'   => array(
                 'label'    => $settings['section_label_project'] ?: 'PROJECT',
@@ -856,6 +862,16 @@ class FRAMT_Portal_Settings {
                 'items'    => explode( ',', $settings['menu_order_account'] ),
             ),
         );
+
+        // Ensure all menu items are present in their sections (handles newly added items)
+        foreach ( $default_section_items as $section_id => $default_items ) {
+            foreach ( $default_items as $item_id ) {
+                if ( ! in_array( $item_id, $sections[ $section_id ]['items'], true ) ) {
+                    // Add missing item to the section
+                    $sections[ $section_id ]['items'][] = $item_id;
+                }
+            }
+        }
         ?>
 
         <div class="framt-settings-card">
