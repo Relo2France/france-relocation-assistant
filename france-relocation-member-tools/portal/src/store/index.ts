@@ -34,10 +34,12 @@ const defaultSettings: PortalSettings = {
     { id: 'timeline', label: 'Timeline', icon: 'Calendar', path: '/timeline' },
     { id: 'messages', label: 'Messages', icon: 'MessageSquare', path: '/messages' },
     // RESOURCES section
+    { id: 'research', label: 'Explore France', icon: 'MapPin', path: '/research' },
+    { id: 'chat', label: 'Ask AI', icon: 'Bot', path: '/chat' },
     { id: 'documents', label: 'Documents', icon: 'FileText', path: '/documents' },
     { id: 'guides', label: 'Guides', icon: 'BookOpen', path: '/guides' },
     { id: 'glossary', label: 'Glossary', icon: 'BookMarked', path: '/glossary' },
-    { id: 'chat', label: 'Ask AI', icon: 'Bot', path: '/chat' },
+    { id: 'files', label: 'Files', icon: 'FolderOpen', path: '/files' },
     // ACCOUNT section
     { id: 'profile', label: 'My Profile', icon: 'User', path: '/profile' },
     { id: 'family', label: 'Family Members', icon: 'Users', path: '/family' },
