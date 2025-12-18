@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { clsx } from 'clsx';
 import {
   BookOpen,
@@ -23,6 +23,10 @@ import {
   DollarSign,
   ExternalLink,
   PawPrint,
+  Send,
+  Bot,
+  User,
+  MessageSquare,
 } from 'lucide-react';
 import {
   useGuides,
@@ -30,9 +34,10 @@ import {
   useGenerateAIGuide,
   useMemberProfile,
   useProfileCompletion,
+  useSendChatMessage,
 } from '@/hooks/useApi';
 import { usePortalStore } from '@/store';
-import type { GuideType } from '@/types';
+import type { GuideType, ChatMessage as ChatMessageType } from '@/types';
 
 interface Guide {
   id: string;
@@ -574,6 +579,69 @@ interface GuideDetailProps {
 
 function GuideDetail({ guide, onBack }: GuideDetailProps) {
   const Icon = guide.icon;
+  const [messages, setMessages] = useState<ChatMessageType[]>([]);
+  const [inputValue, setInputValue] = useState('');
+  const [activeSection, setActiveSection] = useState<number | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const sendMessage = useSendChatMessage();
+
+  // Auto-scroll to latest message
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  // Generate suggested questions based on guide
+  const suggestedQuestions = getSuggestedQuestionsForGuide(guide.id);
+
+  const handleSendMessage = async (messageText?: string) => {
+    const text = messageText || inputValue.trim();
+    if (!text || sendMessage.isPending) return;
+
+    const userMessage: ChatMessageType = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: text,
+      timestamp: new Date().toISOString(),
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+    setInputValue('');
+
+    try {
+      const response = await sendMessage.mutateAsync({
+        message: text,
+        context: guide.id, // Use guide ID as context
+        include_practice: true,
+      });
+
+      if (response.success && response.message) {
+        const assistantMessage: ChatMessageType = {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: response.message,
+          timestamp: new Date().toISOString(),
+          sources: response.sources,
+        };
+        setMessages((prev) => [...prev, assistantMessage]);
+      }
+    } catch (error) {
+      const errorMessage: ChatMessageType = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: 'Sorry, I encountered an error. Please try again.',
+        timestamp: new Date().toISOString(),
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
 
   return (
     <div className="p-6">
@@ -586,66 +654,184 @@ function GuideDetail({ guide, onBack }: GuideDetailProps) {
         Back to guides
       </button>
 
-      <div className="max-w-3xl">
-        {/* Header */}
-        <div className="card p-6 mb-6">
-          <div className="flex items-start gap-4">
-            <div className="p-4 bg-primary-50 rounded-xl">
-              <Icon className="w-8 h-8 text-primary-600" />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left column - Guide info and sections */}
+        <div className="lg:col-span-1 space-y-6">
+          {/* Header */}
+          <div className="card p-6">
+            <div className="flex items-start gap-4">
+              <div className="p-3 bg-primary-50 rounded-xl">
+                <Icon className="w-6 h-6 text-primary-600" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xs font-medium text-primary-600">{guide.category}</span>
+                  <span className={clsx('px-2 py-0.5 rounded-full text-xs', difficultyColors[guide.difficulty])}>
+                    {guide.difficulty}
+                  </span>
+                </div>
+                <h1 className="text-xl font-bold text-gray-900 mb-2">{guide.title}</h1>
+                <p className="text-sm text-gray-600">{guide.description}</p>
+              </div>
             </div>
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-sm font-medium text-primary-600">{guide.category}</span>
-                <span className={clsx('px-2 py-0.5 rounded-full text-xs', difficultyColors[guide.difficulty])}>
-                  {guide.difficulty}
-                </span>
-              </div>
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">{guide.title}</h1>
-              <p className="text-gray-600">{guide.description}</p>
-              <div className="flex items-center gap-4 mt-4 text-sm text-gray-500">
-                <span className="flex items-center gap-1">
-                  <Clock className="w-4 h-4" />
-                  {guide.readTime} read
-                </span>
-                <span className="flex items-center gap-1">
-                  <BookOpen className="w-4 h-4" />
-                  {guide.sections.length} sections
-                </span>
-              </div>
+          </div>
+
+          {/* Table of contents */}
+          <div className="card p-6">
+            <h2 className="text-sm font-semibold text-gray-900 mb-4">Guide Sections</h2>
+            <div className="space-y-1">
+              {guide.sections.map((section, index) => (
+                <button
+                  key={index}
+                  onClick={() => {
+                    setActiveSection(index);
+                    handleSendMessage(`Tell me about "${section}" for ${guide.title.toLowerCase()}`);
+                  }}
+                  className={clsx(
+                    'w-full flex items-center gap-3 p-3 rounded-lg text-left transition-colors',
+                    activeSection === index
+                      ? 'bg-primary-50 text-primary-700'
+                      : 'hover:bg-gray-50 text-gray-700'
+                  )}
+                >
+                  <span className="w-6 h-6 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center text-xs font-medium flex-shrink-0">
+                    {index + 1}
+                  </span>
+                  <span className="text-sm">{section}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Quick questions */}
+          <div className="card p-6">
+            <h2 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-yellow-500" />
+              Quick Questions
+            </h2>
+            <div className="space-y-2">
+              {suggestedQuestions.map((question, index) => (
+                <button
+                  key={index}
+                  onClick={() => handleSendMessage(question)}
+                  className="w-full text-left text-sm text-gray-600 hover:text-primary-600 p-2 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  {question}
+                </button>
+              ))}
             </div>
           </div>
         </div>
 
-        {/* Table of contents */}
-        <div className="card p-6 mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">In this guide</h2>
-          <div className="space-y-2">
-            {guide.sections.map((section, index) => (
-              <div
-                key={index}
-                className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
-              >
-                <span className="w-6 h-6 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center text-sm font-medium">
-                  {index + 1}
-                </span>
-                <span className="text-gray-700">{section}</span>
+        {/* Right column - AI Chat */}
+        <div className="lg:col-span-2">
+          <div className="card h-[600px] flex flex-col">
+            {/* Chat header */}
+            <div className="px-6 py-4 border-b border-gray-200">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center">
+                  <Bot className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900">AI Guide Assistant</h3>
+                  <p className="text-xs text-gray-500">Ask questions about {guide.title.toLowerCase()}</p>
+                </div>
               </div>
-            ))}
-          </div>
-        </div>
+            </div>
 
-        {/* Content placeholder */}
-        <div className="card p-6">
-          <div className="prose max-w-none">
-            <p className="text-gray-600">
-              Full guide content would be loaded here. This guide covers everything you need
-              to know about {guide.title.toLowerCase()}.
-            </p>
-            <div className="mt-6 p-4 bg-primary-50 rounded-lg border border-primary-200">
-              <h3 className="text-primary-900 font-medium mb-2">Need personalized help?</h3>
-              <p className="text-primary-700 text-sm">
-                Use our AI assistant to get answers specific to your situation. It can help
-                you understand requirements based on your visa type and personal circumstances.
+            {/* Messages area */}
+            <div className="flex-1 overflow-y-auto px-6 py-4">
+              {messages.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center text-center">
+                  <div className="w-16 h-16 rounded-full bg-primary-50 flex items-center justify-center mb-4">
+                    <MessageSquare className="w-8 h-8 text-primary-600" />
+                  </div>
+                  <h3 className="font-semibold text-gray-900 mb-2">Start a conversation</h3>
+                  <p className="text-sm text-gray-600 max-w-sm mb-4">
+                    Click on a section from the guide, ask a quick question, or type your own question below.
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    I can help you understand requirements, timelines, and next steps.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {messages.map((message) => (
+                    <div
+                      key={message.id}
+                      className={clsx(
+                        'flex gap-3',
+                        message.role === 'user' ? 'justify-end' : 'justify-start'
+                      )}
+                    >
+                      {message.role === 'assistant' && (
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center flex-shrink-0">
+                          <Bot className="w-4 h-4 text-white" />
+                        </div>
+                      )}
+                      <div
+                        className={clsx(
+                          'max-w-[80%] rounded-2xl px-4 py-3',
+                          message.role === 'user'
+                            ? 'bg-primary-600 text-white rounded-tr-sm'
+                            : 'bg-gray-100 text-gray-900 rounded-tl-sm'
+                        )}
+                      >
+                        <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                      </div>
+                      {message.role === 'user' && (
+                        <div className="w-8 h-8 rounded-full bg-primary-600 flex items-center justify-center flex-shrink-0">
+                          <User className="w-4 h-4 text-white" />
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  {sendMessage.isPending && (
+                    <div className="flex gap-3">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center flex-shrink-0">
+                        <Bot className="w-4 h-4 text-white" />
+                      </div>
+                      <div className="bg-gray-100 rounded-2xl rounded-tl-sm px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <Loader2 className="w-4 h-4 animate-spin text-gray-500" />
+                          <span className="text-sm text-gray-500">Thinking...</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  <div ref={messagesEndRef} />
+                </div>
+              )}
+            </div>
+
+            {/* Input area */}
+            <div className="px-6 py-4 border-t border-gray-200">
+              <div className="flex gap-3">
+                <textarea
+                  ref={inputRef}
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Ask a question about this guide..."
+                  rows={1}
+                  className="flex-1 px-4 py-3 border border-gray-300 rounded-xl resize-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
+                  disabled={sendMessage.isPending}
+                />
+                <button
+                  onClick={() => handleSendMessage()}
+                  disabled={!inputValue.trim() || sendMessage.isPending}
+                  className={clsx(
+                    'px-4 py-3 rounded-xl transition-colors flex items-center justify-center',
+                    inputValue.trim() && !sendMessage.isPending
+                      ? 'bg-primary-600 text-white hover:bg-primary-700'
+                      : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                  )}
+                >
+                  <Send className="w-5 h-5" />
+                </button>
+              </div>
+              <p className="text-xs text-gray-500 mt-2">
+                Press Enter to send • Shift+Enter for new line
               </p>
             </div>
           </div>
@@ -653,6 +839,55 @@ function GuideDetail({ guide, onBack }: GuideDetailProps) {
       </div>
     </div>
   );
+}
+
+// Helper function to get suggested questions based on guide
+function getSuggestedQuestionsForGuide(guideId: string): string[] {
+  const questionsByGuide: Record<string, string[]> = {
+    'visa-application': [
+      'What documents do I need for my visa application?',
+      'How long does the visa process take?',
+      'What are the financial requirements?',
+      'Can I work while my visa is being processed?',
+    ],
+    'housing': [
+      'What documents do renters need in France?',
+      'How do I find a guarantor (garant)?',
+      'What is a dossier de location?',
+      'Should I buy or rent when first arriving?',
+    ],
+    'healthcare': [
+      'How do I register for the French healthcare system?',
+      'What is a Carte Vitale and how do I get one?',
+      'Do I need private health insurance?',
+      'How do I find an English-speaking doctor?',
+    ],
+    'banking': [
+      'Which French bank should I choose?',
+      'What documents do I need to open an account?',
+      'Can I open an account before moving?',
+      'How do transfers from the US work?',
+    ],
+    'taxes': [
+      'When do I become a French tax resident?',
+      'How does the US-France tax treaty work?',
+      'Do I need to file taxes in both countries?',
+      'What deductions can I claim?',
+    ],
+    'driving': [
+      'Can I drive with my US license in France?',
+      'How do I exchange my license?',
+      'Do I need an international driving permit?',
+      'What are the rules for buying a car?',
+    ],
+  };
+
+  return questionsByGuide[guideId] || [
+    'What are the first steps I should take?',
+    'What documents will I need?',
+    'How long does this process typically take?',
+    'What are common mistakes to avoid?',
+  ];
 }
 
 // Personalized Guide Detail Component
