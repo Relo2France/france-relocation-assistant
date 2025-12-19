@@ -5970,9 +5970,11 @@ Keep responses concise but informative. Use **bold** for important terms. If men
      */
     private function generate_report_html( $report, $content ) {
         $title = $content['header']['title'] ?? $report['location_name'];
-        $french_name = $content['header']['french_name'] ?? '';
+        $subtitle = $content['header']['subtitle'] ?? '';
         $tagline = $content['header']['tagline'] ?? 'A Comprehensive Guide for Those Considering Relocation';
-        $key_stats = $content['header']['key_stats'] ?? array();
+        $secondary_tagline = $content['header']['secondary_tagline'] ?? '';
+        $french_name = $subtitle; // Use subtitle as French name/location context (e.g., "Department 24 • Nouvelle-Aquitaine")
+        $header_stat_cards = $content['header']['stat_cards'] ?? array();
         $sections = $content['sections'] ?? array();
         $footer = $content['footer'] ?? array();
         $location_type = ucfirst( $report['location_type'] );
@@ -5991,8 +5993,11 @@ Keep responses concise but informative. Use **bold** for important terms. If men
             'demographics'     => '👥',
             'economy'          => '📈',
             'language'         => '💬',
+            'gastronomy'       => '🍷',
             'food_wine'        => '🍷',
+            'culture'          => '🎭',
             'culture_lifestyle' => '🎭',
+            'administrative'   => '🗺️',
             'subdivisions'     => '🏛️',
             'quality_of_life'  => '❤️',
             'environment'      => '🌲',
@@ -6002,41 +6007,16 @@ Keep responses concise but informative. Use **bold** for important terms. If men
             'local_life'       => '🏘️',
         );
 
-        // Format key stats for display
+        // Build header stat cards HTML
         $stats_html = '';
-        $stat_items = array(
-            'area_km2' => array( 'label' => 'Area', 'format' => 'number', 'suffix' => ' km²' ),
-            'population' => array( 'label' => 'Population', 'format' => 'number', 'suffix' => '' ),
-            'gdp_per_capita' => array( 'label' => 'GDP per capita', 'format' => 'currency', 'suffix' => '' ),
-            'life_expectancy' => array( 'label' => 'Life Expectancy', 'format' => 'decimal', 'suffix' => ' years' ),
-            'median_income' => array( 'label' => 'Median Income', 'format' => 'currency', 'suffix' => '' ),
-            'unemployment_rate' => array( 'label' => 'Unemployment', 'format' => 'percent', 'suffix' => '%' ),
-            'density_per_km2' => array( 'label' => 'Density', 'format' => 'number', 'suffix' => '/km²' ),
-            'average_rent' => array( 'label' => 'Avg. Rent', 'format' => 'currency', 'suffix' => '/mo' ),
-        );
-
-        $displayed_stats = 0;
-        foreach ( $stat_items as $key => $config ) {
-            if ( isset( $key_stats[ $key ] ) && $key_stats[ $key ] && $displayed_stats < 4 ) {
-                $value = $key_stats[ $key ];
-                switch ( $config['format'] ) {
-                    case 'number':
-                        $formatted = number_format( $value );
-                        break;
-                    case 'currency':
-                        $formatted = '€' . number_format( $value );
-                        break;
-                    case 'decimal':
-                        $formatted = number_format( $value, 1 );
-                        break;
-                    case 'percent':
-                        $formatted = number_format( $value, 1 );
-                        break;
-                    default:
-                        $formatted = $value;
+        if ( ! empty( $header_stat_cards ) ) {
+            foreach ( $header_stat_cards as $stat ) {
+                if ( is_array( $stat ) && isset( $stat['value'] ) ) {
+                    $value = esc_html( $stat['value'] );
+                    $label = esc_html( $stat['label'] ?? '' );
+                    $sublabel = isset( $stat['sublabel'] ) ? '<span class="stat-sublabel">' . esc_html( $stat['sublabel'] ) . '</span>' : '';
+                    $stats_html .= '<div class="stat-card"><span class="stat-value">' . $value . '</span><span class="stat-label">' . $label . '</span>' . $sublabel . '</div>';
                 }
-                $stats_html .= '<div class="stat-item"><span class="stat-value">' . esc_html( $formatted . $config['suffix'] ) . '</span><span class="stat-label">' . esc_html( $config['label'] ) . '</span></div>';
-                $displayed_stats++;
             }
         }
 
@@ -6045,7 +6025,7 @@ Keep responses concise but informative. Use **bold** for important terms. If men
         $section_index = 0;
         foreach ( $sections as $section_id => $section ) {
             $section_title = $section['title'] ?? ucwords( str_replace( '_', ' ', $section_id ) );
-            $section_content = $section['content'] ?? '';
+            $section_intro = $section['intro'] ?? $section['content'] ?? '';
             $section_icon = $section_icons[ $section_id ] ?? '📍';
             $is_first = $section_index === 0;
             $section_index++;
@@ -6054,12 +6034,161 @@ Keep responses concise but informative. Use **bold** for important terms. If men
             $sections_html .= '<summary class="section-header"><span class="section-icon">' . $section_icon . '</span><span class="section-title">' . esc_html( $section_title ) . '</span><span class="toggle-icon">▼</span></summary>';
             $sections_html .= '<div class="section-body">';
 
-            if ( $section_content ) {
-                $sections_html .= '<p class="section-content">' . wp_kses_post( nl2br( $section_content ) ) . '</p>';
+            // Intro paragraph
+            if ( $section_intro ) {
+                $sections_html .= '<p class="section-intro">' . wp_kses_post( $section_intro ) . '</p>';
             }
 
-            // Handle highlights
-            if ( ! empty( $section['highlights'] ) ) {
+            // Section stat cards
+            if ( ! empty( $section['stat_cards'] ) ) {
+                $sections_html .= '<div class="stat-cards-grid">';
+                foreach ( $section['stat_cards'] as $stat ) {
+                    if ( is_array( $stat ) && isset( $stat['value'] ) ) {
+                        $sections_html .= '<div class="stat-card-small">';
+                        $sections_html .= '<span class="stat-value">' . esc_html( $stat['value'] ) . '</span>';
+                        $sections_html .= '<span class="stat-label">' . esc_html( $stat['label'] ?? '' ) . '</span>';
+                        if ( isset( $stat['sublabel'] ) ) {
+                            $sections_html .= '<span class="stat-sublabel">' . esc_html( $stat['sublabel'] ) . '</span>';
+                        }
+                        $sections_html .= '</div>';
+                    }
+                }
+                $sections_html .= '</div>';
+            }
+
+            // Info box
+            if ( ! empty( $section['info_box'] ) ) {
+                $info_box = $section['info_box'];
+                $sections_html .= '<div class="info-box">';
+                if ( isset( $info_box['title'] ) ) {
+                    $sections_html .= '<h4 class="info-box-title">' . esc_html( $info_box['title'] ) . '</h4>';
+                }
+                // Data rows
+                if ( ! empty( $info_box['data_rows'] ) ) {
+                    $sections_html .= '<div class="data-rows">';
+                    foreach ( $info_box['data_rows'] as $row ) {
+                        $sections_html .= '<div class="data-row"><span class="data-label">' . esc_html( $row['label'] ) . '</span><span class="data-value">' . esc_html( $row['value'] ) . '</span></div>';
+                    }
+                    $sections_html .= '</div>';
+                }
+                // Grid items
+                if ( ! empty( $info_box['grid_items'] ) ) {
+                    $sections_html .= '<div class="info-grid">';
+                    foreach ( $info_box['grid_items'] as $item ) {
+                        $sections_html .= '<div class="info-grid-item"><span class="item-label">' . esc_html( $item['label'] ) . ':</span> <span class="item-desc">' . esc_html( $item['description'] ?? '' ) . '</span></div>';
+                    }
+                    $sections_html .= '</div>';
+                }
+                // Regular items
+                if ( ! empty( $info_box['items'] ) ) {
+                    $sections_html .= '<div class="info-items">';
+                    foreach ( $info_box['items'] as $item ) {
+                        $sections_html .= '<p class="info-item"><span class="item-label">' . esc_html( $item['label'] ) . ':</span> ' . esc_html( $item['description'] ?? $item['value'] ?? '' ) . '</p>';
+                    }
+                    $sections_html .= '</div>';
+                }
+                $sections_html .= '</div>';
+            }
+
+            // Callout box (gold/seasonal)
+            if ( ! empty( $section['callout_box'] ) ) {
+                $callout = $section['callout_box'];
+                $sections_html .= '<div class="callout-box">';
+                if ( isset( $callout['title'] ) ) {
+                    $sections_html .= '<h4 class="callout-title">' . esc_html( $callout['title'] ) . '</h4>';
+                }
+                if ( ! empty( $callout['items'] ) ) {
+                    $sections_html .= '<div class="callout-items">';
+                    foreach ( $callout['items'] as $item ) {
+                        $sections_html .= '<p><span class="callout-label">' . esc_html( $item['label'] ) . ':</span> ' . esc_html( $item['description'] ?? '' ) . '</p>';
+                    }
+                    $sections_html .= '</div>';
+                }
+                $sections_html .= '</div>';
+            }
+
+            // Highlight box (colored - emerald, amber, teal)
+            if ( ! empty( $section['highlight_box'] ) ) {
+                $highlight = $section['highlight_box'];
+                $color = $highlight['color'] ?? 'blue';
+                $color_classes = array(
+                    'emerald' => 'highlight-emerald',
+                    'amber'   => 'highlight-amber',
+                    'teal'    => 'highlight-teal',
+                    'blue'    => 'highlight-blue',
+                );
+                $color_class = $color_classes[ $color ] ?? 'highlight-blue';
+                $sections_html .= '<div class="highlight-box ' . $color_class . '">';
+                if ( isset( $highlight['title'] ) ) {
+                    $sections_html .= '<h4 class="highlight-title">' . esc_html( $highlight['title'] ) . '</h4>';
+                }
+                if ( isset( $highlight['content'] ) ) {
+                    $sections_html .= '<p class="highlight-content">' . esc_html( $highlight['content'] ) . '</p>';
+                }
+                if ( ! empty( $highlight['items'] ) ) {
+                    $sections_html .= '<div class="highlight-items">';
+                    foreach ( $highlight['items'] as $item ) {
+                        $sections_html .= '<p><span class="highlight-label">' . esc_html( $item['label'] ) . ':</span> ' . esc_html( $item['description'] ?? '' ) . '</p>';
+                    }
+                    $sections_html .= '</div>';
+                }
+                $sections_html .= '</div>';
+            }
+
+            // Paragraphs
+            if ( ! empty( $section['paragraphs'] ) ) {
+                foreach ( $section['paragraphs'] as $i => $para ) {
+                    $para_class = $i === count( $section['paragraphs'] ) - 1 ? 'section-para light' : 'section-para';
+                    $sections_html .= '<p class="' . $para_class . '">' . wp_kses_post( $para ) . '</p>';
+                }
+            }
+
+            // Considerations box (gold warning style)
+            if ( ! empty( $section['considerations_box'] ) ) {
+                $considerations = $section['considerations_box'];
+                $sections_html .= '<div class="considerations-box">';
+                $sections_html .= '<p><span class="considerations-label">Considerations:</span> ' . esc_html( $considerations['content'] ?? '' ) . '</p>';
+                $sections_html .= '</div>';
+            }
+
+            // Footer paragraphs
+            if ( ! empty( $section['paragraphs_footer'] ) ) {
+                foreach ( $section['paragraphs_footer'] as $para ) {
+                    $sections_html .= '<p class="section-para light">' . wp_kses_post( $para ) . '</p>';
+                }
+            }
+
+            // Legacy: Handle old format items/subsections
+            if ( ! empty( $section['items'] ) && empty( $section['info_box'] ) ) {
+                $sections_html .= '<div class="data-grid">';
+                foreach ( $section['items'] as $item ) {
+                    $sections_html .= '<div class="data-row"><span class="data-label">' . esc_html( $item['label'] ) . '</span><span class="data-value">' . esc_html( $item['value'] ) . '</span></div>';
+                }
+                $sections_html .= '</div>';
+            }
+
+            if ( ! empty( $section['subsections'] ) ) {
+                foreach ( $section['subsections'] as $sub_id => $subsection ) {
+                    $sub_title = $subsection['title'] ?? ucwords( str_replace( '_', ' ', $sub_id ) );
+                    $sub_content = $subsection['content'] ?? '';
+                    $sections_html .= '<div class="subsection">';
+                    $sections_html .= '<h3 class="subsection-title">' . esc_html( $sub_title ) . '</h3>';
+                    if ( $sub_content ) {
+                        $sections_html .= '<p class="subsection-content">' . wp_kses_post( nl2br( $sub_content ) ) . '</p>';
+                    }
+                    if ( ! empty( $subsection['items'] ) ) {
+                        $sections_html .= '<div class="data-grid">';
+                        foreach ( $subsection['items'] as $item ) {
+                            $sections_html .= '<div class="data-row"><span class="data-label">' . esc_html( $item['label'] ) . '</span><span class="data-value">' . esc_html( $item['value'] ) . '</span></div>';
+                        }
+                        $sections_html .= '</div>';
+                    }
+                    $sections_html .= '</div>';
+                }
+            }
+
+            // Handle legacy highlights
+            if ( ! empty( $section['highlights'] ) && empty( $section['highlight_box'] ) ) {
                 $sections_html .= '<div class="highlights-box">';
                 foreach ( $section['highlights'] as $highlight ) {
                     $sections_html .= '<span class="highlight-tag">' . esc_html( $highlight ) . '</span>';
@@ -6403,6 +6532,252 @@ Keep responses concise but informative. Use **bold** for important terms. If men
         .subsection-content {
             color: var(--dark-text);
             line-height: 1.7;
+        }
+
+        /* Section intro and paragraphs */
+        .section-intro {
+            font-size: 15px;
+            line-height: 1.7;
+            margin-bottom: 16px;
+            color: var(--dark-text);
+        }
+
+        .section-para {
+            font-size: 14px;
+            line-height: 1.7;
+            margin-bottom: 12px;
+            color: var(--dark-text);
+        }
+
+        .section-para.light {
+            color: var(--light-gray);
+            font-size: 13px;
+        }
+
+        .section-para strong {
+            color: var(--brand-blue);
+            font-weight: 600;
+        }
+
+        /* Stat cards grid for sections */
+        .stat-cards-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin: 16px 0;
+        }
+
+        @media (max-width: 768px) {
+            .stat-cards-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .stat-card-small {
+            background: var(--light-blue);
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .stat-card-small .stat-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--brand-blue);
+            display: block;
+        }
+
+        .stat-card-small .stat-label {
+            font-size: 11px;
+            color: var(--dark-text);
+            font-weight: 500;
+            display: block;
+        }
+
+        .stat-card-small .stat-sublabel {
+            font-size: 10px;
+            color: var(--light-gray);
+            display: block;
+        }
+
+        /* Info box (brand blue style) */
+        .info-box {
+            background: var(--light-blue);
+            border-radius: 8px;
+            padding: 16px;
+            margin: 16px 0;
+        }
+
+        .info-box-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--brand-blue);
+            margin-bottom: 12px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+
+        @media (max-width: 600px) {
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .info-grid-item {
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .info-items {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .info-item {
+            font-size: 13px;
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        .item-label {
+            font-weight: 600;
+            color: var(--brand-blue);
+        }
+
+        .item-desc {
+            color: var(--dark-text);
+        }
+
+        .data-rows {
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Callout box (gold/seasonal style) */
+        .callout-box {
+            background: #FEF3E2;
+            border: 1px solid #f5d9a8;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 16px 0;
+        }
+
+        .callout-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--brand-gold);
+            margin-bottom: 12px;
+        }
+
+        .callout-items {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .callout-items p {
+            font-size: 13px;
+            margin: 0;
+        }
+
+        .callout-label {
+            font-weight: 600;
+            color: #c78b2b;
+        }
+
+        /* Highlight box with color variants */
+        .highlight-box {
+            border-radius: 8px;
+            padding: 16px;
+            margin: 16px 0;
+            border: 1px solid;
+        }
+
+        .highlight-emerald {
+            background: #ecfdf5;
+            border-color: #a7f3d0;
+        }
+        .highlight-emerald .highlight-title { color: #065f46; }
+        .highlight-emerald .highlight-label { color: #047857; font-weight: 600; }
+        .highlight-emerald .highlight-content,
+        .highlight-emerald .highlight-items p { color: #047857; }
+
+        .highlight-amber {
+            background: #fffbeb;
+            border-color: #fcd34d;
+        }
+        .highlight-amber .highlight-title { color: #92400e; }
+        .highlight-amber .highlight-label { color: #b45309; font-weight: 600; }
+        .highlight-amber .highlight-content,
+        .highlight-amber .highlight-items p { color: #b45309; }
+
+        .highlight-teal {
+            background: #f0fdfa;
+            border-color: #99f6e4;
+        }
+        .highlight-teal .highlight-title { color: #115e59; }
+        .highlight-teal .highlight-label { color: #0d9488; font-weight: 600; }
+        .highlight-teal .highlight-content,
+        .highlight-teal .highlight-items p { color: #0d9488; }
+
+        .highlight-blue {
+            background: var(--light-blue);
+            border-color: #bfdbfe;
+        }
+        .highlight-blue .highlight-title { color: var(--brand-blue); }
+        .highlight-blue .highlight-label { color: var(--brand-blue); font-weight: 600; }
+        .highlight-blue .highlight-content,
+        .highlight-blue .highlight-items p { color: #1e40af; }
+
+        .highlight-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .highlight-content {
+            font-size: 13px;
+            line-height: 1.6;
+            margin: 0;
+        }
+
+        .highlight-items {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .highlight-items p {
+            font-size: 13px;
+            margin: 0;
+        }
+
+        .highlight-label {
+            font-weight: 600;
+        }
+
+        /* Considerations box (gold warning style) */
+        .considerations-box {
+            background: #FEF3E2;
+            border: 1px solid #f5d9a8;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin: 16px 0;
+        }
+
+        .considerations-box p {
+            font-size: 13px;
+            margin: 0;
+        }
+
+        .considerations-label {
+            font-weight: 600;
+            color: var(--brand-gold);
         }
 
         /* Footer */
@@ -6976,9 +7351,9 @@ SYSTEM;
 
         // Key stats to include based on level
         $key_stats_format = array(
-            'region'     => '"area_km2": [number], "population": [number], "gdp_per_capita": [number in €], "life_expectancy": [number]',
-            'department' => '"area_km2": [number], "population": [number], "median_income": [number in €/year], "unemployment_rate": [percentage]',
-            'commune'    => '"area_km2": [number], "population": [number], "density_per_km2": [number], "average_rent": [number in €/month]',
+            'region'     => '"area_km2": {"value": "[X,XXX]", "label": "Area", "sublabel": "km²"}, "population": {"value": "[X.XM]", "label": "Population", "sublabel": "2024 estimate"}, "capital": {"value": "[City]", "label": "Capital", "sublabel": "regional capital"}, "highlight": {"value": "[Key Value]", "label": "[Key Metric]", "sublabel": "[context]"}',
+            'department' => '"area_km2": {"value": "[X,XXX]", "label": "Area", "sublabel": "km²"}, "population": {"value": "[XXX,XXX]", "label": "Population", "sublabel": "2024 estimate"}, "prefecture": {"value": "[City]", "label": "Préfecture", "sublabel": "administrative center"}, "highlight": {"value": "[Key Value]", "label": "[Key Metric]", "sublabel": "[context]"}',
+            'commune'    => '"area_km2": {"value": "[XX]", "label": "Area", "sublabel": "km²"}, "population": {"value": "[XX,XXX]", "label": "Population", "sublabel": "2024 estimate"}, "altitude": {"value": "[Xm]", "label": "Altitude", "sublabel": "elevation"}, "highlight": {"value": "[Key Value]", "label": "[Key Metric]", "sublabel": "[context]"}',
         );
 
         $taglines = array(
@@ -6987,128 +7362,254 @@ SYSTEM;
             'commune'    => 'Everything You Need to Know About This Community',
         );
 
-        // Build location-specific section requirements
-        $section_requirements = $this->get_section_requirements_for_prompt( $type, $name );
-
         $prompt = <<<PROMPT
 Generate a comprehensive, deeply researched relocation report for {$name} ({$type_label} in France).
 
-This report follows the relo2france template format and should provide the same depth of information as a professional relocation guide. The report is for Americans and other English speakers considering relocating to France.
+This report follows the relo2france template format with StatCards, DataRows, and detailed structured content. It's for Americans and English speakers considering relocating to France.
 
-REQUIRED FORMAT - Return valid JSON with this exact structure:
+REQUIRED JSON FORMAT:
 {
   "header": {
     "title": "{$name}",
-    "french_name": "[French official name if different, or null]",
-    "tagline": "{$taglines[$type]}",
-    "key_stats": {
+    "subtitle": "[Department ## • Region Name] or [Region, France]",
+    "tagline": "[Primary distinguishing characteristic - one compelling sentence]",
+    "secondary_tagline": "[Notable features or appeal]",
+    "stat_cards": [
       {$key_stats_format[$type]}
-    }
+    ]
   },
   "sections": {
-    "section_id": {
-      "title": "Section Title",
-      "icon": "[icon name: MapPin, Thermometer, Users, TrendingUp, Languages, Utensils, Music, Building2, Heart, TreePine, Home, Train, Info]",
-      "content": "Main introductory paragraph with specific facts about {$name}...",
-      "subsections": {
-        "subsection_id": {
-          "title": "Subsection Title",
-          "content": "Detailed content specific to {$name}...",
-          "items": [{"label": "Item Name", "value": "Specific value or description"}]
-        }
+    "geography": {
+      "title": "Geography & Landscape",
+      "icon": "Mountain",
+      "intro": "[2-3 sentences describing physical location and defining characteristics. Include <strong>bold key facts</strong> inline.]",
+      "stat_cards": [
+        {"value": "[X,XXX]", "label": "[Metric]", "sublabel": "[context]"},
+        {"value": "[XXX]", "label": "[Metric]", "sublabel": "[context]"},
+        {"value": "[XX]", "label": "[Metric]", "sublabel": "[context]"},
+        {"value": "[X]", "label": "[Metric]", "sublabel": "[context]"}
+      ],
+      "info_box": {
+        "title": "Major Geographic Features",
+        "items": [
+          {"label": "[River/Mountain/etc]", "description": "[Brief description]"},
+          {"label": "[Feature]", "description": "[Brief description]"}
+        ]
       },
-      "items": [{"label": "Data Point", "value": "Specific value"}],
-      "highlights": ["Key highlight 1", "Key highlight 2"]
+      "paragraphs": [
+        "[Additional geographic details, terrain types, landscape zones - 2-3 sentences]",
+        "[Supplementary information, interesting facts - 1-2 sentences, shown in lighter text]"
+      ]
+    },
+    "climate": {
+      "title": "Climate",
+      "icon": "Thermometer",
+      "intro": "[Opening describing climate type and general characteristics]",
+      "stat_cards": [
+        {"value": "[X°C]", "label": "Avg. Annual", "sublabel": "[descriptor]"},
+        {"value": "[X-X°C]", "label": "Summer High", "sublabel": "Jun-Aug"},
+        {"value": "[X-X°C]", "label": "Winter Low", "sublabel": "Dec-Feb"},
+        {"value": "[Xmm]", "label": "Rainfall", "sublabel": "annual average"}
+      ],
+      "callout_box": {
+        "title": "Seasonal Characteristics",
+        "items": [
+          {"label": "Spring (Mar-May)", "description": "[Specific description]"},
+          {"label": "Summer (Jun-Aug)", "description": "[Specific description]"},
+          {"label": "Autumn (Sep-Nov)", "description": "[Specific description]"},
+          {"label": "Winter (Dec-Feb)", "description": "[Specific description]"}
+        ]
+      },
+      "paragraphs": ["[Regional variations, microclimates]", "[Climate considerations for residents]"]
+    },
+    "demographics": {
+      "title": "Population & Demographics",
+      "icon": "Users",
+      "intro": "[Opening with population figures and growth context]",
+      "stat_cards": [
+        {"value": "[X.XM]", "label": "Population", "sublabel": "2024 estimate"},
+        {"value": "[X/km²]", "label": "Density", "sublabel": "[vs national avg]"},
+        {"value": "[X.XM]", "label": "[Urban Area]", "sublabel": "metropolitan area"},
+        {"value": "[±X.X%]", "label": "Growth", "sublabel": "annual"}
+      ],
+      "info_box": {
+        "title": "Major Population Centers",
+        "data_rows": [
+          {"label": "[City 1]", "value": "~[XXX,000]"},
+          {"label": "[City 2]", "value": "~[XX,000]"},
+          {"label": "[City 3]", "value": "~[XX,000]"}
+        ]
+      },
+      "paragraphs": ["[Population distribution, urban vs rural]", "[Age demographics, migration patterns, expat communities]"]
+    },
+    "economy": {
+      "title": "Economy",
+      "icon": "TrendingUp",
+      "intro": "[Opening describing economic character and major industries]",
+      "stat_cards": [
+        {"value": "€[XX,000]", "label": "GDP/capita", "sublabel": "[vs national]"},
+        {"value": "€[X.X]B", "label": "[Key Export]", "sublabel": "annual value"},
+        {"value": "[XXX,000]", "label": "Employment", "sublabel": "total jobs"},
+        {"value": "[X]M+", "label": "Tourism", "sublabel": "visitors annually"}
+      ],
+      "info_box": {
+        "title": "Key Economic Sectors",
+        "items": [
+          {"label": "[Sector 1]", "description": "[Description with figures]"},
+          {"label": "[Sector 2]", "description": "[Description with figures]"},
+          {"label": "[Sector 3]", "description": "[Description with figures]"}
+        ]
+      },
+      "paragraphs": ["[Recent developments, major employers]", "[Employment distribution, outlook]"]
+    },
+    "language": {
+      "title": "Language & Identity",
+      "icon": "Languages",
+      "intro": "[Opening about linguistic landscape]",
+      "info_box": {
+        "title": "Linguistic Heritage",
+        "items": [
+          {"label": "[Regional language/dialect]", "description": "[Current status and usage]"},
+          {"label": "Regional French", "description": "[Accent and vocabulary notes]"},
+          {"label": "English Usage", "description": "[Proficiency level, expat communities]"}
+        ]
+      },
+      "paragraphs": ["[Regional identity, cultural distinctiveness]", "[Historical context, place name etymology]"]
+    },
+    "gastronomy": {
+      "title": "Gastronomy",
+      "icon": "Utensils",
+      "intro": "[Opening describing culinary character and influences]",
+      "info_box": {
+        "title": "Signature Dishes & Products",
+        "grid_items": [
+          {"label": "[Dish 1]", "description": "[Brief description]"},
+          {"label": "[Dish 2]", "description": "[Brief description]"},
+          {"label": "[Dish 3]", "description": "[Brief description]"},
+          {"label": "[Product 1]", "description": "[Brief description]"},
+          {"label": "[Wine/Beverage]", "description": "[Brief description]"},
+          {"label": "[Specialty]", "description": "[Brief description]"}
+        ]
+      },
+      "highlight_box": {
+        "title": "[Signature Item Name]",
+        "content": "[Detailed description of an iconic local food or drink - 2-3 sentences]",
+        "color": "amber"
+      },
+      "paragraphs": ["[Local food production, markets, AOC products]", "[Restaurant scene, Michelin recognition]"]
+    },
+    "culture": {
+      "title": "Culture & Lifestyle",
+      "icon": "Music",
+      "intro": "[Opening describing cultural character and lifestyle]",
+      "info_box": {
+        "title": "Cultural Highlights",
+        "items": [
+          {"label": "UNESCO World Heritage", "description": "[Sites if applicable]"},
+          {"label": "[Museum/Institution]", "description": "[Description]"},
+          {"label": "[Festival/Event]", "description": "[Description with dates if known]"}
+        ]
+      },
+      "paragraphs": ["[Architectural heritage, arts scene]", "[Lifestyle, pace of life, recreational culture]", "[Major events, sports culture]"]
+    },
+    "administrative": {
+      "title": "Administrative Geography",
+      "icon": "MapPin",
+      "intro": "[Opening about administrative structure]",
+      "info_box": {
+        "title": "[Number] Arrondissements/Cantons",
+        "grid_items": [
+          {"label": "[Name 1]", "description": "[Brief description]"},
+          {"label": "[Name 2]", "description": "[Brief description]"},
+          {"label": "[Name 3]", "description": "[Brief description]"}
+        ]
+      },
+      "highlight_box": {
+        "title": "Notable Communes",
+        "items": [
+          {"label": "[Commune 1]", "description": "[Why notable]"},
+          {"label": "[Commune 2]", "description": "[Why notable]"},
+          {"label": "[Commune 3]", "description": "[Why notable]"}
+        ],
+        "color": "teal"
+      },
+      "paragraphs": ["[Local governance structure]", "[Administrative details]"]
+    },
+    "quality_of_life": {
+      "title": "Quality of Life",
+      "icon": "Heart",
+      "intro": "[Opening about overall quality of life and appeal]",
+      "info_box": {
+        "title": "Key Quality Indicators",
+        "data_rows": [
+          {"label": "TGV to Paris", "value": "[X hours]"},
+          {"label": "Nearest Airport", "value": "[Name] - [X km]"},
+          {"label": "Universities", "value": "[Number/Names]"},
+          {"label": "Major Hospitals", "value": "[Number/Names]"}
+        ]
+      },
+      "paragraphs": [
+        "<strong>Healthcare:</strong> [Hospital system, specialist availability - 1-2 sentences]",
+        "<strong>Education:</strong> [Universities, international schools - 1-2 sentences]",
+        "<strong>Transport:</strong> [Rail, road, public transit - 1-2 sentences]"
+      ],
+      "considerations_box": {
+        "content": "[Honest assessment of challenges - property prices, climate issues, bureaucracy, rural limitations - 2-3 sentences]"
+      }
+    },
+    "environment": {
+      "title": "Environment & Natural Heritage",
+      "icon": "TreePine",
+      "intro": "[Opening about environmental diversity and natural assets]",
+      "paragraphs": ["<strong>[Major Natural Feature]:</strong> [Detailed description - 2-3 sentences]"],
+      "highlight_box": {
+        "title": "Natural Highlights",
+        "items": [
+          {"label": "[Park/Reserve]", "description": "[Description]"},
+          {"label": "[Natural Feature]", "description": "[Description]"},
+          {"label": "[Outdoor Activity]", "description": "[Description]"}
+        ],
+        "color": "emerald"
+      },
+      "paragraphs_footer": ["<strong>Conservation:</strong> [Environmental issues, protection efforts]", "[Outdoor recreation, hiking trails, seasonal activities]"]
     }
   },
   "footer": {
-    "data_sources": ["INSEE (Institut national de la statistique)", "Eurostat", "service-public.fr", "france.fr"],
+    "data_sources": "Data from INSEE, [regional-website.fr], and official French government sources (2024-2025)",
+    "reference_links": ["insee.fr", "[regional-site.fr]", "service-public.fr"],
     "generated_date": "{$current_date}",
     "version": 1
   }
 }
 
-SECTIONS TO GENERATE (in this order):
-{$section_requirements}
+CRITICAL CONTENT REQUIREMENTS:
 
-CRITICAL REQUIREMENTS FOR CONTENT DEPTH:
+1. **ALL stat_cards MUST have real, specific data** - not placeholders
+   - Use INSEE data for populations, densities
+   - Use actual figures or reasonable estimates based on known data
 
-1. GEOGRAPHY & LANDSCAPE:
-   - Describe the specific terrain, elevation, and borders of {$name}
-   - Name specific rivers, mountains, or coastlines if applicable
-   - Mention notable natural landmarks by name
-   - Include area in km² and describe how this compares regionally
+2. **info_box items must be location-specific**
+   - Name actual rivers, mountains, cities, dishes, wines
+   - Reference real festivals, institutions, landmarks
 
-2. CLIMATE:
-   - Provide specific temperature ranges for each season (in °C)
-   - Mention rainfall patterns and sunny days per year
-   - Note any special weather phenomena (mistral, Atlantic winds, etc.)
-   - Compare to other French regions if helpful
+3. **Every paragraph should contain specific facts**
+   - "The Dordogne River runs 483km through the region" NOT "The area has several rivers"
+   - "Temperatures reach 30-35°C in July-August" NOT "Summers are warm"
 
-3. DEMOGRAPHICS & POPULATION:
-   - Exact population figures with year
-   - Population density per km²
-   - Urban vs rural split percentage
-   - Age demographics (median age, retiree percentage if notable)
-   - Growth or decline trends
-
-4. ECONOMY:
-   - Specific economic indicators: median income, unemployment rate
-   - Name the 3-5 largest employers or industries
-   - Job market outlook for different sectors
-   - Cost of living comparison to national average
-
-5. HOUSING & REAL ESTATE (for department/commune):
-   - Specific average rents: studio (€X), 1-bed (€X), 2-bed (€X), house (€X)
-   - Property buying prices in €/m²
-   - Name 2-4 specific neighborhoods with character descriptions
-   - Rental market competitiveness
-
-6. FOOD & WINE CULTURE:
-   - Name 3-5 specific regional dishes and describe them
-   - Name local wines or beverages if applicable
-   - Describe the local market scene (weekly market days)
-   - Notable restaurants or food traditions
-
-7. CULTURE & LIFESTYLE:
-   - Local festivals or cultural events by name
-   - Expat community presence and size if known
-   - Social customs specific to the area
-   - Work-life balance observations
-
-8. QUALITY OF LIFE:
-   - Name specific hospitals or clinics
-   - International school options if any
-   - Internet speeds and infrastructure quality
-   - Safety and quality of life rankings if available
-
-9. TRANSPORTATION:
-   - Specific train connections (TGV stations, journey times to Paris)
-   - Local bus/tram systems
-   - Nearest airports with distance
-   - Driving considerations
-
-10. ENVIRONMENT & NATURAL HERITAGE:
-    - Name specific parks, reserves, or natural sites
-    - Popular hiking trails or outdoor activities
-    - Environmental quality observations
+4. **For {$type_label} "{$name}", include:**
+   - Exact population with year (e.g., "423,000 - 2024 INSEE")
+   - Specific major cities/towns with populations
+   - Named regional dishes and products
+   - Real transportation times (TGV to Paris: X hours)
+   - Actual climate data (avg temp, rainfall)
 
 WRITING STYLE:
-- Professional yet warm, like a trusted relocation consultant
-- Use specific data, names, and numbers - no vague statements
-- Write in second person where natural ("You'll discover...")
-- Include practical tips for newcomers
-- Be balanced - mention both advantages and honest considerations
-- Format numbers appropriately (1,234 for thousands, €1,500 for currency)
+- Informative but accessible for relocators
+- Practical focus with specific data points
+- Include both advantages AND honest considerations
+- Format numbers: 1,234 for thousands, €1,500 for currency
 
-DATA ACCURACY:
-- Use current data from INSEE, Eurostat, and French government sources
-- Populations should reflect 2023-2024 figures
-- Housing prices should reflect current market (2024-2025)
-- If exact data unavailable, use regional averages with appropriate qualification
-- NEVER invent specific numbers - use ranges or estimates if needed
-
-Return ONLY valid JSON. No markdown, no explanation, just the JSON object.
+Return ONLY valid JSON. No markdown, no explanation.
 PROMPT;
 
         return $prompt;
