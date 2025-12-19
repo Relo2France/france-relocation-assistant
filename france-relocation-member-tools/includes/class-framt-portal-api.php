@@ -6086,10 +6086,24 @@ Keep responses concise but informative. Use **bold** for important terms. If men
                 $sections_html .= '<p class="section-intro">' . wp_kses_post( $section_intro ) . '</p>';
             }
 
-            // Note: stat_cards removed from sections to match PDF template
-            // PDF only has stat cards in the header, not within each section
+            // Section stat cards (these ARE expected - see Gironde template)
+            if ( ! empty( $section['stat_cards'] ) && is_array( $section['stat_cards'] ) ) {
+                $sections_html .= '<div class="stat-cards-grid">';
+                foreach ( $section['stat_cards'] as $stat ) {
+                    if ( is_array( $stat ) && isset( $stat['value'] ) ) {
+                        $sections_html .= '<div class="stat-card-small">';
+                        $sections_html .= '<span class="stat-value">' . esc_html( $stat['value'] ) . '</span>';
+                        $sections_html .= '<span class="stat-label">' . esc_html( $stat['label'] ?? '' ) . '</span>';
+                        if ( isset( $stat['sublabel'] ) ) {
+                            $sections_html .= '<span class="stat-sublabel">' . esc_html( $stat['sublabel'] ) . '</span>';
+                        }
+                        $sections_html .= '</div>';
+                    }
+                }
+                $sections_html .= '</div>';
+            }
 
-            // Info box - render as subsection title + bullet list (matching PDF template)
+            // Info box - render as gold heading + bullet list (NO background box)
             if ( ! empty( $section['info_box'] ) && is_array( $section['info_box'] ) ) {
                 $info_box = $section['info_box'];
                 if ( isset( $info_box['title'] ) ) {
