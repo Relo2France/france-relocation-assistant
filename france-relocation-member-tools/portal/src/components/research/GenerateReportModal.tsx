@@ -160,14 +160,16 @@ export default function GenerateReportModal({
               <div className="bg-gray-50 rounded-lg p-4 mb-6 text-left">
                 <h4 className="font-medium text-gray-900 mb-2">Report includes:</h4>
                 <ul className="text-sm text-gray-600 space-y-1">
-                  <li>• Brief history and cultural overview</li>
-                  <li>• Cost of living analysis</li>
-                  <li>• Housing market information</li>
-                  <li>• Healthcare facilities</li>
-                  <li>• Education options</li>
-                  <li>• Transportation and infrastructure</li>
-                  <li>• Climate and lifestyle</li>
-                  <li>• Practical relocation tips</li>
+                  <li>🗺️ Geography & landscape overview</li>
+                  <li>🌡️ Climate and weather patterns</li>
+                  <li>📈 Economy and job market</li>
+                  <li>🏠 Housing and real estate</li>
+                  <li>🍷 Food and wine culture</li>
+                  <li>🎭 Culture and lifestyle</li>
+                  <li>❤️ Quality of life (healthcare, education)</li>
+                  <li>🚆 Transportation options</li>
+                  <li>🌲 Environment and outdoor activities</li>
+                  <li>ℹ️ Practical information</li>
                 </ul>
               </div>
 
