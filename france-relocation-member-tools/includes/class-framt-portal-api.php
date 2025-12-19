@@ -6045,7 +6045,7 @@ Keep responses concise but informative. Use **bold** for important terms. If men
 
         // Build header stat cards HTML
         $stats_html = '';
-        if ( ! empty( $header_stat_cards ) ) {
+        if ( ! empty( $header_stat_cards ) && is_array( $header_stat_cards ) ) {
             foreach ( $header_stat_cards as $stat ) {
                 if ( is_array( $stat ) && isset( $stat['value'] ) ) {
                     $value = esc_html( $stat['value'] );
@@ -6080,7 +6080,7 @@ Keep responses concise but informative. Use **bold** for important terms. If men
             }
 
             // Section stat cards
-            if ( ! empty( $section['stat_cards'] ) ) {
+            if ( ! empty( $section['stat_cards'] ) && is_array( $section['stat_cards'] ) ) {
                 $sections_html .= '<div class="stat-cards-grid">';
                 foreach ( $section['stat_cards'] as $stat ) {
                     if ( is_array( $stat ) && isset( $stat['value'] ) ) {
@@ -6097,33 +6097,36 @@ Keep responses concise but informative. Use **bold** for important terms. If men
             }
 
             // Info box
-            if ( ! empty( $section['info_box'] ) ) {
+            if ( ! empty( $section['info_box'] ) && is_array( $section['info_box'] ) ) {
                 $info_box = $section['info_box'];
                 $sections_html .= '<div class="info-box">';
                 if ( isset( $info_box['title'] ) ) {
                     $sections_html .= '<h4 class="info-box-title">' . esc_html( $info_box['title'] ) . '</h4>';
                 }
                 // Data rows
-                if ( ! empty( $info_box['data_rows'] ) ) {
+                if ( ! empty( $info_box['data_rows'] ) && is_array( $info_box['data_rows'] ) ) {
                     $sections_html .= '<div class="data-rows">';
                     foreach ( $info_box['data_rows'] as $row ) {
-                        $sections_html .= '<div class="data-row"><span class="data-label">' . esc_html( $row['label'] ) . '</span><span class="data-value">' . esc_html( $row['value'] ) . '</span></div>';
+                        if ( ! is_array( $row ) ) continue;
+                        $sections_html .= '<div class="data-row"><span class="data-label">' . esc_html( $row['label'] ?? '' ) . '</span><span class="data-value">' . esc_html( $row['value'] ?? '' ) . '</span></div>';
                     }
                     $sections_html .= '</div>';
                 }
                 // Grid items
-                if ( ! empty( $info_box['grid_items'] ) ) {
+                if ( ! empty( $info_box['grid_items'] ) && is_array( $info_box['grid_items'] ) ) {
                     $sections_html .= '<div class="info-grid">';
                     foreach ( $info_box['grid_items'] as $item ) {
-                        $sections_html .= '<div class="info-grid-item"><span class="item-label">' . esc_html( $item['label'] ) . ':</span> <span class="item-desc">' . esc_html( $item['description'] ?? '' ) . '</span></div>';
+                        if ( ! is_array( $item ) ) continue;
+                        $sections_html .= '<div class="info-grid-item"><span class="item-label">' . esc_html( $item['label'] ?? '' ) . ':</span> <span class="item-desc">' . esc_html( $item['description'] ?? '' ) . '</span></div>';
                     }
                     $sections_html .= '</div>';
                 }
                 // Regular items
-                if ( ! empty( $info_box['items'] ) ) {
+                if ( ! empty( $info_box['items'] ) && is_array( $info_box['items'] ) ) {
                     $sections_html .= '<div class="info-items">';
                     foreach ( $info_box['items'] as $item ) {
-                        $sections_html .= '<p class="info-item"><span class="item-label">' . esc_html( $item['label'] ) . ':</span> ' . esc_html( $item['description'] ?? $item['value'] ?? '' ) . '</p>';
+                        if ( ! is_array( $item ) ) continue;
+                        $sections_html .= '<p class="info-item"><span class="item-label">' . esc_html( $item['label'] ?? '' ) . ':</span> ' . esc_html( $item['description'] ?? $item['value'] ?? '' ) . '</p>';
                     }
                     $sections_html .= '</div>';
                 }
@@ -6131,16 +6134,17 @@ Keep responses concise but informative. Use **bold** for important terms. If men
             }
 
             // Callout box (gold/seasonal)
-            if ( ! empty( $section['callout_box'] ) ) {
+            if ( ! empty( $section['callout_box'] ) && is_array( $section['callout_box'] ) ) {
                 $callout = $section['callout_box'];
                 $sections_html .= '<div class="callout-box">';
                 if ( isset( $callout['title'] ) ) {
                     $sections_html .= '<h4 class="callout-title">' . esc_html( $callout['title'] ) . '</h4>';
                 }
-                if ( ! empty( $callout['items'] ) ) {
+                if ( ! empty( $callout['items'] ) && is_array( $callout['items'] ) ) {
                     $sections_html .= '<div class="callout-items">';
                     foreach ( $callout['items'] as $item ) {
-                        $sections_html .= '<p><span class="callout-label">' . esc_html( $item['label'] ) . ':</span> ' . esc_html( $item['description'] ?? '' ) . '</p>';
+                        if ( ! is_array( $item ) ) continue;
+                        $sections_html .= '<p><span class="callout-label">' . esc_html( $item['label'] ?? '' ) . ':</span> ' . esc_html( $item['description'] ?? '' ) . '</p>';
                     }
                     $sections_html .= '</div>';
                 }
@@ -6148,7 +6152,7 @@ Keep responses concise but informative. Use **bold** for important terms. If men
             }
 
             // Highlight box (colored - emerald, amber, teal)
-            if ( ! empty( $section['highlight_box'] ) ) {
+            if ( ! empty( $section['highlight_box'] ) && is_array( $section['highlight_box'] ) ) {
                 $highlight = $section['highlight_box'];
                 $color = $highlight['color'] ?? 'blue';
                 $color_classes = array(
@@ -6165,10 +6169,11 @@ Keep responses concise but informative. Use **bold** for important terms. If men
                 if ( isset( $highlight['content'] ) ) {
                     $sections_html .= '<p class="highlight-content">' . esc_html( $highlight['content'] ) . '</p>';
                 }
-                if ( ! empty( $highlight['items'] ) ) {
+                if ( ! empty( $highlight['items'] ) && is_array( $highlight['items'] ) ) {
                     $sections_html .= '<div class="highlight-items">';
                     foreach ( $highlight['items'] as $item ) {
-                        $sections_html .= '<p><span class="highlight-label">' . esc_html( $item['label'] ) . ':</span> ' . esc_html( $item['description'] ?? '' ) . '</p>';
+                        if ( ! is_array( $item ) ) continue;
+                        $sections_html .= '<p><span class="highlight-label">' . esc_html( $item['label'] ?? '' ) . ':</span> ' . esc_html( $item['description'] ?? '' ) . '</p>';
                     }
                     $sections_html .= '</div>';
                 }
@@ -6176,15 +6181,17 @@ Keep responses concise but informative. Use **bold** for important terms. If men
             }
 
             // Paragraphs
-            if ( ! empty( $section['paragraphs'] ) ) {
+            if ( ! empty( $section['paragraphs'] ) && is_array( $section['paragraphs'] ) ) {
+                $para_count = count( $section['paragraphs'] );
                 foreach ( $section['paragraphs'] as $i => $para ) {
-                    $para_class = $i === count( $section['paragraphs'] ) - 1 ? 'section-para light' : 'section-para';
-                    $sections_html .= '<p class="' . $para_class . '">' . wp_kses_post( $para ) . '</p>';
+                    if ( ! is_string( $para ) && ! is_numeric( $para ) ) continue;
+                    $para_class = $i === $para_count - 1 ? 'section-para light' : 'section-para';
+                    $sections_html .= '<p class="' . $para_class . '">' . wp_kses_post( (string) $para ) . '</p>';
                 }
             }
 
             // Considerations box (gold warning style)
-            if ( ! empty( $section['considerations_box'] ) ) {
+            if ( ! empty( $section['considerations_box'] ) && is_array( $section['considerations_box'] ) ) {
                 $considerations = $section['considerations_box'];
                 $sections_html .= '<div class="considerations-box">';
                 $sections_html .= '<p><span class="considerations-label">Considerations:</span> ' . esc_html( $considerations['content'] ?? '' ) . '</p>';
@@ -6192,8 +6199,9 @@ Keep responses concise but informative. Use **bold** for important terms. If men
             }
 
             // Footer paragraphs
-            if ( ! empty( $section['paragraphs_footer'] ) ) {
+            if ( ! empty( $section['paragraphs_footer'] ) && is_array( $section['paragraphs_footer'] ) ) {
                 foreach ( $section['paragraphs_footer'] as $para ) {
+                    if ( ! is_string( $para ) && ! is_numeric( $para ) ) continue;
                     $sections_html .= '<p class="section-para light">' . wp_kses_post( $para ) . '</p>';
                 }
             }
