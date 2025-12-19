@@ -44,8 +44,9 @@ const defaultSettings: PortalSettings = {
     { id: 'profile', label: 'My Profile', icon: 'User', path: '/profile' },
     { id: 'family', label: 'Family Members', icon: 'Users', path: '/family' },
     { id: 'membership', label: 'Membership', icon: 'CreditCard', path: '/membership' },
+    { id: 'support', label: 'Contact Support', icon: 'Headphones', path: '/support' },
     { id: 'settings', label: 'Settings', icon: 'Settings', path: '/settings' },
-    { id: 'help', label: 'Help & Support', icon: 'HelpCircle', path: '/help' },
+    { id: 'help', label: 'Help', icon: 'HelpCircle', path: '/help' },
   ],
   customCss: '',
 };

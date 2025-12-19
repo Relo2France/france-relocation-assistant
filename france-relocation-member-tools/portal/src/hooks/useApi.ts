@@ -15,6 +15,7 @@ import {
   guidesApi,
   chatApi,
   membershipApi,
+  supportApi,
 } from '@/api/client';
 import type {
   Task,
@@ -64,6 +65,10 @@ export const queryKeys = {
   subscriptions: ['subscriptions'] as const,
   payments: ['payments'] as const,
   upgradeOptions: ['upgradeOptions'] as const,
+  // Support tickets
+  supportTickets: ['supportTickets'] as const,
+  supportTicket: (id: number) => ['supportTicket', id] as const,
+  supportUnreadCount: ['supportUnreadCount'] as const,
 };
 
 // Dashboard hook
@@ -714,5 +719,72 @@ export function useUpgradeOptions() {
     queryKey: queryKeys.upgradeOptions,
     queryFn: membershipApi.getUpgradeOptions,
     staleTime: 60000 * 60, // 1 hour
+  });
+}
+
+// ============================================
+// Support Ticket Hooks
+// ============================================
+
+export function useSupportTickets() {
+  return useQuery({
+    queryKey: queryKeys.supportTickets,
+    queryFn: supportApi.getTickets,
+    staleTime: 30000, // 30 seconds
+  });
+}
+
+export function useSupportTicket(ticketId: number | null) {
+  return useQuery({
+    queryKey: queryKeys.supportTicket(ticketId || 0),
+    queryFn: () => supportApi.getTicket(ticketId!),
+    enabled: !!ticketId,
+    staleTime: 10000, // 10 seconds
+  });
+}
+
+export function useSupportUnreadCount() {
+  return useQuery({
+    queryKey: queryKeys.supportUnreadCount,
+    queryFn: supportApi.getUnreadCount,
+    staleTime: 30000, // 30 seconds
+    refetchInterval: 60000, // Refetch every minute
+  });
+}
+
+export function useCreateSupportTicket() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: supportApi.createTicket,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.supportTickets });
+      queryClient.invalidateQueries({ queryKey: queryKeys.supportUnreadCount });
+    },
+  });
+}
+
+export function useReplyToSupportTicket() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ ticketId, content }: { ticketId: number; content: string }) =>
+      supportApi.replyToTicket(ticketId, { content }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.supportTickets });
+      queryClient.invalidateQueries({ queryKey: queryKeys.supportTicket(variables.ticketId) });
+    },
+  });
+}
+
+export function useDeleteSupportTicket() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: supportApi.deleteTicket,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.supportTickets });
+      queryClient.invalidateQueries({ queryKey: queryKeys.supportUnreadCount });
+    },
   });
 }

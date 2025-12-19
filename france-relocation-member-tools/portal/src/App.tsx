@@ -21,6 +21,7 @@ import { GlossaryView } from '@/components/glossary';
 import { KnowledgeBaseChat } from '@/components/chat';
 import { MembershipView } from '@/components/membership';
 import { ResearchView } from '@/components/research';
+import { SupportView } from '@/components/support';
 
 // View router
 function ViewRouter() {
@@ -60,6 +61,8 @@ function ViewRouter() {
       return <MembershipView />;
     case 'research':
       return <ResearchView />;
+    case 'support':
+      return <SupportView />;
     default:
       return <Dashboard />;
   }

@@ -724,6 +724,56 @@ export interface SavedResearchDocument {
   saved_at: string;
 }
 
+// Support Ticket types
+export interface SupportTicket {
+  id: number;
+  user_id: number;
+  subject: string;
+  status: TicketStatus;
+  priority: TicketPriority;
+  has_unread_user: boolean;
+  reply_count: number;
+  initial_message?: string;
+  created_at: string;
+  updated_at: string;
+  closed_at?: string | null;
+  relative_time: string;
+  last_reply_at?: string;
+}
+
+export type TicketStatus = 'open' | 'closed';
+export type TicketPriority = 'normal' | 'high' | 'urgent';
+
+export interface TicketReply {
+  id: number;
+  message_id: number;
+  user_id: number;
+  content: string;
+  is_admin: boolean;
+  author_name: string;
+  created_at: string;
+  relative_time: string;
+}
+
+export interface SupportTicketsResponse {
+  tickets: SupportTicket[];
+  unread_count: number;
+}
+
+export interface SupportTicketDetailResponse {
+  ticket: SupportTicket;
+  replies: TicketReply[];
+}
+
+export interface CreateTicketRequest {
+  subject: string;
+  content: string;
+}
+
+export interface TicketReplyRequest {
+  content: string;
+}
+
 // WordPress global types
 declare global {
   interface Window {

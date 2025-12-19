@@ -827,6 +827,63 @@ class FRAMT_Portal_API {
                 'permission_callback' => array( $this, 'check_member_permission' ),
             )
         );
+
+        // ============================================
+        // Support Ticket endpoints
+        // ============================================
+        register_rest_route(
+            self::NAMESPACE,
+            '/support/tickets',
+            array(
+                array(
+                    'methods'             => 'GET',
+                    'callback'            => array( $this, 'get_support_tickets' ),
+                    'permission_callback' => array( $this, 'check_member_permission' ),
+                ),
+                array(
+                    'methods'             => 'POST',
+                    'callback'            => array( $this, 'create_support_ticket' ),
+                    'permission_callback' => array( $this, 'check_member_permission' ),
+                ),
+            )
+        );
+
+        register_rest_route(
+            self::NAMESPACE,
+            '/support/tickets/(?P<id>\d+)',
+            array(
+                array(
+                    'methods'             => 'GET',
+                    'callback'            => array( $this, 'get_support_ticket' ),
+                    'permission_callback' => array( $this, 'check_support_ticket_permission' ),
+                ),
+                array(
+                    'methods'             => 'DELETE',
+                    'callback'            => array( $this, 'delete_support_ticket' ),
+                    'permission_callback' => array( $this, 'check_support_ticket_permission' ),
+                ),
+            )
+        );
+
+        register_rest_route(
+            self::NAMESPACE,
+            '/support/tickets/(?P<id>\d+)/reply',
+            array(
+                'methods'             => 'POST',
+                'callback'            => array( $this, 'reply_to_support_ticket' ),
+                'permission_callback' => array( $this, 'check_support_ticket_permission' ),
+            )
+        );
+
+        register_rest_route(
+            self::NAMESPACE,
+            '/support/unread-count',
+            array(
+                'methods'             => 'GET',
+                'callback'            => array( $this, 'get_support_unread_count' ),
+                'permission_callback' => array( $this, 'check_member_permission' ),
+            )
+        );
     }
 
     /**
@@ -8507,5 +8564,435 @@ SECTIONS;
         ) );
 
         return $result ? $wpdb->insert_id : null;
+    }
+
+    // ============================================
+    // Support Ticket Methods
+    // ============================================
+
+    /**
+     * Check if user has permission to access a support ticket
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return bool|WP_Error
+     */
+    public function check_support_ticket_permission( $request ) {
+        $base_check = $this->check_member_permission();
+        if ( is_wp_error( $base_check ) ) {
+            return $base_check;
+        }
+
+        global $wpdb;
+        $ticket_id = (int) $request->get_param( 'id' );
+        $user_id   = get_current_user_id();
+
+        $ticket_user = $wpdb->get_var( $wpdb->prepare(
+            "SELECT user_id FROM {$wpdb->prefix}framt_messages WHERE id = %d",
+            $ticket_id
+        ) );
+
+        if ( ! $ticket_user ) {
+            return new WP_Error(
+                'rest_ticket_not_found',
+                'Support ticket not found.',
+                array( 'status' => 404 )
+            );
+        }
+
+        if ( (int) $ticket_user !== $user_id && ! current_user_can( 'manage_options' ) ) {
+            return new WP_Error(
+                'rest_forbidden',
+                'You do not have permission to access this ticket.',
+                array( 'status' => 403 )
+            );
+        }
+
+        return true;
+    }
+
+    /**
+     * Get all support tickets for the current user
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response|WP_Error
+     */
+    public function get_support_tickets( $request ) {
+        global $wpdb;
+        $user_id = get_current_user_id();
+        $table_messages = $wpdb->prefix . 'framt_messages';
+        $table_replies  = $wpdb->prefix . 'framt_message_replies';
+
+        $tickets = $wpdb->get_results( $wpdb->prepare(
+            "SELECT m.*,
+                    (SELECT COUNT(*) FROM {$table_replies} WHERE message_id = m.id) as reply_count,
+                    (SELECT content FROM {$table_replies} WHERE message_id = m.id ORDER BY created_at ASC LIMIT 1) as initial_message,
+                    (SELECT created_at FROM {$table_replies} WHERE message_id = m.id ORDER BY created_at DESC LIMIT 1) as last_reply_at
+             FROM {$table_messages} m
+             WHERE m.user_id = %d
+             ORDER BY m.updated_at DESC",
+            $user_id
+        ), ARRAY_A );
+
+        // Format tickets
+        foreach ( $tickets as &$ticket ) {
+            $ticket['id']              = (int) $ticket['id'];
+            $ticket['user_id']         = (int) $ticket['user_id'];
+            $ticket['has_unread_user'] = (bool) $ticket['has_unread_user'];
+            $ticket['reply_count']     = (int) $ticket['reply_count'];
+            $ticket['relative_time']   = human_time_diff( strtotime( $ticket['updated_at'] ) ) . ' ago';
+        }
+
+        return rest_ensure_response( array(
+            'tickets'      => $tickets,
+            'unread_count' => $this->count_user_unread_tickets( $user_id ),
+        ) );
+    }
+
+    /**
+     * Get a single support ticket with replies
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response|WP_Error
+     */
+    public function get_support_ticket( $request ) {
+        global $wpdb;
+        $ticket_id      = (int) $request->get_param( 'id' );
+        $user_id        = get_current_user_id();
+        $table_messages = $wpdb->prefix . 'framt_messages';
+        $table_replies  = $wpdb->prefix . 'framt_message_replies';
+
+        // Get ticket
+        $ticket = $wpdb->get_row( $wpdb->prepare(
+            "SELECT * FROM {$table_messages} WHERE id = %d",
+            $ticket_id
+        ), ARRAY_A );
+
+        if ( ! $ticket ) {
+            return new WP_Error( 'not_found', 'Ticket not found.', array( 'status' => 404 ) );
+        }
+
+        // Mark as read by user
+        $wpdb->update(
+            $table_messages,
+            array( 'has_unread_user' => 0 ),
+            array( 'id' => $ticket_id ),
+            array( '%d' ),
+            array( '%d' )
+        );
+
+        // Get replies
+        $replies = $wpdb->get_results( $wpdb->prepare(
+            "SELECT r.*, u.display_name as author_name
+             FROM {$table_replies} r
+             LEFT JOIN {$wpdb->users} u ON r.user_id = u.ID
+             WHERE r.message_id = %d
+             ORDER BY r.created_at ASC",
+            $ticket_id
+        ), ARRAY_A );
+
+        // Format replies
+        foreach ( $replies as &$reply ) {
+            $reply['id']            = (int) $reply['id'];
+            $reply['message_id']    = (int) $reply['message_id'];
+            $reply['user_id']       = (int) $reply['user_id'];
+            $reply['is_admin']      = (bool) $reply['is_admin'];
+            $reply['relative_time'] = human_time_diff( strtotime( $reply['created_at'] ) ) . ' ago';
+            $reply['author_name']   = $reply['is_admin'] ? 'Relo2France Support' : $reply['author_name'];
+        }
+
+        // Format ticket
+        $ticket['id']              = (int) $ticket['id'];
+        $ticket['user_id']         = (int) $ticket['user_id'];
+        $ticket['has_unread_user'] = false; // Just marked as read
+        $ticket['reply_count']     = count( $replies );
+
+        return rest_ensure_response( array(
+            'ticket'  => $ticket,
+            'replies' => $replies,
+        ) );
+    }
+
+    /**
+     * Create a new support ticket
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response|WP_Error
+     */
+    public function create_support_ticket( $request ) {
+        global $wpdb;
+        $user_id        = get_current_user_id();
+        $table_messages = $wpdb->prefix . 'framt_messages';
+        $table_replies  = $wpdb->prefix . 'framt_message_replies';
+
+        $subject = sanitize_text_field( $request->get_param( 'subject' ) );
+        $content = sanitize_textarea_field( $request->get_param( 'content' ) );
+
+        if ( empty( $subject ) || empty( $content ) ) {
+            return new WP_Error(
+                'missing_fields',
+                'Subject and message content are required.',
+                array( 'status' => 400 )
+            );
+        }
+
+        // Create the ticket
+        $inserted = $wpdb->insert(
+            $table_messages,
+            array(
+                'user_id'          => $user_id,
+                'subject'          => $subject,
+                'status'           => 'open',
+                'priority'         => 'normal',
+                'has_unread_admin' => 1,
+                'has_unread_user'  => 0,
+                'created_at'       => current_time( 'mysql' ),
+                'updated_at'       => current_time( 'mysql' ),
+            ),
+            array( '%d', '%s', '%s', '%s', '%d', '%d', '%s', '%s' )
+        );
+
+        if ( ! $inserted ) {
+            return new WP_Error( 'db_error', 'Failed to create ticket.', array( 'status' => 500 ) );
+        }
+
+        $ticket_id = $wpdb->insert_id;
+
+        // Add initial message as first reply
+        $wpdb->insert(
+            $table_replies,
+            array(
+                'message_id' => $ticket_id,
+                'user_id'    => $user_id,
+                'content'    => $content,
+                'is_admin'   => 0,
+                'created_at' => current_time( 'mysql' ),
+            ),
+            array( '%d', '%d', '%s', '%d', '%s' )
+        );
+
+        // Send email notification to admin
+        $this->send_support_admin_notification( $ticket_id, 'new' );
+
+        return rest_ensure_response( array(
+            'success'   => true,
+            'message'   => 'Support ticket created successfully.',
+            'ticket_id' => $ticket_id,
+        ) );
+    }
+
+    /**
+     * Reply to a support ticket
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response|WP_Error
+     */
+    public function reply_to_support_ticket( $request ) {
+        global $wpdb;
+        $ticket_id      = (int) $request->get_param( 'id' );
+        $user_id        = get_current_user_id();
+        $table_messages = $wpdb->prefix . 'framt_messages';
+        $table_replies  = $wpdb->prefix . 'framt_message_replies';
+
+        $content = sanitize_textarea_field( $request->get_param( 'content' ) );
+
+        if ( empty( $content ) ) {
+            return new WP_Error(
+                'missing_content',
+                'Reply content is required.',
+                array( 'status' => 400 )
+            );
+        }
+
+        // Verify ticket exists and belongs to user
+        $ticket = $wpdb->get_row( $wpdb->prepare(
+            "SELECT * FROM {$table_messages} WHERE id = %d AND user_id = %d",
+            $ticket_id, $user_id
+        ), ARRAY_A );
+
+        if ( ! $ticket ) {
+            return new WP_Error( 'not_found', 'Ticket not found.', array( 'status' => 404 ) );
+        }
+
+        // Add reply
+        $inserted = $wpdb->insert(
+            $table_replies,
+            array(
+                'message_id' => $ticket_id,
+                'user_id'    => $user_id,
+                'content'    => $content,
+                'is_admin'   => 0,
+                'created_at' => current_time( 'mysql' ),
+            ),
+            array( '%d', '%d', '%s', '%d', '%s' )
+        );
+
+        if ( ! $inserted ) {
+            return new WP_Error( 'db_error', 'Failed to add reply.', array( 'status' => 500 ) );
+        }
+
+        // Update ticket timestamp and unread flags
+        $wpdb->update(
+            $table_messages,
+            array(
+                'updated_at'       => current_time( 'mysql' ),
+                'has_unread_admin' => 1,
+                'has_unread_user'  => 0,
+                'status'           => 'open', // Reopen if closed
+            ),
+            array( 'id' => $ticket_id ),
+            array( '%s', '%d', '%d', '%s' ),
+            array( '%d' )
+        );
+
+        // Send email notification to admin
+        $this->send_support_admin_notification( $ticket_id, 'reply' );
+
+        return rest_ensure_response( array(
+            'success' => true,
+            'message' => 'Reply sent successfully.',
+        ) );
+    }
+
+    /**
+     * Delete a support ticket
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response|WP_Error
+     */
+    public function delete_support_ticket( $request ) {
+        global $wpdb;
+        $ticket_id      = (int) $request->get_param( 'id' );
+        $table_messages = $wpdb->prefix . 'framt_messages';
+        $table_replies  = $wpdb->prefix . 'framt_message_replies';
+
+        // Delete replies first
+        $wpdb->delete( $table_replies, array( 'message_id' => $ticket_id ), array( '%d' ) );
+
+        // Delete ticket
+        $deleted = $wpdb->delete( $table_messages, array( 'id' => $ticket_id ), array( '%d' ) );
+
+        if ( ! $deleted ) {
+            return new WP_Error( 'db_error', 'Failed to delete ticket.', array( 'status' => 500 ) );
+        }
+
+        return rest_ensure_response( array(
+            'success' => true,
+            'message' => 'Ticket deleted successfully.',
+        ) );
+    }
+
+    /**
+     * Get unread support ticket count
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response
+     */
+    public function get_support_unread_count( $request ) {
+        $user_id = get_current_user_id();
+        return rest_ensure_response( array(
+            'count' => $this->count_user_unread_tickets( $user_id ),
+        ) );
+    }
+
+    /**
+     * Count unread tickets for a user
+     *
+     * @param int $user_id User ID.
+     * @return int
+     */
+    private function count_user_unread_tickets( $user_id ) {
+        global $wpdb;
+        return (int) $wpdb->get_var( $wpdb->prepare(
+            "SELECT COUNT(*) FROM {$wpdb->prefix}framt_messages WHERE user_id = %d AND has_unread_user = 1",
+            $user_id
+        ) );
+    }
+
+    /**
+     * Send admin notification for support ticket
+     *
+     * @param int    $ticket_id Ticket ID.
+     * @param string $type      Notification type (new, reply).
+     * @return void
+     */
+    private function send_support_admin_notification( $ticket_id, $type = 'new' ) {
+        global $wpdb;
+        $table_messages = $wpdb->prefix . 'framt_messages';
+        $table_replies  = $wpdb->prefix . 'framt_message_replies';
+
+        $ticket = $wpdb->get_row( $wpdb->prepare(
+            "SELECT * FROM {$table_messages} WHERE id = %d",
+            $ticket_id
+        ), ARRAY_A );
+
+        if ( ! $ticket ) {
+            return;
+        }
+
+        $user = get_user_by( 'id', $ticket['user_id'] );
+        if ( ! $user ) {
+            return;
+        }
+
+        // Get the latest reply content
+        $latest_reply = $wpdb->get_row( $wpdb->prepare(
+            "SELECT content FROM {$table_replies} WHERE message_id = %d ORDER BY created_at DESC LIMIT 1",
+            $ticket_id
+        ), ARRAY_A );
+
+        $message_content = $latest_reply ? $latest_reply['content'] : '';
+        $admin_email     = get_option( 'admin_email' );
+
+        $subject = 'new' === $type
+            ? '🔔 [Relo2France] New Support Message: ' . $ticket['subject']
+            : '💬 [Relo2France] Member Reply: ' . $ticket['subject'];
+
+        // Build HTML email
+        $body = '<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #1e3a5f; color: white; padding: 20px; border-radius: 8px 8px 0 0; }
+        .header h2 { margin: 0; font-size: 18px; }
+        .content { background: #f9fafb; padding: 20px; border: 1px solid #e5e7eb; }
+        .message-box { background: white; padding: 15px; border-radius: 6px; border-left: 4px solid #e85a1b; margin: 15px 0; }
+        .meta { color: #6b7280; font-size: 14px; margin-bottom: 10px; }
+        .meta strong { color: #1e3a5f; }
+        .button { display: inline-block; background: #e85a1b; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 15px; }
+        .footer { padding: 15px; font-size: 12px; color: #9ca3af; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>' . ( 'new' === $type ? '📩 New Support Message' : '💬 New Reply to Support Ticket' ) . '</h2>
+        </div>
+        <div class="content">
+            <div class="meta">
+                <strong>From:</strong> ' . esc_html( $user->display_name ) . ' (' . esc_html( $user->user_email ) . ')<br>
+                <strong>Subject:</strong> ' . esc_html( $ticket['subject'] ) . '<br>
+                <strong>Status:</strong> ' . ucfirst( $ticket['status'] ) . '
+            </div>
+
+            <div class="message-box">
+                <strong>Message:</strong><br><br>
+                ' . nl2br( esc_html( $message_content ) ) . '
+            </div>
+
+            <a href="' . admin_url( 'admin.php?page=fra-messages&message_id=' . $ticket_id ) . '" class="button">
+                View & Respond
+            </a>
+        </div>
+        <div class="footer">
+            This is an automated notification from Relo2France Member Support System.
+        </div>
+    </div>
+</body>
+</html>';
+
+        $headers = array( 'Content-Type: text/html; charset=UTF-8' );
+        wp_mail( $admin_email, $subject, $body, $headers );
     }
 }
