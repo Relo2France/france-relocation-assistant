@@ -95,9 +95,9 @@ function FranceMap({ onRegionSelect, onGenerateReport }: FranceMapProps) {
   };
 
   return (
-    <div className="relative">
+    <div className="relative h-full flex flex-col">
       {/* Header */}
-      <div className="mb-4 px-6">
+      <div className="mb-3 px-4">
         <h2 className="text-xl font-semibold text-gray-900">Metropolitan France</h2>
         <p className="text-gray-600 text-sm">
           Click on a region to explore its departments and communes
@@ -105,14 +105,19 @@ function FranceMap({ onRegionSelect, onGenerateReport }: FranceMapProps) {
       </div>
 
       {/* Map Container */}
-      <div className="map-container relative bg-gradient-to-b from-sky-50 to-blue-100 rounded-xl mx-4 overflow-hidden shadow-inner border border-blue-200">
+      <div className="map-container relative flex-1 bg-gradient-to-b from-sky-50 to-blue-100 rounded-xl mx-4 overflow-hidden shadow-inner border border-blue-200">
         <ComposableMap
           projection="geoMercator"
           projectionConfig={{
             center: [2.5, 46.5],
-            scale: 2800,
+            scale: 3200,
           }}
-          style={{ width: '100%', height: 'auto', minHeight: '450px', maxHeight: '65vh' }}
+          style={{
+            width: '100%',
+            height: 'auto',
+            minHeight: '500px',
+            aspectRatio: '4/3',
+          }}
         >
           <Geographies geography={FRANCE_REGIONS_GEO_URL}>
             {({ geographies }) =>
@@ -200,9 +205,9 @@ function FranceMap({ onRegionSelect, onGenerateReport }: FranceMapProps) {
       </div>
 
       {/* Region Legend */}
-      <div className="mt-4 px-6">
-        <h3 className="text-sm font-medium text-gray-700 mb-3">Regions of France</h3>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
+      <div className="mt-3 px-4">
+        <h3 className="text-sm font-medium text-gray-700 mb-2">Regions of France</h3>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-1.5">
           {FRANCE_REGIONS.map((region) => {
             const colors = REGION_COLORS[region.code];
             const isHovered = hoveredRegion === region.code;
@@ -235,7 +240,7 @@ function FranceMap({ onRegionSelect, onGenerateReport }: FranceMapProps) {
       </div>
 
       {/* Actions */}
-      <div className="mt-6 px-6 pb-6 flex flex-wrap gap-3">
+      <div className="mt-4 px-4 pb-4 flex flex-wrap gap-3">
         <button
           onClick={() => onGenerateReport('FR', 'France')}
           className="btn btn-outline flex items-center gap-2"
