@@ -5752,7 +5752,7 @@ Keep responses concise but informative. Use **bold** for important terms. If men
 
         // Return cached if less than 30 days old, not forcing regeneration, AND not a placeholder
         // (placeholders should always attempt regeneration if API key is available)
-        $ai_api_key = get_option( 'fra_openai_api_key' );
+        $ai_api_key = class_exists( 'France_Relocation_Assistant' ) ? France_Relocation_Assistant::get_api_key() : '';
         $should_use_cache = ! $force_regenerate && $cached_report
             && strtotime( $cached_report['updated_at'] ) > strtotime( '-30 days' )
             && ( ! $is_placeholder || empty( $ai_api_key ) );
@@ -7336,10 +7336,16 @@ Keep responses concise but informative. Use **bold** for important terms. If men
      * @return array|WP_Error
      */
     private function generate_ai_report( $type, $code, $name ) {
-        $ai_api_key = get_option( 'fra_openai_api_key' );
+        // Use the main plugin's API key retrieval (encrypted storage)
+        if ( ! class_exists( 'France_Relocation_Assistant' ) ) {
+            error_log( 'FRA Report: Main plugin class not available' );
+            return $this->generate_placeholder_report( $type, $code, $name, 'api_key_missing' );
+        }
+
+        $ai_api_key = France_Relocation_Assistant::get_api_key();
 
         if ( empty( $ai_api_key ) ) {
-            error_log( 'FRA Report: OpenAI API key not configured' );
+            error_log( 'FRA Report: API key not configured' );
             return $this->generate_placeholder_report( $type, $code, $name, 'api_key_missing' );
         }
 
@@ -7354,26 +7360,29 @@ Your reports must:
 3. Be practical and informative for someone planning to relocate
 4. Cover both positives and realistic challenges/considerations
 
-CRITICAL: You must respond with ONLY valid JSON. No markdown, no code blocks, no explanation text - just the JSON object.
+CRITICAL: You must respond with ONLY valid JSON. No markdown, no code blocks, no explanation text - just the raw JSON object starting with { and ending with }.
 SYSTEM;
 
+        // Get model from settings, default to claude-sonnet
+        $model = get_option( 'fra_api_model', 'claude-sonnet-4-20250514' );
+
+        // Call Anthropic Claude API (same as main plugin)
         $response = wp_remote_post(
-            'https://api.openai.com/v1/chat/completions',
+            'https://api.anthropic.com/v1/messages',
             array(
                 'timeout' => 120,
                 'headers' => array(
-                    'Authorization' => 'Bearer ' . $ai_api_key,
-                    'Content-Type'  => 'application/json',
+                    'Content-Type'      => 'application/json',
+                    'x-api-key'         => $ai_api_key,
+                    'anthropic-version' => '2023-06-01',
                 ),
                 'body' => wp_json_encode( array(
-                    'model'           => 'gpt-4',
-                    'messages'        => array(
-                        array( 'role' => 'system', 'content' => $system_message ),
+                    'model'      => $model,
+                    'max_tokens' => 8000,
+                    'system'     => $system_message,
+                    'messages'   => array(
                         array( 'role' => 'user', 'content' => $prompt ),
                     ),
-                    'temperature'     => 0.7,
-                    'max_tokens'      => 6000,
-                    'response_format' => array( 'type' => 'json_object' ),
                 ) ),
             )
         );
@@ -7387,18 +7396,31 @@ SYSTEM;
 
         // Check for API errors (invalid key, rate limit, etc.)
         if ( isset( $body['error'] ) ) {
-            error_log( 'FRA Report: OpenAI API error - ' . ( $body['error']['message'] ?? 'Unknown error' ) );
+            error_log( 'FRA Report: Claude API error - ' . ( $body['error']['message'] ?? 'Unknown error' ) );
             return $this->generate_placeholder_report( $type, $code, $name, 'api_error' );
         }
 
-        if ( ! isset( $body['choices'][0]['message']['content'] ) ) {
-            error_log( 'FRA Report: Invalid API response structure' );
+        // Claude API response format: content[0].text
+        if ( ! isset( $body['content'][0]['text'] ) ) {
+            error_log( 'FRA Report: Invalid API response structure - ' . wp_json_encode( $body ) );
             return $this->generate_placeholder_report( $type, $code, $name, 'api_error' );
         }
 
-        $content = json_decode( $body['choices'][0]['message']['content'], true );
+        $raw_text = $body['content'][0]['text'];
+
+        // Extract JSON from response (Claude might wrap it in markdown code blocks)
+        $json_text = $raw_text;
+        if ( preg_match( '/```(?:json)?\s*([\s\S]*?)\s*```/', $raw_text, $matches ) ) {
+            $json_text = $matches[1];
+        }
+        // Also try to find JSON object directly
+        if ( preg_match( '/\{[\s\S]*\}/', $json_text, $matches ) ) {
+            $json_text = $matches[0];
+        }
+
+        $content = json_decode( $json_text, true );
         if ( ! $content ) {
-            error_log( 'FRA Report: Failed to parse AI response as JSON' );
+            error_log( 'FRA Report: Failed to parse AI response as JSON. Raw: ' . substr( $raw_text, 0, 500 ) );
             return $this->generate_placeholder_report( $type, $code, $name, 'parse_error' );
         }
 
