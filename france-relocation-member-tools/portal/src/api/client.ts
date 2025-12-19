@@ -32,6 +32,10 @@ import type {
   Subscription,
   Payment,
   UpgradeOption,
+  SupportTicketsResponse,
+  SupportTicketDetailResponse,
+  CreateTicketRequest,
+  TicketReplyRequest,
 } from '@/types';
 
 /**
@@ -610,4 +614,39 @@ export const researchApi = {
   // Get saved reports
   getSavedReports: () =>
     apiFetch<{ reports: Array<{ id: number; location_name: string; location_type: string; updated_at: string; download_url: string; }> }>('/research/saved'),
+};
+
+// Support Ticket API
+export const supportApi = {
+  // Get all tickets for current user
+  getTickets: () =>
+    apiFetch<SupportTicketsResponse>('/support/tickets'),
+
+  // Get a single ticket with replies
+  getTicket: (ticketId: number) =>
+    apiFetch<SupportTicketDetailResponse>(`/support/tickets/${ticketId}`),
+
+  // Create a new support ticket
+  createTicket: (data: CreateTicketRequest) =>
+    apiFetch<{ success: boolean; message: string; ticket_id: number }>('/support/tickets', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // Reply to a ticket
+  replyToTicket: (ticketId: number, data: TicketReplyRequest) =>
+    apiFetch<{ success: boolean; message: string }>(`/support/tickets/${ticketId}/reply`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // Delete a ticket
+  deleteTicket: (ticketId: number) =>
+    apiFetch<{ success: boolean; message: string }>(`/support/tickets/${ticketId}`, {
+      method: 'DELETE',
+    }),
+
+  // Get unread count
+  getUnreadCount: () =>
+    apiFetch<{ count: number }>('/support/unread-count'),
 };

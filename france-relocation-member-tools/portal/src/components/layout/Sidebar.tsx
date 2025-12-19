@@ -20,6 +20,7 @@ import {
   User,
   CreditCard,
   MapPin,
+  Headphones,
 } from 'lucide-react';
 import { usePortalStore } from '@/store';
 import { useUserSettings } from '@/hooks/useApi';
@@ -45,13 +46,14 @@ const iconComponents: Record<string, LucideIcon> = {
   User,
   CreditCard,
   MapPin,
+  Headphones,
 };
 
 // Default section order
 const defaultSectionOrder: MenuSectionOrder = {
   project: ['dashboard', 'tasks', 'checklists', 'timeline', 'messages'],
   resources: ['research', 'chat', 'documents', 'guides', 'glossary', 'files'],
-  account: ['profile', 'family', 'membership', 'settings', 'help'],
+  account: ['profile', 'family', 'membership', 'support', 'settings', 'help'],
 };
 
 // Merge custom order with defaults to ensure new items appear
