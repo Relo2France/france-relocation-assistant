@@ -6110,8 +6110,8 @@ Keep responses concise but informative. Use **bold** for important terms. If men
         $generated_date = $footer['generated_date'] ?? gmdate( 'F j, Y' );
         $version = $footer['version'] ?? $report['version'] ?? 1;
 
-        // Logo as base64 data URI (relo2france logo colors)
-        $logo_svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 40"><text x="0" y="30" font-family="Arial, sans-serif" font-size="24"><tspan fill="' . $brand_blue . '">relo</tspan><tspan fill="' . $brand_gold . '" font-weight="bold">2</tspan><tspan fill="' . $brand_blue . '">france</tspan></text></svg>';
+        // Logo URL - use the uploaded logo from plugin assets
+        $logo_url = plugins_url( 'assets/images/relo2france_updated_logo.png', dirname( __FILE__ ) );
 
         $html = '<!DOCTYPE html>
 <html lang="en">
@@ -6196,6 +6196,11 @@ Keep responses concise but informative. Use **bold** for important terms. If men
             justify-content: space-between;
             align-items: center;
             margin-bottom: 20px;
+        }
+
+        .logo-img {
+            height: 40px;
+            width: auto;
         }
 
         .logo-text {
@@ -6601,7 +6606,7 @@ Keep responses concise but informative. Use **bold** for important terms. If men
         <div class="report-container">
             <header class="report-header">
                 <div class="header-top">
-                    <span class="logo-text"><span class="blue">relo</span><span class="gold">2</span><span class="blue">france</span></span>
+                    <img src="' . esc_url( $logo_url ) . '" alt="relo2france" class="logo-img" onerror="this.outerHTML=\'<span class=logo-text><span class=blue>relo</span><span class=gold>2</span><span class=blue>france</span></span>\'">
                     <span class="report-type-badge">' . esc_html( $location_type ) . ' Report</span>
                 </div>
                 <h1 class="report-title">' . esc_html( $title ) . '</h1>';
