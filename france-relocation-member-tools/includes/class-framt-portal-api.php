@@ -4075,13 +4075,20 @@ Signature:
             ? ' Include practical, real-world tips based on the knowledge base content and common experiences.'
             : '';
 
-        $system_prompt = "You are a helpful assistant for people relocating to France. Use the knowledge base information provided below to answer the user's question accurately. Base your response primarily on this information, but you can supplement with general knowledge where appropriate.{$practice_instruction}
+        $system_prompt = "You are a helpful assistant for people relocating to France. Answer the user's question using ONLY the verified knowledge base information provided below.
 
-Keep your response concise but comprehensive. Use **bold** for important terms. If the knowledge base mentions official websites, include them in your response.
+CRITICAL RULES:
+1. ONLY state facts that appear in the knowledge base below. Do NOT use your training data for specific facts about regulations, fees, eligible countries/states, or requirements.
+2. If the knowledge base lists specific items (like eligible states for license exchange), use EXACTLY that list - do not add, remove, or modify items.
+3. If you're not sure about something or it's not in the knowledge base, say \"I recommend verifying this with official French sources\" rather than guessing.
+4. NEVER contradict the knowledge base information.
+{$practice_instruction}
+
+Keep your response concise but comprehensive. Use **bold** for important terms. If the knowledge base mentions official websites, include them.
 
 {$kb_context}
 
-Now answer the following question based on the above information:";
+Now answer the following question using ONLY the information above:";
 
         $full_prompt = $system_prompt . "\n\nUser question: " . $message;
 
@@ -4124,6 +4131,11 @@ Now answer the following question based on the above information:";
             : '';
 
         $system_prompt = "You are a helpful assistant for people relocating to France. Continue the following conversation naturally, answering the user's follow-up question based on the previous context.{$practice_instruction}
+
+ACCURACY RULES:
+- Do NOT make up specific facts about regulations, fees, or eligible states/countries.
+- If the previous conversation contained specific facts, use those. Otherwise, be conservative and recommend checking official sources.
+- Some US states DO have license exchange agreements with France - never claim otherwise.
 
 Keep your response concise but helpful. Use **bold** for important terms.
 
@@ -4348,9 +4360,15 @@ Now respond to this follow-up:";
             ? ' Include practical, real-world tips from people who have gone through the process - not just official requirements.'
             : '';
 
-        $system_prompt = "You are a helpful assistant specializing in helping people relocate to France. You provide accurate, up-to-date information about French visa applications, immigration procedures, healthcare (Carte Vitale, CPAM), banking, housing, taxes, driving licenses, and daily life in France.{$category_context}{$practice_instruction}
+        $system_prompt = "You are a helpful assistant specializing in helping people relocate to France.{$category_context}{$practice_instruction}
 
-Keep responses concise but informative. Use **bold** for important terms. If mentioning official websites, use their full URLs. Focus on practical advice that will help the user succeed in their relocation journey.";
+IMPORTANT ACCURACY RULES:
+1. For specific facts about regulations, fees, eligible states/countries, or official requirements - be conservative. If you're not certain, say \"I recommend checking the official source\" rather than stating potentially outdated information.
+2. For license exchange specifically: Some US states DO have reciprocal agreements with France (including PA, SC, TX, FL, and others). Do NOT claim that no US states have agreements - this is incorrect.
+3. Regulations change frequently. Always recommend users verify current requirements with official French government websites.
+4. Use **bold** for important terms. If mentioning official websites, use their full URLs.
+
+Focus on practical advice while being careful not to state incorrect facts. When uncertain about specifics, refer users to Service-Public.fr or France-Visas.gouv.fr.";
 
         $full_prompt = $system_prompt . "\n\nUser question: " . $message;
 
@@ -4419,8 +4437,8 @@ Keep responses concise but informative. Use **bold** for important terms. If men
             return $response;
         }
 
-        if ( strpos( $lower_message, 'license' ) !== false || strpos( $lower_message, 'drive' ) !== false || strpos( $lower_message, 'permis' ) !== false ) {
-            $response = 'US driving licenses can be used in France for up to one year. After that, you\'ll need to exchange it for a French license. Not all US states have reciprocal agreements with France, so check if your state qualifies for direct exchange.';
+        if ( strpos( $lower_message, 'license' ) !== false || strpos( $lower_message, 'drive' ) !== false || strpos( $lower_message, 'permis' ) !== false || strpos( $lower_message, 'exchange' ) !== false ) {
+            $response = "**US License Exchange with France**\n\nUS driving licenses can be used in France for up to one year. After that, you can exchange it for a French license IF your state has a reciprocal agreement.\n\n**Eligible US States (2025):**\nArkansas, Colorado, Connecticut, Delaware, Florida, Illinois, Iowa, Kansas, Kentucky, Maryland, Massachusetts, Michigan, New Hampshire, Ohio, Oklahoma, Pennsylvania, South Carolina, Texas, Virginia, Wisconsin\n\n**If your state is eligible:** Apply within first year, submit license, residence proof, passport, photos. Fee ~€25, processing 2-6 months.\n\n**If NOT eligible:** Must pass French driving test (code + conduite). Cost €1,500-2,500 with driving school.\n\nSee: Service-Public.fr for current list.";
             if ( $include_practice ) {
                 $response .= $practice_note . 'Start the exchange process early - it can take several months. Gather your documents before the 1-year deadline to avoid having to retake the driving test.';
             }
