@@ -5977,6 +5977,31 @@ Keep responses concise but informative. Use **bold** for important terms. If men
         $footer = $content['footer'] ?? array();
         $location_type = ucfirst( $report['location_type'] );
 
+        // relo2france brand colors (from france-overview.jsx template)
+        $brand_blue = '#4A7BA7';
+        $brand_gold = '#E5A54B';
+        $dark_text = '#2D3748';
+        $light_gray = '#718096';
+        $light_blue = '#EBF4FA';
+
+        // Section icons mapping
+        $section_icons = array(
+            'geography'        => '🗺️',
+            'climate'          => '🌡️',
+            'demographics'     => '👥',
+            'economy'          => '📈',
+            'language'         => '💬',
+            'food_wine'        => '🍷',
+            'culture_lifestyle' => '🎭',
+            'subdivisions'     => '🏛️',
+            'quality_of_life'  => '❤️',
+            'environment'      => '🌲',
+            'housing'          => '🏠',
+            'transportation'   => '🚆',
+            'practical_info'   => 'ℹ️',
+            'local_life'       => '🏘️',
+        );
+
         // Format key stats for display
         $stats_html = '';
         $stat_items = array(
@@ -6015,26 +6040,40 @@ Keep responses concise but informative. Use **bold** for important terms. If men
             }
         }
 
-        // Build sections HTML
+        // Build sections HTML with collapsible structure
         $sections_html = '';
+        $section_index = 0;
         foreach ( $sections as $section_id => $section ) {
             $section_title = $section['title'] ?? ucwords( str_replace( '_', ' ', $section_id ) );
             $section_content = $section['content'] ?? '';
+            $section_icon = $section_icons[ $section_id ] ?? '📍';
+            $is_first = $section_index === 0;
+            $section_index++;
 
-            $sections_html .= '<section class="report-section">';
-            $sections_html .= '<h2 class="section-title">' . esc_html( $section_title ) . '</h2>';
+            $sections_html .= '<details class="report-section" ' . ( $is_first ? 'open' : '' ) . '>';
+            $sections_html .= '<summary class="section-header"><span class="section-icon">' . $section_icon . '</span><span class="section-title">' . esc_html( $section_title ) . '</span><span class="toggle-icon">▼</span></summary>';
+            $sections_html .= '<div class="section-body">';
 
             if ( $section_content ) {
-                $sections_html .= '<div class="section-content">' . wp_kses_post( nl2br( $section_content ) ) . '</div>';
+                $sections_html .= '<p class="section-content">' . wp_kses_post( nl2br( $section_content ) ) . '</p>';
             }
 
-            // Handle items (key-value pairs)
-            if ( ! empty( $section['items'] ) ) {
-                $sections_html .= '<ul class="info-list">';
-                foreach ( $section['items'] as $item ) {
-                    $sections_html .= '<li><strong>' . esc_html( $item['label'] ) . ':</strong> ' . esc_html( $item['value'] ) . '</li>';
+            // Handle highlights
+            if ( ! empty( $section['highlights'] ) ) {
+                $sections_html .= '<div class="highlights-box">';
+                foreach ( $section['highlights'] as $highlight ) {
+                    $sections_html .= '<span class="highlight-tag">' . esc_html( $highlight ) . '</span>';
                 }
-                $sections_html .= '</ul>';
+                $sections_html .= '</div>';
+            }
+
+            // Handle items (key-value pairs) in a data grid
+            if ( ! empty( $section['items'] ) ) {
+                $sections_html .= '<div class="data-grid">';
+                foreach ( $section['items'] as $item ) {
+                    $sections_html .= '<div class="data-row"><span class="data-label">' . esc_html( $item['label'] ) . '</span><span class="data-value">' . esc_html( $item['value'] ) . '</span></div>';
+                }
+                $sections_html .= '</div>';
             }
 
             // Handle subsections
@@ -6047,23 +6086,23 @@ Keep responses concise but informative. Use **bold** for important terms. If men
                     $sections_html .= '<h3 class="subsection-title">' . esc_html( $sub_title ) . '</h3>';
 
                     if ( $sub_content ) {
-                        $sections_html .= '<div class="subsection-content">' . wp_kses_post( nl2br( $sub_content ) ) . '</div>';
+                        $sections_html .= '<p class="subsection-content">' . wp_kses_post( nl2br( $sub_content ) ) . '</p>';
                     }
 
                     // Subsection items
                     if ( ! empty( $subsection['items'] ) ) {
-                        $sections_html .= '<ul class="info-list">';
+                        $sections_html .= '<div class="data-grid">';
                         foreach ( $subsection['items'] as $item ) {
-                            $sections_html .= '<li><strong>' . esc_html( $item['label'] ) . ':</strong> ' . esc_html( $item['value'] ) . '</li>';
+                            $sections_html .= '<div class="data-row"><span class="data-label">' . esc_html( $item['label'] ) . '</span><span class="data-value">' . esc_html( $item['value'] ) . '</span></div>';
                         }
-                        $sections_html .= '</ul>';
+                        $sections_html .= '</div>';
                     }
 
                     $sections_html .= '</div>';
                 }
             }
 
-            $sections_html .= '</section>';
+            $sections_html .= '</div></details>';
         }
 
         // Build footer HTML
@@ -6071,8 +6110,8 @@ Keep responses concise but informative. Use **bold** for important terms. If men
         $generated_date = $footer['generated_date'] ?? gmdate( 'F j, Y' );
         $version = $footer['version'] ?? $report['version'] ?? 1;
 
-        // Logo URL - use site logo or placeholder
-        $logo_url = 'https://relo2france.com/wp-content/uploads/2024/01/relo2france-logo.png';
+        // Logo as base64 data URI (relo2france logo colors)
+        $logo_svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 40"><text x="0" y="30" font-family="Arial, sans-serif" font-size="24"><tspan fill="' . $brand_blue . '">relo</tspan><tspan fill="' . $brand_gold . '" font-weight="bold">2</tspan><tspan fill="' . $brand_blue . '">france</tspan></text></svg>';
 
         $html = '<!DOCTYPE html>
 <html lang="en">
@@ -6081,7 +6120,15 @@ Keep responses concise but informative. Use **bold** for important terms. If men
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>' . esc_attr( $title ) . ' - Relocation Report | relo2france</title>
     <style>
-        /* Reset and Base */
+        /* Reset and Base - relo2france brand styling */
+        :root {
+            --brand-blue: ' . $brand_blue . ';
+            --brand-gold: ' . $brand_gold . ';
+            --dark-text: ' . $dark_text . ';
+            --light-gray: ' . $light_gray . ';
+            --light-blue: ' . $light_blue . ';
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -6089,55 +6136,92 @@ Keep responses concise but informative. Use **bold** for important terms. If men
         }
 
         body {
-            font-family: "Georgia", "Times New Roman", serif;
-            font-size: 11pt;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            font-size: 15px;
             line-height: 1.6;
-            color: #333;
-            background: #f5f5f5;
+            color: var(--dark-text);
+            background: #f8fafc;
         }
 
-        /* Print container */
-        .report-container {
-            max-width: 850px;
+        /* Print wrapper with side branding */
+        .print-wrapper {
+            display: flex;
+            max-width: 1000px;
             margin: 0 auto;
-            background: white;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
         }
 
-        /* Header */
-        .report-header {
-            background: linear-gradient(135deg, #1a365d 0%, #2c5282 100%);
+        /* Side branding strip (visible in print) */
+        .side-branding {
+            display: none;
+            width: 30px;
+            background: linear-gradient(180deg, var(--brand-blue) 0%, var(--brand-gold) 100%);
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        .side-branding::after {
+            content: "relo2france.com";
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%) rotate(-90deg);
+            transform-origin: center;
+            white-space: nowrap;
+            font-size: 10px;
             color: white;
-            padding: 30px 40px;
+            letter-spacing: 2px;
+            font-weight: 600;
+        }
+
+        /* Main container */
+        .report-container {
+            flex: 1;
+            background: white;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 20px;
+        }
+
+        /* Header with brand colors */
+        .report-header {
+            background: linear-gradient(135deg, var(--brand-blue) 0%, #3a6a94 100%);
+            color: white;
+            padding: 35px 40px;
             position: relative;
         }
 
         .header-top {
             display: flex;
             justify-content: space-between;
-            align-items: flex-start;
+            align-items: center;
             margin-bottom: 20px;
         }
 
-        .logo {
-            height: 50px;
-            width: auto;
+        .logo-text {
+            font-size: 22px;
+            font-weight: 600;
         }
 
+        .logo-text .blue { color: white; }
+        .logo-text .gold { color: var(--brand-gold); font-weight: 700; }
+
         .report-type-badge {
-            background: rgba(255,255,255,0.2);
-            padding: 5px 15px;
+            background: var(--brand-gold);
+            color: var(--dark-text);
+            padding: 6px 16px;
             border-radius: 20px;
             font-size: 12px;
+            font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 1px;
         }
 
         .report-title {
-            font-size: 36px;
+            font-size: 38px;
             font-weight: 700;
-            margin-bottom: 5px;
-            font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
         }
 
         .french-name {
@@ -6148,23 +6232,23 @@ Keep responses concise but informative. Use **bold** for important terms. If men
         }
 
         .tagline {
-            font-size: 14px;
+            font-size: 15px;
             opacity: 0.85;
-            max-width: 500px;
+            max-width: 550px;
         }
 
         /* Key Stats Bar */
         .key-stats {
             display: flex;
-            background: #0d9488;
-            padding: 20px 40px;
+            background: var(--brand-gold);
+            padding: 18px 40px;
         }
 
         .stat-item {
             flex: 1;
             text-align: center;
-            color: white;
-            border-right: 1px solid rgba(255,255,255,0.3);
+            color: var(--dark-text);
+            border-right: 1px solid rgba(0,0,0,0.1);
         }
 
         .stat-item:last-child {
@@ -6173,9 +6257,9 @@ Keep responses concise but informative. Use **bold** for important terms. If men
 
         .stat-value {
             display: block;
-            font-size: 20px;
+            font-size: 22px;
             font-weight: 700;
-            margin-bottom: 3px;
+            margin-bottom: 2px;
         }
 
         .stat-label {
@@ -6183,167 +6267,287 @@ Keep responses concise but informative. Use **bold** for important terms. If men
             font-size: 11px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            opacity: 0.9;
+            opacity: 0.8;
         }
 
         /* Content */
         .report-content {
-            padding: 40px;
+            padding: 30px 40px;
         }
 
-        /* Sections */
+        /* Collapsible Sections */
         .report-section {
-            margin-bottom: 30px;
-            page-break-inside: avoid;
+            margin-bottom: 8px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 20px;
+            background: var(--light-blue);
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 16px;
+            color: var(--brand-blue);
+            list-style: none;
+            user-select: none;
+        }
+
+        .section-header::-webkit-details-marker {
+            display: none;
+        }
+
+        .section-icon {
+            font-size: 20px;
         }
 
         .section-title {
-            font-size: 18px;
-            font-weight: 700;
-            color: #b8860b;
-            border-bottom: 2px solid #b8860b;
-            padding-bottom: 8px;
-            margin-bottom: 15px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            font-family: "Helvetica Neue", Arial, sans-serif;
+            flex: 1;
+        }
+
+        .toggle-icon {
+            font-size: 12px;
+            transition: transform 0.2s ease;
+            color: var(--light-gray);
+        }
+
+        details[open] .toggle-icon {
+            transform: rotate(180deg);
+        }
+
+        details[open] .section-header {
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .section-body {
+            padding: 20px;
         }
 
         .section-content {
             margin-bottom: 15px;
             text-align: justify;
+            line-height: 1.7;
+        }
+
+        /* Highlights box */
+        .highlights-box {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 15px 0;
+        }
+
+        .highlight-tag {
+            background: var(--light-blue);
+            color: var(--brand-blue);
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        /* Data grid for key-value pairs */
+        .data-grid {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .data-row:last-child {
+            border-bottom: none;
+        }
+
+        .data-label {
+            color: var(--light-gray);
+            font-size: 14px;
+        }
+
+        .data-value {
+            font-weight: 600;
+            color: var(--dark-text);
+            text-align: right;
         }
 
         /* Subsections */
         .subsection {
-            margin: 15px 0 20px 0;
+            margin: 20px 0;
+            padding: 15px;
+            background: white;
+            border-left: 3px solid var(--brand-gold);
         }
 
         .subsection-title {
-            font-size: 14px;
-            font-weight: 700;
-            color: #1a365d;
-            margin-bottom: 8px;
-            font-family: "Helvetica Neue", Arial, sans-serif;
-        }
-
-        .subsection-content {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--brand-blue);
             margin-bottom: 10px;
         }
 
-        /* Info Lists */
-        .info-list {
-            list-style: none;
-            padding: 0;
-            margin: 10px 0;
-        }
-
-        .info-list li {
-            padding: 5px 0 5px 20px;
-            position: relative;
-        }
-
-        .info-list li::before {
-            content: "•";
-            color: #b8860b;
-            font-weight: bold;
-            position: absolute;
-            left: 0;
+        .subsection-content {
+            color: var(--dark-text);
+            line-height: 1.7;
         }
 
         /* Footer */
         .report-footer {
-            background: #f8f9fa;
-            border-top: 1px solid #e5e7eb;
+            background: #f8fafc;
+            border-top: 1px solid #e2e8f0;
             padding: 25px 40px;
-            font-size: 10px;
-            color: #666;
+            text-align: center;
         }
 
-        .footer-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        .footer-sources {
+            font-size: 12px;
+            color: var(--light-gray);
+            margin-bottom: 10px;
         }
 
-        .data-sources {
-            flex: 2;
+        .footer-brand {
+            font-size: 14px;
+            margin-bottom: 5px;
         }
 
-        .data-sources strong {
-            display: block;
-            margin-bottom: 3px;
-        }
+        .footer-brand .blue { color: var(--brand-blue); }
+        .footer-brand .gold { color: var(--brand-gold); font-weight: 700; }
 
         .footer-meta {
-            text-align: right;
-            flex: 1;
+            font-size: 11px;
+            color: var(--light-gray);
         }
 
-        .footer-meta p {
-            margin: 2px 0;
-        }
-
-        /* Print Button */
-        .print-banner {
-            background: #22c55e;
-            color: white;
-            text-align: center;
-            padding: 15px;
+        /* Action Bar */
+        .action-bar {
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
             position: sticky;
             top: 0;
             z-index: 100;
         }
 
-        .print-banner button {
-            background: white;
-            color: #22c55e;
-            border: none;
-            padding: 10px 30px;
+        .action-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border-radius: 6px;
             font-size: 14px;
             font-weight: 600;
-            border-radius: 5px;
             cursor: pointer;
-            margin-left: 15px;
+            border: none;
+            transition: all 0.2s ease;
         }
 
-        .print-banner button:hover {
-            background: #f0fdf4;
+        .action-btn.primary {
+            background: var(--brand-blue);
+            color: white;
+        }
+
+        .action-btn.primary:hover {
+            background: #3a6a94;
+        }
+
+        .action-btn.secondary {
+            background: white;
+            color: var(--brand-blue);
+            border: 1px solid var(--brand-blue);
+        }
+
+        .action-btn.secondary:hover {
+            background: var(--light-blue);
         }
 
         /* Print Styles */
         @media print {
             body {
                 background: white;
+                font-size: 11pt;
+            }
+
+            .action-bar {
+                display: none !important;
+            }
+
+            .print-wrapper {
+                max-width: none;
+                margin: 0;
+            }
+
+            .side-branding {
+                display: block !important;
+                width: 25px;
+                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact;
             }
 
             .report-container {
+                margin: 0;
                 box-shadow: none;
-                max-width: none;
+                border-radius: 0;
             }
 
-            .print-banner {
+            .report-header,
+            .key-stats,
+            .section-header,
+            .data-grid,
+            .subsection,
+            .highlights-box {
+                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact;
+            }
+
+            /* Expand all sections for print */
+            .report-section {
+                border: 1px solid #ccc;
+                margin-bottom: 15px;
+            }
+
+            .report-section[open] .section-body,
+            .report-section .section-body {
+                display: block !important;
+            }
+
+            .toggle-icon {
                 display: none;
+            }
+
+            .section-header {
+                background: var(--light-blue) !important;
             }
 
             .report-section {
                 page-break-inside: avoid;
             }
 
-            .section-title {
-                page-break-after: avoid;
+            @page {
+                margin: 0.4in 0.4in 0.4in 0;
+                size: letter;
             }
 
-            @page {
-                margin: 0.5in;
-                size: letter;
+            @page :first {
+                margin-top: 0;
             }
         }
 
         /* Responsive */
         @media (max-width: 768px) {
             .report-header {
-                padding: 20px;
+                padding: 25px 20px;
             }
 
             .report-title {
@@ -6365,37 +6569,49 @@ Keep responses concise but informative. Use **bold** for important terms. If men
                 padding: 20px;
             }
 
-            .footer-content {
-                flex-direction: column;
-                gap: 15px;
+            .section-body {
+                padding: 15px;
             }
 
-            .footer-meta {
-                text-align: left;
+            .action-bar {
+                flex-direction: column;
+                padding: 10px;
+            }
+
+            .action-btn {
+                width: 100%;
+                justify-content: center;
             }
         }
     </style>
 </head>
 <body>
-    <div class="print-banner">
-        <span>To save as PDF, use your browser\'s Print function (Ctrl+P / Cmd+P) and select "Save as PDF"</span>
-        <button onclick="window.print()">Print / Save PDF</button>
+    <div class="action-bar">
+        <button class="action-btn primary" onclick="window.print()">
+            🖨️ Print / Save as PDF
+        </button>
+        <button class="action-btn secondary" onclick="expandAll()">
+            📂 Expand All Sections
+        </button>
     </div>
 
-    <div class="report-container">
-        <header class="report-header">
-            <div class="header-top">
-                <img src="' . esc_url( $logo_url ) . '" alt="relo2france" class="logo" onerror="this.style.display=\'none\'">
-                <span class="report-type-badge">' . esc_html( $location_type ) . ' Report</span>
-            </div>
-            <h1 class="report-title">' . esc_html( $title ) . '</h1>';
+    <div class="print-wrapper">
+        <div class="side-branding"></div>
+
+        <div class="report-container">
+            <header class="report-header">
+                <div class="header-top">
+                    <span class="logo-text"><span class="blue">relo</span><span class="gold">2</span><span class="blue">france</span></span>
+                    <span class="report-type-badge">' . esc_html( $location_type ) . ' Report</span>
+                </div>
+                <h1 class="report-title">' . esc_html( $title ) . '</h1>';
 
         if ( $french_name ) {
             $html .= '<p class="french-name">' . esc_html( $french_name ) . '</p>';
         }
 
         $html .= '<p class="tagline">' . esc_html( $tagline ) . '</p>
-        </header>';
+            </header>';
 
         if ( $stats_html ) {
             $html .= '<div class="key-stats">' . $stats_html . '</div>';
@@ -6403,20 +6619,30 @@ Keep responses concise but informative. Use **bold** for important terms. If men
 
         $html .= '<main class="report-content">' . $sections_html . '</main>
 
-        <footer class="report-footer">
-            <div class="footer-content">
-                <div class="data-sources">
-                    <strong>Data Sources:</strong>
-                    ' . esc_html( implode( ' • ', $data_sources ) ) . '
-                </div>
-                <div class="footer-meta">
-                    <p><strong>Generated:</strong> ' . esc_html( $generated_date ) . '</p>
-                    <p><strong>Version:</strong> ' . esc_html( $version ) . '</p>
-                    <p>© ' . esc_html( gmdate( 'Y' ) ) . ' relo2france.com</p>
-                </div>
-            </div>
-        </footer>
+            <footer class="report-footer">
+                <p class="footer-sources">Data from ' . esc_html( implode( ', ', $data_sources ) ) . '</p>
+                <p class="footer-brand">
+                    <span class="blue">relo</span><span class="gold">2</span><span class="blue">france</span>.com
+                </p>
+                <p class="footer-meta">
+                    Generated: ' . esc_html( $generated_date ) . ' • Version ' . esc_html( $version ) . ' • © ' . esc_html( gmdate( 'Y' ) ) . '
+                </p>
+            </footer>
+        </div>
     </div>
+
+    <script>
+        function expandAll() {
+            document.querySelectorAll(".report-section").forEach(function(section) {
+                section.open = true;
+            });
+        }
+
+        // Expand all sections before print
+        window.addEventListener("beforeprint", function() {
+            expandAll();
+        });
+    </script>
 </body>
 </html>';
 
@@ -6730,7 +6956,9 @@ SYSTEM;
     /**
      * Build AI prompt for report generation
      *
-     * Uses the relo2france template format with sections adapted per location level.
+     * Uses the relo2france template format (based on france-overview.jsx) with
+     * sections adapted per location level. Produces detailed, location-specific
+     * content with the depth expected for relocation research.
      *
      * @param string $type Location type (region, department, commune).
      * @param string $code Location code.
@@ -6739,51 +6967,13 @@ SYSTEM;
      */
     private function build_report_prompt( $type, $code, $name ) {
         $type_label = ucfirst( $type );
-
-        // Base sections for all report types
-        $base_sections = array(
-            'geography'        => 'Geography & Landscape: Physical description, terrain, borders, notable geographic features, major rivers and waterways',
-            'climate'          => 'Climate: Climate zones, seasonal temperatures (°C), rainfall, special weather phenomena (mistral, etc.)',
-            'economy'          => 'Economy: Key economic indicators (GDP if region, median income, unemployment rate), major industries, job market',
-            'food_wine'        => 'Food & Wine Culture: Regional specialties with specific dishes, local wines, markets and food shopping',
-            'culture_lifestyle' => 'Culture & Lifestyle: Work-life balance, social customs, expat community presence',
-            'quality_of_life'  => 'Quality of Life: Healthcare (hospitals, clinics), education (schools, international options), infrastructure (internet, utilities), practical considerations',
-            'transportation'   => 'Transportation: Public transit, train services (TGV, regional), nearest airports, driving conditions',
-            'environment'      => 'Environment & Natural Heritage: Natural highlights, parks, outdoor activities (hiking, cycling)',
-        );
-
-        // Add level-specific sections
-        $level_sections = array();
-
-        if ( 'region' === $type ) {
-            $level_sections = array(
-                'demographics'  => 'Demographics & Population: Total population, population density, major cities with metro populations, median age, urban vs rural split',
-                'language'      => 'Language & Communication: Regional dialects or languages, English proficiency levels',
-                'subdivisions'  => 'Departments: List key departments in this region with brief description of each',
-            );
-        } elseif ( 'department' === $type ) {
-            $level_sections = array(
-                'demographics'   => 'Demographics & Population: Total population, density, major communes/cities',
-                'housing'        => 'Housing & Real Estate: Average rent by property type (studio, 1-bed, 2-bed, house), buying prices per m², key neighborhoods/areas',
-                'practical_info' => 'Practical Information: Préfecture location, administrative offices, banking, emergency services',
-            );
-        } else { // commune
-            $level_sections = array(
-                'housing'        => 'Housing & Real Estate: Average rent (studio €X, 1-bed €X, 2-bed €X, house €X), buying prices €/m², neighborhood descriptions',
-                'practical_info' => 'Practical Information: Mairie location/hours, administrative services, banks, emergency contacts',
-            );
-        }
-
-        $all_sections = array_merge( $base_sections, $level_sections );
-        $sections_text = implode( "\n", array_map( function( $key, $desc ) {
-            return "- {$desc}";
-        }, array_keys( $all_sections ), array_values( $all_sections ) ) );
+        $current_date = gmdate( 'F j, Y' );
 
         // Key stats to include based on level
-        $key_stats = array(
-            'region'     => 'area_km2, population, gdp_per_capita (€), life_expectancy (years)',
-            'department' => 'area_km2, population, median_income (€/year), unemployment_rate (%)',
-            'commune'    => 'area_km2, population, density_per_km2, average_rent (€/month)',
+        $key_stats_format = array(
+            'region'     => '"area_km2": [number], "population": [number], "gdp_per_capita": [number in €], "life_expectancy": [number]',
+            'department' => '"area_km2": [number], "population": [number], "median_income": [number in €/year], "unemployment_rate": [percentage]',
+            'commune'    => '"area_km2": [number], "population": [number], "density_per_km2": [number], "average_rent": [number in €/month]',
         );
 
         $taglines = array(
@@ -6792,61 +6982,224 @@ SYSTEM;
             'commune'    => 'Everything You Need to Know About This Community',
         );
 
-        $prompt = <<<PROMPT
-Generate a comprehensive relocation research report for {$name} ({$type_label} in France).
+        // Build location-specific section requirements
+        $section_requirements = $this->get_section_requirements_for_prompt( $type, $name );
 
-This report is for people considering relocating to France and should be informative, practical, and data-driven.
+        $prompt = <<<PROMPT
+Generate a comprehensive, deeply researched relocation report for {$name} ({$type_label} in France).
+
+This report follows the relo2france template format and should provide the same depth of information as a professional relocation guide. The report is for Americans and other English speakers considering relocating to France.
 
 REQUIRED FORMAT - Return valid JSON with this exact structure:
 {
   "header": {
     "title": "{$name}",
-    "french_name": "[French official name if different]",
+    "french_name": "[French official name if different, or null]",
     "tagline": "{$taglines[$type]}",
     "key_stats": {
-      {$key_stats[$type]}
+      {$key_stats_format[$type]}
     }
   },
   "sections": {
     "section_id": {
       "title": "Section Title",
-      "content": "Main paragraph content...",
+      "icon": "[icon name: MapPin, Thermometer, Users, TrendingUp, Languages, Utensils, Music, Building2, Heart, TreePine, Home, Train, Info]",
+      "content": "Main introductory paragraph with specific facts about {$name}...",
       "subsections": {
         "subsection_id": {
           "title": "Subsection Title",
-          "content": "Subsection content...",
-          "items": [{"label": "Item Name", "value": "Description"}]
+          "content": "Detailed content specific to {$name}...",
+          "items": [{"label": "Item Name", "value": "Specific value or description"}]
         }
       },
-      "items": [{"label": "Item Name", "value": "Description"}]
+      "items": [{"label": "Data Point", "value": "Specific value"}],
+      "highlights": ["Key highlight 1", "Key highlight 2"]
     }
   },
   "footer": {
-    "data_sources": ["INSEE", "Eurostat", "service-public.fr"],
-    "generated_date": "[today's date]"
+    "data_sources": ["INSEE (Institut national de la statistique)", "Eurostat", "service-public.fr", "france.fr"],
+    "generated_date": "{$current_date}",
+    "version": 1
   }
 }
 
-SECTIONS TO INCLUDE:
-{$sections_text}
+SECTIONS TO GENERATE (in this order):
+{$section_requirements}
+
+CRITICAL REQUIREMENTS FOR CONTENT DEPTH:
+
+1. GEOGRAPHY & LANDSCAPE:
+   - Describe the specific terrain, elevation, and borders of {$name}
+   - Name specific rivers, mountains, or coastlines if applicable
+   - Mention notable natural landmarks by name
+   - Include area in km² and describe how this compares regionally
+
+2. CLIMATE:
+   - Provide specific temperature ranges for each season (in °C)
+   - Mention rainfall patterns and sunny days per year
+   - Note any special weather phenomena (mistral, Atlantic winds, etc.)
+   - Compare to other French regions if helpful
+
+3. DEMOGRAPHICS & POPULATION:
+   - Exact population figures with year
+   - Population density per km²
+   - Urban vs rural split percentage
+   - Age demographics (median age, retiree percentage if notable)
+   - Growth or decline trends
+
+4. ECONOMY:
+   - Specific economic indicators: median income, unemployment rate
+   - Name the 3-5 largest employers or industries
+   - Job market outlook for different sectors
+   - Cost of living comparison to national average
+
+5. HOUSING & REAL ESTATE (for department/commune):
+   - Specific average rents: studio (€X), 1-bed (€X), 2-bed (€X), house (€X)
+   - Property buying prices in €/m²
+   - Name 2-4 specific neighborhoods with character descriptions
+   - Rental market competitiveness
+
+6. FOOD & WINE CULTURE:
+   - Name 3-5 specific regional dishes and describe them
+   - Name local wines or beverages if applicable
+   - Describe the local market scene (weekly market days)
+   - Notable restaurants or food traditions
+
+7. CULTURE & LIFESTYLE:
+   - Local festivals or cultural events by name
+   - Expat community presence and size if known
+   - Social customs specific to the area
+   - Work-life balance observations
+
+8. QUALITY OF LIFE:
+   - Name specific hospitals or clinics
+   - International school options if any
+   - Internet speeds and infrastructure quality
+   - Safety and quality of life rankings if available
+
+9. TRANSPORTATION:
+   - Specific train connections (TGV stations, journey times to Paris)
+   - Local bus/tram systems
+   - Nearest airports with distance
+   - Driving considerations
+
+10. ENVIRONMENT & NATURAL HERITAGE:
+    - Name specific parks, reserves, or natural sites
+    - Popular hiking trails or outdoor activities
+    - Environmental quality observations
 
 WRITING STYLE:
-- Professional but accessible, like a high-quality travel/relocation guide
-- Include specific numbers, prices, and data where possible
-- Be accurate and factual - use real data from INSEE, Eurostat, and French government sources
-- Write in second person where appropriate ("You'll find...")
+- Professional yet warm, like a trusted relocation consultant
+- Use specific data, names, and numbers - no vague statements
+- Write in second person where natural ("You'll discover...")
 - Include practical tips for newcomers
-- Mention both positives and realistic considerations/challenges
+- Be balanced - mention both advantages and honest considerations
+- Format numbers appropriately (1,234 for thousands, €1,500 for currency)
 
-IMPORTANT:
-- Use actual current data (population, prices, etc.) - do not make up numbers
-- Include specific place names, neighborhoods, and landmarks
-- Mention seasonal variations where relevant
-- For prices, use euros (€) and provide ranges where appropriate
-- Return ONLY valid JSON, no markdown or explanation
+DATA ACCURACY:
+- Use current data from INSEE, Eurostat, and French government sources
+- Populations should reflect 2023-2024 figures
+- Housing prices should reflect current market (2024-2025)
+- If exact data unavailable, use regional averages with appropriate qualification
+- NEVER invent specific numbers - use ranges or estimates if needed
+
+Return ONLY valid JSON. No markdown, no explanation, just the JSON object.
 PROMPT;
 
         return $prompt;
+    }
+
+    /**
+     * Get section requirements based on location type
+     *
+     * @param string $type Location type.
+     * @param string $name Location name.
+     * @return string
+     */
+    private function get_section_requirements_for_prompt( $type, $name ) {
+        $base_sections = <<<SECTIONS
+1. geography - Geography & Landscape
+   Required: terrain description, borders, notable features, rivers/mountains
+   Include items array with: Region, Borders, Notable Features
+
+2. climate - Climate
+   Required: climate zone, seasonal temperatures, rainfall, special phenomena
+   Include subsections for each season with temperature ranges
+
+3. economy - Economy
+   Required: key indicators, major industries, job market
+   Include items array with: GDP/Income, Unemployment, Top Industries
+
+4. food_wine - Food & Wine Culture
+   Required: 3-5 named regional dishes, local wines, market culture
+   Include items array with specific dishes and descriptions
+
+5. culture_lifestyle - Culture & Lifestyle
+   Required: work-life balance, social customs, festivals, expat presence
+   Include subsections for customs and cultural touchstones
+
+6. quality_of_life - Quality of Life
+   Required: healthcare facilities, education options, infrastructure
+   Include items array with specific metrics and facility names
+
+7. transportation - Transportation
+   Required: train service, public transit, airports, driving
+   Include items array with journey times and connections
+
+8. environment - Environment & Natural Heritage
+   Required: parks, nature reserves, outdoor activities
+   Include specific named locations and activities
+SECTIONS;
+
+        // Add type-specific sections
+        if ( 'region' === $type ) {
+            $base_sections .= <<<SECTIONS
+
+9. demographics - Demographics & Population
+   Required: population, density, major cities, age distribution
+   Include items array with Population, Density, Major Cities, Median Age
+
+10. language - Language & Communication
+    Required: regional languages/dialects, English proficiency
+    Include any notable linguistic features of the region
+
+11. subdivisions - Departments & Key Areas
+    Required: list departments with brief descriptions
+    Include notable cities in each department
+SECTIONS;
+        } elseif ( 'department' === $type ) {
+            $base_sections .= <<<SECTIONS
+
+9. demographics - Demographics & Population
+   Required: population, density, major communes
+   Include items with population figures for top 3-4 communes
+
+10. housing - Housing & Real Estate
+    Required: specific rent ranges, property prices per m², neighborhood descriptions
+    Include items with: Studio Rent, 1-Bed Rent, 2-Bed Rent, House Rent, Buying Price
+
+11. practical_info - Practical Information
+    Required: préfecture location, key administrative offices, banks, emergency
+    Include specific addresses and contact information where possible
+SECTIONS;
+        } else {
+            $base_sections .= <<<SECTIONS
+
+9. housing - Housing & Real Estate
+   Required: specific rent ranges, property prices per m², neighborhood descriptions
+   Include items with: Studio Rent, 1-Bed Rent, 2-Bed Rent, House Rent, Buying Price
+
+10. practical_info - Practical Information
+    Required: mairie location/hours, administrative services, banks, emergency contacts
+    Include specific addresses and useful practical details
+
+11. local_life - Local Life & Community
+    Required: community character, shops, amenities, what makes {$name} special
+    Include specific named establishments and local favorites
+SECTIONS;
+        }
+
+        return $base_sections;
     }
 
     /**
