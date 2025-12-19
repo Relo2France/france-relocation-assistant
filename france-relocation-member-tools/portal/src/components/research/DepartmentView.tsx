@@ -11,9 +11,25 @@ import { ArrowLeft, FileText, MapPin, Users, Search, Loader2, Building, Home, Tr
 import DepartmentMapView from './DepartmentMapView';
 import type { FranceDepartment, FranceCommune, ResearchLevel } from '@/types';
 
-// GeoJSON URL for commune data (same source as the map)
-const getCommuneGeoUrl = (deptCode: string) =>
-  `https://raw.githubusercontent.com/gregoiredavid/france-geojson/master/departements/${deptCode}/communes.geojson`;
+// Slugify department name for URL (e.g., "Côte-d'Or" -> "cote-d-or")
+const slugifyDeptName = (name: string): string => {
+  return name
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // Remove diacritics
+    .replace(/['']/g, '-')           // Replace apostrophes with hyphens
+    .replace(/\s+/g, '-')            // Replace spaces with hyphens
+    .replace(/[^a-z0-9-]/g, '')      // Remove other special chars
+    .replace(/-+/g, '-')             // Collapse multiple hyphens
+    .replace(/^-|-$/g, '');          // Trim hyphens from ends
+};
+
+// Build GeoJSON URL for department communes
+// Format: departements/{code}-{name}/communes-{code}-{name}.geojson
+const getCommuneGeoUrl = (deptCode: string, deptName: string) => {
+  const slug = slugifyDeptName(deptName);
+  return `https://raw.githubusercontent.com/gregoiredavid/france-geojson/master/departements/${deptCode}-${slug}/communes-${deptCode}-${slug}.geojson`;
+};
 
 
 interface DepartmentViewProps {
@@ -47,7 +63,7 @@ export default function DepartmentView({
     const fetchCommunes = async () => {
       setLoading(true);
       try {
-        const geoUrl = getCommuneGeoUrl(department.code);
+        const geoUrl = getCommuneGeoUrl(department.code, department.name);
         const response = await fetch(geoUrl);
 
         if (!response.ok) {
