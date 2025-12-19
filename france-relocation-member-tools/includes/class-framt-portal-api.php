@@ -6086,7 +6086,7 @@ Keep responses concise but informative. Use **bold** for important terms. If men
                 $sections_html .= '<p class="section-intro">' . wp_kses_post( $section_intro ) . '</p>';
             }
 
-            // Section stat cards
+            // Section stat cards (these ARE expected - see Gironde template)
             if ( ! empty( $section['stat_cards'] ) && is_array( $section['stat_cards'] ) ) {
                 $sections_html .= '<div class="stat-cards-grid">';
                 foreach ( $section['stat_cards'] as $stat ) {
@@ -6103,7 +6103,7 @@ Keep responses concise but informative. Use **bold** for important terms. If men
                 $sections_html .= '</div>';
             }
 
-            // Info box - render as subsection title + bullet list (matching PDF template)
+            // Info box - render as gold heading + bullet list (NO background box)
             if ( ! empty( $section['info_box'] ) && is_array( $section['info_box'] ) ) {
                 $info_box = $section['info_box'];
                 if ( isset( $info_box['title'] ) ) {
@@ -6184,33 +6184,34 @@ Keep responses concise but informative. Use **bold** for important terms. If men
             }
 
             // Considerations box (gold warning style)
+            // Considerations - render as subsection heading + paragraph (matching PDF)
             if ( ! empty( $section['considerations_box'] ) && is_array( $section['considerations_box'] ) ) {
                 $considerations = $section['considerations_box'];
-                $sections_html .= '<div class="considerations-box">';
-                $sections_html .= '<p><span class="considerations-label">Considerations:</span> ' . esc_html( $considerations['content'] ?? '' ) . '</p>';
-                $sections_html .= '</div>';
+                $sections_html .= '<h4 class="subsection-heading">Considerations</h4>';
+                $sections_html .= '<p class="section-para">' . esc_html( $considerations['content'] ?? '' ) . '</p>';
             }
 
             // Footer paragraphs
             if ( ! empty( $section['paragraphs_footer'] ) && is_array( $section['paragraphs_footer'] ) ) {
                 foreach ( $section['paragraphs_footer'] as $para ) {
                     if ( ! is_string( $para ) && ! is_numeric( $para ) ) continue;
-                    $sections_html .= '<p class="section-para light">' . wp_kses_post( $para ) . '</p>';
+                    $sections_html .= '<p class="section-para">' . wp_kses_post( $para ) . '</p>';
                 }
             }
 
-            // Legacy: Handle old format items/subsections
+            // Legacy: Handle old format items as bullet list (matching PDF)
             if ( ! empty( $section['items'] ) && is_array( $section['items'] ) && empty( $section['info_box'] ) ) {
-                $sections_html .= '<div class="data-grid">';
+                $sections_html .= '<ul class="bullet-list">';
                 foreach ( $section['items'] as $item ) {
                     if ( ! is_array( $item ) ) {
                         continue;
                     }
-                    $sections_html .= '<div class="data-row"><span class="data-label">' . esc_html( $item['label'] ?? '' ) . '</span><span class="data-value">' . esc_html( $item['value'] ?? '' ) . '</span></div>';
+                    $sections_html .= '<li><strong>' . esc_html( $item['label'] ?? '' ) . ':</strong> ' . esc_html( $item['value'] ?? '' ) . '</li>';
                 }
-                $sections_html .= '</div>';
+                $sections_html .= '</ul>';
             }
 
+            // Legacy subsections - render as gold headings + paragraphs (matching PDF)
             if ( ! empty( $section['subsections'] ) && is_array( $section['subsections'] ) ) {
                 foreach ( $section['subsections'] as $sub_id => $subsection ) {
                     if ( ! is_array( $subsection ) ) {
@@ -6218,34 +6219,32 @@ Keep responses concise but informative. Use **bold** for important terms. If men
                     }
                     $sub_title = $subsection['title'] ?? ucwords( str_replace( '_', ' ', $sub_id ) );
                     $sub_content = $subsection['content'] ?? '';
-                    $sections_html .= '<div class="subsection">';
-                    $sections_html .= '<h3 class="subsection-title">' . esc_html( $sub_title ) . '</h3>';
+                    $sections_html .= '<h4 class="subsection-heading">' . esc_html( $sub_title ) . '</h4>';
                     if ( $sub_content ) {
-                        $sections_html .= '<p class="subsection-content">' . wp_kses_post( nl2br( $sub_content ) ) . '</p>';
+                        $sections_html .= '<p class="section-para">' . wp_kses_post( $sub_content ) . '</p>';
                     }
                     if ( ! empty( $subsection['items'] ) && is_array( $subsection['items'] ) ) {
-                        $sections_html .= '<div class="data-grid">';
+                        $sections_html .= '<ul class="bullet-list">';
                         foreach ( $subsection['items'] as $item ) {
                             if ( ! is_array( $item ) ) {
                                 continue;
                             }
-                            $sections_html .= '<div class="data-row"><span class="data-label">' . esc_html( $item['label'] ?? '' ) . '</span><span class="data-value">' . esc_html( $item['value'] ?? '' ) . '</span></div>';
+                            $sections_html .= '<li><strong>' . esc_html( $item['label'] ?? '' ) . ':</strong> ' . esc_html( $item['value'] ?? '' ) . '</li>';
                         }
-                        $sections_html .= '</div>';
+                        $sections_html .= '</ul>';
                     }
-                    $sections_html .= '</div>';
                 }
             }
 
-            // Handle legacy highlights
+            // Handle legacy highlights as bullet list (matching PDF)
             if ( ! empty( $section['highlights'] ) && is_array( $section['highlights'] ) && empty( $section['highlight_box'] ) ) {
-                $sections_html .= '<div class="highlights-box">';
+                $sections_html .= '<ul class="bullet-list">';
                 foreach ( $section['highlights'] as $highlight ) {
                     if ( is_string( $highlight ) ) {
-                        $sections_html .= '<span class="highlight-tag">' . esc_html( $highlight ) . '</span>';
+                        $sections_html .= '<li>' . esc_html( $highlight ) . '</li>';
                     }
                 }
-                $sections_html .= '</div>';
+                $sections_html .= '</ul>';
             }
 
             $sections_html .= '</div></details>';
@@ -6977,15 +6976,68 @@ Keep responses concise but informative. Use **bold** for important terms. If men
             .section-header,
             .data-grid,
             .subsection,
-            .highlights-box {
+            .highlights-box,
+            .stat-cards-grid,
+            .stat-card-small,
+            .subsection-heading,
+            .subsection-subheading {
                 print-color-adjust: exact;
                 -webkit-print-color-adjust: exact;
             }
 
-            /* Expand all sections for print */
-            .report-section {
+            /* Ensure stat cards print in grid */
+            .stat-cards-grid {
+                display: grid !important;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 10px;
+                margin: 12px 0;
+            }
+
+            .stat-card-small {
+                background: #EBF4FA !important;
+                border: 1px solid #ddd;
+                padding: 10px;
+                text-align: center;
+            }
+
+            /* Bullet lists for print */
+            .bullet-list {
+                margin: 10px 0;
+                padding-left: 20px;
+            }
+
+            .bullet-list li {
+                margin-bottom: 6px;
+                page-break-inside: avoid;
+            }
+
+            /* Subsection headings print with gold color */
+            .subsection-heading {
+                color: #E5A54B !important;
+                margin: 16px 0 10px 0;
+                page-break-after: avoid;
+            }
+
+            .subsection-subheading {
+                color: #E5A54B !important;
+                margin: 12px 0 8px 0;
+                page-break-after: avoid;
+            }
+
+            /* Expand all sections for print - force details open */
+            .report-section,
+            details.report-section {
                 border: 1px solid #ccc;
                 margin-bottom: 15px;
+            }
+
+            /* Force all details elements to show content when printing */
+            details.report-section > .section-body {
+                display: block !important;
+            }
+
+            details.report-section:not([open]) > .section-body {
+                display: block !important;
             }
 
             .report-section[open] .section-body,
