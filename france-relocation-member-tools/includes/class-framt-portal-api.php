@@ -5752,13 +5752,14 @@ Keep responses concise but informative. Use **bold** for important terms. If men
 
         // Return cached if less than 30 days old, not forcing regeneration, AND not a placeholder
         // (placeholders should always attempt regeneration if API key is available)
-        $ai_api_key = get_option( 'fra_openai_api_key' );
+        $ai_api_key = class_exists( 'France_Relocation_Assistant' ) ? France_Relocation_Assistant::get_api_key() : '';
         $should_use_cache = ! $force_regenerate && $cached_report
             && strtotime( $cached_report['updated_at'] ) > strtotime( '-30 days' )
             && ( ! $is_placeholder || empty( $ai_api_key ) );
 
         if ( $should_use_cache ) {
             $report = $this->format_report_response( $cached_report );
+            $cached_placeholder_reason = $cached_content['footer']['placeholder_reason'] ?? '';
 
             $document_id = null;
             if ( $save_to_docs ) {
@@ -5770,6 +5771,7 @@ Keep responses concise but informative. Use **bold** for important terms. If men
                 'report'             => $report,
                 'cached'             => true,
                 'is_placeholder'     => $is_placeholder,
+                'placeholder_reason' => $cached_placeholder_reason,
                 'saved_to_documents' => $save_to_docs,
                 'document_id'        => $document_id,
             ) );
@@ -5802,6 +5804,10 @@ Keep responses concise but informative. Use **bold** for important terms. If men
 
         $report = $this->format_report_response( array_merge( $report_data, array( 'id' => $report_id ) ) );
 
+        // Check if newly generated report is a placeholder
+        $new_is_placeholder = isset( $report_content['footer']['note'] ) && strpos( $report_content['footer']['note'], 'template report' ) !== false;
+        $placeholder_reason = $report_content['footer']['placeholder_reason'] ?? '';
+
         $document_id = null;
         if ( $save_to_docs ) {
             $document_id = $this->save_report_link_to_documents( $report_id, get_current_user_id() );
@@ -5811,6 +5817,8 @@ Keep responses concise but informative. Use **bold** for important terms. If men
             'success'            => true,
             'report'             => $report,
             'cached'             => false,
+            'is_placeholder'     => $new_is_placeholder,
+            'placeholder_reason' => $placeholder_reason,
             'saved_to_documents' => $save_to_docs,
             'document_id'        => $document_id,
         ) );
@@ -7007,13 +7015,23 @@ Keep responses concise but informative. Use **bold** for important terms. If men
 
         // Add placeholder banner if this is a template report
         if ( $is_placeholder ) {
+            $placeholder_reason = $footer['placeholder_reason'] ?? '';
+            $reason_messages = array(
+                'api_key_missing' => 'The OpenAI API key is not configured. Please add your API key in the plugin settings.',
+                'api_error'       => 'Unable to connect to the AI service. Please try again later.',
+                'parse_error'     => 'The AI response could not be processed. Please try regenerating the report.',
+            );
+            $reason_note = isset( $reason_messages[ $placeholder_reason ] )
+                ? $reason_messages[ $placeholder_reason ]
+                : 'AI-generated reports with specific local data are available when the service is configured.';
+
             $html .= '
             <div class="placeholder-banner">
                 <div class="placeholder-banner-content">
                     <span class="placeholder-banner-icon">⚠️</span>
                     <span class="placeholder-banner-text">This is a template report with generic information</span>
                 </div>
-                <p class="placeholder-banner-note">AI-generated reports with specific local data are available when the service is configured.</p>
+                <p class="placeholder-banner-note">' . esc_html( $reason_note ) . '</p>
             </div>';
         }
 
@@ -7318,10 +7336,17 @@ Keep responses concise but informative. Use **bold** for important terms. If men
      * @return array|WP_Error
      */
     private function generate_ai_report( $type, $code, $name ) {
-        $ai_api_key = get_option( 'fra_openai_api_key' );
+        // Use the main plugin's API key retrieval (encrypted storage)
+        if ( ! class_exists( 'France_Relocation_Assistant' ) ) {
+            error_log( 'FRA Report: Main plugin class not available' );
+            return $this->generate_placeholder_report( $type, $code, $name, 'api_key_missing' );
+        }
+
+        $ai_api_key = France_Relocation_Assistant::get_api_key();
 
         if ( empty( $ai_api_key ) ) {
-            return $this->generate_placeholder_report( $type, $code, $name );
+            error_log( 'FRA Report: API key not configured' );
+            return $this->generate_placeholder_report( $type, $code, $name, 'api_key_missing' );
         }
 
         $prompt = $this->build_report_prompt( $type, $code, $name );
@@ -7335,41 +7360,71 @@ Your reports must:
 3. Be practical and informative for someone planning to relocate
 4. Cover both positives and realistic challenges/considerations
 
-CRITICAL: You must respond with ONLY valid JSON. No markdown, no code blocks, no explanation text - just the JSON object.
+CRITICAL: You must respond with ONLY valid JSON. No markdown, no code blocks, no explanation text - just the raw JSON object starting with { and ending with }.
 SYSTEM;
 
+        // Get model from settings, default to claude-sonnet
+        $model = get_option( 'fra_api_model', 'claude-sonnet-4-20250514' );
+
+        // Call Anthropic Claude API (same as main plugin)
         $response = wp_remote_post(
-            'https://api.openai.com/v1/chat/completions',
+            'https://api.anthropic.com/v1/messages',
             array(
                 'timeout' => 120,
                 'headers' => array(
-                    'Authorization' => 'Bearer ' . $ai_api_key,
-                    'Content-Type'  => 'application/json',
+                    'Content-Type'      => 'application/json',
+                    'x-api-key'         => $ai_api_key,
+                    'anthropic-version' => '2023-06-01',
                 ),
                 'body' => wp_json_encode( array(
-                    'model'           => 'gpt-4',
-                    'messages'        => array(
-                        array( 'role' => 'system', 'content' => $system_message ),
+                    'model'      => $model,
+                    'max_tokens' => 8000,
+                    'system'     => $system_message,
+                    'messages'   => array(
                         array( 'role' => 'user', 'content' => $prompt ),
                     ),
-                    'temperature'     => 0.7,
-                    'max_tokens'      => 6000,
-                    'response_format' => array( 'type' => 'json_object' ),
                 ) ),
             )
         );
 
         if ( is_wp_error( $response ) ) {
-            return $this->generate_placeholder_report( $type, $code, $name );
+            error_log( 'FRA Report: API request failed - ' . $response->get_error_message() );
+            return $this->generate_placeholder_report( $type, $code, $name, 'api_error' );
         }
 
         $body = json_decode( wp_remote_retrieve_body( $response ), true );
-        if ( ! isset( $body['choices'][0]['message']['content'] ) ) {
-            return $this->generate_placeholder_report( $type, $code, $name );
+
+        // Check for API errors (invalid key, rate limit, etc.)
+        if ( isset( $body['error'] ) ) {
+            error_log( 'FRA Report: Claude API error - ' . ( $body['error']['message'] ?? 'Unknown error' ) );
+            return $this->generate_placeholder_report( $type, $code, $name, 'api_error' );
         }
 
-        $content = json_decode( $body['choices'][0]['message']['content'], true );
-        return $content ?: $this->generate_placeholder_report( $type, $code, $name );
+        // Claude API response format: content[0].text
+        if ( ! isset( $body['content'][0]['text'] ) ) {
+            error_log( 'FRA Report: Invalid API response structure - ' . wp_json_encode( $body ) );
+            return $this->generate_placeholder_report( $type, $code, $name, 'api_error' );
+        }
+
+        $raw_text = $body['content'][0]['text'];
+
+        // Extract JSON from response (Claude might wrap it in markdown code blocks)
+        $json_text = $raw_text;
+        if ( preg_match( '/```(?:json)?\s*([\s\S]*?)\s*```/', $raw_text, $matches ) ) {
+            $json_text = $matches[1];
+        }
+        // Also try to find JSON object directly
+        if ( preg_match( '/\{[\s\S]*\}/', $json_text, $matches ) ) {
+            $json_text = $matches[0];
+        }
+
+        $content = json_decode( $json_text, true );
+        if ( ! $content ) {
+            error_log( 'FRA Report: Failed to parse AI response as JSON. Raw: ' . substr( $raw_text, 0, 500 ) );
+            return $this->generate_placeholder_report( $type, $code, $name, 'parse_error' );
+        }
+
+        return $content;
     }
 
     /**
@@ -7764,9 +7819,10 @@ SECTIONS;
      * @param string $type Location type (region, department, commune).
      * @param string $code Location code.
      * @param string $name Location name.
+     * @param string $reason Optional reason why placeholder is being used.
      * @return array
      */
-    private function generate_placeholder_report( $type, $code, $name ) {
+    private function generate_placeholder_report( $type, $code, $name, $reason = '' ) {
         $taglines = array(
             'region'     => 'A Comprehensive Guide for Those Considering Relocation',
             'department' => 'Your Guide to Living and Working in This Area',
@@ -7970,10 +8026,11 @@ SECTIONS;
             ),
             'sections' => $sections,
             'footer'   => array(
-                'data_sources'   => array( 'INSEE', 'Eurostat', 'service-public.fr' ),
-                'generated_date' => gmdate( 'Y-m-d' ),
-                'version'        => 1,
-                'note'           => 'This is a template report. AI-generated reports will include specific local data and details.',
+                'data_sources'      => array( 'INSEE', 'Eurostat', 'service-public.fr' ),
+                'generated_date'    => gmdate( 'Y-m-d' ),
+                'version'           => 1,
+                'note'              => 'This is a template report. AI-generated reports will include specific local data and details.',
+                'placeholder_reason' => $reason,
             ),
         );
     }
