@@ -7,7 +7,7 @@
  */
 
 import { useState, useMemo, useCallback } from 'react';
-import { ComposableMap, Geographies, Geography, ZoomableGroup } from 'react-simple-maps';
+import { ComposableMap, Geographies, Geography, ZoomableGroup, Marker } from 'react-simple-maps';
 import { FRANCE_DEPARTMENTS } from '@/config/research';
 import type { FranceCommune } from '@/types';
 
@@ -380,7 +380,6 @@ export default function DepartmentMapView({
                   geographies.map((geo) => {
                     const communeName = geo.properties.nom;
                     // Calculate centroid of the commune for label placement
-                    // We'll use a simple approximation - the center of the bounding box
                     const bounds = geo.geometry.coordinates;
                     let centerLon = 0, centerLat = 0;
 
@@ -401,22 +400,24 @@ export default function DepartmentMapView({
                     }
 
                     return (
-                      <text
+                      <Marker
                         key={`label-${geo.rsmKey}`}
-                        x={centerLon}
-                        y={centerLat}
-                        textAnchor="middle"
-                        fontSize={labelFontSize / zoom}
-                        fontWeight="500"
-                        fill="#1F2937"
-                        className="pointer-events-none select-none"
-                        style={{
-                          textShadow: '1px 1px 1px white, -1px -1px 1px white',
-                          transform: `translate(${centerLon}px, ${centerLat}px)`,
-                        }}
+                        coordinates={[centerLon, centerLat]}
                       >
-                        {communeName}
-                      </text>
+                        <text
+                          textAnchor="middle"
+                          fontSize={labelFontSize / zoom}
+                          fontWeight="500"
+                          fill="#1F2937"
+                          dy=".3em"
+                          className="pointer-events-none select-none"
+                          style={{
+                            textShadow: '0 0 3px white, 0 0 3px white, 0 0 3px white',
+                          }}
+                        >
+                          {communeName}
+                        </text>
+                      </Marker>
                     );
                   })
                 }

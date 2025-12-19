@@ -383,8 +383,13 @@ function CommuneSection({
   type: 'city' | 'town' | 'village';
   onSelect: (commune: FranceCommune) => void;
 }) {
+  const [expanded, setExpanded] = useState(false);
   const typeInfo = COMMUNE_TYPE_INFO[type];
   const Icon = typeInfo.icon;
+
+  const INITIAL_COUNT = 12;
+  const displayedCommunes = expanded ? communes : communes.slice(0, INITIAL_COUNT);
+  const hasMore = communes.length > INITIAL_COUNT;
 
   return (
     <div>
@@ -396,7 +401,7 @@ function CommuneSection({
         <span className="text-sm text-gray-500">({communes.length})</span>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {communes.slice(0, 12).map((commune) => (
+        {displayedCommunes.map((commune) => (
           <button
             key={commune.code}
             onClick={() => onSelect(commune)}
@@ -420,10 +425,17 @@ function CommuneSection({
           </button>
         ))}
       </div>
-      {communes.length > 12 && (
-        <p className="text-sm text-gray-500 mt-3 text-center">
-          And {communes.length - 12} more {type === 'city' ? 'cities' : `${type}s`}...
-        </p>
+      {hasMore && (
+        <div className="mt-3 text-center">
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className="text-sm text-primary-600 hover:text-primary-700 hover:underline font-medium"
+          >
+            {expanded
+              ? `Show less`
+              : `Show all ${communes.length} ${type === 'city' ? 'cities' : `${type}s`}`}
+          </button>
+        </div>
       )}
     </div>
   );
