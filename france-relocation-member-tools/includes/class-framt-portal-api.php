@@ -6103,88 +6103,74 @@ Keep responses concise but informative. Use **bold** for important terms. If men
                 $sections_html .= '</div>';
             }
 
-            // Info box
+            // Info box - render as subsection title + bullet list (matching PDF template)
             if ( ! empty( $section['info_box'] ) && is_array( $section['info_box'] ) ) {
                 $info_box = $section['info_box'];
-                $sections_html .= '<div class="info-box">';
                 if ( isset( $info_box['title'] ) ) {
-                    $sections_html .= '<h4 class="info-box-title">' . esc_html( $info_box['title'] ) . '</h4>';
+                    $sections_html .= '<h4 class="subsection-heading">' . esc_html( $info_box['title'] ) . '</h4>';
                 }
-                // Data rows
+                // Data rows as bullet list
                 if ( ! empty( $info_box['data_rows'] ) && is_array( $info_box['data_rows'] ) ) {
-                    $sections_html .= '<div class="data-rows">';
+                    $sections_html .= '<ul class="bullet-list">';
                     foreach ( $info_box['data_rows'] as $row ) {
                         if ( ! is_array( $row ) ) continue;
-                        $sections_html .= '<div class="data-row"><span class="data-label">' . esc_html( $row['label'] ?? '' ) . '</span><span class="data-value">' . esc_html( $row['value'] ?? '' ) . '</span></div>';
+                        $sections_html .= '<li><strong>' . esc_html( $row['label'] ?? '' ) . ':</strong> ' . esc_html( $row['value'] ?? '' ) . '</li>';
                     }
-                    $sections_html .= '</div>';
+                    $sections_html .= '</ul>';
                 }
-                // Grid items
+                // Grid items as bullet list
                 if ( ! empty( $info_box['grid_items'] ) && is_array( $info_box['grid_items'] ) ) {
-                    $sections_html .= '<div class="info-grid">';
+                    $sections_html .= '<ul class="bullet-list">';
                     foreach ( $info_box['grid_items'] as $item ) {
                         if ( ! is_array( $item ) ) continue;
-                        $sections_html .= '<div class="info-grid-item"><span class="item-label">' . esc_html( $item['label'] ?? '' ) . ':</span> <span class="item-desc">' . esc_html( $item['description'] ?? '' ) . '</span></div>';
+                        $sections_html .= '<li><strong>' . esc_html( $item['label'] ?? '' ) . ':</strong> ' . esc_html( $item['description'] ?? '' ) . '</li>';
                     }
-                    $sections_html .= '</div>';
+                    $sections_html .= '</ul>';
                 }
-                // Regular items
+                // Regular items as bullet list
                 if ( ! empty( $info_box['items'] ) && is_array( $info_box['items'] ) ) {
-                    $sections_html .= '<div class="info-items">';
+                    $sections_html .= '<ul class="bullet-list">';
                     foreach ( $info_box['items'] as $item ) {
                         if ( ! is_array( $item ) ) continue;
-                        $sections_html .= '<p class="info-item"><span class="item-label">' . esc_html( $item['label'] ?? '' ) . ':</span> ' . esc_html( $item['description'] ?? $item['value'] ?? '' ) . '</p>';
+                        $sections_html .= '<li><strong>' . esc_html( $item['label'] ?? '' ) . ':</strong> ' . esc_html( $item['description'] ?? $item['value'] ?? '' ) . '</li>';
                     }
-                    $sections_html .= '</div>';
+                    $sections_html .= '</ul>';
                 }
-                $sections_html .= '</div>';
             }
 
-            // Callout box (gold/seasonal)
+            // Callout box - render as subsection title + content (matching PDF template)
             if ( ! empty( $section['callout_box'] ) && is_array( $section['callout_box'] ) ) {
                 $callout = $section['callout_box'];
-                $sections_html .= '<div class="callout-box">';
                 if ( isset( $callout['title'] ) ) {
-                    $sections_html .= '<h4 class="callout-title">' . esc_html( $callout['title'] ) . '</h4>';
+                    $sections_html .= '<h4 class="subsection-heading">' . esc_html( $callout['title'] ) . '</h4>';
                 }
                 if ( ! empty( $callout['items'] ) && is_array( $callout['items'] ) ) {
-                    $sections_html .= '<div class="callout-items">';
                     foreach ( $callout['items'] as $item ) {
                         if ( ! is_array( $item ) ) continue;
-                        $sections_html .= '<p><span class="callout-label">' . esc_html( $item['label'] ?? '' ) . ':</span> ' . esc_html( $item['description'] ?? '' ) . '</p>';
+                        // Render each seasonal item as a small subsection
+                        $sections_html .= '<h5 class="subsection-subheading">' . esc_html( $item['label'] ?? '' ) . '</h5>';
+                        $sections_html .= '<p class="section-para">' . esc_html( $item['description'] ?? '' ) . '</p>';
                     }
-                    $sections_html .= '</div>';
                 }
-                $sections_html .= '</div>';
             }
 
-            // Highlight box (colored - emerald, amber, teal)
+            // Highlight box - render as subsection heading + content (matching PDF template)
             if ( ! empty( $section['highlight_box'] ) && is_array( $section['highlight_box'] ) ) {
                 $highlight = $section['highlight_box'];
-                $color = $highlight['color'] ?? 'blue';
-                $color_classes = array(
-                    'emerald' => 'highlight-emerald',
-                    'amber'   => 'highlight-amber',
-                    'teal'    => 'highlight-teal',
-                    'blue'    => 'highlight-blue',
-                );
-                $color_class = $color_classes[ $color ] ?? 'highlight-blue';
-                $sections_html .= '<div class="highlight-box ' . $color_class . '">';
                 if ( isset( $highlight['title'] ) ) {
-                    $sections_html .= '<h4 class="highlight-title">' . esc_html( $highlight['title'] ) . '</h4>';
+                    $sections_html .= '<h4 class="subsection-heading">' . esc_html( $highlight['title'] ) . '</h4>';
                 }
                 if ( isset( $highlight['content'] ) ) {
-                    $sections_html .= '<p class="highlight-content">' . esc_html( $highlight['content'] ) . '</p>';
+                    $sections_html .= '<p class="section-para">' . wp_kses_post( $highlight['content'] ) . '</p>';
                 }
                 if ( ! empty( $highlight['items'] ) && is_array( $highlight['items'] ) ) {
-                    $sections_html .= '<div class="highlight-items">';
+                    $sections_html .= '<ul class="bullet-list">';
                     foreach ( $highlight['items'] as $item ) {
                         if ( ! is_array( $item ) ) continue;
-                        $sections_html .= '<p><span class="highlight-label">' . esc_html( $item['label'] ?? '' ) . ':</span> ' . esc_html( $item['description'] ?? '' ) . '</p>';
+                        $sections_html .= '<li><strong>' . esc_html( $item['label'] ?? '' ) . ':</strong> ' . esc_html( $item['description'] ?? '' ) . '</li>';
                     }
-                    $sections_html .= '</div>';
+                    $sections_html .= '</ul>';
                 }
-                $sections_html .= '</div>';
             }
 
             // Paragraphs
@@ -6605,6 +6591,38 @@ Keep responses concise but informative. Use **bold** for important terms. If men
         .subsection-content {
             color: var(--dark-text);
             line-height: 1.7;
+        }
+
+        /* Subsection headings (gold, matching PDF template) */
+        .subsection-heading {
+            font-size: 17px;
+            font-weight: 600;
+            color: var(--brand-gold);
+            margin: 20px 0 12px 0;
+        }
+
+        .subsection-subheading {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--brand-gold);
+            margin: 16px 0 8px 0;
+        }
+
+        /* Bullet list (matching PDF template) */
+        .bullet-list {
+            margin: 12px 0;
+            padding-left: 24px;
+            list-style: disc;
+        }
+
+        .bullet-list li {
+            margin-bottom: 8px;
+            line-height: 1.6;
+            color: var(--dark-text);
+        }
+
+        .bullet-list li strong {
+            color: var(--dark-text);
         }
 
         /* Section intro and paragraphs */
