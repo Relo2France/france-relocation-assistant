@@ -6976,15 +6976,68 @@ Keep responses concise but informative. Use **bold** for important terms. If men
             .section-header,
             .data-grid,
             .subsection,
-            .highlights-box {
+            .highlights-box,
+            .stat-cards-grid,
+            .stat-card-small,
+            .subsection-heading,
+            .subsection-subheading {
                 print-color-adjust: exact;
                 -webkit-print-color-adjust: exact;
             }
 
-            /* Expand all sections for print */
-            .report-section {
+            /* Ensure stat cards print in grid */
+            .stat-cards-grid {
+                display: grid !important;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 10px;
+                margin: 12px 0;
+            }
+
+            .stat-card-small {
+                background: #EBF4FA !important;
+                border: 1px solid #ddd;
+                padding: 10px;
+                text-align: center;
+            }
+
+            /* Bullet lists for print */
+            .bullet-list {
+                margin: 10px 0;
+                padding-left: 20px;
+            }
+
+            .bullet-list li {
+                margin-bottom: 6px;
+                page-break-inside: avoid;
+            }
+
+            /* Subsection headings print with gold color */
+            .subsection-heading {
+                color: #E5A54B !important;
+                margin: 16px 0 10px 0;
+                page-break-after: avoid;
+            }
+
+            .subsection-subheading {
+                color: #E5A54B !important;
+                margin: 12px 0 8px 0;
+                page-break-after: avoid;
+            }
+
+            /* Expand all sections for print - force details open */
+            .report-section,
+            details.report-section {
                 border: 1px solid #ccc;
                 margin-bottom: 15px;
+            }
+
+            /* Force all details elements to show content when printing */
+            details.report-section > .section-body {
+                display: block !important;
+            }
+
+            details.report-section:not([open]) > .section-body {
+                display: block !important;
             }
 
             .report-section[open] .section-body,
