@@ -5962,34 +5962,41 @@ Keep responses concise but informative. Use **bold** for important terms. If men
      * @return void Outputs HTML directly
      */
     public function view_research_report_html( $request ) {
-        $report_id = absint( $request->get_param( 'id' ) );
+        try {
+            $report_id = absint( $request->get_param( 'id' ) );
 
-        global $wpdb;
-        $table_name = $wpdb->prefix . 'framt_research_reports';
+            global $wpdb;
+            $table_name = $wpdb->prefix . 'framt_research_reports';
 
-        $report = $wpdb->get_row(
-            $wpdb->prepare( "SELECT * FROM {$table_name} WHERE id = %d", $report_id ),
-            ARRAY_A
-        );
+            $report = $wpdb->get_row(
+                $wpdb->prepare( "SELECT * FROM {$table_name} WHERE id = %d", $report_id ),
+                ARRAY_A
+            );
 
-        if ( ! $report ) {
-            wp_die( 'Research report not found.', 'Report Not Found', array( 'response' => 404 ) );
+            if ( ! $report ) {
+                wp_die( 'Research report not found.', 'Report Not Found', array( 'response' => 404 ) );
+            }
+
+            // Parse the report content
+            $content = is_string( $report['content'] ) ? json_decode( $report['content'], true ) : $report['content'];
+
+            // Ensure content is valid
+            if ( ! is_array( $content ) ) {
+                wp_die( 'Report content is invalid or corrupted. JSON decode error: ' . esc_html( json_last_error_msg() ), 'Invalid Report', array( 'response' => 500 ) );
+            }
+
+            // Generate and output HTML
+            $html = $this->generate_report_html( $report, $content );
+
+            header( 'Content-Type: text/html; charset=utf-8' );
+            echo $html;
+            exit;
+        } catch ( \Exception $e ) {
+            wp_die( 'Error generating report: ' . esc_html( $e->getMessage() ), 'Report Error', array( 'response' => 500 ) );
+        } catch ( \Error $e ) {
+            error_log( 'FRA Report Fatal Error: ' . $e->getMessage() . ' in ' . $e->getFile() . ' line ' . $e->getLine() );
+            wp_die( 'Fatal error generating report: ' . esc_html( $e->getMessage() ) . ' in ' . esc_html( basename( $e->getFile() ) ) . ' line ' . esc_html( $e->getLine() ), 'Report Error', array( 'response' => 500 ) );
         }
-
-        // Parse the report content
-        $content = is_string( $report['content'] ) ? json_decode( $report['content'], true ) : $report['content'];
-
-        // Ensure content is valid
-        if ( ! is_array( $content ) ) {
-            wp_die( 'Report content is invalid or corrupted.', 'Invalid Report', array( 'response' => 500 ) );
-        }
-
-        // Generate and output HTML
-        $html = $this->generate_report_html( $report, $content );
-
-        header( 'Content-Type: text/html; charset=utf-8' );
-        echo $html;
-        exit;
     }
 
     /**
@@ -6258,8 +6265,11 @@ Keep responses concise but informative. Use **bold** for important terms. If men
             $sections_html .= '</div></details>';
         }
 
-        // Build footer HTML
+        // Build footer HTML - ensure data_sources is always an array
         $data_sources = $footer['data_sources'] ?? array( 'INSEE', 'Eurostat', 'French government sources' );
+        if ( ! is_array( $data_sources ) ) {
+            $data_sources = is_string( $data_sources ) ? array( $data_sources ) : array( 'INSEE', 'Eurostat', 'French government sources' );
+        }
         $generated_date = $footer['generated_date'] ?? gmdate( 'F j, Y' );
         $version = $footer['version'] ?? $report['version'] ?? 1;
 
