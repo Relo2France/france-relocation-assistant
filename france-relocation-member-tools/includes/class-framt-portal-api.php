@@ -5979,6 +5979,11 @@ Keep responses concise but informative. Use **bold** for important terms. If men
         // Parse the report content
         $content = is_string( $report['content'] ) ? json_decode( $report['content'], true ) : $report['content'];
 
+        // Ensure content is valid
+        if ( ! is_array( $content ) ) {
+            wp_die( 'Report content is invalid or corrupted.', 'Invalid Report', array( 'response' => 500 ) );
+        }
+
         // Generate and output HTML
         $html = $this->generate_report_html( $report, $content );
 
@@ -5995,14 +6000,16 @@ Keep responses concise but informative. Use **bold** for important terms. If men
      * @return string Complete HTML document
      */
     private function generate_report_html( $report, $content ) {
-        $title = $content['header']['title'] ?? $report['location_name'];
-        $subtitle = $content['header']['subtitle'] ?? '';
-        $tagline = $content['header']['tagline'] ?? 'A Comprehensive Guide for Those Considering Relocation';
-        $secondary_tagline = $content['header']['secondary_tagline'] ?? '';
+        // Ensure content has expected structure with defaults
+        $header = is_array( $content['header'] ?? null ) ? $content['header'] : array();
+        $title = $header['title'] ?? $report['location_name'];
+        $subtitle = $header['subtitle'] ?? '';
+        $tagline = $header['tagline'] ?? 'A Comprehensive Guide for Those Considering Relocation';
+        $secondary_tagline = $header['secondary_tagline'] ?? '';
         $french_name = $subtitle; // Use subtitle as French name/location context (e.g., "Department 24 • Nouvelle-Aquitaine")
-        $header_stat_cards = $content['header']['stat_cards'] ?? array();
-        $sections = $content['sections'] ?? array();
-        $footer = $content['footer'] ?? array();
+        $header_stat_cards = is_array( $header['stat_cards'] ?? null ) ? $header['stat_cards'] : array();
+        $sections = is_array( $content['sections'] ?? null ) ? $content['sections'] : array();
+        $footer = is_array( $content['footer'] ?? null ) ? $content['footer'] : array();
         $location_type = ucfirst( $report['location_type'] );
 
         // Check if this is a placeholder/template report
@@ -6053,6 +6060,10 @@ Keep responses concise but informative. Use **bold** for important terms. If men
         $sections_html = '';
         $section_index = 0;
         foreach ( $sections as $section_id => $section ) {
+            // Skip if section is not an array
+            if ( ! is_array( $section ) ) {
+                continue;
+            }
             $section_title = $section['title'] ?? ucwords( str_replace( '_', ' ', $section_id ) );
             $section_intro = $section['intro'] ?? $section['content'] ?? '';
             $section_icon = $section_icons[ $section_id ] ?? '📍';
@@ -6188,16 +6199,22 @@ Keep responses concise but informative. Use **bold** for important terms. If men
             }
 
             // Legacy: Handle old format items/subsections
-            if ( ! empty( $section['items'] ) && empty( $section['info_box'] ) ) {
+            if ( ! empty( $section['items'] ) && is_array( $section['items'] ) && empty( $section['info_box'] ) ) {
                 $sections_html .= '<div class="data-grid">';
                 foreach ( $section['items'] as $item ) {
-                    $sections_html .= '<div class="data-row"><span class="data-label">' . esc_html( $item['label'] ) . '</span><span class="data-value">' . esc_html( $item['value'] ) . '</span></div>';
+                    if ( ! is_array( $item ) ) {
+                        continue;
+                    }
+                    $sections_html .= '<div class="data-row"><span class="data-label">' . esc_html( $item['label'] ?? '' ) . '</span><span class="data-value">' . esc_html( $item['value'] ?? '' ) . '</span></div>';
                 }
                 $sections_html .= '</div>';
             }
 
-            if ( ! empty( $section['subsections'] ) ) {
+            if ( ! empty( $section['subsections'] ) && is_array( $section['subsections'] ) ) {
                 foreach ( $section['subsections'] as $sub_id => $subsection ) {
+                    if ( ! is_array( $subsection ) ) {
+                        continue;
+                    }
                     $sub_title = $subsection['title'] ?? ucwords( str_replace( '_', ' ', $sub_id ) );
                     $sub_content = $subsection['content'] ?? '';
                     $sections_html .= '<div class="subsection">';
@@ -6205,10 +6222,13 @@ Keep responses concise but informative. Use **bold** for important terms. If men
                     if ( $sub_content ) {
                         $sections_html .= '<p class="subsection-content">' . wp_kses_post( nl2br( $sub_content ) ) . '</p>';
                     }
-                    if ( ! empty( $subsection['items'] ) ) {
+                    if ( ! empty( $subsection['items'] ) && is_array( $subsection['items'] ) ) {
                         $sections_html .= '<div class="data-grid">';
                         foreach ( $subsection['items'] as $item ) {
-                            $sections_html .= '<div class="data-row"><span class="data-label">' . esc_html( $item['label'] ) . '</span><span class="data-value">' . esc_html( $item['value'] ) . '</span></div>';
+                            if ( ! is_array( $item ) ) {
+                                continue;
+                            }
+                            $sections_html .= '<div class="data-row"><span class="data-label">' . esc_html( $item['label'] ?? '' ) . '</span><span class="data-value">' . esc_html( $item['value'] ?? '' ) . '</span></div>';
                         }
                         $sections_html .= '</div>';
                     }
@@ -6217,10 +6237,12 @@ Keep responses concise but informative. Use **bold** for important terms. If men
             }
 
             // Handle legacy highlights
-            if ( ! empty( $section['highlights'] ) && empty( $section['highlight_box'] ) ) {
+            if ( ! empty( $section['highlights'] ) && is_array( $section['highlights'] ) && empty( $section['highlight_box'] ) ) {
                 $sections_html .= '<div class="highlights-box">';
                 foreach ( $section['highlights'] as $highlight ) {
-                    $sections_html .= '<span class="highlight-tag">' . esc_html( $highlight ) . '</span>';
+                    if ( is_string( $highlight ) ) {
+                        $sections_html .= '<span class="highlight-tag">' . esc_html( $highlight ) . '</span>';
+                    }
                 }
                 $sections_html .= '</div>';
             }
