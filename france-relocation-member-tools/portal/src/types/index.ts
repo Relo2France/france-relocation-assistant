@@ -532,7 +532,9 @@ export interface ChatMessage {
 export interface ChatSource {
   title: string;
   category: string;
-  relevance: number;
+  relevance?: number;
+  url?: string;
+  type?: 'official' | 'community';
 }
 
 export interface ChatRequest {
