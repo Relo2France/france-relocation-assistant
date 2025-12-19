@@ -8,7 +8,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ArrowLeft, FileText, MapPin, Users, Search, Loader2, Building, Home, TreeDeciduous } from 'lucide-react';
 import { researchApi } from '@/api/client';
-import { hasDepartmentMap } from '@/config/departmentMaps';
 import DepartmentMapView from './DepartmentMapView';
 import type { FranceDepartment, FranceCommune, ResearchLevel } from '@/types';
 
@@ -170,8 +169,8 @@ export default function DepartmentView({
         </div>
       </div>
 
-      {/* Department Map (if available) */}
-      {!loading && hasDepartmentMap(department.code) && (
+      {/* Department Map - Shows all communes using GeoJSON */}
+      {!loading && (
         <DepartmentMapView
           departmentCode={department.code}
           departmentName={department.name}
