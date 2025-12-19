@@ -32,6 +32,20 @@ interface GenerateReportModalProps {
 
 type ModalState = 'initial' | 'generating' | 'ready' | 'error' | 'saving' | 'saved';
 
+// Get user-friendly message based on placeholder reason
+function getPlaceholderMessage(reason: string | null): string {
+  switch (reason) {
+    case 'api_key_missing':
+      return 'The AI service is not configured. Please contact support to enable AI-generated reports with specific local data.';
+    case 'api_error':
+      return 'Unable to connect to the AI service. Please try again later or contact support.';
+    case 'parse_error':
+      return 'The AI response could not be processed. Please try regenerating the report.';
+    default:
+      return 'This is a template report with generic information. Click "Generate AI Report" to get location-specific data.';
+  }
+}
+
 export default function GenerateReportModal({
   isOpen,
   onClose,
@@ -45,6 +59,7 @@ export default function GenerateReportModal({
   const [isCached, setIsCached] = useState(false);
   const [cacheAge, setCacheAge] = useState<string | null>(null);
   const [isPlaceholder, setIsPlaceholder] = useState(false);
+  const [placeholderReason, setPlaceholderReason] = useState<string | null>(null);
 
   // Reset state when modal opens with new location
   useEffect(() => {
@@ -55,6 +70,7 @@ export default function GenerateReportModal({
       setIsCached(false);
       setCacheAge(null);
       setIsPlaceholder(false);
+      setPlaceholderReason(null);
     }
   }, [isOpen, locationCode]);
 
@@ -75,6 +91,7 @@ export default function GenerateReportModal({
       setIsCached(response.cached);
       setCacheAge(response.cache_age || null);
       setIsPlaceholder(response.is_placeholder || false);
+      setPlaceholderReason(response.placeholder_reason || null);
       setState('ready');
     } catch (err) {
       console.error('Report generation failed:', err);
@@ -229,7 +246,7 @@ export default function GenerateReportModal({
 
                 <p className="text-gray-600">
                   {isPlaceholder
-                    ? 'This is a template report with generic information. Click "Regenerate" to get AI-researched data specific to this location.'
+                    ? getPlaceholderMessage(placeholderReason)
                     : `Your relocation report for ${locationName} is ready.`}
                 </p>
               </div>

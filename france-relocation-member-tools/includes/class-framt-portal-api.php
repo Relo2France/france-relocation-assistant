@@ -5759,6 +5759,7 @@ Keep responses concise but informative. Use **bold** for important terms. If men
 
         if ( $should_use_cache ) {
             $report = $this->format_report_response( $cached_report );
+            $cached_placeholder_reason = $cached_content['footer']['placeholder_reason'] ?? '';
 
             $document_id = null;
             if ( $save_to_docs ) {
@@ -5770,6 +5771,7 @@ Keep responses concise but informative. Use **bold** for important terms. If men
                 'report'             => $report,
                 'cached'             => true,
                 'is_placeholder'     => $is_placeholder,
+                'placeholder_reason' => $cached_placeholder_reason,
                 'saved_to_documents' => $save_to_docs,
                 'document_id'        => $document_id,
             ) );
@@ -5802,6 +5804,10 @@ Keep responses concise but informative. Use **bold** for important terms. If men
 
         $report = $this->format_report_response( array_merge( $report_data, array( 'id' => $report_id ) ) );
 
+        // Check if newly generated report is a placeholder
+        $new_is_placeholder = isset( $report_content['footer']['note'] ) && strpos( $report_content['footer']['note'], 'template report' ) !== false;
+        $placeholder_reason = $report_content['footer']['placeholder_reason'] ?? '';
+
         $document_id = null;
         if ( $save_to_docs ) {
             $document_id = $this->save_report_link_to_documents( $report_id, get_current_user_id() );
@@ -5811,6 +5817,8 @@ Keep responses concise but informative. Use **bold** for important terms. If men
             'success'            => true,
             'report'             => $report,
             'cached'             => false,
+            'is_placeholder'     => $new_is_placeholder,
+            'placeholder_reason' => $placeholder_reason,
             'saved_to_documents' => $save_to_docs,
             'document_id'        => $document_id,
         ) );
@@ -7007,13 +7015,23 @@ Keep responses concise but informative. Use **bold** for important terms. If men
 
         // Add placeholder banner if this is a template report
         if ( $is_placeholder ) {
+            $placeholder_reason = $footer['placeholder_reason'] ?? '';
+            $reason_messages = array(
+                'api_key_missing' => 'The OpenAI API key is not configured. Please add your API key in the plugin settings.',
+                'api_error'       => 'Unable to connect to the AI service. Please try again later.',
+                'parse_error'     => 'The AI response could not be processed. Please try regenerating the report.',
+            );
+            $reason_note = isset( $reason_messages[ $placeholder_reason ] )
+                ? $reason_messages[ $placeholder_reason ]
+                : 'AI-generated reports with specific local data are available when the service is configured.';
+
             $html .= '
             <div class="placeholder-banner">
                 <div class="placeholder-banner-content">
                     <span class="placeholder-banner-icon">⚠️</span>
                     <span class="placeholder-banner-text">This is a template report with generic information</span>
                 </div>
-                <p class="placeholder-banner-note">AI-generated reports with specific local data are available when the service is configured.</p>
+                <p class="placeholder-banner-note">' . esc_html( $reason_note ) . '</p>
             </div>';
         }
 
@@ -7321,7 +7339,8 @@ Keep responses concise but informative. Use **bold** for important terms. If men
         $ai_api_key = get_option( 'fra_openai_api_key' );
 
         if ( empty( $ai_api_key ) ) {
-            return $this->generate_placeholder_report( $type, $code, $name );
+            error_log( 'FRA Report: OpenAI API key not configured' );
+            return $this->generate_placeholder_report( $type, $code, $name, 'api_key_missing' );
         }
 
         $prompt = $this->build_report_prompt( $type, $code, $name );
@@ -7360,16 +7379,30 @@ SYSTEM;
         );
 
         if ( is_wp_error( $response ) ) {
-            return $this->generate_placeholder_report( $type, $code, $name );
+            error_log( 'FRA Report: API request failed - ' . $response->get_error_message() );
+            return $this->generate_placeholder_report( $type, $code, $name, 'api_error' );
         }
 
         $body = json_decode( wp_remote_retrieve_body( $response ), true );
+
+        // Check for API errors (invalid key, rate limit, etc.)
+        if ( isset( $body['error'] ) ) {
+            error_log( 'FRA Report: OpenAI API error - ' . ( $body['error']['message'] ?? 'Unknown error' ) );
+            return $this->generate_placeholder_report( $type, $code, $name, 'api_error' );
+        }
+
         if ( ! isset( $body['choices'][0]['message']['content'] ) ) {
-            return $this->generate_placeholder_report( $type, $code, $name );
+            error_log( 'FRA Report: Invalid API response structure' );
+            return $this->generate_placeholder_report( $type, $code, $name, 'api_error' );
         }
 
         $content = json_decode( $body['choices'][0]['message']['content'], true );
-        return $content ?: $this->generate_placeholder_report( $type, $code, $name );
+        if ( ! $content ) {
+            error_log( 'FRA Report: Failed to parse AI response as JSON' );
+            return $this->generate_placeholder_report( $type, $code, $name, 'parse_error' );
+        }
+
+        return $content;
     }
 
     /**
@@ -7764,9 +7797,10 @@ SECTIONS;
      * @param string $type Location type (region, department, commune).
      * @param string $code Location code.
      * @param string $name Location name.
+     * @param string $reason Optional reason why placeholder is being used.
      * @return array
      */
-    private function generate_placeholder_report( $type, $code, $name ) {
+    private function generate_placeholder_report( $type, $code, $name, $reason = '' ) {
         $taglines = array(
             'region'     => 'A Comprehensive Guide for Those Considering Relocation',
             'department' => 'Your Guide to Living and Working in This Area',
@@ -7970,10 +8004,11 @@ SECTIONS;
             ),
             'sections' => $sections,
             'footer'   => array(
-                'data_sources'   => array( 'INSEE', 'Eurostat', 'service-public.fr' ),
-                'generated_date' => gmdate( 'Y-m-d' ),
-                'version'        => 1,
-                'note'           => 'This is a template report. AI-generated reports will include specific local data and details.',
+                'data_sources'      => array( 'INSEE', 'Eurostat', 'service-public.fr' ),
+                'generated_date'    => gmdate( 'Y-m-d' ),
+                'version'           => 1,
+                'note'              => 'This is a template report. AI-generated reports will include specific local data and details.',
+                'placeholder_reason' => $reason,
             ),
         );
     }
