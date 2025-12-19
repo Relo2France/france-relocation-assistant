@@ -5703,6 +5703,7 @@ Keep responses concise but informative. Use **bold** for important terms. If men
     public function generate_research_report( $request ) {
         $location_type = sanitize_text_field( $request->get_param( 'location_type' ) );
         $location_code = sanitize_text_field( $request->get_param( 'location_code' ) );
+        $provided_name = sanitize_text_field( $request->get_param( 'location_name' ) );
         $save_to_docs  = (bool) $request->get_param( 'save_to_documents' );
 
         if ( ! in_array( $location_type, array( 'region', 'department', 'commune' ), true ) ) {
@@ -5713,11 +5714,12 @@ Keep responses concise but informative. Use **bold** for important terms. If men
             );
         }
 
-        $location_name = $this->get_location_name( $location_type, $location_code );
+        // Use provided name if available (for communes loaded from GeoJSON), otherwise look it up
+        $location_name = ! empty( $provided_name ) ? $provided_name : $this->get_location_name( $location_type, $location_code );
         if ( ! $location_name ) {
             return new WP_Error(
                 'location_not_found',
-                'Location not found.',
+                'Location not found. Please provide a location name.',
                 array( 'status' => 404 )
             );
         }
