@@ -11,9 +11,25 @@ import { ComposableMap, Geographies, Geography, ZoomableGroup } from 'react-simp
 import { FRANCE_DEPARTMENTS } from '@/config/research';
 import type { FranceCommune } from '@/types';
 
-// Base URL for commune GeoJSON files (per department)
-const getCommmuneGeoUrl = (deptCode: string) =>
-  `https://raw.githubusercontent.com/gregoiredavid/france-geojson/master/departements/${deptCode}/communes.geojson`;
+// Slugify department name for URL (e.g., "Côte-d'Or" -> "cote-d-or")
+const slugifyDeptName = (name: string): string => {
+  return name
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // Remove diacritics
+    .replace(/['']/g, '-')           // Replace apostrophes with hyphens
+    .replace(/\s+/g, '-')            // Replace spaces with hyphens
+    .replace(/[^a-z0-9-]/g, '')      // Remove other special chars
+    .replace(/-+/g, '-')             // Collapse multiple hyphens
+    .replace(/^-|-$/g, '');          // Trim hyphens from ends
+};
+
+// Build GeoJSON URL for department communes
+// Format: departements/{code}-{name}/communes-{code}-{name}.geojson
+const getCommuneGeoUrl = (deptCode: string, deptName: string) => {
+  const slug = slugifyDeptName(deptName);
+  return `https://raw.githubusercontent.com/gregoiredavid/france-geojson/master/departements/${deptCode}-${slug}/communes-${deptCode}-${slug}.geojson`;
+};
 
 // Color palette for communes (alternating to distinguish neighbors)
 const COMMUNE_COLORS = [
@@ -162,7 +178,7 @@ export default function DepartmentMapView({
   const deptConfig = DEPARTMENT_CENTERS[departmentCode] || DEFAULT_DEPT_CONFIG;
 
   // GeoJSON URL for this department's communes
-  const communeGeoUrl = useMemo(() => getCommmuneGeoUrl(departmentCode), [departmentCode]);
+  const communeGeoUrl = useMemo(() => getCommuneGeoUrl(departmentCode, departmentName), [departmentCode, departmentName]);
 
   // Get color for a commune (based on index for visual distinction)
   const getCommuneColor = useCallback((index: number) => {
