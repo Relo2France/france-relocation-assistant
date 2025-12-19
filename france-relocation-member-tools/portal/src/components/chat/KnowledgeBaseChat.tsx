@@ -57,8 +57,9 @@ export default function KnowledgeBaseChat() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [includePractice, setIncludePractice] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [isStreaming, setIsStreaming] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const latestResponseRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const { data: categories, isLoading: categoriesLoading } = useChatCategories();
@@ -73,10 +74,15 @@ export default function KnowledgeBaseChat() {
     setSelectedCategory(categoryId);
   };
 
-  // Auto-scroll to latest message
+  // Scroll to the latest response (top of the response, not bottom)
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isStreaming]);
+    if (messages.length > 0 && !isLoading && latestResponseRef.current) {
+      // Small delay to ensure DOM is updated
+      setTimeout(() => {
+        latestResponseRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
+  }, [messages, isLoading]);
 
   const handleSendMessage = async () => {
     if (!inputValue.trim() || sendMessage.isPending) return;
@@ -90,7 +96,7 @@ export default function KnowledgeBaseChat() {
 
     setMessages((prev) => [...prev, userMessage]);
     setInputValue('');
-    setIsStreaming(true);
+    setIsLoading(true);
 
     try {
       const response = await sendMessage.mutateAsync({
@@ -100,7 +106,7 @@ export default function KnowledgeBaseChat() {
       });
 
       if (response.success && response.message) {
-        // Simulate streaming effect
+        // Add complete message immediately (no streaming effect)
         const assistantMessage: ChatMessageType = {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
@@ -109,8 +115,7 @@ export default function KnowledgeBaseChat() {
           sources: response.sources,
         };
 
-        // Add message with streaming effect
-        await streamMessage(assistantMessage);
+        setMessages((prev) => [...prev, assistantMessage]);
       } else {
         throw new Error(response.error || 'Failed to get response');
       }
@@ -123,41 +128,8 @@ export default function KnowledgeBaseChat() {
       };
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
-      setIsStreaming(false);
+      setIsLoading(false);
     }
-  };
-
-  const streamMessage = async (message: ChatMessageType) => {
-    const words = message.content.split(' ');
-    let currentContent = '';
-
-    // Add empty message first
-    const tempMessage: ChatMessageType = {
-      ...message,
-      content: '',
-    };
-    setMessages((prev) => [...prev, tempMessage]);
-
-    // Stream words
-    for (let i = 0; i < words.length; i++) {
-      currentContent += (i > 0 ? ' ' : '') + words[i];
-      setMessages((prev) => {
-        const updated = [...prev];
-        updated[updated.length - 1] = {
-          ...message,
-          content: currentContent,
-        };
-        return updated;
-      });
-      await new Promise((resolve) => setTimeout(resolve, 30));
-    }
-
-    // Finalize with sources
-    setMessages((prev) => {
-      const updated = [...prev];
-      updated[updated.length - 1] = message;
-      return updated;
-    });
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -225,7 +197,7 @@ export default function KnowledgeBaseChat() {
         </div>
 
         {/* Messages area */}
-        <div className="flex-1 overflow-y-auto px-6 py-6">
+        <div ref={messagesContainerRef} className="flex-1 overflow-y-auto px-6 py-6">
           {messages.length === 0 ? (
             selectedCategory ? (
               <CategoryTopicsView
@@ -237,20 +209,30 @@ export default function KnowledgeBaseChat() {
             )
           ) : (
             <div className="max-w-4xl mx-auto space-y-6">
-              {messages.map((message) => (
-                <ChatMessage key={message.id} message={message} />
-              ))}
-              {isStreaming && (
+              {messages.map((message, index) => {
+                // Add ref to the latest assistant message for scrolling
+                const isLatestAssistant =
+                  message.role === 'assistant' &&
+                  index === messages.length - 1;
+                return (
+                  <div
+                    key={message.id}
+                    ref={isLatestAssistant ? latestResponseRef : undefined}
+                  >
+                    <ChatMessage message={message} />
+                  </div>
+                );
+              })}
+              {isLoading && (
                 <div
                   role="status"
                   aria-live="polite"
-                  className="flex items-center gap-2 text-gray-500 text-sm"
+                  className="flex items-center gap-3 p-4 bg-white border border-gray-200 rounded-lg shadow-sm"
                 >
-                  <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
-                  <span>AI is thinking...</span>
+                  <Loader2 className="w-5 h-5 animate-spin text-primary-600" aria-hidden="true" />
+                  <span className="text-gray-600">Generating response...</span>
                 </div>
               )}
-              <div ref={messagesEndRef} />
             </div>
           )}
         </div>
@@ -263,7 +245,7 @@ export default function KnowledgeBaseChat() {
           onKeyPress={handleKeyPress}
           includePractice={includePractice}
           onTogglePractice={() => setIncludePractice(!includePractice)}
-          isLoading={sendMessage.isPending || isStreaming}
+          isLoading={sendMessage.isPending || isLoading}
           inputRef={inputRef}
           onRetry={handleRetry}
           hasError={sendMessage.isError}
@@ -451,120 +433,230 @@ function ChatMessage({ message }: ChatMessageProps) {
     );
   }
 
-  // Assistant message
+  // Assistant message - professional card layout
   return (
-    <div className="flex items-start gap-3">
-      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center flex-shrink-0">
-        <Bot className="w-4 h-4 text-white" />
+    <div className="flex items-start gap-4">
+      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center flex-shrink-0 shadow-sm">
+        <Bot className="w-5 h-5 text-white" />
       </div>
-      <div className="flex-1 max-w-2xl">
-        <div className="bg-white border border-gray-200 rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm">
-          <div className="prose prose-sm max-w-none">
+      <div className="flex-1">
+        {/* Response card */}
+        <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+          {/* Content area with professional typography */}
+          <div className="px-6 py-5">
             <MessageContent content={message.content} />
           </div>
-        </div>
 
-        {/* Sources */}
-        {message.sources && message.sources.length > 0 && (
-          <div className="mt-3 px-2">
-            <div className="text-xs font-medium text-gray-500 mb-2">Sources:</div>
-            <div className="flex flex-wrap gap-2">
-              {message.sources.map((source, index) => (
-                <SourceBadge key={index} source={source} />
-              ))}
+          {/* Sources section */}
+          {message.sources && message.sources.length > 0 && (
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-100">
+              <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Sources</div>
+              <div className="flex flex-wrap gap-2">
+                {message.sources.map((source, index) => (
+                  <SourceBadge key={index} source={source} />
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Footer */}
-        <div className="flex items-center justify-between gap-2 mt-1 px-2">
-          <span className="text-xs text-gray-500">{formatTime(message.timestamp)}</span>
-          <button
-            onClick={handleCopy}
-            className={clsx(
-              'p-1.5 rounded transition-colors',
-              copied
-                ? 'bg-green-100 text-green-600'
-                : 'hover:bg-gray-100 text-gray-400 hover:text-gray-600'
-            )}
-            title="Copy message"
-          >
-            {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-          </button>
+          {/* Footer with actions */}
+          <div className="px-6 py-3 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
+            <span className="text-xs text-gray-500">{formatTime(message.timestamp)}</span>
+            <button
+              onClick={handleCopy}
+              className={clsx(
+                'flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors',
+                copied
+                  ? 'bg-green-100 text-green-700'
+                  : 'hover:bg-gray-200 text-gray-500 hover:text-gray-700'
+              )}
+              title="Copy to clipboard"
+            >
+              {copied ? (
+                <>
+                  <Check className="w-3.5 h-3.5" />
+                  <span>Copied</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-3.5 h-3.5" />
+                  <span>Copy</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-// Message content with markdown-like rendering
+// Message content with professional markdown rendering
 function MessageContent({ content }: { content: string }) {
-  // Simple markdown-like parsing
   const lines = content.split('\n');
   const elements: JSX.Element[] = [];
-  let currentList: string[] = [];
+  let currentList: { text: string; formatted: JSX.Element }[] = [];
   let currentListType: 'ul' | 'ol' | null = null;
+
+  // Parse inline formatting (bold, links, inline code)
+  const parseInlineFormatting = (text: string): JSX.Element => {
+    const parts: (string | JSX.Element)[] = [];
+    let remaining = text;
+    let keyIndex = 0;
+
+    // Process text for bold, links, and inline code
+    while (remaining.length > 0) {
+      // Check for markdown links [text](url)
+      const linkMatch = remaining.match(/\[([^\]]+)\]\(([^)]+)\)/);
+      // Check for bold **text**
+      const boldMatch = remaining.match(/\*\*([^*]+)\*\*/);
+      // Check for inline code `code`
+      const codeMatch = remaining.match(/`([^`]+)`/);
+
+      // Find the earliest match
+      const matches = [
+        linkMatch ? { type: 'link', match: linkMatch, index: remaining.indexOf(linkMatch[0]) } : null,
+        boldMatch ? { type: 'bold', match: boldMatch, index: remaining.indexOf(boldMatch[0]) } : null,
+        codeMatch ? { type: 'code', match: codeMatch, index: remaining.indexOf(codeMatch[0]) } : null,
+      ].filter(Boolean).sort((a, b) => (a?.index ?? Infinity) - (b?.index ?? Infinity));
+
+      if (matches.length === 0 || matches[0] === null) {
+        parts.push(remaining);
+        break;
+      }
+
+      const earliest = matches[0];
+      if (earliest.index > 0) {
+        parts.push(remaining.slice(0, earliest.index));
+      }
+
+      if (earliest.type === 'link' && earliest.match) {
+        parts.push(
+          <a
+            key={keyIndex++}
+            href={earliest.match[2]}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary-600 hover:text-primary-700 underline font-medium"
+          >
+            {earliest.match[1]}
+          </a>
+        );
+        remaining = remaining.slice(earliest.index + earliest.match[0].length);
+      } else if (earliest.type === 'bold' && earliest.match) {
+        parts.push(
+          <strong key={keyIndex++} className="font-semibold text-gray-900">
+            {earliest.match[1]}
+          </strong>
+        );
+        remaining = remaining.slice(earliest.index + earliest.match[0].length);
+      } else if (earliest.type === 'code' && earliest.match) {
+        parts.push(
+          <code key={keyIndex++} className="px-1.5 py-0.5 bg-gray-100 rounded text-sm font-mono text-gray-800">
+            {earliest.match[1]}
+          </code>
+        );
+        remaining = remaining.slice(earliest.index + earliest.match[0].length);
+      }
+    }
+
+    return <>{parts}</>;
+  };
 
   const flushList = () => {
     if (currentList.length > 0) {
-      const ListTag = currentListType === 'ol' ? 'ol' : 'ul';
+      const isOrdered = currentListType === 'ol';
       elements.push(
-        <ListTag key={elements.length} className="my-2 ml-4">
-          {currentList.map((item, i) => (
-            <li key={i} className="text-gray-700">
-              {item}
-            </li>
-          ))}
-        </ListTag>
+        isOrdered ? (
+          <ol key={elements.length} className="my-4 ml-6 space-y-2 list-decimal">
+            {currentList.map((item, i) => (
+              <li key={i} className="text-gray-700 leading-relaxed pl-1">
+                {item.formatted}
+              </li>
+            ))}
+          </ol>
+        ) : (
+          <ul key={elements.length} className="my-4 ml-6 space-y-2">
+            {currentList.map((item, i) => (
+              <li key={i} className="text-gray-700 leading-relaxed flex items-start gap-2">
+                <span className="text-primary-500 mt-1.5">•</span>
+                <span>{item.formatted}</span>
+              </li>
+            ))}
+          </ul>
+        )
       );
       currentList = [];
       currentListType = null;
     }
   };
 
-  lines.forEach((line, _index) => {
-    // Bullet points
-    if (line.match(/^[\-\*•]\s/)) {
-      if (currentListType !== 'ul') flushList();
-      currentListType = 'ul';
-      currentList.push(line.replace(/^[\-\*•]\s/, ''));
-    }
-    // Numbered lists
-    else if (line.match(/^\d+\.\s/)) {
-      if (currentListType !== 'ol') flushList();
-      currentListType = 'ol';
-      currentList.push(line.replace(/^\d+\.\s/, ''));
-    }
-    // Code blocks
-    else if (line.startsWith('```')) {
+  lines.forEach((line) => {
+    const trimmedLine = line.trim();
+
+    // H1 headers (# Header)
+    if (trimmedLine.startsWith('# ')) {
       flushList();
       elements.push(
-        <pre key={elements.length} className="bg-gray-100 p-3 rounded-lg overflow-x-auto">
-          <code className="text-xs">{line.replace(/```/g, '')}</code>
+        <h2 key={elements.length} className="text-xl font-bold text-gray-900 mt-6 mb-3 pb-2 border-b border-gray-200">
+          {parseInlineFormatting(trimmedLine.slice(2))}
+        </h2>
+      );
+    }
+    // H2 headers (## Header)
+    else if (trimmedLine.startsWith('## ')) {
+      flushList();
+      elements.push(
+        <h3 key={elements.length} className="text-lg font-semibold text-gray-900 mt-5 mb-2">
+          {parseInlineFormatting(trimmedLine.slice(3))}
+        </h3>
+      );
+    }
+    // H3 headers (### Header) or bold-only lines as subheadings
+    else if (trimmedLine.startsWith('### ') || (trimmedLine.startsWith('**') && trimmedLine.endsWith('**') && trimmedLine.indexOf('**', 2) === trimmedLine.length - 2)) {
+      flushList();
+      const headerText = trimmedLine.startsWith('### ')
+        ? trimmedLine.slice(4)
+        : trimmedLine.slice(2, -2);
+      elements.push(
+        <h4 key={elements.length} className="text-base font-semibold text-gray-800 mt-4 mb-2">
+          {headerText}
+        </h4>
+      );
+    }
+    // Bullet points
+    else if (trimmedLine.match(/^[\-\*•]\s/)) {
+      if (currentListType !== 'ul') flushList();
+      currentListType = 'ul';
+      const itemText = trimmedLine.replace(/^[\-\*•]\s/, '');
+      currentList.push({ text: itemText, formatted: parseInlineFormatting(itemText) });
+    }
+    // Numbered lists
+    else if (trimmedLine.match(/^\d+\.\s/)) {
+      if (currentListType !== 'ol') flushList();
+      currentListType = 'ol';
+      const itemText = trimmedLine.replace(/^\d+\.\s/, '');
+      currentList.push({ text: itemText, formatted: parseInlineFormatting(itemText) });
+    }
+    // Code blocks
+    else if (trimmedLine.startsWith('```')) {
+      flushList();
+      elements.push(
+        <pre key={elements.length} className="my-4 bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto">
+          <code className="text-sm font-mono">{trimmedLine.replace(/```/g, '')}</code>
         </pre>
       );
     }
     // Regular paragraphs
-    else if (line.trim()) {
+    else if (trimmedLine) {
       flushList();
-      // Parse bold text **text** safely without dangerouslySetInnerHTML
-      const parts = line.split(/(\*\*.*?\*\*)/g);
-      const formattedParts = parts.map((part, i) => {
-        if (part.startsWith('**') && part.endsWith('**')) {
-          return <strong key={i}>{part.slice(2, -2)}</strong>;
-        }
-        return part;
-      });
       elements.push(
-        <p
-          key={elements.length}
-          className="text-gray-700 leading-relaxed mb-2"
-        >
-          {formattedParts}
+        <p key={elements.length} className="text-gray-700 leading-relaxed mb-3">
+          {parseInlineFormatting(trimmedLine)}
         </p>
       );
     }
-    // Empty lines
+    // Empty lines - just flush the list
     else {
       flushList();
     }
@@ -572,32 +664,67 @@ function MessageContent({ content }: { content: string }) {
 
   flushList(); // Flush any remaining list
 
-  return <>{elements}</>;
+  return <div className="prose-content">{elements}</div>;
 }
 
-// Source badge
+// Source badge with type differentiation
 function SourceBadge({ source }: { source: ChatSource }) {
-  const categoryColors: Record<string, string> = {
-    visas: 'bg-blue-100 text-blue-700 border-blue-200',
-    property: 'bg-green-100 text-green-700 border-green-200',
-    healthcare: 'bg-red-100 text-red-700 border-red-200',
-    taxes: 'bg-yellow-100 text-yellow-700 border-yellow-200',
-    driving: 'bg-purple-100 text-purple-700 border-purple-200',
-    shipping: 'bg-indigo-100 text-indigo-700 border-indigo-200',
-    banking: 'bg-pink-100 text-pink-700 border-pink-200',
-    settling: 'bg-orange-100 text-orange-700 border-orange-200',
+  // Different styles for different source types
+  const typeStyles: Record<string, string> = {
+    official: 'bg-blue-50 text-blue-700 border-blue-200',
+    community: 'bg-amber-50 text-amber-700 border-amber-200',
   };
 
-  const colorClass = categoryColors[source.category] || 'bg-gray-100 text-gray-700 border-gray-200';
+  const categoryColors: Record<string, string> = {
+    visas: 'bg-blue-50 text-blue-700 border-blue-200',
+    property: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    healthcare: 'bg-rose-50 text-rose-700 border-rose-200',
+    taxes: 'bg-yellow-50 text-yellow-700 border-yellow-200',
+    driving: 'bg-violet-50 text-violet-700 border-violet-200',
+    shipping: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+    banking: 'bg-pink-50 text-pink-700 border-pink-200',
+    settling: 'bg-orange-50 text-orange-700 border-orange-200',
+  };
+
+  // Use type-based styling if available, otherwise fall back to category
+  const colorClass = source.type
+    ? typeStyles[source.type] || categoryColors[source.category] || 'bg-gray-50 text-gray-700 border-gray-200'
+    : categoryColors[source.category] || 'bg-gray-50 text-gray-700 border-gray-200';
+
+  const typeLabel = source.type === 'official' ? 'Official' : source.type === 'community' ? 'Community' : null;
+
+  // If source has URL, make it clickable
+  if (source.url) {
+    return (
+      <a
+        href={source.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={clsx(
+          'inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs border transition-colors hover:opacity-80',
+          colorClass
+        )}
+        title={source.url}
+      >
+        {typeLabel && (
+          <span className="font-semibold uppercase text-[10px] tracking-wide opacity-70">{typeLabel}:</span>
+        )}
+        <span className="font-medium">{source.title}</span>
+      </a>
+    );
+  }
 
   return (
     <span
       className={clsx(
-        'inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs border',
+        'inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs border',
         colorClass
       )}
-      title={`Relevance: ${Math.round(source.relevance * 100)}%`}
+      title={source.relevance ? `Relevance: ${Math.round(source.relevance * 100)}%` : undefined}
     >
+      {typeLabel && (
+        <span className="font-semibold uppercase text-[10px] tracking-wide opacity-70">{typeLabel}:</span>
+      )}
       <span className="font-medium">{source.title}</span>
     </span>
   );
