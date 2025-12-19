@@ -44,6 +44,7 @@ export default function GenerateReportModal({
   const [error, setError] = useState<string | null>(null);
   const [isCached, setIsCached] = useState(false);
   const [cacheAge, setCacheAge] = useState<string | null>(null);
+  const [isPlaceholder, setIsPlaceholder] = useState(false);
 
   // Reset state when modal opens with new location
   useEffect(() => {
@@ -53,6 +54,7 @@ export default function GenerateReportModal({
       setError(null);
       setIsCached(false);
       setCacheAge(null);
+      setIsPlaceholder(false);
     }
   }, [isOpen, locationCode]);
 
@@ -72,6 +74,7 @@ export default function GenerateReportModal({
       setReport(response.report);
       setIsCached(response.cached);
       setCacheAge(response.cache_age || null);
+      setIsPlaceholder(response.is_placeholder || false);
       setState('ready');
     } catch (err) {
       console.error('Report generation failed:', err);
@@ -210,15 +213,24 @@ export default function GenerateReportModal({
                   Report Ready
                 </h3>
 
-                {isCached && (
+                {isCached && !isPlaceholder && (
                   <div className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 text-sm rounded-full mb-2">
                     <Clock className="w-3 h-3" />
                     <span>Cached report {cacheAge && `(${cacheAge})`}</span>
                   </div>
                 )}
 
+                {isPlaceholder && (
+                  <div className="inline-flex items-center gap-1 px-3 py-1 bg-amber-100 text-amber-700 text-sm rounded-full mb-2">
+                    <AlertCircle className="w-3 h-3" />
+                    <span>Template report (generic data)</span>
+                  </div>
+                )}
+
                 <p className="text-gray-600">
-                  Your relocation report for {locationName} is ready.
+                  {isPlaceholder
+                    ? 'This is a template report with generic information. Click "Regenerate" to get AI-researched data specific to this location.'
+                    : `Your relocation report for ${locationName} is ready.`}
                 </p>
               </div>
 
@@ -256,13 +268,13 @@ export default function GenerateReportModal({
                   Save to My Documents
                 </button>
 
-                {isCached && (
+                {(isCached || isPlaceholder) && (
                   <button
                     onClick={() => handleGenerate(true)}
-                    className="btn btn-ghost w-full text-sm"
+                    className={`btn w-full text-sm ${isPlaceholder ? 'btn-primary' : 'btn-ghost'}`}
                   >
                     <RefreshCw className="w-4 h-4" />
-                    Regenerate with fresh data
+                    {isPlaceholder ? 'Generate AI Report' : 'Regenerate with fresh data'}
                   </button>
                 )}
               </div>

@@ -594,6 +594,7 @@ export const researchApi = {
       };
       cached: boolean;
       cache_age?: string;
+      is_placeholder?: boolean;
     }>('/research/report/generate', {
       method: 'POST',
       body: JSON.stringify(data),
