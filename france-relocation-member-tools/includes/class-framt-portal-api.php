@@ -5740,8 +5740,24 @@ Keep responses concise but informative. Use **bold** for important terms. If men
             ARRAY_A
         );
 
-        // Return cached if less than 30 days old AND not forcing regeneration
-        if ( ! $force_regenerate && $cached_report && strtotime( $cached_report['updated_at'] ) > strtotime( '-30 days' ) ) {
+        // Check if cached report is a placeholder (template report without real AI data)
+        $is_placeholder = false;
+        if ( $cached_report ) {
+            $cached_content = json_decode( $cached_report['content'], true );
+            // Placeholder reports have a note field indicating they're templates
+            if ( isset( $cached_content['footer']['note'] ) && strpos( $cached_content['footer']['note'], 'template report' ) !== false ) {
+                $is_placeholder = true;
+            }
+        }
+
+        // Return cached if less than 30 days old, not forcing regeneration, AND not a placeholder
+        // (placeholders should always attempt regeneration if API key is available)
+        $ai_api_key = get_option( 'fra_openai_api_key' );
+        $should_use_cache = ! $force_regenerate && $cached_report
+            && strtotime( $cached_report['updated_at'] ) > strtotime( '-30 days' )
+            && ( ! $is_placeholder || empty( $ai_api_key ) );
+
+        if ( $should_use_cache ) {
             $report = $this->format_report_response( $cached_report );
 
             $document_id = null;
@@ -5753,6 +5769,7 @@ Keep responses concise but informative. Use **bold** for important terms. If men
                 'success'            => true,
                 'report'             => $report,
                 'cached'             => true,
+                'is_placeholder'     => $is_placeholder,
                 'saved_to_documents' => $save_to_docs,
                 'document_id'        => $document_id,
             ) );
@@ -5980,6 +5997,9 @@ Keep responses concise but informative. Use **bold** for important terms. If men
         $footer = $content['footer'] ?? array();
         $location_type = ucfirst( $report['location_type'] );
 
+        // Check if this is a placeholder/template report
+        $is_placeholder = isset( $footer['note'] ) && strpos( $footer['note'], 'template report' ) !== false;
+
         // relo2france brand colors (from france-overview.jsx template)
         $brand_blue = '#4A7BA7';
         $brand_gold = '#E5A54B';
@@ -6197,41 +6217,6 @@ Keep responses concise but informative. Use **bold** for important terms. If men
                 $sections_html .= '</div>';
             }
 
-            // Handle items (key-value pairs) in a data grid
-            if ( ! empty( $section['items'] ) ) {
-                $sections_html .= '<div class="data-grid">';
-                foreach ( $section['items'] as $item ) {
-                    $sections_html .= '<div class="data-row"><span class="data-label">' . esc_html( $item['label'] ) . '</span><span class="data-value">' . esc_html( $item['value'] ) . '</span></div>';
-                }
-                $sections_html .= '</div>';
-            }
-
-            // Handle subsections
-            if ( ! empty( $section['subsections'] ) ) {
-                foreach ( $section['subsections'] as $sub_id => $subsection ) {
-                    $sub_title = $subsection['title'] ?? ucwords( str_replace( '_', ' ', $sub_id ) );
-                    $sub_content = $subsection['content'] ?? '';
-
-                    $sections_html .= '<div class="subsection">';
-                    $sections_html .= '<h3 class="subsection-title">' . esc_html( $sub_title ) . '</h3>';
-
-                    if ( $sub_content ) {
-                        $sections_html .= '<p class="subsection-content">' . wp_kses_post( nl2br( $sub_content ) ) . '</p>';
-                    }
-
-                    // Subsection items
-                    if ( ! empty( $subsection['items'] ) ) {
-                        $sections_html .= '<div class="data-grid">';
-                        foreach ( $subsection['items'] as $item ) {
-                            $sections_html .= '<div class="data-row"><span class="data-label">' . esc_html( $item['label'] ) . '</span><span class="data-value">' . esc_html( $item['value'] ) . '</span></div>';
-                        }
-                        $sections_html .= '</div>';
-                    }
-
-                    $sections_html .= '</div>';
-                }
-            }
-
             $sections_html .= '</div></details>';
         }
 
@@ -6311,6 +6296,45 @@ Keep responses concise but informative. Use **bold** for important terms. If men
             border-radius: 8px;
             overflow: hidden;
             margin: 20px;
+        }
+
+        /* Placeholder/template report banner */
+        .placeholder-banner {
+            background: linear-gradient(135deg, #FEF3CD 0%, #FFF3CD 100%);
+            border-bottom: 2px solid #E5A54B;
+            padding: 12px 20px;
+            text-align: center;
+        }
+
+        .placeholder-banner-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .placeholder-banner-icon {
+            font-size: 18px;
+        }
+
+        .placeholder-banner-text {
+            color: #856404;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .placeholder-banner-note {
+            color: #856404;
+            font-size: 12px;
+            margin-top: 4px;
+            opacity: 0.9;
+        }
+
+        @media print {
+            .placeholder-banner {
+                display: none;
+            }
         }
 
         /* Header with brand colors */
@@ -6979,7 +7003,21 @@ Keep responses concise but informative. Use **bold** for important terms. If men
     <div class="print-wrapper">
         <div class="side-branding"></div>
 
-        <div class="report-container">
+        <div class="report-container">';
+
+        // Add placeholder banner if this is a template report
+        if ( $is_placeholder ) {
+            $html .= '
+            <div class="placeholder-banner">
+                <div class="placeholder-banner-content">
+                    <span class="placeholder-banner-icon">⚠️</span>
+                    <span class="placeholder-banner-text">This is a template report with generic information</span>
+                </div>
+                <p class="placeholder-banner-note">AI-generated reports with specific local data are available when the service is configured.</p>
+            </div>';
+        }
+
+        $html .= '
             <header class="report-header">
                 <div class="header-top">
                     <img src="' . esc_url( $logo_url ) . '" alt="relo2france" class="logo-img" onerror="this.outerHTML=\'<span class=logo-text><span class=blue>relo</span><span class=gold>2</span><span class=blue>france</span></span>\'">
