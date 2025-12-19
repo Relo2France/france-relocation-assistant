@@ -261,13 +261,15 @@ function CommuneView({
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="bg-gray-50 rounded-lg p-4">
-          <p className="text-sm text-gray-500">Population</p>
-          <p className="text-2xl font-bold text-gray-900">
-            {commune.population.toLocaleString()}
-          </p>
-        </div>
+      <div className={`grid grid-cols-1 gap-4 mb-6 ${commune.population > 0 ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
+        {commune.population > 0 && (
+          <div className="bg-gray-50 rounded-lg p-4">
+            <p className="text-sm text-gray-500">Population</p>
+            <p className="text-2xl font-bold text-gray-900">
+              {commune.population.toLocaleString()}
+            </p>
+          </div>
+        )}
         <div className="bg-gray-50 rounded-lg p-4">
           <p className="text-sm text-gray-500">Type</p>
           <p className="text-2xl font-bold text-gray-900 capitalize">
@@ -275,9 +277,9 @@ function CommuneView({
           </p>
         </div>
         <div className="bg-gray-50 rounded-lg p-4">
-          <p className="text-sm text-gray-500">Postal Code</p>
+          <p className="text-sm text-gray-500">Department</p>
           <p className="text-2xl font-bold text-gray-900">
-            {commune.postal_codes[0]}
+            {commune.department_name}
           </p>
         </div>
       </div>
