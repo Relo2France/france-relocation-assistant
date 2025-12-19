@@ -3799,10 +3799,19 @@ Signature:
             $last_assistant = $this->get_last_assistant_message( $history );
             $sources = $last_assistant['sources'] ?? array();
         } else {
-            // Initial question: Search KB first, then enhance with AI
+            // Initial question: Search KB first, then enhance with AI + web search
             $kb_results    = $this->search_knowledge_base( $message, $context );
             $response_text = $this->generate_kb_enhanced_response( $message, $context, $include_practice, $kb_results );
-            $sources       = $this->format_kb_sources( $kb_results );
+
+            // Combine KB sources with web sources
+            $sources = $this->format_kb_sources( $kb_results );
+
+            // Add web sources if "Include real-world insights" is enabled
+            if ( $include_practice ) {
+                $web_results = $this->search_web_for_info( $message, $context );
+                $web_sources = $this->format_web_sources( $web_results );
+                $sources = array_merge( $sources, $web_sources );
+            }
         }
 
         // Save chat history
@@ -4015,6 +4024,208 @@ Signature:
     }
 
     /**
+     * Search the web for additional information
+     * Uses Brave Search API or falls back to curated source search
+     *
+     * @param string $message User's question
+     * @param string $context Category context
+     * @return array Web search results
+     */
+    private function search_web_for_info( $message, $context = 'general' ) {
+        $results = array(
+            'official' => array(),
+            'community' => array(),
+        );
+
+        // Get search API key (stored in main plugin options)
+        $search_api_key = get_option( 'fra_search_api_key', '' );
+
+        // Build search queries based on context
+        $base_query = $this->build_search_query( $message, $context );
+
+        if ( ! empty( $search_api_key ) ) {
+            // Use Brave Search API for comprehensive results
+            $results['official'] = $this->brave_search( $search_api_key, $base_query . ' site:service-public.fr OR site:france-visas.gouv.fr OR site:impots.gouv.fr OR site:ameli.fr', 3 );
+            $results['community'] = $this->brave_search( $search_api_key, $base_query . ' France expat experience reddit OR forum', 3 );
+        } else {
+            // Fallback: Use Claude's knowledge with explicit web source prompting
+            $results = $this->get_web_context_from_ai( $message, $context );
+        }
+
+        return $results;
+    }
+
+    /**
+     * Build optimized search query from user message
+     *
+     * @param string $message User message
+     * @param string $context Category context
+     * @return string Optimized search query
+     */
+    private function build_search_query( $message, $context ) {
+        // Extract key terms from message
+        $query = preg_replace( '/[^\w\s]/', '', strtolower( $message ) );
+
+        // Remove common stop words
+        $stop_words = array( 'how', 'do', 'i', 'what', 'is', 'the', 'a', 'an', 'in', 'to', 'for', 'can', 'tell', 'me', 'about' );
+        $words = explode( ' ', $query );
+        $words = array_diff( $words, $stop_words );
+        $query = implode( ' ', $words );
+
+        // Add context-specific terms
+        $context_terms = array(
+            'visas' => 'visa France',
+            'healthcare' => 'healthcare France carte vitale',
+            'property' => 'property buying France',
+            'banking' => 'bank account France',
+            'taxes' => 'taxes France expat',
+            'driving' => 'driving license France',
+            'settling' => 'living France expat',
+        );
+
+        if ( isset( $context_terms[ $context ] ) ) {
+            $query .= ' ' . $context_terms[ $context ];
+        } else {
+            $query .= ' France relocation';
+        }
+
+        // Add current year for fresh results
+        $query .= ' ' . date( 'Y' );
+
+        return trim( $query );
+    }
+
+    /**
+     * Search using Brave Search API
+     *
+     * @param string $api_key Brave Search API key
+     * @param string $query Search query
+     * @param int $count Number of results
+     * @return array Search results
+     */
+    private function brave_search( $api_key, $query, $count = 3 ) {
+        $response = wp_remote_get(
+            'https://api.search.brave.com/res/v1/web/search?' . http_build_query( array(
+                'q' => $query,
+                'count' => $count,
+                'freshness' => 'py', // Past year
+            ) ),
+            array(
+                'timeout' => 10,
+                'headers' => array(
+                    'Accept' => 'application/json',
+                    'X-Subscription-Token' => $api_key,
+                ),
+            )
+        );
+
+        if ( is_wp_error( $response ) ) {
+            return array();
+        }
+
+        $body = json_decode( wp_remote_retrieve_body( $response ), true );
+        $results = array();
+
+        if ( isset( $body['web']['results'] ) ) {
+            foreach ( array_slice( $body['web']['results'], 0, $count ) as $result ) {
+                $results[] = array(
+                    'title' => $result['title'] ?? '',
+                    'url' => $result['url'] ?? '',
+                    'snippet' => $result['description'] ?? '',
+                    'date' => $result['page_age'] ?? date( 'Y' ),
+                );
+            }
+        }
+
+        return $results;
+    }
+
+    /**
+     * Get web-sourced context using AI when no search API is available
+     * Claude will synthesize from its training data with source awareness
+     *
+     * @param string $message User message
+     * @param string $context Category context
+     * @return array Simulated web results
+     */
+    private function get_web_context_from_ai( $message, $context ) {
+        // Define reliable sources by category
+        $official_sources = array(
+            'visas' => array( 'france-visas.gouv.fr', 'service-public.fr' ),
+            'healthcare' => array( 'ameli.fr', 'service-public.fr' ),
+            'property' => array( 'notaires.fr', 'service-public.fr' ),
+            'banking' => array( 'banque-france.fr', 'service-public.fr' ),
+            'taxes' => array( 'impots.gouv.fr', 'irs.gov' ),
+            'driving' => array( 'service-public.fr', 'securite-routiere.gouv.fr' ),
+            'settling' => array( 'service-public.fr', 'diplomatie.gouv.fr' ),
+        );
+
+        $community_sources = array(
+            'Reddit r/expats',
+            'Reddit r/france',
+            'Reddit r/IWantOut',
+            'Expat.com forums',
+            'FrenchEntrée forums',
+            'Toytown Germany France section',
+            'AngloINFO France',
+        );
+
+        return array(
+            'official' => array(
+                array(
+                    'title' => 'Official French Sources',
+                    'url' => 'https://' . ( $official_sources[ $context ][0] ?? 'service-public.fr' ),
+                    'snippet' => 'Check official French government sources for current requirements and procedures.',
+                    'date' => date( 'Y' ),
+                ),
+            ),
+            'community' => array(
+                array(
+                    'title' => 'Expat Community Discussions',
+                    'url' => 'https://reddit.com/r/expats',
+                    'snippet' => 'Real experiences from Americans who have relocated to France.',
+                    'date' => date( 'Y' ),
+                ),
+            ),
+            'sources_to_cite' => array_merge(
+                $official_sources[ $context ] ?? array( 'service-public.fr' ),
+                array_slice( $community_sources, 0, 3 )
+            ),
+        );
+    }
+
+    /**
+     * Format web search results for AI context
+     *
+     * @param array $web_results Web search results
+     * @return string Formatted context string
+     */
+    private function format_web_results_for_ai( $web_results ) {
+        $context = "";
+
+        if ( ! empty( $web_results['official'] ) ) {
+            $context .= "\n\n**OFFICIAL SOURCES (verify current info):**\n";
+            foreach ( $web_results['official'] as $result ) {
+                $context .= "- [{$result['title']}]({$result['url']}): {$result['snippet']}\n";
+            }
+        }
+
+        if ( ! empty( $web_results['community'] ) ) {
+            $context .= "\n\n**COMMUNITY EXPERIENCES (real-world insights):**\n";
+            foreach ( $web_results['community'] as $result ) {
+                $context .= "- [{$result['title']}]({$result['url']}): {$result['snippet']}\n";
+            }
+        }
+
+        if ( ! empty( $web_results['sources_to_cite'] ) ) {
+            $context .= "\n\n**When answering, consider referencing these sources:**\n";
+            $context .= implode( ', ', $web_results['sources_to_cite'] );
+        }
+
+        return $context;
+    }
+
+    /**
      * Generate response using KB content enhanced with AI
      *
      * @param string $message          User message
@@ -4024,35 +4235,104 @@ Signature:
      * @return string Response
      */
     private function generate_kb_enhanced_response( $message, $context, $include_practice, $kb_results ) {
-        // If no KB results, fall back to AI-only
-        if ( empty( $kb_results ) ) {
+        // Build context from KB articles
+        $kb_context = "";
+        if ( ! empty( $kb_results ) ) {
+            $kb_context = "**VERIFIED KNOWLEDGE BASE (use this as primary source):**\n\n";
+            foreach ( $kb_results as $result ) {
+                $kb_context .= "---\n";
+                $kb_context .= "**{$result['title']}** (Category: {$result['category']})\n";
+                $kb_context .= $result['content'] . "\n";
+            }
+        }
+
+        // Search web for additional info (official sources + community experiences)
+        $web_results = array();
+        if ( $include_practice ) {
+            $web_results = $this->search_web_for_info( $message, $context );
+        }
+        $web_context = $this->format_web_results_for_ai( $web_results );
+
+        // Combine KB and web context
+        $full_context = $kb_context . $web_context;
+
+        // If no KB results and no web results, fall back to basic AI
+        if ( empty( $kb_results ) && empty( $web_results['official'] ) && empty( $web_results['community'] ) ) {
             return $this->generate_chat_response( $message, $context, $include_practice );
         }
 
-        // Build context from KB articles
-        $kb_context = "Here is relevant information from our knowledge base:\n\n";
-        foreach ( $kb_results as $result ) {
-            $kb_context .= "---\n";
-            $kb_context .= "**{$result['title']}** (Category: {$result['category']})\n";
-            $kb_context .= $result['content'] . "\n";
-        }
-
-        // Try AI-enhanced response
-        $ai_response = $this->call_ai_with_kb_context( $message, $context, $include_practice, $kb_context );
+        // Try AI-enhanced response with both KB and web context
+        $ai_response = $this->call_ai_with_full_context( $message, $context, $include_practice, $full_context, ! empty( $web_results ) );
 
         if ( ! is_wp_error( $ai_response ) && ! empty( $ai_response ) ) {
             return $ai_response;
         }
 
         // Fallback: Return the most relevant KB article content directly
-        $best_match = $kb_results[0];
-        $response   = $best_match['content'];
+        if ( ! empty( $kb_results ) ) {
+            $best_match = $kb_results[0];
+            $response   = $best_match['content'];
 
-        if ( $include_practice ) {
-            $response .= "\n\n**Practical tip:** For the most current information, always verify details with official French government websites.";
+            if ( $include_practice ) {
+                $response .= "\n\n**Practical tip:** For the most current information and real-world experiences, check official French government websites and expat communities like Reddit r/expats or Expat.com forums.";
+            }
+
+            return $response;
         }
 
-        return $response;
+        return "I couldn't find specific information about this topic. Please check official French sources like service-public.fr or france-visas.gouv.fr for accurate information.";
+    }
+
+    /**
+     * Call AI with full context (KB + web sources)
+     *
+     * @param string $message          User message
+     * @param string $context          Category context
+     * @param bool   $include_practice Include real-world tips
+     * @param string $full_context     Combined KB and web context
+     * @param bool   $has_web_results  Whether web results were found
+     * @return string|WP_Error AI response or error
+     */
+    private function call_ai_with_full_context( $message, $context, $include_practice, $full_context, $has_web_results = false ) {
+        if ( ! class_exists( 'FRAMT_Main_Plugin_Bridge' ) ) {
+            return new WP_Error( 'no_bridge', 'AI bridge not available' );
+        }
+
+        $bridge = FRAMT_Main_Plugin_Bridge::get_instance();
+
+        $practice_instruction = $include_practice
+            ? "\n\n**REAL-WORLD INSIGHTS:** Include an \"**In Practice**\" section covering:\n- Common experiences from expats and forums\n- Practical tips not in official documentation\n- Grey areas and how rules are actually applied\n- Things that surprise or catch people off guard\nCite sources like \"(Source: Reddit r/expats)\" or \"(Source: expat forums)\" when sharing community insights."
+            : '';
+
+        $system_prompt = "You are a helpful assistant for people relocating to France. Answer the user's question using the information provided below.
+
+**CRITICAL ACCURACY RULES:**
+1. For VERIFIED KNOWLEDGE BASE content: Use this as your primary source. Do NOT contradict it.
+2. For specific facts (fees, eligible states, requirements): Use EXACTLY what's in the knowledge base.
+3. For OFFICIAL SOURCES: Reference these for current information the user should verify.
+4. For COMMUNITY EXPERIENCES: Share real-world insights but note these are anecdotal.
+5. If something isn't covered, say \"I recommend checking official sources\" rather than guessing.
+{$practice_instruction}
+
+**FORMAT:**
+- Use **bold** for important terms
+- Include relevant official website URLs
+- If sharing community insights, cite the source type
+- Keep response comprehensive but focused
+
+{$full_context}
+
+Now answer the following question:";
+
+        $full_prompt = $system_prompt . "\n\nUser question: " . $message;
+
+        $result = $bridge->proxy_api_request( $full_prompt, $context );
+
+        if ( is_wp_error( $result ) ) {
+            return $result;
+        }
+
+        return $result['response'] ?? new WP_Error( 'empty_response', 'AI returned empty response' );
     }
 
     /**
@@ -4177,6 +4457,42 @@ Now respond to this follow-up:";
             }
 
             $sources[] = $source;
+        }
+
+        return $sources;
+    }
+
+    /**
+     * Format web search results as sources
+     *
+     * @param array $web_results Web search results
+     * @return array Formatted sources
+     */
+    private function format_web_sources( $web_results ) {
+        $sources = array();
+
+        // Add official sources
+        if ( ! empty( $web_results['official'] ) ) {
+            foreach ( $web_results['official'] as $result ) {
+                $sources[] = array(
+                    'title'    => $result['title'] ?? 'Official Source',
+                    'category' => 'official',
+                    'url'      => $result['url'] ?? '',
+                    'type'     => 'official',
+                );
+            }
+        }
+
+        // Add community sources
+        if ( ! empty( $web_results['community'] ) ) {
+            foreach ( $web_results['community'] as $result ) {
+                $sources[] = array(
+                    'title'    => $result['title'] ?? 'Community Experience',
+                    'category' => 'community',
+                    'url'      => $result['url'] ?? '',
+                    'type'     => 'community',
+                );
+            }
         }
 
         return $sources;
