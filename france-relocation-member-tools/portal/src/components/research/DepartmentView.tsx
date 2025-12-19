@@ -3,14 +3,18 @@
  *
  * Displays department details with a searchable list of communes.
  * Allows users to drill down into communes or generate department reports.
+ * Loads commune data directly from GeoJSON for comprehensive coverage.
  */
 
 import { useState, useEffect, useCallback } from 'react';
 import { ArrowLeft, FileText, MapPin, Users, Search, Loader2, Building, Home, TreeDeciduous } from 'lucide-react';
-import { researchApi } from '@/api/client';
-import { hasDepartmentMap } from '@/config/departmentMaps';
 import DepartmentMapView from './DepartmentMapView';
 import type { FranceDepartment, FranceCommune, ResearchLevel } from '@/types';
+
+// GeoJSON URL for commune data (same source as the map)
+const getCommuneGeoUrl = (deptCode: string) =>
+  `https://raw.githubusercontent.com/gregoiredavid/france-geojson/master/departements/${deptCode}/communes.geojson`;
+
 
 interface DepartmentViewProps {
   department: FranceDepartment;
@@ -38,20 +42,60 @@ export default function DepartmentView({
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<'all' | 'city' | 'town' | 'village'>('all');
 
-  // Fetch communes for this department
+  // Fetch communes directly from GeoJSON (same source as the map)
   useEffect(() => {
     const fetchCommunes = async () => {
       setLoading(true);
       try {
-        const response = await researchApi.searchCommunes({
-          department: department.code,
-          limit: 100,
+        const geoUrl = getCommuneGeoUrl(department.code);
+        const response = await fetch(geoUrl);
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch GeoJSON: ${response.status}`);
+        }
+
+        const geoJson = await response.json();
+
+        // Extract commune data from GeoJSON features
+        const communeData: FranceCommune[] = geoJson.features.map((feature: {
+          properties: { code: string; nom: string };
+        }) => {
+          const { code, nom } = feature.properties;
+
+          // Classify commune type based on name patterns and known major cities
+          const isMajorCity = department.major_cities.some(
+            (city) => city.toLowerCase() === nom.toLowerCase()
+          );
+
+          // Determine type (we don't have population in GeoJSON, use heuristics)
+          let type: 'city' | 'town' | 'village' = 'village';
+          if (isMajorCity) {
+            type = 'city';
+          } else if (nom.includes('-') || nom.length > 15) {
+            // Longer names with hyphens tend to be towns
+            type = 'town';
+          }
+
+          return {
+            code,
+            name: nom,
+            postal_codes: [department.code + '000'], // Approximate postal code
+            department_code: department.code,
+            department_name: department.name,
+            region_code: department.region_code,
+            region_name: department.region_name,
+            population: 0, // Not available in GeoJSON
+            type,
+          };
         });
-        const communeData: FranceCommune[] = response.communes || [];
+
+        // Sort by name
+        communeData.sort((a, b) => a.name.localeCompare(b.name, 'fr'));
+
         setCommunes(communeData);
         setFilteredCommunes(communeData);
       } catch (error) {
-        console.error('Failed to fetch communes:', error);
+        console.error('Failed to fetch communes from GeoJSON:', error);
         // Fallback to major cities from department data
         const fallbackCommunes: FranceCommune[] = department.major_cities.map((city, index) => ({
           code: `${department.code}${String(index + 1).padStart(3, '0')}`,
@@ -170,8 +214,8 @@ export default function DepartmentView({
         </div>
       </div>
 
-      {/* Department Map (if available) */}
-      {!loading && hasDepartmentMap(department.code) && (
+      {/* Department Map - Shows all communes using GeoJSON */}
+      {!loading && (
         <DepartmentMapView
           departmentCode={department.code}
           departmentName={department.name}

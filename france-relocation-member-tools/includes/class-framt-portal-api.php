@@ -5676,11 +5676,12 @@ Keep responses concise but informative. Use **bold** for important terms. If men
         $department_code = sanitize_text_field( $request->get_param( 'department' ) );
         $limit = absint( $request->get_param( 'limit' ) ) ?: 20;
 
-        if ( strlen( $query ) < 2 ) {
+        // Allow either a search query OR a department filter
+        if ( strlen( $query ) < 2 && empty( $department_code ) ) {
             return rest_ensure_response( array(
                 'success'  => true,
                 'communes' => array(),
-                'message'  => 'Search query must be at least 2 characters.',
+                'message'  => 'Provide a search query (2+ characters) or department code.',
             ) );
         }
 
