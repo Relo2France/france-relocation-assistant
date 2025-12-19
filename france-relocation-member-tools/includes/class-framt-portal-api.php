@@ -5705,6 +5705,7 @@ Keep responses concise but informative. Use **bold** for important terms. If men
         $location_code = sanitize_text_field( $request->get_param( 'location_code' ) );
         $provided_name = sanitize_text_field( $request->get_param( 'location_name' ) );
         $save_to_docs  = (bool) $request->get_param( 'save_to_documents' );
+        $force_regenerate = (bool) $request->get_param( 'force_regenerate' ) || (bool) $request->get_param( 'force_refresh' );
 
         if ( ! in_array( $location_type, array( 'region', 'department', 'commune' ), true ) ) {
             return new WP_Error(
@@ -5739,8 +5740,8 @@ Keep responses concise but informative. Use **bold** for important terms. If men
             ARRAY_A
         );
 
-        // Return cached if less than 30 days old
-        if ( $cached_report && strtotime( $cached_report['updated_at'] ) > strtotime( '-30 days' ) ) {
+        // Return cached if less than 30 days old AND not forcing regeneration
+        if ( ! $force_regenerate && $cached_report && strtotime( $cached_report['updated_at'] ) > strtotime( '-30 days' ) ) {
             $report = $this->format_report_response( $cached_report );
 
             $document_id = null;
@@ -7349,11 +7350,20 @@ SYSTEM;
         $type_label = ucfirst( $type );
         $current_date = gmdate( 'F j, Y' );
 
-        // Key stats to include based on level
+        // Key stats to include based on level - formatted as array of objects
         $key_stats_format = array(
-            'region'     => '"area_km2": {"value": "[X,XXX]", "label": "Area", "sublabel": "km²"}, "population": {"value": "[X.XM]", "label": "Population", "sublabel": "2024 estimate"}, "capital": {"value": "[City]", "label": "Capital", "sublabel": "regional capital"}, "highlight": {"value": "[Key Value]", "label": "[Key Metric]", "sublabel": "[context]"}',
-            'department' => '"area_km2": {"value": "[X,XXX]", "label": "Area", "sublabel": "km²"}, "population": {"value": "[XXX,XXX]", "label": "Population", "sublabel": "2024 estimate"}, "prefecture": {"value": "[City]", "label": "Préfecture", "sublabel": "administrative center"}, "highlight": {"value": "[Key Value]", "label": "[Key Metric]", "sublabel": "[context]"}',
-            'commune'    => '"area_km2": {"value": "[XX]", "label": "Area", "sublabel": "km²"}, "population": {"value": "[XX,XXX]", "label": "Population", "sublabel": "2024 estimate"}, "altitude": {"value": "[Xm]", "label": "Altitude", "sublabel": "elevation"}, "highlight": {"value": "[Key Value]", "label": "[Key Metric]", "sublabel": "[context]"}',
+            'region'     => '{"value": "[X,XXX]", "label": "Area", "sublabel": "km²"},
+      {"value": "[X.XM]", "label": "Population", "sublabel": "2024 estimate"},
+      {"value": "[City]", "label": "Capital", "sublabel": "regional capital"},
+      {"value": "[Key Value]", "label": "[Key Metric]", "sublabel": "[context]"}',
+            'department' => '{"value": "[X,XXX]", "label": "Area", "sublabel": "km²"},
+      {"value": "[XXX,XXX]", "label": "Population", "sublabel": "2024 estimate"},
+      {"value": "[City]", "label": "Préfecture", "sublabel": "administrative center"},
+      {"value": "[Key Value]", "label": "[Key Metric]", "sublabel": "[context]"}',
+            'commune'    => '{"value": "[XX]", "label": "Area", "sublabel": "km²"},
+      {"value": "[XX,XXX]", "label": "Population", "sublabel": "2024 estimate"},
+      {"value": "[Xm]", "label": "Altitude", "sublabel": "elevation"},
+      {"value": "[Key Value]", "label": "[Key Metric]", "sublabel": "[context]"}',
         );
 
         $taglines = array(
