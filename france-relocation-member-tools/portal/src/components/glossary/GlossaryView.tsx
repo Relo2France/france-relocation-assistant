@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { clsx } from 'clsx';
 import {
   Book,
@@ -196,9 +196,11 @@ export default function GlossaryView() {
   const { data: searchResults, isLoading: searchLoading } = useGlossarySearch(searchQuery);
 
   // Use API data if available, otherwise use hardcoded data
-  const categories = searchQuery
+  // Ensure we always have an array
+  const rawCategories = searchQuery
     ? searchResults || hardcodedCategories
     : apiCategories || hardcodedCategories;
+  const categories = Array.isArray(rawCategories) ? rawCategories : hardcodedCategories;
 
   // Filter and sort terms
   const filteredCategories = useMemo(() => {
@@ -260,16 +262,23 @@ export default function GlossaryView() {
   const highlightText = (text: string) => {
     if (!searchQuery) return text;
 
-    const parts = text.split(new RegExp(`(${searchQuery})`, 'gi'));
-    return parts.map((part, i) =>
-      part.toLowerCase() === searchQuery.toLowerCase() ? (
-        <mark key={i} className="bg-yellow-200 text-gray-900">
-          {part}
-        </mark>
-      ) : (
-        part
-      )
-    );
+    try {
+      // Escape special regex characters
+      const escapedQuery = searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const parts = text.split(new RegExp(`(${escapedQuery})`, 'gi'));
+      return parts.map((part, i) =>
+        part.toLowerCase() === searchQuery.toLowerCase() ? (
+          <mark key={i} className="bg-yellow-200 text-gray-900">
+            {part}
+          </mark>
+        ) : (
+          part
+        )
+      );
+    } catch {
+      // If regex fails for any reason, return plain text
+      return text;
+    }
   };
 
   return (
