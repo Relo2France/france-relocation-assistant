@@ -69,7 +69,6 @@ class FRAMT_Portal_Settings {
         'menu_profile'        => true,
         'menu_family'         => true,
         'menu_membership'     => true,
-        'menu_support'        => true,
         'menu_settings'       => true,
         'menu_help'           => true,
 
@@ -88,7 +87,6 @@ class FRAMT_Portal_Settings {
         'label_profile'       => 'My Profile',
         'label_family'        => 'Family Members',
         'label_membership'    => 'Membership',
-        'label_support'       => 'Contact Support',
         'label_settings'      => 'Settings',
         'label_help'          => 'Help',
 
@@ -107,14 +105,13 @@ class FRAMT_Portal_Settings {
         'icon_profile'        => 'User',
         'icon_family'         => 'Users',
         'icon_membership'     => 'CreditCard',
-        'icon_support'        => 'Headphones',
         'icon_settings'       => 'Settings',
         'icon_help'           => 'HelpCircle',
 
         // Menu Section Order (JSON encoded arrays)
         'menu_order_project'   => 'dashboard,tasks,checklists,timeline,messages',
         'menu_order_resources' => 'chat,documents,guides,glossary,research,files',
-        'menu_order_account'   => 'profile,family,membership,support,settings,help',
+        'menu_order_account'   => 'profile,family,membership,settings,help',
 
         // Section Labels
         'section_label_project'   => 'PROJECT',
@@ -286,7 +283,7 @@ class FRAMT_Portal_Settings {
             'menu_dashboard', 'menu_tasks', 'menu_checklists', 'menu_timeline',
             'menu_messages', 'menu_chat', 'menu_documents', 'menu_guides',
             'menu_glossary', 'menu_research', 'menu_files', 'menu_profile', 'menu_family',
-            'menu_membership', 'menu_support', 'menu_settings', 'menu_help'
+            'menu_membership', 'menu_settings', 'menu_help'
         );
         foreach ( $bool_fields as $field ) {
             $sanitized[ $field ] = ! empty( $input[ $field ] );
@@ -298,7 +295,7 @@ class FRAMT_Portal_Settings {
             'label_dashboard', 'label_tasks', 'label_checklists', 'label_timeline',
             'label_messages', 'label_chat', 'label_documents', 'label_guides',
             'label_glossary', 'label_research', 'label_files', 'label_profile', 'label_family',
-            'label_membership', 'label_support', 'label_settings', 'label_help',
+            'label_membership', 'label_settings', 'label_help',
             'section_label_project', 'section_label_resources', 'section_label_account'
         );
         foreach ( $text_fields as $field ) {
@@ -317,7 +314,7 @@ class FRAMT_Portal_Settings {
             'icon_dashboard', 'icon_tasks', 'icon_checklists', 'icon_timeline',
             'icon_messages', 'icon_chat', 'icon_documents', 'icon_guides',
             'icon_glossary', 'icon_research', 'icon_files', 'icon_profile', 'icon_family',
-            'icon_membership', 'icon_support', 'icon_settings', 'icon_help'
+            'icon_membership', 'icon_settings', 'icon_help'
         );
         foreach ( $icon_fields as $field ) {
             if ( isset( $input[ $field ] ) ) {
@@ -632,17 +629,17 @@ class FRAMT_Portal_Settings {
                 'menu_dashboard', 'menu_tasks', 'menu_checklists', 'menu_timeline',
                 'menu_messages', 'menu_chat', 'menu_documents', 'menu_guides',
                 'menu_glossary', 'menu_research', 'menu_files', 'menu_profile', 'menu_family',
-                'menu_membership', 'menu_support', 'menu_settings', 'menu_help',
+                'menu_membership', 'menu_settings', 'menu_help',
                 // Labels
                 'label_dashboard', 'label_tasks', 'label_checklists', 'label_timeline',
                 'label_messages', 'label_chat', 'label_documents', 'label_guides',
                 'label_glossary', 'label_research', 'label_files', 'label_profile', 'label_family',
-                'label_membership', 'label_support', 'label_settings', 'label_help',
+                'label_membership', 'label_settings', 'label_help',
                 // Icons
                 'icon_dashboard', 'icon_tasks', 'icon_checklists', 'icon_timeline',
                 'icon_messages', 'icon_chat', 'icon_documents', 'icon_guides',
                 'icon_glossary', 'icon_research', 'icon_files', 'icon_profile', 'icon_family',
-                'icon_membership', 'icon_support', 'icon_settings', 'icon_help',
+                'icon_membership', 'icon_settings', 'icon_help',
                 // Order
                 'menu_order_project', 'menu_order_resources', 'menu_order_account',
                 // Section labels
@@ -677,7 +674,7 @@ class FRAMT_Portal_Settings {
             'menu_dashboard', 'menu_tasks', 'menu_checklists', 'menu_timeline',
             'menu_messages', 'menu_chat', 'menu_documents', 'menu_guides',
             'menu_glossary', 'menu_research', 'menu_files', 'menu_profile', 'menu_family',
-            'menu_membership', 'menu_support', 'menu_settings', 'menu_help',
+            'menu_membership', 'menu_settings', 'menu_help',
         );
 
         // Output hidden fields
@@ -841,7 +838,6 @@ class FRAMT_Portal_Settings {
             'profile'    => array( 'default_label' => 'My Profile', 'default_icon' => 'User' ),
             'family'     => array( 'default_label' => 'Family Members', 'default_icon' => 'Users' ),
             'membership' => array( 'default_label' => 'Membership', 'default_icon' => 'CreditCard' ),
-            'support'    => array( 'default_label' => 'Contact Support', 'default_icon' => 'Headphones' ),
             'settings'   => array( 'default_label' => 'Settings', 'default_icon' => 'Settings' ),
             'help'       => array( 'default_label' => 'Help', 'default_icon' => 'HelpCircle' ),
         );
@@ -850,7 +846,7 @@ class FRAMT_Portal_Settings {
         $default_section_items = array(
             'project'   => array( 'dashboard', 'tasks', 'checklists', 'timeline', 'messages' ),
             'resources' => array( 'research', 'chat', 'documents', 'guides', 'glossary', 'files' ),
-            'account'   => array( 'profile', 'family', 'membership', 'support', 'settings', 'help' ),
+            'account'   => array( 'profile', 'family', 'membership', 'settings', 'help' ),
         );
 
         $sections = array(
