@@ -204,11 +204,26 @@ export default function GlossaryView() {
 
   // Filter and sort terms
   const filteredCategories = useMemo(() => {
+    // Safely get terms array with fallback
+    const getTerms = (category: GlossaryCategory) => {
+      if (!category?.terms || !Array.isArray(category.terms)) return [];
+      return category.terms.filter((term) => term && typeof term.title === 'string');
+    };
+
+    // Safe sort function
+    const sortTerms = (terms: GlossaryTerm[]) => {
+      return [...terms].sort((a, b) => {
+        const titleA = a?.title || '';
+        const titleB = b?.title || '';
+        return titleA.localeCompare(titleB);
+      });
+    };
+
     if (!searchQuery) {
       // No search - show all categories with sorted terms
       return categories.map((category) => ({
         ...category,
-        terms: [...category.terms].sort((a, b) => a.title.localeCompare(b.title)),
+        terms: sortTerms(getTerms(category)),
       }));
     }
 
@@ -216,19 +231,19 @@ export default function GlossaryView() {
     const query = searchQuery.toLowerCase();
     return categories
       .map((category) => {
-        const matchingTerms = category.terms
+        const terms = getTerms(category);
+        const matchingTerms = terms
           .filter(
             (term) =>
-              term.title.toLowerCase().includes(query) ||
-              term.french?.toLowerCase().includes(query) ||
-              term.short.toLowerCase().includes(query) ||
-              term.full?.toLowerCase().includes(query)
-          )
-          .sort((a, b) => a.title.localeCompare(b.title));
+              (term.title?.toLowerCase() || '').includes(query) ||
+              (term.french?.toLowerCase() || '').includes(query) ||
+              (term.short?.toLowerCase() || '').includes(query) ||
+              (term.full?.toLowerCase() || '').includes(query)
+          );
 
         return {
           ...category,
-          terms: matchingTerms,
+          terms: sortTerms(matchingTerms),
         };
       })
       .filter((category) => category.terms.length > 0);
