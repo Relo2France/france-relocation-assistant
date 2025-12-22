@@ -167,46 +167,50 @@ export default function RegionMapView({
           </ZoomableGroup>
         </ComposableMap>
 
-        {/* Hover Tooltip */}
-        {tooltipContent && (
-          <div
-            className="absolute bg-white rounded-lg shadow-xl border border-gray-200 p-3 pointer-events-none z-20 min-w-[220px]"
-            style={{
-              left: Math.min(Math.max(tooltipPos.x, 110), 320),
-              top: Math.max(tooltipPos.y - 10, 60),
-              transform: 'translate(-50%, -100%)',
-            }}
-          >
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
-                {tooltipContent.code}
-              </span>
-              <h4 className="font-bold text-gray-900">{tooltipContent.name}</h4>
-            </div>
-            <p className="text-sm text-gray-500 mb-2">
-              Prefecture: {tooltipContent.prefecture}
-            </p>
-            <div className="grid grid-cols-2 gap-2 text-sm">
-              <div>
-                <span className="text-gray-400 text-xs block">Population</span>
-                <span className="font-semibold text-gray-900">
-                  {tooltipContent.population.toLocaleString()}
+        {/* Hover Tooltip - positioned to avoid edge cutoff */}
+        {tooltipContent && (() => {
+          // Determine horizontal position: show to right if near left edge, otherwise to left of cursor
+          const showOnRight = tooltipPos.x < 240;
+          const tooltipStyle: React.CSSProperties = showOnRight
+            ? { left: tooltipPos.x + 15, top: tooltipPos.y }
+            : { left: tooltipPos.x - 15, top: tooltipPos.y, transform: 'translateX(-100%)' };
+
+          return (
+            <div
+              className="absolute bg-white rounded-lg shadow-xl border border-gray-200 p-3 pointer-events-none z-20 w-[220px]"
+              style={tooltipStyle}
+            >
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                  {tooltipContent.code}
+                </span>
+                <h4 className="font-bold text-gray-900">{tooltipContent.name}</h4>
+              </div>
+              <p className="text-sm text-gray-500 mb-2">
+                Prefecture: {tooltipContent.prefecture}
+              </p>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div>
+                  <span className="text-gray-400 text-xs block">Population</span>
+                  <span className="font-semibold text-gray-900">
+                    {tooltipContent.population.toLocaleString()}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-gray-400 text-xs block">Area</span>
+                  <span className="font-semibold text-gray-900">
+                    {tooltipContent.area_km2.toLocaleString()} km²
+                  </span>
+                </div>
+              </div>
+              <div className="mt-2 pt-2 border-t border-gray-100">
+                <span className="text-xs text-primary-600 font-medium">
+                  Click to explore cities →
                 </span>
               </div>
-              <div>
-                <span className="text-gray-400 text-xs block">Area</span>
-                <span className="font-semibold text-gray-900">
-                  {tooltipContent.area_km2.toLocaleString()} km²
-                </span>
-              </div>
             </div>
-            <div className="mt-2 pt-2 border-t border-gray-100">
-              <span className="text-xs text-primary-600 font-medium">
-                Click to explore cities →
-              </span>
-            </div>
-          </div>
-        )}
+          );
+        })()}
       </div>
 
       {/* Map Legend */}
