@@ -7,8 +7,13 @@ import {
   Filter,
   X,
   Plus,
+  MapPin,
+  Download,
+  FileText,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
-import { useDashboard, useFiles, useDownloadFile } from '@/hooks/useApi';
+import { useDashboard, useFiles, useDownloadFile, useSavedReports } from '@/hooks/useApi';
 import FileUpload from './FileUpload';
 import FileGrid from './FileGrid';
 import FilePreview from './FilePreview';
@@ -50,10 +55,13 @@ export default function DocumentsView() {
   const [showPreview, setShowPreview] = useState(false);
   const [showVerification, setShowVerification] = useState(false);
   const [fileToVerify, setFileToVerify] = useState<PortalFile | null>(null);
+  const [showSavedReports, setShowSavedReports] = useState(true);
 
   // Data
   const { data: dashboard, isLoading: dashboardLoading } = useDashboard();
   const projectId = dashboard?.project?.id || 0;
+  const { data: savedReportsData } = useSavedReports();
+  const savedReports = savedReportsData?.reports || [];
 
   const { data: files = [], isLoading: filesLoading, refetch: refetchFiles } = useFiles(
     projectId,
@@ -147,6 +155,63 @@ export default function DocumentsView() {
           Manage and organize your relocation documents
         </p>
       </div>
+
+      {/* Saved Research Reports Section */}
+      {savedReports.length > 0 && (
+        <div className="card mb-6">
+          <button
+            onClick={() => setShowSavedReports(!showSavedReports)}
+            className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-gray-50 transition-colors rounded-t-xl"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center">
+                <MapPin className="w-5 h-5 text-primary-600" />
+              </div>
+              <div>
+                <h2 className="font-semibold text-gray-900">Saved Relocation Reports</h2>
+                <p className="text-sm text-gray-500">{savedReports.length} report{savedReports.length !== 1 ? 's' : ''} saved</p>
+              </div>
+            </div>
+            {showSavedReports ? (
+              <ChevronUp className="w-5 h-5 text-gray-400" />
+            ) : (
+              <ChevronDown className="w-5 h-5 text-gray-400" />
+            )}
+          </button>
+
+          {showSavedReports && (
+            <div className="border-t border-gray-100">
+              <div className="p-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {savedReports.map((report) => (
+                  <div
+                    key={report.id}
+                    className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                  >
+                    <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm">
+                      <FileText className="w-5 h-5 text-primary-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-gray-900 truncate">{report.location_name}</p>
+                      <p className="text-xs text-gray-500 capitalize">
+                        {report.location_type} Report • {new Date(report.updated_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <a
+                      href={report.download_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-2 text-gray-400 hover:text-primary-600 transition-colors"
+                      title="Download report"
+                    >
+                      <Download className="w-5 h-5" />
+                    </a>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Category summary cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3 mb-6">
