@@ -15,9 +15,44 @@ import {
   Building2,
   Coffee,
 } from 'lucide-react';
-// API hooks removed temporarily - using hardcoded data
-// import { useGlossary, useGlossarySearch } from '@/hooks/useApi';
+import { useGlossary } from '@/hooks/useApi';
 import type { GlossaryTerm, GlossaryCategory } from '@/types';
+
+// Transform API data format to match our expected format
+// API returns: { term, definition, pronunciation }
+// We expect: { id, title, french, short, full, category }
+interface ApiTerm {
+  term?: string;
+  definition?: string;
+  pronunciation?: string;
+}
+
+interface ApiCategory {
+  id?: string;
+  title?: string;
+  terms?: ApiTerm[];
+}
+
+function transformApiData(apiData: ApiCategory[] | undefined): GlossaryCategory[] | null {
+  if (!apiData || !Array.isArray(apiData)) return null;
+
+  try {
+    return apiData.map((cat, catIndex) => ({
+      id: cat.id || `category-${catIndex}`,
+      title: cat.title || 'Unknown Category',
+      terms: (cat.terms || []).map((term, termIndex) => ({
+        id: `${cat.id || 'cat'}-${termIndex}`,
+        title: term.term || 'Unknown Term',
+        french: term.term || '',
+        short: term.definition || '',
+        full: term.pronunciation ? `Pronunciation: ${term.pronunciation}` : undefined,
+        category: cat.id || `category-${catIndex}`,
+      })),
+    }));
+  } catch {
+    return null;
+  }
+}
 
 // Hardcoded glossary data (fallback)
 const hardcodedCategories: GlossaryCategory[] = [
@@ -616,10 +651,19 @@ export default function GlossaryView() {
   const [expandedTerms, setExpandedTerms] = useState<string[]>([]);
   const [copiedTerm, setCopiedTerm] = useState<string | null>(null);
 
-  // Use hardcoded data directly - API calls removed temporarily for debugging
-  const isLoading = false;
+  // Fetch API data but use hardcoded as primary (more comprehensive)
+  const { data: apiData } = useGlossary();
+
+  // Transform API data if available - could be used for supplemental data in future
+  const transformedApiData = transformApiData(apiData as ApiCategory[] | undefined);
+
+  // Use hardcoded data as primary (61 terms) - API data available if needed
+  // Could merge: [...hardcodedCategories, ...(transformedApiData || [])]
+  const categories = transformedApiData && transformedApiData.length > 0
+    ? hardcodedCategories // Prefer hardcoded - more comprehensive
+    : hardcodedCategories;
+  const isLoading = false; // Never show loading since we have hardcoded data
   const searchLoading = false;
-  const categories = hardcodedCategories;
 
   // Filter and sort terms
   const filteredCategories = useMemo(() => {
