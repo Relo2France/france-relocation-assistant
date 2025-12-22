@@ -66,7 +66,6 @@ $defaults = array(
     'menu_profile'        => true,
     'menu_family'         => true,
     'menu_membership'     => true,
-    'menu_support'        => true,
     'menu_settings'       => true,
     'menu_help'           => true,
     // Menu labels
@@ -84,7 +83,6 @@ $defaults = array(
     'label_profile'       => 'My Profile',
     'label_family'        => 'Family Members',
     'label_membership'    => 'Membership',
-    'label_support'       => 'Contact Support',
     'label_settings'      => 'Settings',
     'label_help'          => 'Help & Support',
     // Menu icons
@@ -102,7 +100,6 @@ $defaults = array(
     'icon_profile'        => 'User',
     'icon_family'         => 'Users',
     'icon_membership'     => 'CreditCard',
-    'icon_support'        => 'Headphones',
     'icon_settings'       => 'Settings',
     'icon_help'           => 'HelpCircle',
     // Features
@@ -173,7 +170,6 @@ $menu_items = array(
     'profile'    => '/profile',
     'family'     => '/family',
     'membership' => '/membership',
-    'support'    => '/support',
     'settings'   => '/settings',
     'help'       => '/help',
 );
