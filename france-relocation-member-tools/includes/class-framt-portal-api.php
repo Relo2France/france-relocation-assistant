@@ -7639,7 +7639,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
 
         $saved = $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT l.id, l.report_id, l.saved_at, r.location_type, r.location_code, r.location_name, r.updated_at as report_updated_at
+                "SELECT l.id, l.report_id, l.saved_at, r.location_type, r.location_code, r.location_name, r.updated_at
                  FROM {$links_table} l
                  JOIN {$reports_table} r ON l.report_id = r.id
                  WHERE l.user_id = %d
@@ -7649,9 +7649,22 @@ Focus on practical advice while being careful not to state incorrect facts. When
             ARRAY_A
         );
 
+        // Format reports for frontend - use 'reports' key to match TypeScript interface
+        $reports = array();
+        if ( $saved ) {
+            foreach ( $saved as $item ) {
+                $reports[] = array(
+                    'id'            => (int) $item['report_id'],
+                    'location_name' => $item['location_name'],
+                    'location_type' => $item['location_type'],
+                    'updated_at'    => $item['updated_at'],
+                    'download_url'  => rest_url( self::NAMESPACE . '/research/report/' . $item['report_id'] . '/download' ),
+                );
+            }
+        }
+
         return rest_ensure_response( array(
-            'success' => true,
-            'saved'   => $saved ?: array(),
+            'reports' => $reports,
         ) );
     }
 
