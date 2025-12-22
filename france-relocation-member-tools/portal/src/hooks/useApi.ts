@@ -16,6 +16,7 @@ import {
   chatApi,
   membershipApi,
   supportApi,
+  researchApi,
 } from '@/api/client';
 import type {
   Task,
@@ -69,6 +70,8 @@ export const queryKeys = {
   supportTickets: ['supportTickets'] as const,
   supportTicket: (id: number) => ['supportTicket', id] as const,
   supportUnreadCount: ['supportUnreadCount'] as const,
+  // Research
+  savedReports: ['savedReports'] as const,
 };
 
 // Dashboard hook
@@ -786,5 +789,17 @@ export function useDeleteSupportTicket() {
       queryClient.invalidateQueries({ queryKey: queryKeys.supportTickets });
       queryClient.invalidateQueries({ queryKey: queryKeys.supportUnreadCount });
     },
+  });
+}
+
+// ============================================
+// Research Hooks
+// ============================================
+
+export function useSavedReports() {
+  return useQuery({
+    queryKey: queryKeys.savedReports,
+    queryFn: researchApi.getSavedReports,
+    staleTime: 60000, // 1 minute
   });
 }
