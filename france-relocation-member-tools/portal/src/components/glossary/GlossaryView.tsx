@@ -15,7 +15,8 @@ import {
   Building2,
   Coffee,
 } from 'lucide-react';
-import { useGlossary, useGlossarySearch } from '@/hooks/useApi';
+// API hooks removed temporarily - using hardcoded data
+// import { useGlossary, useGlossarySearch } from '@/hooks/useApi';
 import type { GlossaryTerm, GlossaryCategory } from '@/types';
 
 // Hardcoded glossary data (fallback)
@@ -615,16 +616,10 @@ export default function GlossaryView() {
   const [expandedTerms, setExpandedTerms] = useState<string[]>([]);
   const [copiedTerm, setCopiedTerm] = useState<string | null>(null);
 
-  // Data fetching - use API if available, fallback to hardcoded data
-  const { data: apiCategories, isLoading } = useGlossary();
-  const { data: searchResults, isLoading: searchLoading } = useGlossarySearch(searchQuery);
-
-  // Use API data if available, otherwise use hardcoded data
-  // Ensure we always have an array
-  const rawCategories = searchQuery
-    ? searchResults || hardcodedCategories
-    : apiCategories || hardcodedCategories;
-  const categories = Array.isArray(rawCategories) ? rawCategories : hardcodedCategories;
+  // Use hardcoded data directly - API calls removed temporarily for debugging
+  const isLoading = false;
+  const searchLoading = false;
+  const categories = hardcodedCategories;
 
   // Filter and sort terms
   const filteredCategories = useMemo(() => {
