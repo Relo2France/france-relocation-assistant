@@ -3893,6 +3893,9 @@ Signature:
             ) );
         }
 
+        // Get comprehensive user context for personalized responses
+        $user_context = $this->get_user_portal_context( $user_id );
+
         // Get chat history to determine if this is a follow-up
         $history       = get_user_meta( $user_id, 'fra_chat_history', true ) ?: array();
         $is_follow_up  = $this->is_follow_up_question( $history, $message );
@@ -3903,14 +3906,14 @@ Signature:
 
         if ( $is_follow_up ) {
             // Follow-up: Use AI directly with conversation context
-            $response_text = $this->generate_follow_up_response( $message, $context, $include_practice, $history );
+            $response_text = $this->generate_follow_up_response( $message, $context, $include_practice, $history, $user_context );
             // Keep sources from previous response if available
             $last_assistant = $this->get_last_assistant_message( $history );
             $sources = $last_assistant['sources'] ?? array();
         } else {
             // Initial question: Search KB first, then enhance with AI + web search
             $kb_results    = $this->search_knowledge_base( $message, $context );
-            $response_text = $this->generate_kb_enhanced_response( $message, $context, $include_practice, $kb_results );
+            $response_text = $this->generate_kb_enhanced_response( $message, $context, $include_practice, $kb_results, $user_context );
 
             // Combine KB sources with web sources
             $sources = $this->format_kb_sources( $kb_results );
@@ -4341,9 +4344,10 @@ Signature:
      * @param string $context          Context/category
      * @param bool   $include_practice Include real-world tips
      * @param array  $kb_results       KB search results
+     * @param array  $user_context     User portal context (profile, docs, tasks)
      * @return string Response
      */
-    private function generate_kb_enhanced_response( $message, $context, $include_practice, $kb_results ) {
+    private function generate_kb_enhanced_response( $message, $context, $include_practice, $kb_results, $user_context = array() ) {
         // Build context from KB articles
         $kb_context = "";
         if ( ! empty( $kb_results ) ) {
@@ -4362,8 +4366,14 @@ Signature:
         }
         $web_context = $this->format_web_results_for_ai( $web_results );
 
-        // Combine KB and web context
-        $full_context = $kb_context . $web_context;
+        // Add user portal context for personalization
+        $user_context_text = "";
+        if ( ! empty( $user_context['summary'] ) ) {
+            $user_context_text = "\n\n**THIS MEMBER'S CURRENT STATUS:**\n" . $user_context['summary'] . "\n";
+        }
+
+        // Combine KB, web, and user context
+        $full_context = $kb_context . $web_context . $user_context_text;
 
         // If no KB results and no web results, fall back to basic AI
         if ( empty( $kb_results ) && empty( $web_results['official'] ) && empty( $web_results['community'] ) ) {
@@ -4371,7 +4381,7 @@ Signature:
         }
 
         // Try AI-enhanced response with both KB and web context
-        $ai_response = $this->call_ai_with_full_context( $message, $context, $include_practice, $full_context, ! empty( $web_results ) );
+        $ai_response = $this->call_ai_with_full_context( $message, $context, $include_practice, $full_context, ! empty( $web_results ), $user_context );
 
         if ( ! is_wp_error( $ai_response ) && ! empty( $ai_response ) ) {
             return $ai_response;
@@ -4400,9 +4410,10 @@ Signature:
      * @param bool   $include_practice Include real-world tips
      * @param string $full_context     Combined KB and web context
      * @param bool   $has_web_results  Whether web results were found
+     * @param array  $user_context     User portal context for personalization
      * @return string|WP_Error AI response or error
      */
-    private function call_ai_with_full_context( $message, $context, $include_practice, $full_context, $has_web_results = false ) {
+    private function call_ai_with_full_context( $message, $context, $include_practice, $full_context, $has_web_results = false, $user_context = array() ) {
         if ( ! class_exists( 'FRAMT_Main_Plugin_Bridge' ) ) {
             return new WP_Error( 'no_bridge', 'AI bridge not available' );
         }
@@ -4412,6 +4423,34 @@ Signature:
         $practice_instruction = $include_practice
             ? "\n\n**REAL-WORLD INSIGHTS:** Include an \"**In Practice**\" section covering:\n- Common experiences from expats and forums\n- Practical tips not in official documentation\n- Grey areas and how rules are actually applied\n- Things that surprise or catch people off guard\nCite sources like \"(Source: Reddit r/expats)\" or \"(Source: expat forums)\" when sharing community insights."
             : '';
+
+        // Build personalization instructions based on user context
+        $personalization = "";
+        if ( ! empty( $user_context['profile'] ) ) {
+            $profile = $user_context['profile'];
+            $visa_type = $profile['visa_type'] ?? '';
+
+            $personalization = "\n\n**PERSONALIZATION REQUIREMENTS (THIS IS A PREMIUM MEMBERSHIP PORTAL):**
+You are providing PERSONALIZED guidance to this specific member. Be proactive and helpful:
+
+1. **Reference their profile data** - Use their name if available, reference their visa type, and tailor advice to their situation.
+
+2. **If they have a visa type selected**: Explain how the information specifically applies to their {$visa_type} visa. If they ask about visa types, confirm their current selection and explain why it may or may not be the best fit.
+
+3. **If NO visa type selected**: Proactively help them choose. Ask clarifying questions about their situation (employment, retirement, family) to recommend the best visa type.
+
+4. **Reference their progress**:
+   - If they have documents uploaded, acknowledge this and identify what's still needed
+   - If they have NO documents, encourage them to start gathering required documents
+   - If they have tasks completed, congratulate their progress
+   - If tasks are pending, gently remind them of next steps
+
+5. **Be conversational and supportive** - This is a premium service. Make them feel supported, not like they're reading a FAQ.
+
+6. **Ask confirming questions** - \"Based on your profile, you're applying for a Visitor visa. Is that still your plan?\" or \"I see you haven't uploaded any documents yet. Would you like me to explain what you'll need to gather first?\"
+
+7. **Guide to next steps** - Always end with a clear next action they should take.";
+        }
 
         $system_prompt = "You are a helpful assistant for AMERICANS relocating to France. This platform specifically serves US citizens applying for French visas from the United States.
 
@@ -4426,13 +4465,16 @@ Signature:
 - Document TRANSLATIONS: Americans applying FROM THE US do NOT need translations for English documents. French consulates in the US accept English documents. Translations are ONLY needed when: (1) documents are in a language other than English/French, OR (2) when RENEWING a visa from France at the prefecture.
 - Never say Americans need to translate English documents for initial visa applications - this is INCORRECT.
 - Apostilles ARE required for US vital documents (birth certificates, marriage certificates, etc.).
+{$personalization}
 {$practice_instruction}
 
 **FORMAT:**
-- Use **bold** for important terms
+- Use clear headers with ## for main sections
+- Use **bold** for important terms and key facts
+- Use bullet points for lists
 - Include relevant official website URLs
-- If sharing community insights, cite the source type
-- Keep response comprehensive but focused
+- Keep paragraphs short and scannable
+- End with a \"**Next Steps**\" section with 1-3 actionable items
 
 {$full_context}
 
@@ -4507,9 +4549,10 @@ Now answer the following question using ONLY the information above:";
      * @param string $context          Category context
      * @param bool   $include_practice Include real-world tips
      * @param array  $history          Conversation history
+     * @param array  $user_context     User portal context for personalization
      * @return string Response
      */
-    private function generate_follow_up_response( $message, $context, $include_practice, $history ) {
+    private function generate_follow_up_response( $message, $context, $include_practice, $history, $user_context = array() ) {
         if ( ! class_exists( 'FRAMT_Main_Plugin_Bridge' ) ) {
             return $this->generate_fallback_response( $message, $context, $include_practice );
         }
@@ -4529,6 +4572,12 @@ Now answer the following question using ONLY the information above:";
             ? ' Include practical real-world tips where relevant.'
             : '';
 
+        // Include user context summary for personalization
+        $user_context_text = "";
+        if ( ! empty( $user_context['summary'] ) ) {
+            $user_context_text = "\n\nMEMBER'S CURRENT STATUS:\n" . $user_context['summary'] . "\n";
+        }
+
         $system_prompt = "You are a helpful assistant for AMERICANS relocating to France. This platform specifically serves US citizens. Continue the following conversation naturally, answering the user's follow-up question based on the previous context.{$practice_instruction}
 
 ACCURACY RULES:
@@ -4540,7 +4589,14 @@ AMERICAN-SPECIFIC RULES (CRITICAL):
 - Document TRANSLATIONS: Americans applying FROM THE US do NOT need translations for English documents. French consulates in the US accept English documents. Translations are ONLY needed when: (1) documents are in a language other than English/French, OR (2) when RENEWING a visa from France at the prefecture.
 - NEVER say Americans need to translate English documents for initial visa applications - this is INCORRECT.
 
-Keep your response concise but helpful. Use **bold** for important terms.
+PERSONALIZATION:
+- This is a premium membership portal. Be helpful, supportive, and reference the member's specific situation.
+- If they have a visa type selected, tailor your response to that visa type.
+- Reference their progress (documents, tasks) when relevant.
+- End follow-up responses with a helpful suggestion or next step.
+{$user_context_text}
+
+Keep your response concise but helpful. Use **bold** for important terms. Use ## headers for sections.
 
 Previous conversation:
 {$conversation_text}
@@ -4619,6 +4675,234 @@ Now respond to this follow-up:";
         }
 
         return $sources;
+    }
+
+    /**
+     * Get comprehensive user context for personalized guide responses
+     *
+     * Gathers profile, documents, tasks, and checklist data to enable
+     * proactive, personalized AI responses in the guides.
+     *
+     * @param int $user_id User ID
+     * @return array User context data
+     */
+    private function get_user_portal_context( $user_id ) {
+        $context = array(
+            'profile'    => array(),
+            'documents'  => array(),
+            'tasks'      => array(),
+            'checklists' => array(),
+            'summary'    => '',
+        );
+
+        // Get user profile
+        if ( class_exists( 'FRAMT_Profile' ) ) {
+            $profile_instance = FRAMT_Profile::get_instance();
+            $profile = $profile_instance->get_profile( $user_id );
+
+            if ( ! empty( $profile ) ) {
+                $context['profile'] = array(
+                    'visa_type'           => $profile['visa_type'] ?? '',
+                    'legal_first_name'    => $profile['legal_first_name'] ?? '',
+                    'legal_last_name'     => $profile['legal_last_name'] ?? '',
+                    'nationality'         => $profile['nationality'] ?? 'American',
+                    'target_region'       => $profile['target_region'] ?? '',
+                    'target_city'         => $profile['target_city'] ?? '',
+                    'planned_move_date'   => $profile['planned_move_date'] ?? '',
+                    'applicants'          => $profile['applicants'] ?? 'single',
+                    'has_children'        => $profile['has_children'] ?? '',
+                    'has_pets'            => $profile['has_pets'] ?? '',
+                    'employment_status'   => $profile['employment_status'] ?? '',
+                    'income_source'       => $profile['income_source'] ?? '',
+                    'french_proficiency'  => $profile['french_proficiency'] ?? '',
+                    'birth_state'         => $profile['birth_state'] ?? '',
+                    'marriage_state'      => $profile['marriage_state'] ?? '',
+                );
+            }
+        }
+
+        // Get user's uploaded documents
+        global $wpdb;
+        $files_table = $wpdb->prefix . 'framt_files';
+        if ( $wpdb->get_var( "SHOW TABLES LIKE '{$files_table}'" ) === $files_table ) {
+            $documents = $wpdb->get_results( $wpdb->prepare(
+                "SELECT id, original_name, category, uploaded_at FROM {$files_table} WHERE user_id = %d ORDER BY uploaded_at DESC",
+                $user_id
+            ), ARRAY_A );
+
+            $context['documents'] = array(
+                'count'      => count( $documents ),
+                'categories' => array(),
+                'recent'     => array(),
+            );
+
+            foreach ( $documents as $doc ) {
+                $cat = $doc['category'] ?? 'general';
+                if ( ! isset( $context['documents']['categories'][ $cat ] ) ) {
+                    $context['documents']['categories'][ $cat ] = 0;
+                }
+                $context['documents']['categories'][ $cat ]++;
+            }
+
+            // Get 5 most recent document names
+            $context['documents']['recent'] = array_slice( array_map( function( $d ) {
+                return $d['original_name'];
+            }, $documents ), 0, 5 );
+        }
+
+        // Get user's tasks and completion status
+        $tasks_table = $wpdb->prefix . 'framt_tasks';
+        if ( $wpdb->get_var( "SHOW TABLES LIKE '{$tasks_table}'" ) === $tasks_table ) {
+            $tasks = $wpdb->get_results( $wpdb->prepare(
+                "SELECT id, title, status, category FROM {$tasks_table} WHERE user_id = %d",
+                $user_id
+            ), ARRAY_A );
+
+            $context['tasks'] = array(
+                'total'     => count( $tasks ),
+                'completed' => 0,
+                'pending'   => 0,
+                'by_status' => array(),
+                'by_category' => array(),
+            );
+
+            foreach ( $tasks as $task ) {
+                $status = $task['status'] ?? 'pending';
+                $cat = $task['category'] ?? 'general';
+
+                if ( $status === 'completed' || $status === 'done' ) {
+                    $context['tasks']['completed']++;
+                } else {
+                    $context['tasks']['pending']++;
+                }
+
+                if ( ! isset( $context['tasks']['by_status'][ $status ] ) ) {
+                    $context['tasks']['by_status'][ $status ] = 0;
+                }
+                $context['tasks']['by_status'][ $status ]++;
+
+                if ( ! isset( $context['tasks']['by_category'][ $cat ] ) ) {
+                    $context['tasks']['by_category'][ $cat ] = array( 'total' => 0, 'completed' => 0 );
+                }
+                $context['tasks']['by_category'][ $cat ]['total']++;
+                if ( $status === 'completed' || $status === 'done' ) {
+                    $context['tasks']['by_category'][ $cat ]['completed']++;
+                }
+            }
+        }
+
+        // Get checklist progress for visa-related checklists
+        $checklist_types = array( 'visitor', 'talent-passport', 'student', 'work', 'entrepreneur', 'family' );
+        foreach ( $checklist_types as $type ) {
+            $progress = get_user_meta( $user_id, "fra_checklist_{$type}_progress", true );
+            if ( ! empty( $progress ) && is_array( $progress ) ) {
+                $checked = count( array_filter( $progress ) );
+                $total = count( $progress );
+                $context['checklists'][ $type ] = array(
+                    'checked' => $checked,
+                    'total'   => $total,
+                    'percent' => $total > 0 ? round( ( $checked / $total ) * 100 ) : 0,
+                );
+            }
+        }
+
+        // Build a human-readable summary for the AI
+        $context['summary'] = $this->build_user_context_summary( $context );
+
+        return $context;
+    }
+
+    /**
+     * Build a human-readable summary of user context for AI prompts
+     *
+     * @param array $context User context data
+     * @return string Formatted summary
+     */
+    private function build_user_context_summary( $context ) {
+        $lines = array();
+        $profile = $context['profile'];
+
+        // Profile summary
+        if ( ! empty( $profile['legal_first_name'] ) ) {
+            $lines[] = "Member name: {$profile['legal_first_name']} {$profile['legal_last_name']}";
+        }
+
+        if ( ! empty( $profile['visa_type'] ) ) {
+            $visa_labels = array(
+                'visitor' => 'Long-Stay Visitor Visa (VLS-TS Visiteur)',
+                'talent-passport' => 'Talent Passport (Passeport Talent)',
+                'student' => 'Student Visa',
+                'work' => 'Work Visa (Salarié)',
+                'entrepreneur' => 'Entrepreneur Visa',
+                'family' => 'Family Reunification Visa',
+                'undecided' => 'Not yet decided',
+            );
+            $visa_label = $visa_labels[ $profile['visa_type'] ] ?? ucfirst( $profile['visa_type'] );
+            $lines[] = "Selected visa type: {$visa_label}";
+        } else {
+            $lines[] = "Visa type: NOT YET SELECTED - member needs guidance on choosing";
+        }
+
+        if ( ! empty( $profile['applicants'] ) ) {
+            $applicant_labels = array(
+                'single' => 'Applying alone',
+                'couple' => 'Applying with spouse/partner',
+                'family' => 'Applying with family (includes children)',
+            );
+            $lines[] = $applicant_labels[ $profile['applicants'] ] ?? $profile['applicants'];
+        }
+
+        if ( ! empty( $profile['target_region'] ) || ! empty( $profile['target_city'] ) ) {
+            $location = trim( ( $profile['target_city'] ?? '' ) . ', ' . ( $profile['target_region'] ?? '' ), ', ' );
+            $lines[] = "Target location in France: {$location}";
+        }
+
+        if ( ! empty( $profile['planned_move_date'] ) ) {
+            $lines[] = "Planned move date: {$profile['planned_move_date']}";
+        }
+
+        if ( ! empty( $profile['employment_status'] ) ) {
+            $lines[] = "Employment status: {$profile['employment_status']}";
+        }
+
+        if ( ! empty( $profile['has_pets'] ) && $profile['has_pets'] !== 'no' ) {
+            $lines[] = "Has pets: {$profile['has_pets']} (will need pet relocation guidance)";
+        }
+
+        // Document summary
+        $docs = $context['documents'];
+        if ( $docs['count'] > 0 ) {
+            $lines[] = "\nDocuments uploaded: {$docs['count']} total";
+            if ( ! empty( $docs['categories'] ) ) {
+                $cat_list = array();
+                foreach ( $docs['categories'] as $cat => $count ) {
+                    $cat_list[] = "{$cat}: {$count}";
+                }
+                $lines[] = "Document categories: " . implode( ', ', $cat_list );
+            }
+        } else {
+            $lines[] = "\nDocuments uploaded: NONE - member should start gathering documents";
+        }
+
+        // Task summary
+        $tasks = $context['tasks'];
+        if ( $tasks['total'] > 0 ) {
+            $lines[] = "\nTasks: {$tasks['completed']} of {$tasks['total']} completed (" . round( ( $tasks['completed'] / $tasks['total'] ) * 100 ) . "%)";
+            if ( $tasks['pending'] > 0 ) {
+                $lines[] = "Pending tasks: {$tasks['pending']}";
+            }
+        } else {
+            $lines[] = "\nTasks: None created yet - member should review task checklist";
+        }
+
+        // Checklist summary
+        $visa_type = $profile['visa_type'] ?? '';
+        if ( ! empty( $visa_type ) && isset( $context['checklists'][ $visa_type ] ) ) {
+            $cl = $context['checklists'][ $visa_type ];
+            $lines[] = "\nVisa checklist progress ({$visa_type}): {$cl['checked']} of {$cl['total']} items completed ({$cl['percent']}%)";
+        }
+
+        return implode( "\n", $lines );
     }
 
     /**
