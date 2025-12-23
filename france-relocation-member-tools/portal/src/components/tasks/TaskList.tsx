@@ -8,6 +8,7 @@ import {
   MoreVertical,
   Plus,
 } from 'lucide-react';
+import VirtualList, { useVirtualization } from '@/components/shared/VirtualList';
 import type { Task, TaskStatus } from '@/types';
 
 interface TaskListProps {
@@ -32,7 +33,40 @@ export default function TaskList({
   onStatusChange,
   onAddTask,
 }: TaskListProps) {
+  const shouldVirtualize = useVirtualization(tasks.length, 30);
+
   if (groupBy === 'none') {
+    if (tasks.length === 0) {
+      return (
+        <div className="text-center py-12 text-gray-500">
+          <CheckCircle className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+          <p>No tasks found</p>
+        </div>
+      );
+    }
+
+    // Use virtual scrolling for large lists
+    if (shouldVirtualize) {
+      return (
+        <VirtualList
+          items={tasks}
+          estimateSize={72}
+          className="max-h-[calc(100vh-200px)]"
+          getItemKey={(task) => task.id}
+          renderItem={(task) => (
+            <div className="pb-2">
+              <TaskListItem
+                task={task}
+                onClick={() => onTaskClick?.(task)}
+                onStatusChange={onStatusChange}
+              />
+            </div>
+          )}
+        />
+      );
+    }
+
+    // Standard rendering for smaller lists
     return (
       <div className="space-y-2">
         {tasks.map((task) => (
@@ -43,12 +77,6 @@ export default function TaskList({
             onStatusChange={onStatusChange}
           />
         ))}
-        {tasks.length === 0 && (
-          <div className="text-center py-12 text-gray-500">
-            <CheckCircle className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-            <p>No tasks found</p>
-          </div>
-        )}
       </div>
     );
   }
