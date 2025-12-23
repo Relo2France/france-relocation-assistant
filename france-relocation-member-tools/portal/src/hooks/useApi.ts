@@ -17,7 +17,9 @@ import {
   membershipApi,
   supportApi,
   researchApi,
+  familyApi,
 } from '@/api/client';
+import type { FamilyMember } from '@/api/client';
 import type {
   Task,
   TaskStatus,
@@ -72,6 +74,10 @@ export const queryKeys = {
   supportUnreadCount: ['supportUnreadCount'] as const,
   // Research
   savedReports: ['savedReports'] as const,
+  // Family members
+  familyMembers: ['familyMembers'] as const,
+  familyMember: (id: number) => ['familyMember', id] as const,
+  familyFeatureStatus: ['familyFeatureStatus'] as const,
 };
 
 // Dashboard hook
@@ -801,5 +807,59 @@ export function useSavedReports() {
     queryKey: queryKeys.savedReports,
     queryFn: researchApi.getSavedReports,
     staleTime: 60000, // 1 minute
+  });
+}
+
+// ============================================
+// Family Members Hooks (Paid Add-on Ready)
+// ============================================
+
+export function useFamilyMembers() {
+  return useQuery({
+    queryKey: queryKeys.familyMembers,
+    queryFn: familyApi.getAll,
+    staleTime: 30000, // 30 seconds
+  });
+}
+
+export function useFamilyFeatureStatus() {
+  return useQuery({
+    queryKey: queryKeys.familyFeatureStatus,
+    queryFn: familyApi.getFeatureStatus,
+    staleTime: 60000 * 5, // 5 minutes
+  });
+}
+
+export function useCreateFamilyMember() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: familyApi.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.familyMembers });
+    },
+  });
+}
+
+export function useUpdateFamilyMember() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ memberId, data }: { memberId: number; data: Partial<FamilyMember> }) =>
+      familyApi.update(memberId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.familyMembers });
+    },
+  });
+}
+
+export function useDeleteFamilyMember() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: familyApi.delete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.familyMembers });
+    },
   });
 }

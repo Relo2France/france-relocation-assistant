@@ -14,71 +14,16 @@ import {
   User,
   Baby,
   Heart,
+  Lock,
+  Crown,
 } from 'lucide-react';
-import { useDashboard } from '@/hooks/useApi';
-
-// Types for family members
-interface FamilyMember {
-  id: number;
-  name: string;
-  relationship: 'spouse' | 'child' | 'parent' | 'other';
-  birthDate: string;
-  nationality: string;
-  visaStatus: 'pending' | 'applied' | 'approved' | 'not_required';
-  documents: {
-    passport: boolean;
-    birthCertificate: boolean;
-    marriageCertificate?: boolean;
-    photos: boolean;
-  };
-  notes?: string;
-}
-
-// Mock data - in real implementation this would come from API
-const mockFamilyMembers: FamilyMember[] = [
-  {
-    id: 1,
-    name: 'Sarah Johnson',
-    relationship: 'spouse',
-    birthDate: '1985-06-15',
-    nationality: 'American',
-    visaStatus: 'applied',
-    documents: {
-      passport: true,
-      birthCertificate: true,
-      marriageCertificate: true,
-      photos: true,
-    },
-  },
-  {
-    id: 2,
-    name: 'Emma Johnson',
-    relationship: 'child',
-    birthDate: '2015-03-22',
-    nationality: 'American',
-    visaStatus: 'applied',
-    documents: {
-      passport: true,
-      birthCertificate: true,
-      photos: true,
-    },
-    notes: 'Will need school enrollment documents',
-  },
-  {
-    id: 3,
-    name: 'James Johnson',
-    relationship: 'child',
-    birthDate: '2018-11-08',
-    nationality: 'American',
-    visaStatus: 'applied',
-    documents: {
-      passport: true,
-      birthCertificate: false,
-      photos: true,
-    },
-    notes: 'Birth certificate translation pending',
-  },
-];
+import {
+  useFamilyMembers,
+  useCreateFamilyMember,
+  useUpdateFamilyMember,
+  useDeleteFamilyMember,
+} from '@/hooks/useApi';
+import type { FamilyMember } from '@/api/client';
 
 const relationshipLabels: Record<string, string> = {
   spouse: 'Spouse',
@@ -102,23 +47,26 @@ const visaStatusConfig: Record<string, { label: string; color: string; icon: Rea
 };
 
 export default function FamilyView() {
-  const { data: dashboard, isLoading } = useDashboard();
+  const { data: familyData, isLoading, error } = useFamilyMembers();
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingMember, setEditingMember] = useState<FamilyMember | null>(null);
+  const [deletingMember, setDeletingMember] = useState<FamilyMember | null>(null);
 
-  // Use mock data for now
-  const familyMembers = mockFamilyMembers;
+  const familyMembers = familyData?.members || [];
+  const canEdit = familyData?.can_edit ?? false;
+  const featureEnabled = familyData?.feature_enabled ?? false;
 
   if (isLoading) {
     return <FamilyViewSkeleton />;
   }
 
-  if (!dashboard?.project) {
+  if (error) {
     return (
       <div className="p-6">
         <div className="card p-8 text-center">
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">No Project Found</h2>
-          <p className="text-gray-600">Please set up your relocation project first.</p>
+          <AlertCircle className="w-12 h-12 mx-auto mb-4 text-red-400" />
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">Error Loading Family Members</h2>
+          <p className="text-gray-600">Please try refreshing the page.</p>
         </div>
       </div>
     );
@@ -144,14 +92,42 @@ export default function FamilyView() {
             Manage your family's relocation details and documents
           </p>
         </div>
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="btn btn-primary flex items-center gap-2"
-        >
-          <UserPlus className="w-4 h-4" />
-          Add Member
-        </button>
+        {canEdit ? (
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="btn btn-primary flex items-center gap-2"
+          >
+            <UserPlus className="w-4 h-4" />
+            Add Member
+          </button>
+        ) : (
+          <UpgradeButton />
+        )}
       </div>
+
+      {/* Feature locked notice */}
+      {!featureEnabled && (
+        <div className="mb-6 p-4 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl">
+          <div className="flex items-start gap-3">
+            <div className="p-2 bg-amber-100 rounded-lg">
+              <Crown className="w-5 h-5 text-amber-600" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-amber-900">Premium Feature</h3>
+              <p className="text-sm text-amber-700 mt-1">
+                Family member management is available with our Premium plan.
+                Upgrade to add, edit, and track visa applications for your family members.
+              </p>
+              <a
+                href="/membership/"
+                className="inline-flex items-center gap-1 mt-2 text-sm font-medium text-amber-700 hover:text-amber-800"
+              >
+                Learn about Premium →
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
@@ -204,13 +180,17 @@ export default function FamilyView() {
           <p className="text-gray-600 mb-4">
             Add family members to track their visa applications and documents
           </p>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="btn btn-primary inline-flex items-center gap-2"
-          >
-            <UserPlus className="w-4 h-4" />
-            Add First Member
-          </button>
+          {canEdit ? (
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="btn btn-primary inline-flex items-center gap-2"
+            >
+              <UserPlus className="w-4 h-4" />
+              Add First Member
+            </button>
+          ) : (
+            <UpgradeButton />
+          )}
         </div>
       ) : (
         <div className="space-y-4">
@@ -218,41 +198,62 @@ export default function FamilyView() {
             <FamilyMemberCard
               key={member.id}
               member={member}
+              canEdit={canEdit}
               onEdit={() => setEditingMember(member)}
+              onDelete={() => setDeletingMember(member)}
             />
           ))}
         </div>
       )}
 
       {/* Add/Edit Modal */}
-      {(showAddModal || editingMember) && (
+      {(showAddModal || editingMember) && canEdit && (
         <FamilyMemberModal
           member={editingMember}
           onClose={() => {
             setShowAddModal(false);
             setEditingMember(null);
           }}
-          onSave={() => {
-            setShowAddModal(false);
-            setEditingMember(null);
-          }}
+        />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deletingMember && canEdit && (
+        <DeleteConfirmModal
+          member={deletingMember}
+          onClose={() => setDeletingMember(null)}
         />
       )}
     </div>
   );
 }
 
-interface FamilyMemberCardProps {
-  member: FamilyMember;
-  onEdit: () => void;
+function UpgradeButton() {
+  return (
+    <a
+      href="/membership/"
+      className="btn bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600 flex items-center gap-2"
+    >
+      <Crown className="w-4 h-4" />
+      Upgrade to Add Members
+    </a>
+  );
 }
 
-function FamilyMemberCard({ member, onEdit }: FamilyMemberCardProps) {
-  const RelationshipIcon = relationshipIcons[member.relationship];
-  const visaConfig = visaStatusConfig[member.visaStatus];
+interface FamilyMemberCardProps {
+  member: FamilyMember;
+  canEdit: boolean;
+  onEdit: () => void;
+  onDelete: () => void;
+}
+
+function FamilyMemberCard({ member, canEdit, onEdit, onDelete }: FamilyMemberCardProps) {
+  const RelationshipIcon = relationshipIcons[member.relationship] || User;
+  const visaConfig = visaStatusConfig[member.visaStatus] || visaStatusConfig.pending;
   const VisaIcon = visaConfig.icon;
 
   const calculateAge = (birthDate: string) => {
+    if (!birthDate) return null;
     const birth = new Date(birthDate);
     const today = new Date();
     let age = today.getFullYear() - birth.getFullYear();
@@ -274,6 +275,8 @@ function FamilyMemberCard({ member, onEdit }: FamilyMemberCardProps) {
     (doc) => member.documents[doc.key as keyof typeof member.documents]
   ).length;
 
+  const age = calculateAge(member.birthDate);
+
   return (
     <div className="card p-5">
       <div className="flex items-start gap-4">
@@ -288,31 +291,53 @@ function FamilyMemberCard({ member, onEdit }: FamilyMemberCardProps) {
             <div>
               <h3 className="font-semibold text-gray-900">{member.name}</h3>
               <p className="text-sm text-gray-500">
-                {relationshipLabels[member.relationship]} &middot; {calculateAge(member.birthDate)} years old
+                {relationshipLabels[member.relationship] || member.relationship}
+                {age !== null && ` · ${age} years old`}
               </p>
             </div>
-            <button
-              onClick={onEdit}
-              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <Edit2 className="w-4 h-4" />
-            </button>
+            {canEdit && (
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={onEdit}
+                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                  title="Edit"
+                >
+                  <Edit2 className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={onDelete}
+                  className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  title="Delete"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+            {!canEdit && (
+              <div className="p-2 text-gray-300" title="Upgrade to edit">
+                <Lock className="w-4 h-4" />
+              </div>
+            )}
           </div>
 
           {/* Info row */}
           <div className="flex flex-wrap items-center gap-4 mt-3 text-sm">
-            <div className="flex items-center gap-1 text-gray-600">
-              <Flag className="w-4 h-4" />
-              {member.nationality}
-            </div>
-            <div className="flex items-center gap-1 text-gray-600">
-              <Calendar className="w-4 h-4" />
-              {new Date(member.birthDate).toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric',
-              })}
-            </div>
+            {member.nationality && (
+              <div className="flex items-center gap-1 text-gray-600">
+                <Flag className="w-4 h-4" />
+                {member.nationality}
+              </div>
+            )}
+            {member.birthDate && (
+              <div className="flex items-center gap-1 text-gray-600">
+                <Calendar className="w-4 h-4" />
+                {new Date(member.birthDate).toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                })}
+              </div>
+            )}
             <div className={clsx('flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium', visaConfig.color)}>
               <VisaIcon className="w-3 h-3" />
               {visaConfig.label}
@@ -371,22 +396,54 @@ function FamilyMemberCard({ member, onEdit }: FamilyMemberCardProps) {
 interface FamilyMemberModalProps {
   member: FamilyMember | null;
   onClose: () => void;
-  onSave: () => void;
 }
 
-function FamilyMemberModal({ member, onClose, onSave }: FamilyMemberModalProps) {
+function FamilyMemberModal({ member, onClose }: FamilyMemberModalProps) {
+  const createMutation = useCreateFamilyMember();
+  const updateMutation = useUpdateFamilyMember();
+  const isLoading = createMutation.isPending || updateMutation.isPending;
+
   const [formData, setFormData] = useState({
     name: member?.name || '',
-    relationship: member?.relationship || 'spouse',
+    relationship: member?.relationship || 'spouse' as FamilyMember['relationship'],
     birthDate: member?.birthDate || '',
     nationality: member?.nationality || '',
+    visaStatus: member?.visaStatus || 'pending' as FamilyMember['visaStatus'],
     notes: member?.notes || '',
+    documents: member?.documents || {
+      passport: false,
+      birthCertificate: false,
+      marriageCertificate: false,
+      photos: false,
+    },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // In real implementation, this would call an API
-    onSave();
+
+    try {
+      if (member) {
+        await updateMutation.mutateAsync({
+          memberId: member.id,
+          data: formData,
+        });
+      } else {
+        await createMutation.mutateAsync(formData);
+      }
+      onClose();
+    } catch (error) {
+      console.error('Failed to save family member:', error);
+    }
+  };
+
+  const toggleDocument = (key: keyof typeof formData.documents) => {
+    setFormData({
+      ...formData,
+      documents: {
+        ...formData.documents,
+        [key]: !formData.documents[key],
+      },
+    });
   };
 
   return (
@@ -443,7 +500,6 @@ function FamilyMemberModal({ member, onClose, onSave }: FamilyMemberModalProps) 
               value={formData.birthDate}
               onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-              required
             />
           </div>
 
@@ -456,8 +512,47 @@ function FamilyMemberModal({ member, onClose, onSave }: FamilyMemberModalProps) 
               value={formData.nationality}
               onChange={(e) => setFormData({ ...formData, nationality: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-              required
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Visa Status
+            </label>
+            <select
+              value={formData.visaStatus}
+              onChange={(e) => setFormData({ ...formData, visaStatus: e.target.value as FamilyMember['visaStatus'] })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            >
+              <option value="pending">Pending</option>
+              <option value="applied">Applied</option>
+              <option value="approved">Approved</option>
+              <option value="not_required">Not Required</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Documents
+            </label>
+            <div className="space-y-2">
+              {[
+                { key: 'passport' as const, label: 'Passport' },
+                { key: 'birthCertificate' as const, label: 'Birth Certificate' },
+                { key: 'marriageCertificate' as const, label: 'Marriage Certificate' },
+                { key: 'photos' as const, label: 'Visa Photos' },
+              ].map((doc) => (
+                <label key={doc.key} className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.documents[doc.key] || false}
+                    onChange={() => toggleDocument(doc.key)}
+                    className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                  />
+                  <span className="text-sm text-gray-700">{doc.label}</span>
+                </label>
+              ))}
+            </div>
           </div>
 
           <div>
@@ -477,27 +572,71 @@ function FamilyMemberModal({ member, onClose, onSave }: FamilyMemberModalProps) 
               type="button"
               onClick={onClose}
               className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+              disabled={isLoading}
             >
               Cancel
             </button>
             <button
               type="submit"
               className="flex-1 btn btn-primary"
+              disabled={isLoading}
             >
-              {member ? 'Save Changes' : 'Add Member'}
+              {isLoading ? 'Saving...' : member ? 'Save Changes' : 'Add Member'}
             </button>
           </div>
-
-          {member && (
-            <button
-              type="button"
-              className="w-full mt-2 flex items-center justify-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-            >
-              <Trash2 className="w-4 h-4" />
-              Remove Family Member
-            </button>
-          )}
         </form>
+      </div>
+    </div>
+  );
+}
+
+interface DeleteConfirmModalProps {
+  member: FamilyMember;
+  onClose: () => void;
+}
+
+function DeleteConfirmModal({ member, onClose }: DeleteConfirmModalProps) {
+  const deleteMutation = useDeleteFamilyMember();
+
+  const handleDelete = async () => {
+    try {
+      await deleteMutation.mutateAsync(member.id);
+      onClose();
+    } catch (error) {
+      console.error('Failed to delete family member:', error);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-xl max-w-sm w-full">
+        <div className="p-6">
+          <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
+            <Trash2 className="w-6 h-6 text-red-600" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900 text-center mb-2">
+            Remove Family Member?
+          </h3>
+          <p className="text-gray-600 text-center mb-6">
+            Are you sure you want to remove <strong>{member.name}</strong>? This action cannot be undone.
+          </p>
+          <div className="flex gap-3">
+            <button
+              onClick={onClose}
+              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+              disabled={deleteMutation.isPending}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleDelete}
+              className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? 'Removing...' : 'Remove'}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

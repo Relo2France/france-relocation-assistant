@@ -379,6 +379,58 @@ class FRAMT_Portal_API {
         );
 
         // ============================================
+        // Family Members endpoints (paid add-on ready)
+        // ============================================
+        register_rest_route(
+            self::NAMESPACE,
+            '/family',
+            array(
+                array(
+                    'methods'             => 'GET',
+                    'callback'            => array( $this, 'get_family_members' ),
+                    'permission_callback' => array( $this, 'check_member_permission' ),
+                ),
+                array(
+                    'methods'             => 'POST',
+                    'callback'            => array( $this, 'create_family_member' ),
+                    'permission_callback' => array( $this, 'check_family_feature_permission' ),
+                ),
+            )
+        );
+
+        register_rest_route(
+            self::NAMESPACE,
+            '/family/(?P<member_id>\d+)',
+            array(
+                array(
+                    'methods'             => 'GET',
+                    'callback'            => array( $this, 'get_family_member' ),
+                    'permission_callback' => array( $this, 'check_member_permission' ),
+                ),
+                array(
+                    'methods'             => 'PUT',
+                    'callback'            => array( $this, 'update_family_member' ),
+                    'permission_callback' => array( $this, 'check_family_feature_permission' ),
+                ),
+                array(
+                    'methods'             => 'DELETE',
+                    'callback'            => array( $this, 'delete_family_member' ),
+                    'permission_callback' => array( $this, 'check_family_feature_permission' ),
+                ),
+            )
+        );
+
+        register_rest_route(
+            self::NAMESPACE,
+            '/family/feature-status',
+            array(
+                'methods'             => 'GET',
+                'callback'            => array( $this, 'get_family_feature_status' ),
+                'permission_callback' => array( $this, 'check_member_permission' ),
+            )
+        );
+
+        // ============================================
         // Checklists endpoints
         // ============================================
         register_rest_route(
@@ -9007,5 +9059,289 @@ SECTIONS;
 
         $headers = array( 'Content-Type: text/html; charset=UTF-8' );
         wp_mail( $admin_email, $subject, $body, $headers );
+    }
+
+    // =========================================================================
+    // Family Members Methods (Paid Add-on Ready)
+    // =========================================================================
+
+    /**
+     * Check if user has access to family management feature
+     * This is the toggle point for paid add-on functionality
+     *
+     * @return bool|WP_Error True if allowed, WP_Error otherwise
+     */
+    public function check_family_feature_permission() {
+        // First check basic member permission
+        if ( ! $this->check_member_permission() ) {
+            return new WP_Error(
+                'rest_forbidden',
+                'You must be logged in to access this resource.',
+                array( 'status' => 401 )
+            );
+        }
+
+        // Check if family feature is enabled for this user
+        // TOGGLE POINT: Change this logic to check membership level
+        $user_id = get_current_user_id();
+        $feature_enabled = $this->is_family_feature_enabled( $user_id );
+
+        if ( ! $feature_enabled ) {
+            return new WP_Error(
+                'feature_not_available',
+                'Family management is a premium feature. Please upgrade your membership to access it.',
+                array( 'status' => 403 )
+            );
+        }
+
+        return true;
+    }
+
+    /**
+     * Check if family feature is enabled for user
+     * TOGGLE POINT: Modify this to integrate with MemberPress or other membership plugins
+     *
+     * @param int $user_id User ID.
+     * @return bool
+     */
+    private function is_family_feature_enabled( $user_id ) {
+        // Option 1: Check user meta flag (manual override)
+        $manual_override = get_user_meta( $user_id, 'framt_family_feature_enabled', true );
+        if ( '1' === $manual_override ) {
+            return true;
+        }
+        if ( '0' === $manual_override ) {
+            return false;
+        }
+
+        // Option 2: Check global setting (enable for all members during beta)
+        $global_enabled = get_option( 'framt_family_feature_enabled', '1' ); // Default ON for now
+        if ( '1' === $global_enabled ) {
+            return true;
+        }
+
+        // Option 3: Check MemberPress membership level (for future integration)
+        // Uncomment and modify when ready to integrate with MemberPress:
+        /*
+        if ( function_exists( 'mepr_get_current_user' ) ) {
+            $mepr_user = mepr_get_current_user();
+            $premium_levels = array( 'premium', 'family-plan', 'professional' );
+            foreach ( $mepr_user->active_product_subscriptions() as $product_id ) {
+                $product = new MeprProduct( $product_id );
+                if ( in_array( $product->post_name, $premium_levels, true ) ) {
+                    return true;
+                }
+            }
+        }
+        */
+
+        return false;
+    }
+
+    /**
+     * Get family feature status for frontend
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response
+     */
+    public function get_family_feature_status( $request ) {
+        $user_id = get_current_user_id();
+        $enabled = $this->is_family_feature_enabled( $user_id );
+
+        return rest_ensure_response( array(
+            'enabled'     => $enabled,
+            'upgrade_url' => $enabled ? null : home_url( '/membership/' ),
+            'message'     => $enabled ? null : 'Upgrade to Premium to manage family members.',
+        ) );
+    }
+
+    /**
+     * Get all family members for current user
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response
+     */
+    public function get_family_members( $request ) {
+        $user_id = get_current_user_id();
+        $members = get_user_meta( $user_id, 'framt_family_members', true );
+
+        if ( empty( $members ) || ! is_array( $members ) ) {
+            $members = array();
+        }
+
+        // Add feature status to response
+        $feature_enabled = $this->is_family_feature_enabled( $user_id );
+
+        return rest_ensure_response( array(
+            'members'         => array_values( $members ),
+            'feature_enabled' => $feature_enabled,
+            'can_edit'        => $feature_enabled,
+        ) );
+    }
+
+    /**
+     * Get single family member
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response|WP_Error
+     */
+    public function get_family_member( $request ) {
+        $user_id   = get_current_user_id();
+        $member_id = (int) $request->get_param( 'member_id' );
+        $members   = get_user_meta( $user_id, 'framt_family_members', true );
+
+        if ( empty( $members ) || ! is_array( $members ) ) {
+            return new WP_Error( 'not_found', 'Family member not found.', array( 'status' => 404 ) );
+        }
+
+        foreach ( $members as $member ) {
+            if ( (int) $member['id'] === $member_id ) {
+                return rest_ensure_response( $member );
+            }
+        }
+
+        return new WP_Error( 'not_found', 'Family member not found.', array( 'status' => 404 ) );
+    }
+
+    /**
+     * Create new family member
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response|WP_Error
+     */
+    public function create_family_member( $request ) {
+        $user_id = get_current_user_id();
+        $params  = $request->get_json_params();
+
+        // Validate required fields
+        if ( empty( $params['name'] ) || empty( $params['relationship'] ) ) {
+            return new WP_Error( 'missing_fields', 'Name and relationship are required.', array( 'status' => 400 ) );
+        }
+
+        // Get existing members
+        $members = get_user_meta( $user_id, 'framt_family_members', true );
+        if ( empty( $members ) || ! is_array( $members ) ) {
+            $members = array();
+        }
+
+        // Generate new ID
+        $max_id = 0;
+        foreach ( $members as $m ) {
+            if ( isset( $m['id'] ) && $m['id'] > $max_id ) {
+                $max_id = $m['id'];
+            }
+        }
+
+        $new_member = array(
+            'id'           => $max_id + 1,
+            'name'         => sanitize_text_field( $params['name'] ),
+            'relationship' => sanitize_text_field( $params['relationship'] ),
+            'birthDate'    => sanitize_text_field( $params['birthDate'] ?? '' ),
+            'nationality'  => sanitize_text_field( $params['nationality'] ?? '' ),
+            'visaStatus'   => sanitize_text_field( $params['visaStatus'] ?? 'pending' ),
+            'documents'    => array(
+                'passport'           => ! empty( $params['documents']['passport'] ),
+                'birthCertificate'   => ! empty( $params['documents']['birthCertificate'] ),
+                'marriageCertificate' => ! empty( $params['documents']['marriageCertificate'] ),
+                'photos'             => ! empty( $params['documents']['photos'] ),
+            ),
+            'notes'        => sanitize_textarea_field( $params['notes'] ?? '' ),
+            'created_at'   => current_time( 'mysql' ),
+            'updated_at'   => current_time( 'mysql' ),
+        );
+
+        $members[] = $new_member;
+        update_user_meta( $user_id, 'framt_family_members', $members );
+
+        return rest_ensure_response( $new_member );
+    }
+
+    /**
+     * Update family member
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response|WP_Error
+     */
+    public function update_family_member( $request ) {
+        $user_id   = get_current_user_id();
+        $member_id = (int) $request->get_param( 'member_id' );
+        $params    = $request->get_json_params();
+        $members   = get_user_meta( $user_id, 'framt_family_members', true );
+
+        if ( empty( $members ) || ! is_array( $members ) ) {
+            return new WP_Error( 'not_found', 'Family member not found.', array( 'status' => 404 ) );
+        }
+
+        $found = false;
+        foreach ( $members as $key => $member ) {
+            if ( (int) $member['id'] === $member_id ) {
+                // Update fields
+                $members[ $key ] = array_merge( $member, array(
+                    'name'         => sanitize_text_field( $params['name'] ?? $member['name'] ),
+                    'relationship' => sanitize_text_field( $params['relationship'] ?? $member['relationship'] ),
+                    'birthDate'    => sanitize_text_field( $params['birthDate'] ?? $member['birthDate'] ),
+                    'nationality'  => sanitize_text_field( $params['nationality'] ?? $member['nationality'] ),
+                    'visaStatus'   => sanitize_text_field( $params['visaStatus'] ?? $member['visaStatus'] ),
+                    'notes'        => sanitize_textarea_field( $params['notes'] ?? $member['notes'] ),
+                    'updated_at'   => current_time( 'mysql' ),
+                ) );
+
+                // Update documents if provided
+                if ( isset( $params['documents'] ) ) {
+                    $members[ $key ]['documents'] = array(
+                        'passport'           => ! empty( $params['documents']['passport'] ),
+                        'birthCertificate'   => ! empty( $params['documents']['birthCertificate'] ),
+                        'marriageCertificate' => ! empty( $params['documents']['marriageCertificate'] ),
+                        'photos'             => ! empty( $params['documents']['photos'] ),
+                    );
+                }
+
+                $found = $members[ $key ];
+                break;
+            }
+        }
+
+        if ( ! $found ) {
+            return new WP_Error( 'not_found', 'Family member not found.', array( 'status' => 404 ) );
+        }
+
+        update_user_meta( $user_id, 'framt_family_members', $members );
+
+        return rest_ensure_response( $found );
+    }
+
+    /**
+     * Delete family member
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response|WP_Error
+     */
+    public function delete_family_member( $request ) {
+        $user_id   = get_current_user_id();
+        $member_id = (int) $request->get_param( 'member_id' );
+        $members   = get_user_meta( $user_id, 'framt_family_members', true );
+
+        if ( empty( $members ) || ! is_array( $members ) ) {
+            return new WP_Error( 'not_found', 'Family member not found.', array( 'status' => 404 ) );
+        }
+
+        $found = false;
+        foreach ( $members as $key => $member ) {
+            if ( (int) $member['id'] === $member_id ) {
+                unset( $members[ $key ] );
+                $found = true;
+                break;
+            }
+        }
+
+        if ( ! $found ) {
+            return new WP_Error( 'not_found', 'Family member not found.', array( 'status' => 404 ) );
+        }
+
+        // Re-index array
+        $members = array_values( $members );
+        update_user_meta( $user_id, 'framt_family_members', $members );
+
+        return rest_ensure_response( array( 'success' => true, 'message' => 'Family member deleted.' ) );
     }
 }
