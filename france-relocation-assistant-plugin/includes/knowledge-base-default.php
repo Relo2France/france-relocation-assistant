@@ -292,6 +292,22 @@ return array(
                 'validity' => 'Entire visa duration (12 months)',
                 'zone' => 'Schengen zone'
             ),
+            'background_check_requirements' => array(
+                'title' => 'Background Check Requirements for Americans',
+                'important_note' => 'CRITICAL: Requirements vary BY CONSULATE. Always check your specific French consulate\'s document checklist before ordering any background checks.',
+                'typical_requirement' => 'Most French consulates require an FBI Identity History Summary (background check) for long-stay visa applicants.',
+                'fbi_check' => array(
+                    'name' => 'FBI Identity History Summary',
+                    'how_to_obtain' => 'Request through FBI website or approved channeler',
+                    'processing_time' => '3-5 business days via approved channeler, 12-18 weeks direct from FBI',
+                    'cost' => 'Approximately $18 direct, $50-75 via channeler',
+                    'apostille_required' => 'Yes - must be apostilled by US Department of State'
+                ),
+                'state_local_checks' => 'State and local background checks are NOT universally required. Some consulates may request them, but many do not. Do NOT assume you need state or local checks unless your specific consulate\'s checklist explicitly requires them.',
+                'common_mistake' => 'Many applicants waste time and money getting state/local background checks that their consulate doesn\'t require. Always verify with YOUR consulate first.',
+                'validity_period' => 'Background checks are typically valid for 3-6 months from issue date. Don\'t order too early.',
+                'sources' => array(array('name' => 'FBI Background Check', 'url' => 'https://www.fbi.gov/how-we-can-help-you/need-an-fbi-service-or-more-information/identity-history-summary-checks'))
+            ),
             'sources' => array(array('name' => 'France-Visas', 'url' => 'https://france-visas.gouv.fr'))
         ),
 
