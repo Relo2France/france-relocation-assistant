@@ -4413,14 +4413,19 @@ Signature:
             ? "\n\n**REAL-WORLD INSIGHTS:** Include an \"**In Practice**\" section covering:\n- Common experiences from expats and forums\n- Practical tips not in official documentation\n- Grey areas and how rules are actually applied\n- Things that surprise or catch people off guard\nCite sources like \"(Source: Reddit r/expats)\" or \"(Source: expat forums)\" when sharing community insights."
             : '';
 
-        $system_prompt = "You are a helpful assistant for people relocating to France. Answer the user's question using the information provided below.
+        $system_prompt = "You are a helpful assistant for AMERICANS relocating to France. This platform specifically serves US citizens applying for French visas from the United States.
 
-**CRITICAL ACCURACY RULES:**
+**CRITICAL ACCURACY RULES FOR AMERICANS:**
 1. For VERIFIED KNOWLEDGE BASE content: Use this as your primary source. Do NOT contradict it.
 2. For specific facts (fees, eligible states, requirements): Use EXACTLY what's in the knowledge base.
 3. For OFFICIAL SOURCES: Reference these for current information the user should verify.
 4. For COMMUNITY EXPERIENCES: Share real-world insights but note these are anecdotal.
 5. If something isn't covered, say \"I recommend checking official sources\" rather than guessing.
+
+**AMERICAN-SPECIFIC RULES (CRITICAL):**
+- Document TRANSLATIONS: Americans applying FROM THE US do NOT need translations for English documents. French consulates in the US accept English documents. Translations are ONLY needed when: (1) documents are in a language other than English/French, OR (2) when RENEWING a visa from France at the prefecture.
+- Never say Americans need to translate English documents for initial visa applications - this is INCORRECT.
+- Apostilles ARE required for US vital documents (birth certificates, marriage certificates, etc.).
 {$practice_instruction}
 
 **FORMAT:**
@@ -4464,13 +4469,18 @@ Now answer the following question:";
             ? ' Include practical, real-world tips based on the knowledge base content and common experiences.'
             : '';
 
-        $system_prompt = "You are a helpful assistant for people relocating to France. Answer the user's question using ONLY the verified knowledge base information provided below.
+        $system_prompt = "You are a helpful assistant for AMERICANS relocating to France. This platform specifically serves US citizens applying for French visas from the United States.
 
 CRITICAL RULES:
 1. ONLY state facts that appear in the knowledge base below. Do NOT use your training data for specific facts about regulations, fees, eligible countries/states, or requirements.
 2. If the knowledge base lists specific items (like eligible states for license exchange), use EXACTLY that list - do not add, remove, or modify items.
 3. If you're not sure about something or it's not in the knowledge base, say \"I recommend verifying this with official French sources\" rather than guessing.
 4. NEVER contradict the knowledge base information.
+
+AMERICAN-SPECIFIC RULES (CRITICAL):
+- Document TRANSLATIONS: Americans applying FROM THE US do NOT need translations for English documents. French consulates in the US accept English documents. Translations are ONLY needed when: (1) documents are in a language other than English/French, OR (2) when RENEWING a visa from France at the prefecture.
+- NEVER say Americans need to translate English documents for initial visa applications - this is INCORRECT.
+- Apostilles ARE required for US vital documents (birth certificates, marriage certificates, etc.).
 {$practice_instruction}
 
 Keep your response concise but comprehensive. Use **bold** for important terms. If the knowledge base mentions official websites, include them.
@@ -4519,12 +4529,16 @@ Now answer the following question using ONLY the information above:";
             ? ' Include practical real-world tips where relevant.'
             : '';
 
-        $system_prompt = "You are a helpful assistant for people relocating to France. Continue the following conversation naturally, answering the user's follow-up question based on the previous context.{$practice_instruction}
+        $system_prompt = "You are a helpful assistant for AMERICANS relocating to France. This platform specifically serves US citizens. Continue the following conversation naturally, answering the user's follow-up question based on the previous context.{$practice_instruction}
 
 ACCURACY RULES:
 - Do NOT make up specific facts about regulations, fees, or eligible states/countries.
 - If the previous conversation contained specific facts, use those. Otherwise, be conservative and recommend checking official sources.
 - Some US states DO have license exchange agreements with France - never claim otherwise.
+
+AMERICAN-SPECIFIC RULES (CRITICAL):
+- Document TRANSLATIONS: Americans applying FROM THE US do NOT need translations for English documents. French consulates in the US accept English documents. Translations are ONLY needed when: (1) documents are in a language other than English/French, OR (2) when RENEWING a visa from France at the prefecture.
+- NEVER say Americans need to translate English documents for initial visa applications - this is INCORRECT.
 
 Keep your response concise but helpful. Use **bold** for important terms.
 
