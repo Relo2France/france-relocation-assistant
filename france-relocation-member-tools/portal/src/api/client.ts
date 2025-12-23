@@ -650,3 +650,71 @@ export const supportApi = {
   getUnreadCount: () =>
     apiFetch<{ count: number }>('/support/unread-count'),
 };
+
+// ============================================
+// Family Members API (Paid Add-on Ready)
+// ============================================
+
+export interface FamilyMember {
+  id: number;
+  name: string;
+  relationship: 'spouse' | 'child' | 'parent' | 'other';
+  birthDate: string;
+  nationality: string;
+  visaStatus: 'pending' | 'applied' | 'approved' | 'not_required';
+  documents: {
+    passport: boolean;
+    birthCertificate: boolean;
+    marriageCertificate?: boolean;
+    photos: boolean;
+  };
+  notes?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface FamilyMembersResponse {
+  members: FamilyMember[];
+  feature_enabled: boolean;
+  can_edit: boolean;
+}
+
+export interface FamilyFeatureStatus {
+  enabled: boolean;
+  upgrade_url: string | null;
+  message: string | null;
+}
+
+export const familyApi = {
+  // Get feature status
+  getFeatureStatus: () =>
+    apiFetch<FamilyFeatureStatus>('/family/feature-status'),
+
+  // Get all family members
+  getAll: () =>
+    apiFetch<FamilyMembersResponse>('/family'),
+
+  // Get single family member
+  get: (memberId: number) =>
+    apiFetch<FamilyMember>(`/family/${memberId}`),
+
+  // Create family member
+  create: (data: Omit<FamilyMember, 'id' | 'created_at' | 'updated_at'>) =>
+    apiFetch<FamilyMember>('/family', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // Update family member
+  update: (memberId: number, data: Partial<FamilyMember>) =>
+    apiFetch<FamilyMember>(`/family/${memberId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  // Delete family member
+  delete: (memberId: number) =>
+    apiFetch<{ success: boolean; message: string }>(`/family/${memberId}`, {
+      method: 'DELETE',
+    }),
+};
