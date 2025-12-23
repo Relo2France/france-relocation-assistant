@@ -377,10 +377,11 @@ class FRAMT_Documents {
         if (!is_array($verification)) {
             $verification = array();
         }
-        $profile = FRAMT_Profile::get_instance()->get_profile($user_id);
+        // Use portal profile (user meta) for accurate data
+        $profile = FRAMT_Profile::get_portal_profile($user_id);
         $user = wp_get_current_user();
         $name = !empty($profile['legal_first_name']) ? $profile['legal_first_name'] : (!empty($user->first_name) ? $user->first_name : $user->display_name);
-        
+
         // Get visa type for requirements
         $visa_type = isset($profile['visa_type']) ? $profile['visa_type'] : 'visitor';
         

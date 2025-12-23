@@ -159,7 +159,8 @@ class FRAMT_Glossary {
      */
     public function render() {
         $terms = $this->get_terms();
-        $profile = FRAMT_Profile::get_instance()->get_profile(get_current_user_id());
+        // Use portal profile (user meta) for accurate data
+        $profile = FRAMT_Profile::get_portal_profile(get_current_user_id());
 
         ob_start();
         ?>

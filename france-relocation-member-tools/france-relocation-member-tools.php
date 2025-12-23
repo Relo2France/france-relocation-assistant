@@ -3055,8 +3055,8 @@ STYLE:
             return;
         }
         
-        // Get user context for better analysis
-        $profile = FRAMT_Profile::get_instance()->get_profile($user_id);
+        // Get user context for better analysis (use portal profile for accurate data)
+        $profile = FRAMT_Profile::get_portal_profile($user_id);
         $user_context = array(
             'visa_type' => isset($profile['visa_type']) ? $profile['visa_type'] : 'long-stay visa',
             'planned_duration' => isset($profile['stay_duration']) ? $profile['stay_duration'] : 'one year or more',
@@ -3521,7 +3521,8 @@ Please provide a helpful, accurate answer about their health insurance coverage 
     private function render_research_tool() {
         $user_id = get_current_user_id();
         $user = wp_get_current_user();
-        $profile = $this->components['profile']->get_profile($user_id);
+        // Use portal profile (user meta) for accurate data
+        $profile = FRAMT_Profile::get_portal_profile($user_id);
         $name = !empty($profile['legal_first_name']) ? $profile['legal_first_name'] : (!empty($user->first_name) ? $user->first_name : $user->display_name);
 
         ob_start();
@@ -3637,7 +3638,8 @@ Please provide a helpful, accurate answer about their health insurance coverage 
             return $prompt;
         }
 
-        $profile = $this->components['profile']->get_profile($user_id);
+        // Use portal profile (user meta) for accurate data
+        $profile = FRAMT_Profile::get_portal_profile($user_id);
         
         if (empty($profile)) {
             return $prompt;
