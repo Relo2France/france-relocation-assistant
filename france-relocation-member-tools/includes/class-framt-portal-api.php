@@ -3964,15 +3964,15 @@ Signature:
     /**
      * Get personalized guide based on user profile
      *
-     * @param WP_REST_Request $request Request object
+     * @param WP_REST_Request $request Request object.
      * @return WP_REST_Response
      */
-    public function get_personalized_guide( $request ) {
+    public function get_personalized_guide( $request ): WP_REST_Response {
         $type    = $request->get_param( 'type' );
         $user_id = get_current_user_id();
 
-        // Get user's visa type and situation
-        $visa_type   = get_user_meta( $user_id, 'fra_visa_type_applying', true ) ?: 'visitor';
+        // Get user's visa type from profile (uses fra_visa_type, not fra_visa_type_applying)
+        $visa_type   = get_user_meta( $user_id, 'fra_visa_type', true ) ?: 'visitor';
         $nationality = get_user_meta( $user_id, 'fra_nationality', true );
 
         $guide = $this->get_guide_content( $type );
