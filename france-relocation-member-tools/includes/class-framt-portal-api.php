@@ -3898,6 +3898,17 @@ Signature:
 
         // Get chat history to determine if this is a follow-up
         $history       = get_user_meta( $user_id, 'fra_chat_history', true ) ?: array();
+
+        // Check if profile has changed since last chat - if so, treat as new conversation
+        $last_profile_hash = get_user_meta( $user_id, 'fra_chat_profile_hash', true );
+        $current_profile_hash = md5( json_encode( $user_context['profile'] ) );
+
+        if ( $last_profile_hash !== $current_profile_hash ) {
+            // Profile changed - clear chat history to avoid stale context
+            $history = array();
+            update_user_meta( $user_id, 'fra_chat_profile_hash', $current_profile_hash );
+        }
+
         $is_follow_up  = $this->is_follow_up_question( $history, $message );
 
         // Generate response based on whether this is initial or follow-up
