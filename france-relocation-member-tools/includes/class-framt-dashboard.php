@@ -94,7 +94,8 @@ class FRAMT_Dashboard {
         $checklists = FRAMT_Checklists::get_instance();
 
         $user = get_userdata($user_id);
-        $profile_data = $profile->get_profile($user_id);
+        // Use portal profile (user meta) for accurate data
+        $profile_data = FRAMT_Profile::get_portal_profile($user_id);
 
         return array(
             'user_name' => $user ? $user->display_name : '',

@@ -36,8 +36,8 @@ class FRAMT_Chat_Handler {
         }
 
         $type = $types[$document_type];
-        $profile = FRAMT_Profile::get_instance();
-        $user_profile = $profile->get_profile(get_current_user_id());
+        // Use portal profile (user meta) for accurate data
+        $user_profile = FRAMT_Profile::get_portal_profile(get_current_user_id());
 
         $intro = array(
             'title' => $type['title'],

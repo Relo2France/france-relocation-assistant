@@ -4968,10 +4968,9 @@ Now respond to this follow-up:";
             'summary'    => '',
         );
 
-        // Get user profile
+        // Get user profile from user meta (portal storage) for accurate data
         if ( class_exists( 'FRAMT_Profile' ) ) {
-            $profile_instance = FRAMT_Profile::get_instance();
-            $profile = $profile_instance->get_profile( $user_id );
+            $profile = FRAMT_Profile::get_portal_profile( $user_id );
 
             if ( ! empty( $profile ) ) {
                 // Map profile fields to context - use actual field names from profile
