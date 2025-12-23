@@ -4963,22 +4963,28 @@ Now respond to this follow-up:";
             $profile = $profile_instance->get_profile( $user_id );
 
             if ( ! empty( $profile ) ) {
+                // Map profile fields to context - use actual field names from profile
+                $num_children = isset( $profile['num_children'] ) ? (int) $profile['num_children'] : 0;
                 $context['profile'] = array(
                     'visa_type'           => $profile['visa_type'] ?? '',
                     'legal_first_name'    => $profile['legal_first_name'] ?? '',
                     'legal_last_name'     => $profile['legal_last_name'] ?? '',
                     'nationality'         => $profile['nationality'] ?? 'American',
-                    'target_region'       => $profile['target_region'] ?? '',
-                    'target_city'         => $profile['target_city'] ?? '',
-                    'planned_move_date'   => $profile['planned_move_date'] ?? '',
+                    'target_location'     => $profile['target_location'] ?? '',
+                    'target_move_date'    => $profile['target_move_date'] ?? '',
                     'applicants'          => $profile['applicants'] ?? 'single',
-                    'has_children'        => $profile['has_children'] ?? '',
+                    'num_children'        => $num_children,
+                    'has_children'        => $num_children > 0,
+                    'children_ages'       => $profile['children_ages'] ?? '',
                     'has_pets'            => $profile['has_pets'] ?? '',
+                    'pet_details'         => $profile['pet_details'] ?? '',
                     'employment_status'   => $profile['employment_status'] ?? '',
-                    'income_source'       => $profile['income_source'] ?? '',
+                    'work_in_france'      => $profile['work_in_france'] ?? '',
+                    'industry'            => $profile['industry'] ?? '',
                     'french_proficiency'  => $profile['french_proficiency'] ?? '',
                     'birth_state'         => $profile['birth_state'] ?? '',
-                    'marriage_state'      => $profile['marriage_state'] ?? '',
+                    'current_state'       => $profile['current_state'] ?? '',
+                    'has_marriage_cert'   => $profile['has_marriage_cert'] ?? '',
                 );
             }
         }
@@ -5053,12 +5059,18 @@ Now respond to this follow-up:";
             }
         }
 
-        // Get checklist progress for visa-related checklists
-        $checklist_types = array( 'visitor', 'talent-passport', 'student', 'work', 'entrepreneur', 'family' );
+        // Get checklist progress - use actual checklist types from config
+        $checklist_types = array( 'visa-application', 'pre-departure', 'arrival', 'administrative', 'banking', 'healthcare' );
         foreach ( $checklist_types as $type ) {
-            $progress = get_user_meta( $user_id, "fra_checklist_{$type}_progress", true );
+            // Meta key is fra_checklist_{type} with progress stored as array of item_id => ['completed' => bool]
+            $progress = get_user_meta( $user_id, 'fra_checklist_' . $type, true );
             if ( ! empty( $progress ) && is_array( $progress ) ) {
-                $checked = count( array_filter( $progress ) );
+                $checked = 0;
+                foreach ( $progress as $item_progress ) {
+                    if ( ! empty( $item_progress['completed'] ) ) {
+                        $checked++;
+                    }
+                }
                 $total = count( $progress );
                 $context['checklists'][ $type ] = array(
                     'checked' => $checked,
@@ -5114,13 +5126,12 @@ Now respond to this follow-up:";
             $lines[] = $applicant_labels[ $profile['applicants'] ] ?? $profile['applicants'];
         }
 
-        if ( ! empty( $profile['target_region'] ) || ! empty( $profile['target_city'] ) ) {
-            $location = trim( ( $profile['target_city'] ?? '' ) . ', ' . ( $profile['target_region'] ?? '' ), ', ' );
-            $lines[] = "Target location in France: {$location}";
+        if ( ! empty( $profile['target_location'] ) ) {
+            $lines[] = "Target location in France: {$profile['target_location']}";
         }
 
-        if ( ! empty( $profile['planned_move_date'] ) ) {
-            $lines[] = "Planned move date: {$profile['planned_move_date']}";
+        if ( ! empty( $profile['target_move_date'] ) ) {
+            $lines[] = "Target move date: {$profile['target_move_date']}";
         }
 
         if ( ! empty( $profile['employment_status'] ) ) {
