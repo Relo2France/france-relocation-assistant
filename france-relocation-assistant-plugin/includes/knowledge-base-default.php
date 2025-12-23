@@ -259,9 +259,9 @@ return array(
             'general_notes' => array(
                 'Each applicant needs COMPLETE, SEPARATE application',
                 'Bring ORIGINALS and PHOTOCOPIES of all documents',
-                'Documents in languages other than French/English need certified translation',
                 'US documents need apostille'
             ),
+            'translation_note_for_americans' => 'IMPORTANT FOR AMERICANS: When applying from the US, French consulates ACCEPT English documents without translation. Certified translations are NOT required for initial visa applications. Translations are only required: (1) for documents in languages other than English/French, or (2) when RENEWING your visa from France at the prefecture.',
             'shared_documents' => array(
                 'Marriage certificate (if applying together)',
                 'Property deed (if jointly owned)',
