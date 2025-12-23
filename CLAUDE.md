@@ -1,293 +1,264 @@
-# CLAUDE.md - Project Memory for France Relocation Assistant
+# CLAUDE.md
 
-> This file serves as persistent context for AI assistants across development sessions.
-
----
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
 
-**Relo2France** is a WordPress-based platform helping users relocate to France. It consists of:
+**Relo2France** is a WordPress-based platform helping Americans relocate to France. It consists of:
 
-1. **Main Plugin** (`france-relocation-assistant`) - AI chat, MemberPress integration, auth flows
-2. **Member Tools Plugin** (`france-relocation-member-tools`) - Portal, profiles, documents, tasks
-3. **Theme** (`relo2france-theme`) - Custom WordPress theme with scroll-snap behavior
-4. **GitHub Sync Plugin** (`france-relocation-github-sync`) - Deployment sync utility
+1. **Main Plugin** (`france-relocation-assistant-plugin/`) - AI chat, MemberPress integration, auth flows
+2. **Member Tools Plugin** (`france-relocation-member-tools/`) - React SPA portal, profiles, documents, tasks
+3. **Theme** (`relo2france-theme/`) - Custom WordPress theme
+4. **GitHub Sync Plugin** (`france-relocation-github-sync/`) - Deployment sync utility
 
----
+## Build Commands
 
-## Current Versions
+```bash
+# Build React portal (required before deploying changes to portal)
+cd france-relocation-member-tools/portal && npm run build
 
-| Component | Version | Main File |
-|-----------|---------|-----------|
-| Main Plugin | v2.9.83 | `france-relocation-assistant-plugin/france-relocation-assistant.php` |
-| Member Tools | v2.1.0 | `france-relocation-member-tools/france-relocation-member-tools.php` |
-| Theme | v1.2.3 | `relo2france-theme/functions.php` |
+# Run dev server
+cd france-relocation-member-tools/portal && npm run dev
 
----
+# Lint TypeScript/React code
+cd france-relocation-member-tools/portal && npm run lint
 
-## Repository Structure
+# Type check without emit
+cd france-relocation-member-tools/portal && npx tsc --noEmit
 
-```
-france-relocation-assistant/
-├── france-relocation-assistant-plugin/   # Main plugin (chat, auth, MemberPress)
-│   ├── france-relocation-assistant.php   # Main plugin file
-│   ├── includes/
-│   │   └── shortcode-template.php        # In-chat auth UI
-│   └── assets/
-│       ├── css/frontend.css
-│       └── js/frontend.js
-│
-├── france-relocation-member-tools/       # Member tools plugin
-│   ├── france-relocation-member-tools.php
-│   ├── includes/
-│   │   ├── class-framt-portal-api.php    # REST API (~4000 lines, 40+ endpoints)
-│   │   ├── class-framt-documents.php
-│   │   ├── class-framt-document-generator.php
-│   │   ├── class-framt-profile.php
-│   │   ├── class-framt-task.php
-│   │   ├── class-framt-messages.php      # Support ticket system
-│   │   └── class-framt-ai-guide-generator.php
-│   ├── portal/                           # React SPA
-│   │   ├── src/
-│   │   │   ├── App.tsx                   # Routes
-│   │   │   ├── main.tsx                  # Entry point
-│   │   │   ├── api/client.ts             # API client modules
-│   │   │   ├── hooks/useApi.ts           # React Query hooks
-│   │   │   ├── store/index.ts            # Zustand store
-│   │   │   ├── types/index.ts            # TypeScript interfaces
-│   │   │   └── components/
-│   │   │       ├── dashboard/
-│   │   │       ├── tasks/
-│   │   │       ├── documents/
-│   │   │       ├── profile/
-│   │   │       ├── checklists/
-│   │   │       ├── glossary/
-│   │   │       ├── membership/
-│   │   │       ├── chat/
-│   │   │       └── layout/
-│   │   └── dist/                         # Built assets
-│   ├── assets/portal/                    # Copied build output
-│   └── templates/
-│       ├── template-portal.php           # Portal page template
-│       └── template-homepage.php
-│
-├── relo2france-theme/                    # WordPress theme
-│   ├── functions.php
-│   ├── front-page.php
-│   └── template-auth.php
-│
-└── france-relocation-github-sync/        # Deployment utility
+# Create deployment zip (excludes node_modules)
+cd france-relocation-member-tools && zip -r ../france-relocation-member-tools.zip . -x "portal/node_modules/*" -x "*.git*" -x "portal/.vite/*"
 ```
 
----
+## Architecture
 
-## Key Technical Details
-
-### React Portal
-
-- **Framework**: React 18 + TypeScript + Vite
+### React Portal (Member Tools)
+- **Location**: `france-relocation-member-tools/portal/src/`
+- **Stack**: React 18 + TypeScript + Vite + Tailwind CSS
 - **State**: Zustand (global), React Query (server state)
-- **Styling**: Tailwind CSS
-- **Build**: `npm run build` in `/portal` directory
-- **Output**: Copied to `assets/portal/` for WordPress
+- **Build output**: Copied to `assets/portal/` for WordPress to serve
 
-### REST API Namespace
+### REST API
+- **Namespace**: `/wp-json/framt/v1/`
+- **Main handler**: `france-relocation-member-tools/includes/class-framt-portal-api.php` (~4000 lines, 40+ endpoints)
+- **Auth**: WordPress cookie auth + nonce
 
-```
-/wp-json/framt/v1/
-```
-
-**Key endpoint groups:**
+Key endpoints:
 - `/projects`, `/tasks`, `/notes`, `/files` - Core CRUD
 - `/profile`, `/profile/completion` - User profile (30+ fields)
-- `/checklists`, `/checklists/{type}` - Visa checklists
+- `/checklists/{type}` - Visa checklists
 - `/documents/generate`, `/documents/preview` - Document generation
-- `/glossary`, `/glossary/search` - French terms
-- `/chat/message`, `/chat/categories` - Knowledge base chat
-- `/membership/*` - MemberPress integration
+- `/chat/message`, `/guides/chat` - AI chat interfaces
 
-### WordPress Integration
+### Database
 
-- Portal loads via `template-portal.php` page template
-- Script loaded with `type="module"` for ES modules
-- Uses WordPress REST API with cookie auth + nonce
-- MemberPress shortcodes: `[fra_mepr_subscriptions]`, `[fra_mepr_payments]`
+Custom tables (prefix `wp_framt_`):
+- `projects`, `tasks`, `task_checklists`, `files`, `notes`, `messages`, `message_replies`
 
----
-
-## Important Patterns & Conventions
-
-### PHP Coding Standards
-
-- Use `$wpdb->prepare()` for ALL SQL queries
-- Sanitize inputs: `sanitize_text_field()`, `sanitize_email()`, `sanitize_array_recursive()`
-- Escape outputs: `esc_html()`, `esc_attr()`, `wp_kses_post()`
-- Use strict comparisons (`===`, `!==`) with type casting for permission checks
-- WordPress Yoda conditions preferred (though not consistently used)
-
-### React Patterns
-
-- Components in `PascalCase.tsx`
-- API calls via hooks in `useApi.ts`
-- Types defined in `types/index.ts`
-- Avoid `dangerouslySetInnerHTML` (XSS risk)
-- Use ARIA attributes for accessibility
-
-### Database Tables
-
-Custom tables (prefix: `wp_framt_`):
-- `wp_framt_projects` - Relocation projects
-- `wp_framt_tasks` - Task management
-- `wp_framt_task_checklists` - Task sub-items
-- `wp_framt_files` - Document storage
-- `wp_framt_notes` - Notes/messages
-- `wp_framt_messages` - Support tickets
-- `wp_framt_message_replies` - Ticket replies
-
-User meta keys (prefix: `fra_`):
+User meta keys (prefix `fra_`):
 - `fra_profile_*` - Profile fields
 - `fra_checklist_*` - Checklist progress
 - `fra_dependents`, `fra_previous_visas` - Array data
+- `fra_chat_profile_hash` - Tracks profile changes for chat context refresh
 
----
+## Style Guide & Coding Rules
 
-## Recent Development History
+### PHP Style
 
-### December 18, 2025 - Dynamic Task Generation System
-- **Auto-generated Tasks**: Tasks automatically created when user selects visa type
-  - 15 common tasks for all visa types (document prep, banking, housing, OFII validation, etc.)
-  - Visa-specific tasks: Visitor (3), Talent Passport (3), Employee (3), Entrepreneur (4), Student (5), Retiree (3)
-- **Conditional Task Generation**: Dynamic tasks based on profile fields
-  - Pet owners: 6 tasks (microchip, vaccinations, EU passport, pet-friendly housing, etc.)
-  - Applicants with spouse: 5 tasks (marriage cert apostille/translation, spouse visa, etc.)
-  - Families with children: 8 tasks (birth certs, school enrollment, vaccinations, CAF benefits, etc.)
-- **Project-Profile Sync**: Project visa_type automatically syncs when profile visa_type is updated
-- **Duplicate Prevention**: Tasks only created if they don't already exist (by title match)
-- **Portal Account Settings**: Combined Profile & Account into single "Portal Account" tab
-- **Self-Service Account Deletion**: Users can delete their own account with confirmation phrase
-- **Dashboard Visa Display**: Shows visa type from profile with link to set if empty
+**File Structure:**
+```php
+<?php
+/**
+ * Class Description
+ *
+ * @package     FRA_Member_Tools
+ * @subpackage  Portal
+ * @since       2.0.0
+ */
 
-### December 18, 2025 - Outstanding Improvements Completed
-- **Component Refactoring**: Split ProfileView (1135→183 lines) and DocumentGenerator (963→402 lines)
-  - ProfileView now uses: PersonalSection, ApplicantSection, VisaSection, LocationSection, FinancialSection
-  - DocumentGenerator now uses: DocumentTypeSelector, DocumentWizard, DocumentPreviewStep, DownloadOptions
-  - Created shared SaveButton and ProfileSkeleton components
-  - Extracted constants to `config/profile.ts` and `config/documents.ts`
-- **Accessibility**: Added comprehensive ARIA labels, roles, and describedby attributes
-- **Error Handling**: Added ErrorBoundary component wrapping ViewRouter in App.tsx
-- **Keyboard Navigation**: Full keyboard support for TaskBoard drag-and-drop
-  - Space to pick up/drop, Arrow keys to move columns, Escape to cancel
-  - Screen reader announcements for all operations
-- **API Improvements**: Added AbortController support with `createCancellableRequest()` utility
-
-### December 18, 2025 - Portal Feature Completion (Merged)
-- Added 8 missing portal features for feature parity
-- Created ProfileView, ChecklistsView, GlossaryView, KnowledgeBaseChat
-- Created DocumentGenerator, AIVerification, MembershipView
-- Added ~1,800 lines PHP API code, ~4,000 lines React code
-- Fixed security issues (SQL injection, XSS, type juggling)
-- Fixed accessibility issues (ARIA labels, roles)
-
-### December 14, 2025 - In-Chat Account System
-- Complete in-chat account management (no page navigation)
-- Custom MemberPress shortcodes for subscriptions/payments
-- Member messaging/support ticket system
-- Dropdown structure: My Visa Profile → My Visa Documents → My Membership Account
-
----
-
-## Outstanding Work / Known Issues
-
-### Completed (Previously Should Address)
-- ✅ Split large components (ProfileView, DocumentGenerator)
-- ✅ Add more ARIA labels to form fields
-- ✅ Implement keyboard navigation for drag-and-drop
-- ✅ Add error boundaries at route level
-- ✅ Request cancellation with AbortController for long operations
-
-### Nice to Have
-- Virtual scrolling for long lists
-- Bundle size optimization
-- Rate limiting for AI endpoints
-
-### WordPress.com Specific
-- Script combining can break ES modules - use `data-cfasync="false"` attributes
-- Portal script loaded directly in template to bypass optimization
-
----
-
-## Testing Checklist
-
-### Portal Features
-- [ ] Dashboard loads with progress tracker
-- [ ] Tasks CRUD + Kanban drag-and-drop
-- [ ] Documents upload/download/preview
-- [ ] Profile view loads/saves 30+ fields
-- [ ] Profile completion percentage works
-- [ ] All 6 checklists load with correct items
-- [ ] Document generator creates all 4 types
-- [ ] Glossary search finds terms
-- [ ] Chat responds to questions
-- [ ] Membership info displays correctly
-
-### In-Chat Features
-- [ ] Login/logout flows work
-- [ ] My Visa Profile loads member tools profile
-- [ ] My Visa Documents shows documents
-- [ ] My Membership Account shows billing form
-- [ ] Subscriptions/Payments tables display
-- [ ] My Messages shows support tickets
-
----
-
-## Deployment Notes
-
-1. **Build Portal**: `cd portal && npm run build`
-2. **Copy Assets**: Build output auto-copies to `assets/portal/`
-3. **Version Bump**: Update version in main plugin PHP file
-4. **Database**: No migrations needed (uses user_meta + existing tables)
-5. **Cache Clear**: Clear WordPress cache after deployment
-6. **MemberPress**: Features gracefully degrade if not installed
-
----
-
-## GitHub Repositories
-
-- **Main Plugin**: `Relo2France/france-relocation-assistant`
-- **Member Tools**: `Relo2France/france-relocation-member-tools`
-
----
-
-## Quick Reference
-
-### Common Commands
-
-```bash
-# Build portal
-cd france-relocation-member-tools/portal && npm run build
-
-# Run dev server (if configured)
-cd france-relocation-member-tools/portal && npm run dev
-
-# Check TypeScript
-cd france-relocation-member-tools/portal && npx tsc --noEmit
+// Prevent direct access.
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
 ```
 
-### Key File Locations
+**Naming:**
+- Classes: `FRAMT_Class_Name` (prefix `FRAMT_` for Member Tools, `FRA_` for main plugin)
+- Functions: `snake_case` with descriptive verbs (`get_dashboard`, `create_task`)
+- Constants: `UPPERCASE_SNAKE_CASE`
+- User meta keys: `fra_` prefix (e.g., `fra_profile_first_name`)
+- Database tables: `wp_framt_` prefix
 
-| Purpose | File |
-|---------|------|
-| Portal API | `france-relocation-member-tools/includes/class-framt-portal-api.php` |
-| Portal Entry | `france-relocation-member-tools/portal/src/main.tsx` |
+**Security (MANDATORY):**
+```php
+// SQL - ALWAYS use prepare()
+$wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE id = %d", $id ) );
+
+// Input sanitization
+$title = sanitize_text_field( $params['title'] );
+$email = sanitize_email( $params['email'] );
+$html  = wp_kses_post( $params['content'] );
+
+// Output escaping
+echo esc_html( $value );
+echo esc_attr( $attribute );
+
+// Permission checks - ALWAYS use strict comparison with type cast
+if ( (int) $resource->user_id !== (int) $current_user_id ) {
+    return new WP_Error( 'forbidden', 'Access denied', array( 'status' => 403 ) );
+}
+```
+
+**WordPress Patterns:**
+- Use singleton pattern for main classes (`get_instance()`)
+- Register hooks in constructor: `add_action( 'rest_api_init', array( $this, 'register_routes' ) )`
+- Return `WP_Error` for REST API errors, not exceptions
+- Use `array()` syntax (not `[]`) for WordPress compatibility
+
+### React/TypeScript Style
+
+**File Organization:**
+```
+components/
+  {feature}/           # Feature folder
+    FeatureView.tsx    # Main view component
+    SubComponent.tsx   # Sub-components
+    index.ts           # Barrel export
+```
+
+**Component Pattern:**
+```tsx
+/**
+ * ComponentName
+ *
+ * Brief description of what the component does.
+ */
+
+import { useState } from 'react';
+import { clsx } from 'clsx';
+import { IconName } from 'lucide-react';
+import { useApiHook } from '@/hooks/useApi';
+import type { TypeName } from '@/types';
+
+interface Props {
+  requiredProp: string;
+  optionalProp?: number;
+}
+
+export default function ComponentName({ requiredProp, optionalProp }: Props) {
+  const [state, setState] = useState<string>('');
+  const { data, isLoading } = useApiHook();
+
+  if (isLoading) {
+    return <LoadingSkeleton />;
+  }
+
+  return (
+    <div className="p-6">
+      {/* Section comment */}
+      <h1 className="text-2xl font-bold text-gray-900">{requiredProp}</h1>
+    </div>
+  );
+}
+```
+
+**Naming:**
+- Components: `PascalCase` (e.g., `ProfileView`, `TaskCard`)
+- Hooks: `useCamelCase` (e.g., `useMemberProfile`, `useUpdateTask`)
+- Types/Interfaces: `PascalCase` (e.g., `MemberProfile`, `TaskStatus`)
+- Files: Match component name (`ProfileView.tsx`)
+
+**React Query Patterns:**
+```tsx
+// Query keys - define in useApi.ts
+export const queryKeys = {
+  profile: ['profile'] as const,
+  task: (id: number) => ['task', id] as const,
+};
+
+// Queries
+export function useProfile() {
+  return useQuery({
+    queryKey: queryKeys.profile,
+    queryFn: profileApi.get,
+    staleTime: 30000,
+  });
+}
+
+// Mutations with cache invalidation
+export function useUpdateProfile() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: profileApi.update,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.profile });
+    },
+  });
+}
+```
+
+**API Client Pattern:**
+```tsx
+// All API calls go through apiFetch in api/client.ts
+export const profileApi = {
+  get: () => apiFetch<MemberProfile>('/profile'),
+  update: (data: Partial<MemberProfile>) =>
+    apiFetch<MemberProfile>('/profile', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+};
+```
+
+**Tailwind CSS Conventions:**
+- Use `clsx()` for conditional classes
+- Common card style: `className="card p-6"` (card class defined in CSS)
+- Color scale: `primary-500`, `primary-600` for brand colors
+- Spacing: Use Tailwind scale (`p-6`, `mb-4`, `gap-3`)
+- Responsive: Mobile-first (`md:`, `lg:` prefixes)
+
+**Accessibility (Required):**
+```tsx
+// ARIA attributes on interactive elements
+<button
+  aria-expanded={isOpen}
+  aria-controls="section-id"
+  aria-label="Toggle section"
+>
+
+// Progress bars
+<div
+  role="progressbar"
+  aria-valuenow={75}
+  aria-valuemin={0}
+  aria-valuemax={100}
+>
+
+// Icons should be decorative
+<Icon className="w-5 h-5" aria-hidden="true" />
+```
+
+**Forbidden Patterns:**
+- `dangerouslySetInnerHTML` - XSS risk, use markdown parser instead
+- Inline styles - Use Tailwind classes
+- `any` type - Define proper types in `types/index.ts`
+- Direct DOM manipulation - Use React state
+
+## Key Files
+
+| Purpose | Location |
+|---------|----------|
+| Portal API (PHP) | `france-relocation-member-tools/includes/class-framt-portal-api.php` |
 | Portal Routes | `france-relocation-member-tools/portal/src/App.tsx` |
 | API Client | `france-relocation-member-tools/portal/src/api/client.ts` |
+| React Query Hooks | `france-relocation-member-tools/portal/src/hooks/useApi.ts` |
 | TypeScript Types | `france-relocation-member-tools/portal/src/types/index.ts` |
-| Profile Config | `france-relocation-member-tools/portal/src/config/profile.ts` |
-| Document Config | `france-relocation-member-tools/portal/src/config/documents.ts` |
-| Error Boundary | `france-relocation-member-tools/portal/src/components/shared/ErrorBoundary.tsx` |
+| Zustand Store | `france-relocation-member-tools/portal/src/store/index.ts` |
 | In-Chat UI | `france-relocation-assistant-plugin/includes/shortcode-template.php` |
-| MemberPress Shortcodes | `france-relocation-assistant-plugin/france-relocation-assistant.php` |
+| Knowledge Base | `france-relocation-assistant-plugin/includes/knowledge-base-default.php` |
 
----
+## WordPress.com Hosting Notes
 
-*Last Updated: December 18, 2025*
+- Script combining can break ES modules - use `data-cfasync="false"` attributes
+- Portal script loaded directly in template-portal.php to bypass optimization
+- MemberPress features gracefully degrade if not installed
