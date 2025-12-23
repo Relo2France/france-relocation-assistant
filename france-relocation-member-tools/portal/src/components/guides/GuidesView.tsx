@@ -582,14 +582,19 @@ function GuideDetail({ guide, onBack }: GuideDetailProps) {
   const [messages, setMessages] = useState<ChatMessageType[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [activeSection, setActiveSection] = useState<number | null>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const latestResponseRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const sendMessage = useSendChatMessage();
 
-  // Auto-scroll to latest message
+  // Scroll to the top of the latest response (not bottom)
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    if (messages.length > 0 && !isLoading && latestResponseRef.current) {
+      setTimeout(() => {
+        latestResponseRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
+  }, [messages, isLoading]);
 
   // Generate suggested questions based on guide
   const suggestedQuestions = getSuggestedQuestionsForGuide(guide.id);
@@ -607,6 +612,7 @@ function GuideDetail({ guide, onBack }: GuideDetailProps) {
 
     setMessages((prev) => [...prev, userMessage]);
     setInputValue('');
+    setIsLoading(true);
 
     try {
       const response = await sendMessage.mutateAsync({
@@ -633,6 +639,8 @@ function GuideDetail({ guide, onBack }: GuideDetailProps) {
         timestamp: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -654,9 +662,9 @@ function GuideDetail({ guide, onBack }: GuideDetailProps) {
         Back to guides
       </button>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-12rem)]">
         {/* Left column - Guide info and sections */}
-        <div className="lg:col-span-1 space-y-6">
+        <div className="lg:col-span-1 space-y-6 overflow-y-auto">
           {/* Header */}
           <div className="card p-6">
             <div className="flex items-start gap-4">
@@ -725,7 +733,7 @@ function GuideDetail({ guide, onBack }: GuideDetailProps) {
 
         {/* Right column - AI Chat */}
         <div className="lg:col-span-2">
-          <div className="card h-[600px] flex flex-col">
+          <div className="card h-full flex flex-col">
             {/* Chat header */}
             <div className="px-6 py-4 border-b border-gray-200">
               <div className="flex items-center gap-3">
@@ -756,37 +764,44 @@ function GuideDetail({ guide, onBack }: GuideDetailProps) {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {messages.map((message) => (
-                    <div
-                      key={message.id}
-                      className={clsx(
-                        'flex gap-3',
-                        message.role === 'user' ? 'justify-end' : 'justify-start'
-                      )}
-                    >
-                      {message.role === 'assistant' && (
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center flex-shrink-0">
-                          <Bot className="w-4 h-4 text-white" />
-                        </div>
-                      )}
+                  {messages.map((message, index) => {
+                    // Add ref to the latest assistant message for scrolling to top
+                    const isLatestAssistant =
+                      message.role === 'assistant' &&
+                      index === messages.length - 1;
+                    return (
                       <div
+                        key={message.id}
+                        ref={isLatestAssistant ? latestResponseRef : undefined}
                         className={clsx(
-                          'max-w-[80%] rounded-2xl px-4 py-3',
-                          message.role === 'user'
-                            ? 'bg-primary-600 text-white rounded-tr-sm'
-                            : 'bg-gray-100 text-gray-900 rounded-tl-sm'
+                          'flex gap-3',
+                          message.role === 'user' ? 'justify-end' : 'justify-start'
                         )}
                       >
-                        <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                      </div>
-                      {message.role === 'user' && (
-                        <div className="w-8 h-8 rounded-full bg-primary-600 flex items-center justify-center flex-shrink-0">
-                          <User className="w-4 h-4 text-white" />
+                        {message.role === 'assistant' && (
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center flex-shrink-0">
+                            <Bot className="w-4 h-4 text-white" />
+                          </div>
+                        )}
+                        <div
+                          className={clsx(
+                            'max-w-[80%] rounded-2xl px-4 py-3',
+                            message.role === 'user'
+                              ? 'bg-primary-600 text-white rounded-tr-sm'
+                              : 'bg-gray-100 text-gray-900 rounded-tl-sm'
+                          )}
+                        >
+                          <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                         </div>
-                      )}
-                    </div>
-                  ))}
-                  {sendMessage.isPending && (
+                        {message.role === 'user' && (
+                          <div className="w-8 h-8 rounded-full bg-primary-600 flex items-center justify-center flex-shrink-0">
+                            <User className="w-4 h-4 text-white" />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                  {isLoading && (
                     <div className="flex gap-3">
                       <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center flex-shrink-0">
                         <Bot className="w-4 h-4 text-white" />
@@ -799,7 +814,6 @@ function GuideDetail({ guide, onBack }: GuideDetailProps) {
                       </div>
                     </div>
                   )}
-                  <div ref={messagesEndRef} />
                 </div>
               )}
             </div>
