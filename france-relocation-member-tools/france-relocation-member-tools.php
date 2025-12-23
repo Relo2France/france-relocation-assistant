@@ -833,9 +833,9 @@ final class FRA_Member_Tools {
         
         $generator = $this->components['guide_generator'];
         $questions = $generator->get_guide_questions($guide_type);
-        
-        // Get user profile for pre-filling
-        $profile = FRAMT_Profile::get_instance()->get_profile(get_current_user_id());
+
+        // Get user profile for pre-filling (use portal profile for accurate data)
+        $profile = FRAMT_Profile::get_portal_profile(get_current_user_id());
         
         // Guide titles
         $guide_titles = array(
@@ -874,7 +874,8 @@ final class FRA_Member_Tools {
         
         try {
             $ai_generator = $this->components['ai_guide_generator'];
-            $profile = FRAMT_Profile::get_instance()->get_profile(get_current_user_id());
+            // Use portal profile (user meta) instead of database table for accurate data
+            $profile = FRAMT_Profile::get_portal_profile(get_current_user_id());
             
             // Check if AI is configured
             if (!$ai_generator->is_configured()) {
@@ -1095,8 +1096,9 @@ window.onload = function() {
         }
         
         $user_id = get_current_user_id();
-        $profile = FRAMT_Profile::get_instance()->get_profile($user_id);
-        
+        // Use portal profile (user meta) instead of database table for accurate data
+        $profile = FRAMT_Profile::get_portal_profile($user_id);
+
         // Guide configurations
         $guide_configs = $this->get_guide_chat_configs();
         
@@ -1620,10 +1622,11 @@ window.onload = function() {
             wp_send_json_error(array('message' => __('No document type specified', 'fra-member-tools')));
             return;
         }
-        
+
         $user_id = get_current_user_id();
-        $profile = FRAMT_Profile::get_instance()->get_profile($user_id);
-        
+        // Use portal profile (user meta) for accurate data
+        $profile = FRAMT_Profile::get_portal_profile($user_id);
+
         // Document type configurations
         $doc_configs = $this->get_document_chat_configs();
         

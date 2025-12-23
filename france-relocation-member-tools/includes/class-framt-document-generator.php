@@ -347,7 +347,8 @@ class FRAMT_Document_Generator {
 
         $document_type = sanitize_key($_POST['document_type'] ?? '');
         $answers = json_decode(stripslashes($_POST['answers'] ?? '{}'), true);
-        $profile = FRAMT_Profile::get_instance()->get_profile(get_current_user_id());
+        // Use portal profile (user meta) for accurate data
+        $profile = FRAMT_Profile::get_portal_profile(get_current_user_id());
 
         $result = $this->generate($document_type, $answers, $profile);
 

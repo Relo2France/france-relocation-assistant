@@ -60,7 +60,8 @@ class FRAMT_Guides {
      * Get apostille guide content personalized for user
      */
     public function get_apostille_guide($user_id) {
-        $profile = FRAMT_Profile::get_instance()->get_profile($user_id);
+        // Use portal profile (user meta) for accurate data
+        $profile = FRAMT_Profile::get_portal_profile($user_id);
         
         $states = array();
         

@@ -156,7 +156,8 @@ class FRAMT_Checklists {
      * Get total items for user's visa type
      */
     public function get_total_items($user_id) {
-        $profile = FRAMT_Profile::get_instance()->get_profile($user_id);
+        // Use portal profile (user meta) for accurate data
+        $profile = FRAMT_Profile::get_portal_profile($user_id);
         $visa_type = $profile['visa_type'] ?? 'visitor';
         $checklists = $this->get_checklists($visa_type);
 
@@ -183,7 +184,8 @@ class FRAMT_Checklists {
      */
     public function render() {
         $user_id = get_current_user_id();
-        $profile = FRAMT_Profile::get_instance()->get_profile($user_id);
+        // Use portal profile (user meta) for accurate data
+        $profile = FRAMT_Profile::get_portal_profile($user_id);
         $visa_type = $profile['visa_type'] ?? 'visitor';
         $checklists = $this->get_checklists($visa_type);
         $interactive = get_user_meta($user_id, 'framt_interactive_checklists', true);

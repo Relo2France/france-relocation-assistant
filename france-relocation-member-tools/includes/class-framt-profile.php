@@ -487,7 +487,77 @@ class FRAMT_Profile {
 
         return array();
     }
-    
+
+    /**
+     * Get profile from portal user meta (fra_ prefix)
+     *
+     * This is the authoritative source for profile data as used by the React portal.
+     * Use this method for guide generation and AI personalization.
+     *
+     * @param int|null $user_id User ID
+     * @return array Profile data from user meta
+     */
+    public static function get_portal_profile( $user_id = null ) {
+        if ( null === $user_id ) {
+            $user_id = get_current_user_id();
+        }
+
+        if ( ! $user_id ) {
+            return array();
+        }
+
+        return array(
+            // Personal Information
+            'legal_first_name'      => get_user_meta( $user_id, 'fra_legal_first_name', true ),
+            'legal_middle_name'     => get_user_meta( $user_id, 'fra_legal_middle_name', true ),
+            'legal_last_name'       => get_user_meta( $user_id, 'fra_legal_last_name', true ),
+            'date_of_birth'         => get_user_meta( $user_id, 'fra_date_of_birth', true ),
+            'nationality'           => get_user_meta( $user_id, 'fra_nationality', true ),
+            'passport_number'       => get_user_meta( $user_id, 'fra_passport_number', true ),
+            'passport_expiry'       => get_user_meta( $user_id, 'fra_passport_expiry', true ),
+
+            // Applicant Information
+            'applicants'                => get_user_meta( $user_id, 'fra_applicants', true ),
+            'spouse_legal_first_name'   => get_user_meta( $user_id, 'fra_spouse_legal_first_name', true ),
+            'spouse_legal_last_name'    => get_user_meta( $user_id, 'fra_spouse_legal_last_name', true ),
+            'spouse_date_of_birth'      => get_user_meta( $user_id, 'fra_spouse_date_of_birth', true ),
+            'num_children'              => (int) get_user_meta( $user_id, 'fra_num_children', true ),
+            'children_ages'             => get_user_meta( $user_id, 'fra_children_ages', true ),
+            'has_pets'                  => get_user_meta( $user_id, 'fra_has_pets', true ),
+            'pet_details'               => get_user_meta( $user_id, 'fra_pet_details', true ),
+
+            // Visa & Employment
+            'visa_type'             => get_user_meta( $user_id, 'fra_visa_type', true ),
+            'employment_status'     => get_user_meta( $user_id, 'fra_employment_status', true ),
+            'work_in_france'        => get_user_meta( $user_id, 'fra_work_in_france', true ),
+            'industry'              => get_user_meta( $user_id, 'fra_industry', true ),
+            'employer_name'         => get_user_meta( $user_id, 'fra_employer_name', true ),
+            'job_title'             => get_user_meta( $user_id, 'fra_job_title', true ),
+
+            // Location Information
+            'current_state'         => get_user_meta( $user_id, 'fra_current_state', true ),
+            'birth_state'           => get_user_meta( $user_id, 'fra_birth_state', true ),
+            'birth_state_other'     => get_user_meta( $user_id, 'fra_birth_state_other', true ),
+            'target_location'       => get_user_meta( $user_id, 'fra_target_location', true ),
+            'housing_plan'          => get_user_meta( $user_id, 'fra_housing_plan', true ),
+
+            // Timeline
+            'timeline'              => get_user_meta( $user_id, 'fra_timeline', true ),
+            'target_move_date'      => get_user_meta( $user_id, 'fra_target_move_date', true ),
+            'application_location'  => get_user_meta( $user_id, 'fra_application_location', true ),
+
+            // Financial
+            'french_proficiency'    => get_user_meta( $user_id, 'fra_french_proficiency', true ),
+            'french_mortgage'       => get_user_meta( $user_id, 'fra_french_mortgage', true ),
+
+            // Documents
+            'has_birth_cert'        => get_user_meta( $user_id, 'fra_has_birth_cert', true ),
+            'birth_cert_apostilled' => get_user_meta( $user_id, 'fra_birth_cert_apostilled', true ),
+            'has_marriage_cert'     => get_user_meta( $user_id, 'fra_has_marriage_cert', true ),
+            'marriage_cert_apostilled' => get_user_meta( $user_id, 'fra_marriage_cert_apostilled', true ),
+        );
+    }
+
     /**
      * Get profile with pre-fill from registration data on first access
      *
