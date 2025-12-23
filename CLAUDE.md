@@ -61,20 +61,188 @@ User meta keys (prefix `fra_`):
 - `fra_dependents`, `fra_previous_visas` - Array data
 - `fra_chat_profile_hash` - Tracks profile changes for chat context refresh
 
-## Coding Conventions
+## Style Guide & Coding Rules
 
-### PHP
-- **SQL**: Always use `$wpdb->prepare()` for queries
-- **Input sanitization**: `sanitize_text_field()`, `sanitize_email()`, `sanitize_array_recursive()`
-- **Output escaping**: `esc_html()`, `esc_attr()`, `wp_kses_post()`
-- **Comparisons**: Use strict (`===`, `!==`) with type casting for permission checks
+### PHP Style
 
-### React/TypeScript
-- Components in `PascalCase.tsx` in `components/{feature}/` directories
-- API calls via hooks in `hooks/useApi.ts`
-- Types defined in `types/index.ts`
-- Configuration constants in `config/*.ts`
-- Avoid `dangerouslySetInnerHTML` (XSS risk)
+**File Structure:**
+```php
+<?php
+/**
+ * Class Description
+ *
+ * @package     FRA_Member_Tools
+ * @subpackage  Portal
+ * @since       2.0.0
+ */
+
+// Prevent direct access.
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+```
+
+**Naming:**
+- Classes: `FRAMT_Class_Name` (prefix `FRAMT_` for Member Tools, `FRA_` for main plugin)
+- Functions: `snake_case` with descriptive verbs (`get_dashboard`, `create_task`)
+- Constants: `UPPERCASE_SNAKE_CASE`
+- User meta keys: `fra_` prefix (e.g., `fra_profile_first_name`)
+- Database tables: `wp_framt_` prefix
+
+**Security (MANDATORY):**
+```php
+// SQL - ALWAYS use prepare()
+$wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE id = %d", $id ) );
+
+// Input sanitization
+$title = sanitize_text_field( $params['title'] );
+$email = sanitize_email( $params['email'] );
+$html  = wp_kses_post( $params['content'] );
+
+// Output escaping
+echo esc_html( $value );
+echo esc_attr( $attribute );
+
+// Permission checks - ALWAYS use strict comparison with type cast
+if ( (int) $resource->user_id !== (int) $current_user_id ) {
+    return new WP_Error( 'forbidden', 'Access denied', array( 'status' => 403 ) );
+}
+```
+
+**WordPress Patterns:**
+- Use singleton pattern for main classes (`get_instance()`)
+- Register hooks in constructor: `add_action( 'rest_api_init', array( $this, 'register_routes' ) )`
+- Return `WP_Error` for REST API errors, not exceptions
+- Use `array()` syntax (not `[]`) for WordPress compatibility
+
+### React/TypeScript Style
+
+**File Organization:**
+```
+components/
+  {feature}/           # Feature folder
+    FeatureView.tsx    # Main view component
+    SubComponent.tsx   # Sub-components
+    index.ts           # Barrel export
+```
+
+**Component Pattern:**
+```tsx
+/**
+ * ComponentName
+ *
+ * Brief description of what the component does.
+ */
+
+import { useState } from 'react';
+import { clsx } from 'clsx';
+import { IconName } from 'lucide-react';
+import { useApiHook } from '@/hooks/useApi';
+import type { TypeName } from '@/types';
+
+interface Props {
+  requiredProp: string;
+  optionalProp?: number;
+}
+
+export default function ComponentName({ requiredProp, optionalProp }: Props) {
+  const [state, setState] = useState<string>('');
+  const { data, isLoading } = useApiHook();
+
+  if (isLoading) {
+    return <LoadingSkeleton />;
+  }
+
+  return (
+    <div className="p-6">
+      {/* Section comment */}
+      <h1 className="text-2xl font-bold text-gray-900">{requiredProp}</h1>
+    </div>
+  );
+}
+```
+
+**Naming:**
+- Components: `PascalCase` (e.g., `ProfileView`, `TaskCard`)
+- Hooks: `useCamelCase` (e.g., `useMemberProfile`, `useUpdateTask`)
+- Types/Interfaces: `PascalCase` (e.g., `MemberProfile`, `TaskStatus`)
+- Files: Match component name (`ProfileView.tsx`)
+
+**React Query Patterns:**
+```tsx
+// Query keys - define in useApi.ts
+export const queryKeys = {
+  profile: ['profile'] as const,
+  task: (id: number) => ['task', id] as const,
+};
+
+// Queries
+export function useProfile() {
+  return useQuery({
+    queryKey: queryKeys.profile,
+    queryFn: profileApi.get,
+    staleTime: 30000,
+  });
+}
+
+// Mutations with cache invalidation
+export function useUpdateProfile() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: profileApi.update,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.profile });
+    },
+  });
+}
+```
+
+**API Client Pattern:**
+```tsx
+// All API calls go through apiFetch in api/client.ts
+export const profileApi = {
+  get: () => apiFetch<MemberProfile>('/profile'),
+  update: (data: Partial<MemberProfile>) =>
+    apiFetch<MemberProfile>('/profile', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+};
+```
+
+**Tailwind CSS Conventions:**
+- Use `clsx()` for conditional classes
+- Common card style: `className="card p-6"` (card class defined in CSS)
+- Color scale: `primary-500`, `primary-600` for brand colors
+- Spacing: Use Tailwind scale (`p-6`, `mb-4`, `gap-3`)
+- Responsive: Mobile-first (`md:`, `lg:` prefixes)
+
+**Accessibility (Required):**
+```tsx
+// ARIA attributes on interactive elements
+<button
+  aria-expanded={isOpen}
+  aria-controls="section-id"
+  aria-label="Toggle section"
+>
+
+// Progress bars
+<div
+  role="progressbar"
+  aria-valuenow={75}
+  aria-valuemin={0}
+  aria-valuemax={100}
+>
+
+// Icons should be decorative
+<Icon className="w-5 h-5" aria-hidden="true" />
+```
+
+**Forbidden Patterns:**
+- `dangerouslySetInnerHTML` - XSS risk, use markdown parser instead
+- Inline styles - Use Tailwind classes
+- `any` type - Define proper types in `types/index.ts`
+- Direct DOM manipulation - Use React state
 
 ## Key Files
 
