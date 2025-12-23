@@ -31,6 +31,23 @@ class FRAMT_Portal_API {
     const NAMESPACE = 'fra-portal/v1';
 
     /**
+     * Rate limiting constants
+     */
+    const RATE_LIMIT_CHAT_REQUESTS = 20;      // Max requests per minute for chat
+    const RATE_LIMIT_CHAT_WINDOW   = 60;      // Window in seconds
+    const RATE_LIMIT_AI_REQUESTS   = 10;      // Max AI/verification requests per minute
+    const RATE_LIMIT_AI_WINDOW     = 60;      // Window in seconds
+    const MAX_CHAT_HISTORY         = 100;     // Max chat messages to store
+    const MAX_UPLOAD_SIZE          = 10485760; // 10MB in bytes
+
+    /**
+     * Cache duration constants (in seconds)
+     */
+    const CACHE_GLOSSARY_DURATION   = 3600;   // 1 hour
+    const CACHE_CHECKLISTS_DURATION = 3600;   // 1 hour
+    const CACHE_GUIDES_DURATION     = 1800;   // 30 minutes
+
+    /**
      * Singleton instance
      *
      * @var FRAMT_Portal_API|null
@@ -54,6 +71,158 @@ class FRAMT_Portal_API {
      */
     private function __construct() {
         add_action( 'rest_api_init', array( $this, 'register_routes' ) );
+    }
+
+    /**
+     * Check rate limit for a specific action
+     *
+     * @param int    $user_id     User ID.
+     * @param string $action      Action identifier (e.g., 'chat', 'ai_verify').
+     * @param int    $max_requests Maximum requests allowed.
+     * @param int    $window       Time window in seconds.
+     * @return bool|WP_Error True if allowed, WP_Error if rate limited.
+     */
+    private function check_rate_limit( int $user_id, string $action, int $max_requests, int $window ) {
+        $transient_key   = "fra_rate_{$action}_{$user_id}";
+        $request_count   = (int) get_transient( $transient_key );
+
+        if ( $request_count >= $max_requests ) {
+            $this->log_security_event( 'rate_limit_exceeded', $user_id, array(
+                'action'       => $action,
+                'count'        => $request_count,
+                'max_requests' => $max_requests,
+            ) );
+
+            return new WP_Error(
+                'rate_limit_exceeded',
+                sprintf(
+                    'Rate limit exceeded. Maximum %d requests per %d seconds allowed.',
+                    $max_requests,
+                    $window
+                ),
+                array( 'status' => 429 )
+            );
+        }
+
+        // Increment counter
+        if ( false === $request_count ) {
+            set_transient( $transient_key, 1, $window );
+        } else {
+            set_transient( $transient_key, $request_count + 1, $window );
+        }
+
+        return true;
+    }
+
+    /**
+     * Log security-related events
+     *
+     * @param string $event_type Event type identifier.
+     * @param int    $user_id    User ID (0 for anonymous).
+     * @param array  $details    Additional event details.
+     * @return void
+     */
+    private function log_security_event( string $event_type, int $user_id, array $details = array() ): void {
+        $log_entry = array(
+            'timestamp'  => current_time( 'mysql' ),
+            'event_type' => $event_type,
+            'user_id'    => $user_id,
+            'ip_address' => $this->get_client_ip(),
+            'user_agent' => isset( $_SERVER['HTTP_USER_AGENT'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) ) : '',
+            'details'    => $details,
+        );
+
+        // Log to error log for monitoring
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( sprintf(
+                '[FRA Security] %s: User %d from %s - %s',
+                $event_type,
+                $user_id,
+                $log_entry['ip_address'],
+                wp_json_encode( $details )
+            ) );
+        }
+
+        // Store in transient for recent events (last 100)
+        $recent_events = get_transient( 'fra_security_events' ) ?: array();
+        array_unshift( $recent_events, $log_entry );
+        $recent_events = array_slice( $recent_events, 0, 100 );
+        set_transient( 'fra_security_events', $recent_events, DAY_IN_SECONDS );
+    }
+
+    /**
+     * Get client IP address
+     *
+     * @return string Client IP address.
+     */
+    private function get_client_ip(): string {
+        $ip_keys = array(
+            'HTTP_CF_CONNECTING_IP', // Cloudflare
+            'HTTP_X_FORWARDED_FOR',
+            'HTTP_X_REAL_IP',
+            'REMOTE_ADDR',
+        );
+
+        foreach ( $ip_keys as $key ) {
+            if ( ! empty( $_SERVER[ $key ] ) ) {
+                $ip = sanitize_text_field( wp_unslash( $_SERVER[ $key ] ) );
+                // Handle comma-separated IPs (X-Forwarded-For)
+                if ( strpos( $ip, ',' ) !== false ) {
+                    $ips = explode( ',', $ip );
+                    $ip  = trim( $ips[0] );
+                }
+                if ( filter_var( $ip, FILTER_VALIDATE_IP ) ) {
+                    return $ip;
+                }
+            }
+        }
+
+        return '0.0.0.0';
+    }
+
+    /**
+     * Get cached data or execute callback to fetch fresh data
+     *
+     * @param string   $cache_key Cache key.
+     * @param callable $callback  Callback to fetch data if not cached.
+     * @param int      $duration  Cache duration in seconds.
+     * @return mixed Cached or fresh data.
+     */
+    private function get_cached_data( string $cache_key, callable $callback, int $duration = 3600 ) {
+        $cached = wp_cache_get( $cache_key, 'fra_portal' );
+
+        if ( false !== $cached ) {
+            return $cached;
+        }
+
+        // Try transient as fallback for persistent cache
+        $cached = get_transient( $cache_key );
+
+        if ( false !== $cached ) {
+            // Also set in object cache for faster subsequent access
+            wp_cache_set( $cache_key, $cached, 'fra_portal', $duration );
+            return $cached;
+        }
+
+        // Fetch fresh data
+        $data = $callback();
+
+        // Cache in both layers
+        wp_cache_set( $cache_key, $data, 'fra_portal', $duration );
+        set_transient( $cache_key, $data, $duration );
+
+        return $data;
+    }
+
+    /**
+     * Clear cached data
+     *
+     * @param string $cache_key Cache key to clear.
+     * @return void
+     */
+    private function clear_cache( string $cache_key ): void {
+        wp_cache_delete( $cache_key, 'fra_portal' );
+        delete_transient( $cache_key );
     }
 
     /**
@@ -963,7 +1132,7 @@ class FRAMT_Portal_API {
     /**
      * Check if user has permission to access a project
      *
-     * @param WP_REST_Request $request Request object
+     * @param WP_REST_Request $request Request object.
      * @return bool|WP_Error
      */
     public function check_project_permission( $request ) {
@@ -972,8 +1141,9 @@ class FRAMT_Portal_API {
             return $base_check;
         }
 
-        $project_id = $request->get_param( 'id' );
+        $project_id = (int) $request->get_param( 'id' );
         $project    = new FRAMT_Project( $project_id );
+        $user_id    = get_current_user_id();
 
         if ( ! $project->id ) {
             return new WP_Error(
@@ -983,7 +1153,13 @@ class FRAMT_Portal_API {
             );
         }
 
-        if ( $project->user_id !== get_current_user_id() && ! current_user_can( 'manage_options' ) ) {
+        if ( (int) $project->user_id !== $user_id && ! current_user_can( 'manage_options' ) ) {
+            // Log unauthorized access attempt
+            $this->log_security_event( 'unauthorized_project_access', $user_id, array(
+                'project_id'    => $project_id,
+                'project_owner' => $project->user_id,
+            ) );
+
             return new WP_Error(
                 'rest_forbidden',
                 'You do not have permission to access this project.',
@@ -2846,12 +3022,26 @@ class FRAMT_Portal_API {
     }
 
     /**
-     * Get checklist items for a type
+     * Get checklist items for a type (with caching)
      *
-     * @param string $type Checklist type
-     * @return array Checklist items
+     * @param string $type Checklist type.
+     * @return array Checklist items.
      */
-    private function get_checklist_items( $type ) {
+    private function get_checklist_items( string $type ): array {
+        $cache_key = 'fra_checklist_items_' . sanitize_key( $type );
+
+        return $this->get_cached_data( $cache_key, function() use ( $type ) {
+            return $this->get_checklist_items_data( $type );
+        }, self::CACHE_CHECKLISTS_DURATION );
+    }
+
+    /**
+     * Get raw checklist items data
+     *
+     * @param string $type Checklist type.
+     * @return array Checklist items.
+     */
+    private function get_checklist_items_data( string $type ): array {
         $checklists = array(
             'visa-application' => array(
                 array( 'id' => 'passport-valid', 'title' => 'Valid passport (6+ months)', 'lead_time' => 180, 'priority' => 'high' ),
@@ -3480,11 +3670,22 @@ Signature:
     }
 
     /**
-     * Get glossary data
+     * Get glossary data (with caching)
      *
-     * @return array Glossary categories and terms
+     * @return array Glossary categories and terms.
      */
-    private function get_glossary_data() {
+    private function get_glossary_data(): array {
+        return $this->get_cached_data( 'fra_glossary_data', function() {
+            return $this->get_glossary_data_raw();
+        }, self::CACHE_GLOSSARY_DURATION );
+    }
+
+    /**
+     * Get raw glossary data
+     *
+     * @return array Glossary categories and terms.
+     */
+    private function get_glossary_data_raw(): array {
         return array(
             array(
                 'id'    => 'visa-immigration',
@@ -3551,13 +3752,31 @@ Signature:
     /**
      * Verify a document using AI
      *
-     * @param WP_REST_Request $request Request object
+     * @param WP_REST_Request $request Request object.
      * @return WP_REST_Response|WP_Error
      */
     public function verify_document( $request ) {
+        $user_id = get_current_user_id();
+
+        // Rate limiting check for AI operations
+        $rate_check = $this->check_rate_limit(
+            $user_id,
+            'ai_verify',
+            self::RATE_LIMIT_AI_REQUESTS,
+            self::RATE_LIMIT_AI_WINDOW
+        );
+        if ( is_wp_error( $rate_check ) ) {
+            return $rate_check;
+        }
+
         $params = $request->get_json_params();
-        $type   = $params['document_type'] ?? '';
+        $type   = isset( $params['document_type'] ) ? sanitize_text_field( $params['document_type'] ) : '';
         $data   = $params['document_data'] ?? array();
+
+        // Log AI verification request
+        $this->log_security_event( 'ai_verification_request', $user_id, array(
+            'document_type' => $type,
+        ) );
 
         // Simulate AI verification (in production, this would call an AI service)
         $result = $this->perform_verification( $type, $data );
@@ -3879,12 +4098,27 @@ Signature:
      * @param WP_REST_Request $request Request object
      * @return WP_REST_Response
      */
-    public function send_chat_message( $request ) {
+    public function send_chat_message( $request ): WP_REST_Response {
+        $user_id = get_current_user_id();
+
+        // Rate limiting check
+        $rate_check = $this->check_rate_limit(
+            $user_id,
+            'chat',
+            self::RATE_LIMIT_CHAT_REQUESTS,
+            self::RATE_LIMIT_CHAT_WINDOW
+        );
+        if ( is_wp_error( $rate_check ) ) {
+            return rest_ensure_response( array(
+                'success' => false,
+                'error'   => $rate_check->get_error_message(),
+            ) );
+        }
+
         $params           = $request->get_json_params();
-        $message          = $params['message'] ?? '';
-        $context          = $params['context'] ?? 'general';
+        $message          = isset( $params['message'] ) ? sanitize_text_field( $params['message'] ) : '';
+        $context          = isset( $params['context'] ) ? sanitize_text_field( $params['context'] ) : 'general';
         $include_practice = $params['include_practice'] ?? true;
-        $user_id          = get_current_user_id();
 
         if ( empty( $message ) ) {
             return rest_ensure_response( array(

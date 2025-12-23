@@ -11,6 +11,8 @@ export default defineConfig({
     emptyOutDir: true,
     // Generate manifest for WordPress to locate files
     manifest: true,
+    // Optimize chunk size
+    chunkSizeWarningLimit: 500,
     rollupOptions: {
       input: {
         main: path.resolve(__dirname, 'index.html'),
@@ -24,6 +26,15 @@ export default defineConfig({
             return 'css/[name]-[hash][extname]';
           }
           return 'assets/[name]-[hash][extname]';
+        },
+        // Manual chunk splitting for better caching
+        manualChunks: {
+          // Vendor chunks - rarely change, cached longer
+          'vendor-react': ['react', 'react-dom'],
+          'vendor-router': ['react-router-dom'],
+          'vendor-query': ['@tanstack/react-query'],
+          'vendor-virtual': ['@tanstack/react-virtual'],
+          'vendor-utils': ['clsx', 'zustand'],
         },
       },
     },

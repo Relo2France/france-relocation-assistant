@@ -11,7 +11,8 @@ import {
   FolderOpen,
   Shield,
 } from 'lucide-react';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
+import { VirtualGrid, useVirtualization } from '@/components/shared/VirtualList';
 import type { PortalFile, FileType } from '@/types';
 
 interface FileGridProps {
@@ -51,6 +52,18 @@ export default function FileGrid({
   onVerify,
   isLoading,
 }: FileGridProps) {
+  const shouldVirtualize = useVirtualization(files.length, 40);
+
+  // Determine column count based on viewport (simplified for SSR compatibility)
+  const columns = useMemo(() => {
+    if (typeof window === 'undefined') return 4;
+    const width = window.innerWidth;
+    if (width < 768) return 2;
+    if (width < 1024) return 3;
+    if (width < 1280) return 4;
+    return 5;
+  }, []);
+
   if (isLoading) {
     return view === 'grid' ? <GridSkeleton /> : <ListSkeleton />;
   }
@@ -70,6 +83,29 @@ export default function FileGrid({
   }
 
   if (view === 'grid') {
+    // Use virtual scrolling for large file collections
+    if (shouldVirtualize) {
+      return (
+        <VirtualGrid
+          items={files}
+          columns={columns}
+          estimateSize={220}
+          gap={16}
+          className="max-h-[calc(100vh-200px)]"
+          getItemKey={(file) => file.id}
+          renderItem={(file) => (
+            <FileCardGrid
+              file={file}
+              onClick={() => onFileClick(file)}
+              onDownload={() => onDownload(file)}
+              onDelete={() => onDelete(file)}
+              onVerify={onVerify ? () => onVerify(file) : undefined}
+            />
+          )}
+        />
+      );
+    }
+
     return (
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
         {files.map((file) => (
