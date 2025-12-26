@@ -24,6 +24,7 @@ const GlossaryView = lazy(() => import('@/components/glossary/GlossaryView'));
 const KnowledgeBaseChat = lazy(() => import('@/components/chat/KnowledgeBaseChat'));
 const MembershipView = lazy(() => import('@/components/membership/MembershipView'));
 const ResearchView = lazy(() => import('@/components/research/ResearchView'));
+const SchengenDashboard = lazy(() => import('@/components/schengen/SchengenDashboard'));
 
 // Loading fallback component
 function ViewLoadingFallback() {
@@ -82,6 +83,8 @@ function ViewRouter() {
         return <MembershipView />;
       case 'research':
         return <ResearchView />;
+      case 'schengen':
+        return <SchengenDashboard />;
       default:
         return <Dashboard />;
     }
