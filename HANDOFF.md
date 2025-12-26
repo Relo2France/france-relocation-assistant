@@ -66,24 +66,18 @@ Built a complete frontend implementation for tracking Schengen zone compliance w
 
 ## 3. What's In Progress / Partially Done
 
-**Phase 1 is complete.** Phase 2 (backend persistence) is planned but not started.
+**Phases 1 and 2 are complete.** The Schengen tracker has full backend persistence.
 
-Phase 2 would include:
-- `wp_framt_schengen_trips` database table
-- PHP REST API endpoints (`/schengen/trips`, etc.)
-- Connect React Query hooks to API
-- Premium tier gating
+Phase 2 included:
+- ✅ `fra_schengen_trips` database table (in `class-framt-portal-schema.php`)
+- ✅ PHP REST API class (`class-framt-schengen-api.php` - 707 lines)
+- ✅ React Query hooks connected to API (`useApi.ts`)
+- ✅ API client functions (`schengenApi` in `api/client.ts`)
+- ⏳ Premium tier gating (not yet implemented)
 
 ---
 
 ## 4. Next Steps Discussed
-
-### Phase 2: Backend Persistence
-1. Create database table for trips
-2. Add PHP API endpoints in `class-framt-portal-api.php`
-3. Create `schengenApi` client functions in `api/client.ts`
-4. Add React Query hooks in `hooks/useApi.ts`
-5. Replace localStorage with API calls
 
 ### Phase 3: Enhanced Features
 1. Calendar view visualization
