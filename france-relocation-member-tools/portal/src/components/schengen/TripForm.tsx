@@ -6,7 +6,7 @@
 
 import { useState, useEffect } from 'react';
 import { clsx } from 'clsx';
-import { X, Calendar, MapPin, Briefcase, FileText, AlertTriangle } from 'lucide-react';
+import { Calendar, MapPin, Briefcase, FileText, AlertTriangle } from 'lucide-react';
 import { SCHENGEN_COUNTRIES } from '@/types';
 import type { SchengenTrip, SchengenCountry } from '@/types';
 import { wouldTripViolate, getTripDuration } from './schengenUtils';
@@ -103,21 +103,6 @@ export default function TripForm({
 
   return (
     <form onSubmit={handleSubmit} className={clsx('space-y-4', className)}>
-      {/* Header */}
-      <div className="flex items-center justify-between pb-4 border-b border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-900">
-          {isEditing ? 'Edit Trip' : 'Add Trip'}
-        </h3>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="text-gray-400 hover:text-gray-600 transition-colors"
-          aria-label="Close"
-        >
-          <X className="w-5 h-5" />
-        </button>
-      </div>
-
       {/* Date fields */}
       <div className="grid grid-cols-2 gap-4">
         <div>
