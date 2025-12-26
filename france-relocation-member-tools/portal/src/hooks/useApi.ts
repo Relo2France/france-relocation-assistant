@@ -18,6 +18,7 @@ import {
   supportApi,
   researchApi,
   familyApi,
+  schengenApi,
 } from '@/api/client';
 import type { FamilyMember } from '@/api/client';
 import type {
@@ -33,6 +34,8 @@ import type {
   DocumentGenerationRequest,
   ChatRequest,
   DashboardData,
+  SchengenTrip,
+  SchengenAlertSettings,
 } from '@/types';
 
 // Query keys
@@ -78,6 +81,11 @@ export const queryKeys = {
   familyMembers: ['familyMembers'] as const,
   familyMember: (id: number) => ['familyMember', id] as const,
   familyFeatureStatus: ['familyFeatureStatus'] as const,
+  // Schengen tracker
+  schengenTrips: ['schengenTrips'] as const,
+  schengenTrip: (id: string) => ['schengenTrip', id] as const,
+  schengenSummary: ['schengenSummary'] as const,
+  schengenSettings: ['schengenSettings'] as const,
 };
 
 // Dashboard hook
@@ -860,6 +868,84 @@ export function useDeleteFamilyMember() {
     mutationFn: familyApi.delete,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.familyMembers });
+    },
+  });
+}
+
+// ============================================
+// Schengen Tracker Hooks
+// ============================================
+
+export function useSchengenTrips() {
+  return useQuery({
+    queryKey: queryKeys.schengenTrips,
+    queryFn: schengenApi.getTrips,
+    staleTime: 30000, // 30 seconds
+  });
+}
+
+export function useSchengenSummary() {
+  return useQuery({
+    queryKey: queryKeys.schengenSummary,
+    queryFn: schengenApi.getSummary,
+    staleTime: 30000, // 30 seconds
+  });
+}
+
+export function useSchengenSettings() {
+  return useQuery({
+    queryKey: queryKeys.schengenSettings,
+    queryFn: schengenApi.getSettings,
+    staleTime: 60000 * 5, // 5 minutes
+  });
+}
+
+export function useCreateSchengenTrip() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: schengenApi.createTrip,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.schengenTrips });
+      queryClient.invalidateQueries({ queryKey: queryKeys.schengenSummary });
+    },
+  });
+}
+
+export function useUpdateSchengenTrip() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<SchengenTrip> }) =>
+      schengenApi.updateTrip(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.schengenTrips });
+      queryClient.invalidateQueries({ queryKey: queryKeys.schengenSummary });
+    },
+  });
+}
+
+export function useDeleteSchengenTrip() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: schengenApi.deleteTrip,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.schengenTrips });
+      queryClient.invalidateQueries({ queryKey: queryKeys.schengenSummary });
+    },
+  });
+}
+
+export function useUpdateSchengenSettings() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: Partial<SchengenAlertSettings>) => schengenApi.updateSettings(data),
+    onSuccess: (updatedSettings) => {
+      queryClient.setQueryData(queryKeys.schengenSettings, updatedSettings);
+      // Summary depends on settings thresholds, so invalidate it too
+      queryClient.invalidateQueries({ queryKey: queryKeys.schengenSummary });
     },
   });
 }
