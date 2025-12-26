@@ -21,6 +21,7 @@ import {
   CreditCard,
   MapPin,
   Headphones,
+  Globe,
 } from 'lucide-react';
 import { usePortalStore } from '@/store';
 import { useUserSettings } from '@/hooks/useApi';
@@ -47,12 +48,13 @@ const iconComponents: Record<string, LucideIcon> = {
   CreditCard,
   MapPin,
   Headphones,
+  Globe,
 };
 
 // Default section order
 const defaultSectionOrder: MenuSectionOrder = {
   project: ['dashboard', 'tasks', 'checklists', 'timeline', 'messages'],
-  resources: ['research', 'chat', 'documents', 'guides', 'glossary', 'files'],
+  resources: ['research', 'chat', 'documents', 'guides', 'glossary', 'schengen', 'files'],
   account: ['profile', 'family', 'membership', 'support', 'settings', 'help'],
 };
 
