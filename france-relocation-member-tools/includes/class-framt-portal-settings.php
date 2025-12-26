@@ -631,7 +631,7 @@ class FRAMT_Portal_Settings {
                 // Visibility
                 'menu_dashboard', 'menu_tasks', 'menu_checklists', 'menu_timeline',
                 'menu_messages', 'menu_chat', 'menu_documents', 'menu_guides',
-                'menu_glossary', 'menu_research', 'menu_files', 'menu_profile', 'menu_family',
+                'menu_glossary', 'menu_research', 'menu_schengen', 'menu_files', 'menu_profile', 'menu_family',
                 'menu_membership', 'menu_settings', 'menu_help',
                 // Labels
                 'label_dashboard', 'label_tasks', 'label_checklists', 'label_timeline',
