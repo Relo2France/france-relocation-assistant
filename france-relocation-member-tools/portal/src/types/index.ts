@@ -774,6 +774,61 @@ export interface TicketReplyRequest {
   content: string;
 }
 
+// ============================================
+// Schengen Tracker Types
+// ============================================
+
+export const SCHENGEN_COUNTRIES = [
+  'Austria', 'Belgium', 'Bulgaria', 'Croatia', 'Czech Republic', 'Denmark',
+  'Estonia', 'Finland', 'France', 'Germany', 'Greece', 'Hungary', 'Iceland',
+  'Italy', 'Latvia', 'Liechtenstein', 'Lithuania', 'Luxembourg', 'Malta',
+  'Netherlands', 'Norway', 'Poland', 'Portugal', 'Romania', 'Slovakia',
+  'Slovenia', 'Spain', 'Sweden', 'Switzerland'
+] as const;
+
+export type SchengenCountry = typeof SCHENGEN_COUNTRIES[number];
+
+export interface SchengenTrip {
+  id: string;                              // UUID
+  startDate: string;                       // ISO date (YYYY-MM-DD)
+  endDate: string;                         // ISO date (YYYY-MM-DD)
+  country: SchengenCountry;                // Country name
+  category: 'personal' | 'business';
+  notes?: string;
+  createdAt: string;                       // ISO timestamp
+  updatedAt: string;                       // ISO timestamp
+}
+
+export interface SchengenSummary {
+  daysUsed: number;                        // Days in current 180-day window
+  daysRemaining: number;                   // 90 - daysUsed
+  windowStart: string;                     // Date 180 days ago
+  windowEnd: string;                       // Today
+  status: SchengenStatus;                  // Compliance status
+  nextExpiration: string | null;           // When oldest days drop off
+  statusThresholds: {
+    yellow: number;                        // Default: 60
+    red: number;                           // Default: 80
+  };
+}
+
+export type SchengenStatus = 'safe' | 'warning' | 'danger' | 'critical';
+
+export interface SchengenAlertSettings {
+  yellowThreshold: number;                 // Days (default 60)
+  redThreshold: number;                    // Days (default 80)
+  emailAlerts: boolean;
+  upcomingTripReminders: boolean;
+}
+
+export interface SchengenPlanningResult {
+  wouldViolate: boolean;
+  projectedDaysUsed: number;
+  earliestSafeEntry: string | null;
+  maxTripLength: number | null;
+  message: string;
+}
+
 // WordPress global types
 declare global {
   interface Window {

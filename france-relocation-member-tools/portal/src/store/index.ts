@@ -39,6 +39,7 @@ const defaultSettings: PortalSettings = {
     { id: 'documents', label: 'Documents', icon: 'FileText', path: '/documents' },
     { id: 'guides', label: 'Guides', icon: 'BookOpen', path: '/guides' },
     { id: 'glossary', label: 'Glossary', icon: 'BookMarked', path: '/glossary' },
+    { id: 'schengen', label: 'Schengen Tracker', icon: 'Globe', path: '/schengen' },
     { id: 'files', label: 'Files', icon: 'FolderOpen', path: '/files' },
     // ACCOUNT section
     { id: 'profile', label: 'My Profile', icon: 'User', path: '/profile' },
