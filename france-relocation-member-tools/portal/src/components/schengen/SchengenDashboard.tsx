@@ -3,13 +3,25 @@
  *
  * Main dashboard view for the Schengen 90/180 day tracker.
  * Shows compliance status, day counter, and trip management.
+ * Includes premium features: calendar view, planning tool, PDF export.
  */
 
 import { useState, useMemo } from 'react';
 import { clsx } from 'clsx';
-import { Plus, Calendar, Clock, AlertTriangle, Info } from 'lucide-react';
+import {
+  Plus,
+  Calendar,
+  Clock,
+  AlertTriangle,
+  Info,
+  Crown,
+  Calculator,
+  CalendarDays,
+  Lock,
+} from 'lucide-react';
 import type { SchengenTrip } from '@/types';
 import { useSchengenStore } from './useSchengenStore';
+import { useSchengenFeatureStatus } from '@/hooks/useApi';
 import {
   getSchengenSummary,
   formatDate,
@@ -18,12 +30,20 @@ import DayCounter from './DayCounter';
 import StatusBadge from './StatusBadge';
 import TripForm from './TripForm';
 import TripList from './TripList';
+import PlanningTool from './PlanningTool';
+import CalendarView from './CalendarView';
+import ReportExport from './ReportExport';
 import Modal from '@/components/shared/Modal';
+
+type ViewTab = 'trips' | 'calendar' | 'planning';
 
 export default function SchengenDashboard() {
   const { trips, settings, isLoaded, addTrip, updateTrip, deleteTrip } = useSchengenStore();
+  const { data: featureStatus, isLoading: featureLoading } = useSchengenFeatureStatus();
+
   const [showTripForm, setShowTripForm] = useState(false);
   const [editingTrip, setEditingTrip] = useState<SchengenTrip | null>(null);
+  const [activeTab, setActiveTab] = useState<ViewTab>('trips');
 
   // Calculate summary from trips
   const summary = useMemo(() => {
@@ -70,7 +90,10 @@ export default function SchengenDashboard() {
     setEditingTrip(null);
   };
 
-  if (!isLoaded) {
+  const canAddTrip = featureStatus?.canAddTrip ?? true;
+  const isPremium = featureStatus?.isPremium ?? true;
+
+  if (!isLoaded || featureLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
@@ -95,14 +118,52 @@ export default function SchengenDashboard() {
             Track your 90/180 day Schengen zone compliance
           </p>
         </div>
-        <button
-          onClick={() => setShowTripForm(true)}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium"
-        >
-          <Plus className="w-5 h-5" aria-hidden="true" />
-          Add Trip
-        </button>
+        <div className="flex items-center gap-3">
+          {/* PDF Export (premium) */}
+          {isPremium && <ReportExport />}
+
+          {/* Add trip button */}
+          <button
+            onClick={() => setShowTripForm(true)}
+            disabled={!canAddTrip}
+            className={clsx(
+              'inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors',
+              canAddTrip
+                ? 'bg-primary-600 text-white hover:bg-primary-700'
+                : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+            )}
+          >
+            <Plus className="w-5 h-5" aria-hidden="true" />
+            Add Trip
+          </button>
+        </div>
       </div>
+
+      {/* Free tier limit warning */}
+      {!isPremium && featureStatus && (
+        <div className="flex items-center justify-between p-4 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-lg">
+          <div className="flex items-center gap-3">
+            <Crown className="w-5 h-5 text-amber-600" aria-hidden="true" />
+            <div>
+              <p className="font-medium text-amber-800">
+                Free Plan: {featureStatus.tripCount} of {featureStatus.tripLimit} trips used
+              </p>
+              <p className="text-sm text-amber-700">
+                Upgrade to Premium for unlimited trips, planning tools, and PDF reports
+              </p>
+            </div>
+          </div>
+          {featureStatus.upgradeUrl && (
+            <a
+              href={featureStatus.upgradeUrl}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg font-medium hover:bg-amber-700 transition-colors"
+            >
+              <Crown className="w-4 h-4" aria-hidden="true" />
+              Upgrade
+            </a>
+          )}
+        </div>
+      )}
 
       {/* Status cards row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -196,7 +257,7 @@ export default function SchengenDashboard() {
         </div>
       </div>
 
-      {/* Warning banner if approaching limit */}
+      {/* Warning banners */}
       {summary.status === 'warning' && (
         <div className="flex items-center gap-3 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
           <AlertTriangle className="w-5 h-5 text-yellow-600 flex-shrink-0" aria-hidden="true" />
@@ -227,19 +288,101 @@ export default function SchengenDashboard() {
         </div>
       )}
 
-      {/* Trip list */}
-      <div className="card">
-        <div className="card-header flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900">Your Trips</h2>
-          <span className="text-sm text-gray-500">{trips.length} trip{trips.length !== 1 ? 's' : ''}</span>
-        </div>
-        <TripList
-          trips={trips}
-          currentWindowStart={summary.windowStart}
-          onEdit={handleOpenEdit}
-          onDelete={handleDeleteTrip}
-        />
+      {/* Tab navigation */}
+      <div className="border-b border-gray-200">
+        <nav className="flex gap-6" aria-label="Tabs">
+          <button
+            onClick={() => setActiveTab('trips')}
+            className={clsx(
+              'pb-3 px-1 border-b-2 font-medium text-sm transition-colors',
+              activeTab === 'trips'
+                ? 'border-primary-600 text-primary-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            )}
+          >
+            <span className="flex items-center gap-2">
+              <Calendar className="w-4 h-4" aria-hidden="true" />
+              Trip List
+            </span>
+          </button>
+          <button
+            onClick={() => setActiveTab('calendar')}
+            className={clsx(
+              'pb-3 px-1 border-b-2 font-medium text-sm transition-colors',
+              activeTab === 'calendar'
+                ? 'border-primary-600 text-primary-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            )}
+          >
+            <span className="flex items-center gap-2">
+              <CalendarDays className="w-4 h-4" aria-hidden="true" />
+              Calendar View
+              {!isPremium && <Lock className="w-3 h-3 text-gray-400" aria-hidden="true" />}
+            </span>
+          </button>
+          <button
+            onClick={() => setActiveTab('planning')}
+            className={clsx(
+              'pb-3 px-1 border-b-2 font-medium text-sm transition-colors',
+              activeTab === 'planning'
+                ? 'border-primary-600 text-primary-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            )}
+          >
+            <span className="flex items-center gap-2">
+              <Calculator className="w-4 h-4" aria-hidden="true" />
+              Planning Tool
+              {!isPremium && <Lock className="w-3 h-3 text-gray-400" aria-hidden="true" />}
+            </span>
+          </button>
+        </nav>
       </div>
+
+      {/* Tab content */}
+      {activeTab === 'trips' && (
+        <div className="card">
+          <div className="card-header flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-gray-900">Your Trips</h2>
+            <span className="text-sm text-gray-500">{trips.length} trip{trips.length !== 1 ? 's' : ''}</span>
+          </div>
+          <TripList
+            trips={trips}
+            currentWindowStart={summary.windowStart}
+            onEdit={handleOpenEdit}
+            onDelete={handleDeleteTrip}
+          />
+        </div>
+      )}
+
+      {activeTab === 'calendar' && (
+        isPremium ? (
+          <CalendarView
+            trips={trips}
+            windowStart={summary.windowStart}
+            windowEnd={summary.windowEnd}
+          />
+        ) : (
+          <PremiumFeaturePrompt
+            feature="Calendar View"
+            description="Visualize your trips on an interactive calendar to better understand your travel patterns and plan future trips."
+            upgradeUrl={featureStatus?.upgradeUrl}
+          />
+        )
+      )}
+
+      {activeTab === 'planning' && (
+        isPremium ? (
+          <div className="card p-6">
+            <PlanningTool />
+          </div>
+        ) : (
+          <PremiumFeaturePrompt
+            feature="Planning Tool"
+            description="Use the 'What If' calculator to check if a planned trip would violate the 90/180 rule before you book."
+            upgradeUrl={featureStatus?.upgradeUrl}
+          />
+        )
+      )}
 
       {/* Add trip modal */}
       <Modal
@@ -271,6 +414,42 @@ export default function SchengenDashboard() {
           />
         )}
       </Modal>
+    </div>
+  );
+}
+
+/**
+ * Premium feature upgrade prompt
+ */
+function PremiumFeaturePrompt({
+  feature,
+  description,
+  upgradeUrl,
+}: {
+  feature: string;
+  description: string;
+  upgradeUrl?: string | null;
+}) {
+  return (
+    <div className="card p-8 text-center">
+      <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+        <Crown className="w-8 h-8 text-amber-600" aria-hidden="true" />
+      </div>
+      <h3 className="text-lg font-semibold text-gray-900 mb-2">
+        {feature} is a Premium Feature
+      </h3>
+      <p className="text-gray-600 mb-6 max-w-md mx-auto">
+        {description}
+      </p>
+      {upgradeUrl && (
+        <a
+          href={upgradeUrl}
+          className="inline-flex items-center gap-2 px-6 py-3 bg-amber-600 text-white rounded-lg font-medium hover:bg-amber-700 transition-colors"
+        >
+          <Crown className="w-5 h-5" aria-hidden="true" />
+          Upgrade to Premium
+        </a>
+      )}
     </div>
   );
 }

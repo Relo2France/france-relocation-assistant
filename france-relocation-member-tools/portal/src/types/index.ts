@@ -829,6 +829,38 @@ export interface SchengenPlanningResult {
   message: string;
 }
 
+export interface SchengenFeatureStatus {
+  isPremium: boolean;
+  tripLimit: number | null;               // null for premium users
+  tripCount: number;
+  canAddTrip: boolean;
+  canUsePlanning: boolean;
+  canExportPdf: boolean;
+  upgradeUrl: string | null;
+  upgradeMessage: string | null;
+}
+
+export interface SchengenSimulationResult {
+  wouldViolate: boolean;
+  violations: string[];                   // Array of dates that would violate
+  maxDaysUsed: number;
+  proposedLength: number;
+  earliestSafeDate: string | null;
+  maxSafeLength: number;
+  daysOverLimit: number;
+}
+
+export interface SchengenReportResponse {
+  html: string;
+  filename: string;
+  summary: {
+    daysUsed: number;
+    daysRemaining: number;
+    status: SchengenStatus;
+    tripCount: number;
+  };
+}
+
 // WordPress global types
 declare global {
   interface Window {
