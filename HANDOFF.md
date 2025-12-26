@@ -1,227 +1,205 @@
 # Session Handoff Document
 
-**Date:** December 23, 2025
-**Branch:** `claude/continue-session-pOGZm`
-**Last Commit:** `7332d72` - Update all remaining profile lookups to use portal profile
-# HANDOFF.md - Session Handoff Document
-
-**Date:** December 23, 2025
-**Branch:** `claude/update-resume-Os09v`
+**Date:** December 26, 2025
+**Branch:** `claude/review-handoff-status-ywTl9`
+**Last Commit:** `e145341` - Add Schengen 90/180 day tracker (Phase 1)
 
 ---
 
 ## 1. Current Project Status
 
-The France Relocation Assistant is fully functional with the React portal, AI-powered guides, and personalization features now correctly pulling user profile data. All "Nice to Have" optimizations from previous sessions have been implemented (virtual scrolling, code splitting, rate limiting, caching, etc.).
+**Relo2France** is a WordPress-based platform helping Americans relocate to France. The project is stable and in active use:
+
+| Component | Version | Status |
+|-----------|---------|--------|
+| Main Plugin | v2.9.83 | Active |
+| Member Tools Plugin | v2.1.0 | Active |
+| Theme | v1.2.3 | Active |
+
+The React portal is fully functional with 40+ REST API endpoints. All major features are complete including profile management, task tracking, document generation, checklists, AI-powered guides, and now **Schengen day tracking**.
 
 ---
 
 ## 2. What We Completed This Session
 
-### Fixed: AI Not Seeing Correct Visa Type
+### New Feature: Schengen 90/180 Day Tracker (Phase 1)
 
-**Root Cause Identified:** The system had TWO separate profile storage mechanisms that were not synchronized:
+Built a complete frontend implementation for tracking Schengen zone compliance with localStorage persistence.
 
-| Storage Location | Used By | Issue |
-|------------------|---------|-------|
-| User Meta (`fra_*` prefix) | React Portal (save/load) | ✅ Correct source |
-| Database Table (`wp_framt_profiles`) | AI/Guide Generation | ❌ Was reading stale/empty data |
+#### Components Created
 
-**Solution:** Created `FRAMT_Profile::get_portal_profile()` static method that reads from user meta, then updated ALL profile lookups for AI/personalization to use it.
+| Component | File | Purpose |
+|-----------|------|---------|
+| `SchengenDashboard` | `components/schengen/SchengenDashboard.tsx` | Main view with day counter, stats cards, trip list |
+| `DayCounter` | `components/schengen/DayCounter.tsx` | Circular progress display (days used / 90) |
+| `StatusBadge` | `components/schengen/StatusBadge.tsx` | Color-coded badge: safe/warning/danger/critical |
+| `TripForm` | `components/schengen/TripForm.tsx` | Add/edit trips with violation warnings |
+| `TripList` | `components/schengen/TripList.tsx` | Sortable list with edit/delete actions |
 
-### Files Modified
+#### Core Algorithm (`schengenUtils.ts`)
 
-**New Method Added:**
-- `class-framt-profile.php` - Added `get_portal_profile()` static method (70+ lines)
+| Function | Purpose |
+|----------|---------|
+| `calculateSchengenDays()` | Rolling 180-day window calculation |
+| `wouldTripViolate()` | Check if proposed trip exceeds limit |
+| `findEarliestEntryDate()` | Find next safe entry date for trip length |
+| `findMaxTripLength()` | Calculate max stay for given start date |
+| `getSchengenSummary()` | Generate full dashboard summary |
 
-**Profile Lookups Updated (14 locations):**
+#### Features Implemented
 
-| File | Method/Function |
-|------|-----------------|
-| `class-framt-portal-api.php` | `get_user_portal_context()` |
-| `france-relocation-member-tools.php` | `ajax_generate_guide()` |
-| `france-relocation-member-tools.php` | `ajax_guide_chat()` |
-| `france-relocation-member-tools.php` | `ajax_get_guide_questions()` |
-| `france-relocation-member-tools.php` | `ajax_document_chat()` |
-| `france-relocation-member-tools.php` | `ajax_verify_health_insurance()` |
-| `france-relocation-member-tools.php` | `render_research_tool()` |
-| `france-relocation-member-tools.php` | `add_member_context()` |
-| `class-framt-guides.php` | `get_apostille_guide()` |
-| `class-framt-checklists.php` | `get_total_items()`, `render()` |
-| `class-framt-document-generator.php` | `ajax_generate()` |
-| `class-framt-chat-handler.php` | `get_document_chat_intro()` |
-| `class-framt-dashboard.php` | `get_dashboard_data()` |
-| `class-framt-documents.php` | `render_health_insurance_chat()` |
-| `class-framt-glossary.php` | `render()` |
+- Full 30-country Schengen list (incl. Bulgaria/Romania 2024)
+- Real-time violation warnings when adding trips
+- Days remaining and "next expiration" tracking
+- Trip categorization (personal/business)
+- localStorage persistence via `useSchengenStore` hook
+- Accessible (ARIA labels, progress bar roles)
+- Responsive design with Tailwind CSS
 
-### Also Fixed Earlier in Session
+#### Integration Points
 
-- `get_personalized_guide()` - Was using wrong meta key `fra_visa_type_applying` instead of `fra_visa_type`
-- `get_user_portal_context()` - Was using wrong field names (`target_region` instead of `target_location`, etc.)
-- `build_user_context_summary()` - Updated to match corrected field names
-- Checklist progress retrieval - Was using wrong checklist types and meta key format
-**Relo2France** is a WordPress-based platform helping Americans relocate to France. The project is stable and in active use with the following components:
-
-- **Main Plugin** (`france-relocation-assistant-plugin/`) - v2.9.83
-- **Member Tools Plugin** (`france-relocation-member-tools/`) - v2.1.0
-- **Theme** (`relo2france-theme/`) - v1.2.3
-
-The React portal is fully functional with 40+ REST API endpoints. All major features are complete including profile management, task tracking, document generation, checklists, and AI-powered guides.
-
----
-
-## 2. What We Completed This Session
-
-### Profile Change Detection for AI Chat
-- **Problem:** When users changed their visa type in the profile, the AI guide chat continued using stale context from the old profile data
-- **Solution:** Added profile hash comparison in `class-framt-portal-api.php:3903-3909`
-- **How it works:**
-  - Calculates MD5 hash of current profile
-  - Compares to stored hash in `fra_chat_profile_hash` user meta
-  - Clears chat history if profile changed, forcing fresh context
-- **Commit:** `a07c47e` - "Clear chat history when profile changes to avoid stale context"
-
-### CLAUDE.md Improvements
-- **Streamlined content:** Reduced from 294 to ~260 lines by removing:
-  - Dated development history entries that become stale
-  - Manual testing checklist (not useful for AI)
-  - Version numbers that get outdated
-  - Completed items in "Outstanding Work" section
-- **Added required header:** Claude Code guidance prefix
-- **Added lint command:** `npm run lint` to build commands
-- **Commits:**
-  - `a379c06` - "Streamline CLAUDE.md for Claude Code"
-  - `82ce9bb` - "Add comprehensive style guide and coding rules to CLAUDE.md"
-
-### Comprehensive Style Guide Added to CLAUDE.md
-New sections covering:
-- **PHP Style:** File structure, naming conventions, security patterns (wpdb->prepare, sanitization, escaping, permission checks), WordPress patterns
-- **React/TypeScript Style:** File organization, component patterns, naming conventions
-- **React Query Patterns:** Query keys, queries with staleTime, mutations with cache invalidation
-- **API Client Pattern:** Typed apiFetch usage
-- **Tailwind CSS Conventions:** clsx usage, card styles, spacing, responsive design
-- **Accessibility Requirements:** ARIA attributes, progress bars, icon accessibility
-- **Forbidden Patterns:** dangerouslySetInnerHTML, inline styles, any type, direct DOM manipulation
+- Added `schengen` case to `App.tsx` ViewRouter
+- Added "Schengen Tracker" menu item with Globe icon in `store/index.ts`
+- TypeScript types added to `types/index.ts`
 
 ---
 
 ## 3. What's In Progress / Partially Done
 
-**Nothing currently in progress.** All identified issues have been fixed and pushed.
+**Phase 1 is complete.** Phase 2 (backend persistence) is planned but not started.
 
----
-
-## 4. Next Steps
-
-1. **Create Pull Request** - The changes are on branch `claude/continue-session-pOGZm` and ready for PR to main
-2. **Deploy and Test** - Verify on production that AI correctly shows user's visa type
-3. **Consider Profile Sync** - Long-term, may want to consolidate the two storage systems or add a sync mechanism
-**Nothing left incomplete from this session.**
-
-Previous session work (all completed before this session resumed):
-- Chat window height matching sidebar
-- Auto-scroll to top of AI responses
-- AI accuracy fixes for translations and background checks
-- Personalized guides based on user profile/documents/tasks
-- AI verification requirements with web search
+Phase 2 would include:
+- `wp_framt_schengen_trips` database table
+- PHP REST API endpoints (`/schengen/trips`, etc.)
+- Connect React Query hooks to API
+- Premium tier gating
 
 ---
 
 ## 4. Next Steps Discussed
 
-No specific next steps were discussed this session. Potential future work from CLAUDE.md "Nice to Have":
-- Virtual scrolling for long lists
-- Bundle size optimization
-- Rate limiting for AI endpoints
+### Phase 2: Backend Persistence
+1. Create database table for trips
+2. Add PHP API endpoints in `class-framt-portal-api.php`
+3. Create `schengenApi` client functions in `api/client.ts`
+4. Add React Query hooks in `hooks/useApi.ts`
+5. Replace localStorage with API calls
+
+### Phase 3: Enhanced Features
+1. Calendar view visualization
+2. "What if" planning tool UI
+3. PDF report generation
+4. Email alerts for approaching limits
+
+### Phase 4: Monetization
+1. Premium tier gating (follow `familyApi.getFeatureStatus()` pattern)
+2. Free tier: 3 trips, basic count
+3. Premium tier: Unlimited trips, planning tools, PDF export
 
 ---
 
 ## 5. Decisions Made This Session
 
-1. **Use user meta as source of truth for AI personalization** - Since the React portal saves to user meta (`fra_*` keys), all AI/personalization code should read from there via `get_portal_profile()`
+1. **Phase 1 approach**: Build complete frontend with localStorage first, then add backend in Phase 2. This allows immediate usability and faster iteration.
 
-2. **Keep database table for internal operations** - The `wp_framt_profiles` table and `get_profile()` method are still used for internal operations like MemberPress sync and prefill logic
+2. **Algorithm design**: Use Set-based day counting to handle overlapping trips correctly. Each unique date is counted only once.
 
-3. **Static method for portal profile** - Made `get_portal_profile()` a static method for easier access without needing an instance
-1. **CLAUDE.md Structure:** Decided to focus on actionable content (commands, architecture, style guide) rather than historical changelog
-2. **Style Guide Scope:** Included concrete code examples rather than abstract rules
-3. **Security Emphasis:** Made security patterns (sanitization, escaping, prepare) prominently labeled as "MANDATORY"
-4. **Forbidden Patterns:** Explicitly listed anti-patterns to prevent common mistakes
+3. **Component structure**: Follow existing portal patterns - feature folder with barrel export, View suffix for main components.
+
+4. **Status thresholds**:
+   - Safe: 0-59 days (green)
+   - Warning: 60-79 days (yellow)
+   - Danger: 80-89 days (orange)
+   - Critical: 90+ days (red)
+
+5. **Menu placement**: Added to Resources section between Glossary and Files.
+
+6. **No backend this phase**: localStorage is sufficient for MVP; backend adds complexity that can wait.
 
 ---
 
 ## 6. Issues / Bugs Being Tracked
 
-### Resolved This Session
-- ✅ AI not seeing correct visa type in personalized guides
-- ✅ AI context using wrong profile field names
-- ✅ Checklist progress using wrong types and meta keys
+### No New Issues This Session
 
-### Known Technical Debt
-- **Dual profile storage** - Two separate storage systems (user meta vs database table) is confusing. Consider consolidating in future.
-- **Document generation address fields** - `fra_current_address`, `fra_current_city`, `fra_current_country` are expected by document generator but not in profile definition (users provide via form)
+All Phase 1 code compiles and builds successfully.
 
-### Previously Tracked (From CLAUDE.md "Nice to Have")
-- ✅ Virtual scrolling - Implemented
-- ✅ Bundle optimization - Implemented
-- ✅ Rate limiting - Implemented
-- ✅ Security logging - Implemented
-- ✅ PHP type hints - Added to key methods
-- ✅ Performance caching - Implemented
+### Known Technical Debt (Inherited)
+
+- **Dual profile storage** - User meta vs database table still exists; consider consolidating
+- **ESLint config missing** - `npm run lint` fails due to missing `.eslintrc` file in portal directory
+
+### Notes for Phase 2
+
+- Need to decide on trip data migration strategy (localStorage → database)
+- Consider timezone handling for international users
+- May need date picker component for better UX
 
 ---
 
-## Commits This Session
+## Files Created/Modified This Session
 
-```
-7332d72 Update all remaining profile lookups to use portal profile
-c7bd82e Fix get_user_portal_context to use portal profile
-5414ebc Fix guides using wrong profile storage - use portal user meta
-49fcdf5 Fix AI context using wrong profile field names
-3b2f557 Fix personalized guides using wrong visa type meta key
-```
+### New Files
+
+| File | Description |
+|------|-------------|
+| `portal/src/components/schengen/SchengenDashboard.tsx` | Main dashboard component |
+| `portal/src/components/schengen/DayCounter.tsx` | Circular progress display |
+| `portal/src/components/schengen/StatusBadge.tsx` | Status indicator badge |
+| `portal/src/components/schengen/TripForm.tsx` | Trip add/edit form |
+| `portal/src/components/schengen/TripList.tsx` | Trip list with actions |
+| `portal/src/components/schengen/schengenUtils.ts` | Core calculation algorithms |
+| `portal/src/components/schengen/useSchengenStore.ts` | localStorage persistence hook |
+| `portal/src/components/schengen/index.ts` | Barrel exports |
+
+### Modified Files
+
+| File | Changes |
+|------|---------|
+| `portal/src/App.tsx` | Added SchengenDashboard lazy import and route case |
+| `portal/src/store/index.ts` | Added 'schengen' menu item with Globe icon |
+| `portal/src/types/index.ts` | Added Schengen types and SCHENGEN_COUNTRIES constant |
+
+### Build Artifacts Updated
+
+All files in `assets/portal/js/` and `assets/portal/css/` were rebuilt with new hashes.
 
 ---
 
 ## Quick Reference
 
-### Testing the Fix
-1. Log into portal as a member
-2. Set visa type in Profile section
-3. Use AI chat or generate a guide
-4. Verify the AI references the correct visa type
+### Testing the Feature
+1. Navigate to portal
+2. Click "Schengen Tracker" in sidebar (under Resources)
+3. Click "Add Trip" to add a Schengen trip
+4. Verify day counter updates correctly
+5. Try adding a trip that would exceed 90 days - should show warning
 
 ### Key File Locations
-- Portal profile method: `class-framt-profile.php::get_portal_profile()`
-- AI context builder: `class-framt-portal-api.php::get_user_portal_context()`
-- User meta prefix: `fra_` (e.g., `fra_visa_type`, `fra_nationality`)
+- Components: `portal/src/components/schengen/`
+- Algorithm: `schengenUtils.ts`
+- Storage: `useSchengenStore.ts` (localStorage)
+- Types: `types/index.ts` (search for "Schengen")
 
----
-
-*Generated: December 23, 2025*
-**No active bugs identified this session.**
-
-### Known WordPress.com Hosting Quirks (not bugs, just notes):
-- Script combining can break ES modules - use `data-cfasync="false"` attributes
-- Portal script loaded directly in template to bypass optimization
-- MemberPress features gracefully degrade if not installed
-
----
-
-## Files Modified This Session
-
-| File | Changes |
-|------|---------|
-| `france-relocation-member-tools/includes/class-framt-portal-api.php` | Added profile hash detection (lines 3903-3909) |
-| `CLAUDE.md` | Streamlined + added comprehensive style guide |
-| `france-relocation-member-tools-v2.1.0.zip` | Updated with latest changes |
+### Build Commands
+```bash
+cd france-relocation-member-tools/portal
+npm install
+npm run build
+```
 
 ---
 
 ## Git Status
 
 ```
-Branch: claude/update-resume-Os09v
+Branch: claude/review-handoff-status-ywTl9
 Status: Clean (all changes committed and pushed)
-Latest commit: 82ce9bb - Add comprehensive style guide and coding rules to CLAUDE.md
+Latest commit: e145341 - Add Schengen 90/180 day tracker (Phase 1)
 ```
+
+Ready for PR to main.
+
+---
+
+*Generated: December 26, 2025*
