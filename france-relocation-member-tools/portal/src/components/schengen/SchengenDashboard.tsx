@@ -33,15 +33,31 @@ export default function SchengenDashboard() {
     });
   }, [trips, settings.yellowThreshold, settings.redThreshold]);
 
-  const handleAddTrip = (tripData: Omit<SchengenTrip, 'id' | 'createdAt' | 'updatedAt'>) => {
-    addTrip(tripData);
-    setShowTripForm(false);
+  const handleAddTrip = async (tripData: Omit<SchengenTrip, 'id' | 'createdAt' | 'updatedAt'>) => {
+    try {
+      await addTrip(tripData);
+      setShowTripForm(false);
+    } catch (error) {
+      console.error('Failed to add trip:', error);
+    }
   };
 
-  const handleEditTrip = (tripData: Omit<SchengenTrip, 'id' | 'createdAt' | 'updatedAt'>) => {
+  const handleEditTrip = async (tripData: Omit<SchengenTrip, 'id' | 'createdAt' | 'updatedAt'>) => {
     if (editingTrip) {
-      updateTrip(editingTrip.id, tripData);
-      setEditingTrip(null);
+      try {
+        await updateTrip(editingTrip.id, tripData);
+        setEditingTrip(null);
+      } catch (error) {
+        console.error('Failed to update trip:', error);
+      }
+    }
+  };
+
+  const handleDeleteTrip = async (id: string) => {
+    try {
+      await deleteTrip(id);
+    } catch (error) {
+      console.error('Failed to delete trip:', error);
     }
   };
 
@@ -221,7 +237,7 @@ export default function SchengenDashboard() {
           trips={trips}
           currentWindowStart={summary.windowStart}
           onEdit={handleOpenEdit}
-          onDelete={deleteTrip}
+          onDelete={handleDeleteTrip}
         />
       </div>
 

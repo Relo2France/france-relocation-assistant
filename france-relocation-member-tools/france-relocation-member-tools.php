@@ -330,6 +330,7 @@ final class FRA_Member_Tools {
             'includes/class-framt-task.php',
             'includes/class-framt-portal-api.php',
             'includes/class-framt-portal-settings.php',
+            'includes/class-framt-schengen-api.php',
         );
 
         foreach ($required_files as $file) {
@@ -398,6 +399,17 @@ final class FRA_Member_Tools {
             $this->log_error('Failed to initialize portal API: ' . $e->getMessage());
         } catch (Error $e) {
             $this->log_error('Fatal error initializing portal API: ' . $e->getMessage());
+        }
+
+        // Schengen Tracker API
+        try {
+            if (class_exists('FRAMT_Schengen_API')) {
+                $this->components['schengen_api'] = FRAMT_Schengen_API::get_instance();
+            }
+        } catch (Exception $e) {
+            $this->log_error('Failed to initialize Schengen API: ' . $e->getMessage());
+        } catch (Error $e) {
+            $this->log_error('Fatal error initializing Schengen API: ' . $e->getMessage());
         }
 
         // Check if portal schema needs update

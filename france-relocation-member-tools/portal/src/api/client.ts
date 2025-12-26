@@ -36,6 +36,9 @@ import type {
   SupportTicketDetailResponse,
   CreateTicketRequest,
   TicketReplyRequest,
+  SchengenTrip,
+  SchengenSummary,
+  SchengenAlertSettings,
 } from '@/types';
 
 /**
@@ -716,5 +719,50 @@ export const familyApi = {
   delete: (memberId: number) =>
     apiFetch<{ success: boolean; message: string }>(`/family/${memberId}`, {
       method: 'DELETE',
+    }),
+};
+
+// ============================================
+// Schengen Tracker API
+// ============================================
+
+export const schengenApi = {
+  // Get all trips for current user
+  getTrips: () => apiFetch<SchengenTrip[]>('/schengen/trips'),
+
+  // Get single trip
+  getTrip: (id: string) => apiFetch<SchengenTrip>(`/schengen/trips/${id}`),
+
+  // Create a new trip
+  createTrip: (data: Omit<SchengenTrip, 'id' | 'createdAt' | 'updatedAt'>) =>
+    apiFetch<SchengenTrip>('/schengen/trips', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // Update an existing trip
+  updateTrip: (id: string, data: Partial<SchengenTrip>) =>
+    apiFetch<SchengenTrip>(`/schengen/trips/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  // Delete a trip
+  deleteTrip: (id: string) =>
+    apiFetch<{ deleted: boolean; id: string }>(`/schengen/trips/${id}`, {
+      method: 'DELETE',
+    }),
+
+  // Get summary (days used, days remaining, status, etc.)
+  getSummary: () => apiFetch<SchengenSummary>('/schengen/summary'),
+
+  // Get user settings
+  getSettings: () => apiFetch<SchengenAlertSettings>('/schengen/settings'),
+
+  // Update user settings
+  updateSettings: (data: Partial<SchengenAlertSettings>) =>
+    apiFetch<SchengenAlertSettings>('/schengen/settings', {
+      method: 'PUT',
+      body: JSON.stringify(data),
     }),
 };

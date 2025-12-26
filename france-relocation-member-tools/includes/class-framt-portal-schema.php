@@ -28,7 +28,7 @@ class FRAMT_Portal_Schema {
      *
      * @var string
      */
-    const DB_VERSION = '2.0.0';
+    const DB_VERSION = '2.1.0';
 
     /**
      * Option name for tracking database version
@@ -51,6 +51,7 @@ class FRAMT_Portal_Schema {
         'notes'          => 'fra_notes',
         'applicants'     => 'fra_applicants',
         'activity'       => 'fra_activity',
+        'schengen_trips' => 'fra_schengen_trips',
     );
 
     /**
@@ -252,6 +253,25 @@ class FRAMT_Portal_Schema {
             KEY action (action)
         ) $charset_collate;";
         dbDelta( $sql_activity );
+
+        // Schengen trips for 90/180 day tracker
+        $table_schengen = self::get_table( 'schengen_trips' );
+        $sql_schengen = "CREATE TABLE $table_schengen (
+            id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+            user_id bigint(20) unsigned NOT NULL,
+            start_date date NOT NULL,
+            end_date date NOT NULL,
+            country varchar(100) NOT NULL,
+            category varchar(20) DEFAULT 'personal',
+            notes text,
+            created_at datetime DEFAULT CURRENT_TIMESTAMP,
+            updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            KEY user_id (user_id),
+            KEY start_date (start_date),
+            KEY end_date (end_date)
+        ) $charset_collate;";
+        dbDelta( $sql_schengen );
 
         // Update database version
         update_option( self::DB_VERSION_OPTION, self::DB_VERSION );

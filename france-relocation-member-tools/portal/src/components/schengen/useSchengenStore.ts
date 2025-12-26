@@ -1,17 +1,25 @@
 /**
- * Schengen Tracker Local Storage Hook
+ * Schengen Tracker Store Hook
  *
- * Provides localStorage persistence for trips during Phase 1.
- * Will be replaced with API calls in Phase 2.
+ * Provides a unified interface for managing Schengen trips using the API.
+ * This replaces the previous localStorage implementation (Phase 1) with
+ * server-side persistence (Phase 2).
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useMemo, useCallback } from 'react';
 import type { SchengenTrip, SchengenAlertSettings } from '@/types';
-import { generateTripId } from './schengenUtils';
+import {
+  useSchengenTrips,
+  useSchengenSettings,
+  useCreateSchengenTrip,
+  useUpdateSchengenTrip,
+  useDeleteSchengenTrip,
+  useUpdateSchengenSettings,
+} from '@/hooks/useApi';
 
-const STORAGE_KEY = 'framt_schengen_trips';
-const SETTINGS_KEY = 'framt_schengen_settings';
-
+/**
+ * Default settings for new users
+ */
 const defaultSettings: SchengenAlertSettings = {
   yellowThreshold: 60,
   redThreshold: 80,
@@ -20,145 +28,91 @@ const defaultSettings: SchengenAlertSettings = {
 };
 
 /**
- * Load trips from localStorage
- */
-function loadTrips(): SchengenTrip[] {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      return JSON.parse(stored);
-    }
-  } catch (e) {
-    console.error('Failed to load Schengen trips from localStorage:', e);
-  }
-  return [];
-}
-
-/**
- * Save trips to localStorage
- */
-function saveTrips(trips: SchengenTrip[]): void {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(trips));
-  } catch (e) {
-    console.error('Failed to save Schengen trips to localStorage:', e);
-  }
-}
-
-/**
- * Load settings from localStorage
- */
-function loadSettings(): SchengenAlertSettings {
-  try {
-    const stored = localStorage.getItem(SETTINGS_KEY);
-    if (stored) {
-      return { ...defaultSettings, ...JSON.parse(stored) };
-    }
-  } catch (e) {
-    console.error('Failed to load Schengen settings from localStorage:', e);
-  }
-  return defaultSettings;
-}
-
-/**
- * Save settings to localStorage
- */
-function saveSettings(settings: SchengenAlertSettings): void {
-  try {
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-  } catch (e) {
-    console.error('Failed to save Schengen settings to localStorage:', e);
-  }
-}
-
-/**
- * Hook for managing Schengen trips with localStorage persistence
+ * Hook for managing Schengen trips with API persistence
  */
 export function useSchengenStore() {
-  const [trips, setTrips] = useState<SchengenTrip[]>([]);
-  const [settings, setSettingsState] = useState<SchengenAlertSettings>(defaultSettings);
-  const [isLoaded, setIsLoaded] = useState(false);
+  // Fetch trips and settings from API
+  const {
+    data: trips = [],
+    isLoading: tripsLoading,
+    isError: tripsError,
+  } = useSchengenTrips();
 
-  // Load from localStorage on mount
-  useEffect(() => {
-    setTrips(loadTrips());
-    setSettingsState(loadSettings());
-    setIsLoaded(true);
-  }, []);
+  const {
+    data: settings = defaultSettings,
+    isLoading: settingsLoading,
+  } = useSchengenSettings();
 
-  // Save trips whenever they change (after initial load)
-  useEffect(() => {
-    if (isLoaded) {
-      saveTrips(trips);
-    }
-  }, [trips, isLoaded]);
+  // Mutations
+  const createMutation = useCreateSchengenTrip();
+  const updateMutation = useUpdateSchengenTrip();
+  const deleteMutation = useDeleteSchengenTrip();
+  const updateSettingsMutation = useUpdateSchengenSettings();
 
-  // Save settings whenever they change (after initial load)
-  useEffect(() => {
-    if (isLoaded) {
-      saveSettings(settings);
-    }
-  }, [settings, isLoaded]);
+  // Combined loading state
+  const isLoaded = !tripsLoading && !settingsLoading;
+  const isError = tripsError;
+
+  // Sort trips by start date (most recent first)
+  const sortedTrips = useMemo(() => {
+    return [...trips].sort((a, b) =>
+      new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
+    );
+  }, [trips]);
 
   /**
    * Add a new trip
    */
-  const addTrip = useCallback((tripData: Omit<SchengenTrip, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const now = new Date().toISOString();
-    const newTrip: SchengenTrip = {
-      ...tripData,
-      id: generateTripId(),
-      createdAt: now,
-      updatedAt: now,
-    };
-
-    setTrips((prev) => [...prev, newTrip].sort((a, b) =>
-      new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
-    ));
-
-    return newTrip;
-  }, []);
+  const addTrip = useCallback(
+    (tripData: Omit<SchengenTrip, 'id' | 'createdAt' | 'updatedAt'>) => {
+      return createMutation.mutateAsync(tripData);
+    },
+    [createMutation]
+  );
 
   /**
    * Update an existing trip
    */
-  const updateTrip = useCallback((id: string, updates: Partial<SchengenTrip>) => {
-    setTrips((prev) =>
-      prev.map((trip) =>
-        trip.id === id
-          ? { ...trip, ...updates, updatedAt: new Date().toISOString() }
-          : trip
-      ).sort((a, b) =>
-        new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
-      )
-    );
-  }, []);
+  const updateTrip = useCallback(
+    (id: string, updates: Partial<SchengenTrip>) => {
+      return updateMutation.mutateAsync({ id, data: updates });
+    },
+    [updateMutation]
+  );
 
   /**
    * Delete a trip
    */
-  const deleteTrip = useCallback((id: string) => {
-    setTrips((prev) => prev.filter((trip) => trip.id !== id));
-  }, []);
+  const deleteTrip = useCallback(
+    (id: string) => {
+      return deleteMutation.mutateAsync(id);
+    },
+    [deleteMutation]
+  );
 
   /**
    * Update settings
    */
-  const updateSettings = useCallback((updates: Partial<SchengenAlertSettings>) => {
-    setSettingsState((prev) => ({ ...prev, ...updates }));
-  }, []);
-
-  /**
-   * Get trips sorted by date (most recent first)
-   */
-  const sortedTrips = trips.sort((a, b) =>
-    new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
+  const updateSettings = useCallback(
+    (updates: Partial<SchengenAlertSettings>) => {
+      return updateSettingsMutation.mutateAsync(updates);
+    },
+    [updateSettingsMutation]
   );
+
+  // Check if any mutation is in progress
+  const isSaving =
+    createMutation.isPending ||
+    updateMutation.isPending ||
+    deleteMutation.isPending ||
+    updateSettingsMutation.isPending;
 
   return {
     trips: sortedTrips,
     settings,
     isLoaded,
+    isError,
+    isSaving,
     addTrip,
     updateTrip,
     deleteTrip,
