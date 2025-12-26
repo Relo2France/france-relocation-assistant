@@ -737,14 +737,26 @@ export const schengenApi = {
   createTrip: (data: Omit<SchengenTrip, 'id' | 'createdAt' | 'updatedAt'>) =>
     apiFetch<SchengenTrip>('/schengen/trips', {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        start_date: data.startDate,
+        end_date: data.endDate,
+        country: data.country,
+        category: data.category,
+        notes: data.notes,
+      }),
     }),
 
   // Update an existing trip
   updateTrip: (id: string, data: Partial<SchengenTrip>) =>
     apiFetch<SchengenTrip>(`/schengen/trips/${id}`, {
       method: 'PUT',
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        ...(data.startDate !== undefined && { start_date: data.startDate }),
+        ...(data.endDate !== undefined && { end_date: data.endDate }),
+        ...(data.country !== undefined && { country: data.country }),
+        ...(data.category !== undefined && { category: data.category }),
+        ...(data.notes !== undefined && { notes: data.notes }),
+      }),
     }),
 
   // Delete a trip

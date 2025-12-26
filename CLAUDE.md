@@ -257,6 +257,56 @@ export const profileApi = {
 | In-Chat UI | `france-relocation-assistant-plugin/includes/shortcode-template.php` |
 | Knowledge Base | `france-relocation-assistant-plugin/includes/knowledge-base-default.php` |
 
+## Adding New Portal Menu Items (CHECKLIST)
+
+When adding a new menu item to the portal sidebar, ALL of the following locations must be updated:
+
+### 1. PHP Backend - Portal Settings Class
+**File:** `france-relocation-member-tools/includes/class-framt-portal-settings.php`
+
+- [ ] Add `'menu_{item}' => true` to `$defaults` array (~line 57-74)
+- [ ] Add `'label_{item}' => 'Item Label'` to `$defaults` array (~line 76-93)
+- [ ] Add `'icon_{item}' => 'IconName'` to `$defaults` array (~line 95-112)
+- [ ] Add `'menu_{item}'` to `$bool_fields` array in `sanitize()` (~line 286-289)
+- [ ] Add `'label_{item}'` to `$text_fields` array in `sanitize()` (~line 296-302)
+- [ ] Add `'icon_{item}'` to `$text_fields` array in `sanitize()` (~line 296-302)
+- [ ] Add `'menu_{item}'` to `$tab_fields['menu']` visibility array (~line 632-635) **← CRITICAL: often missed!**
+- [ ] Add `'label_{item}'` to `$tab_fields['menu']` labels array (~line 637-640)
+- [ ] Add `'icon_{item}'` to `$tab_fields['menu']` icons array (~line 642-645)
+- [ ] Add item to `$menu_items` array in `render_menu_tab_content()` (~line 830-847)
+- [ ] Add item to appropriate section in `$default_section_items` (~line 850-854)
+
+### 2. PHP Backend - Portal Template
+**File:** `france-relocation-member-tools/templates/template-portal.php`
+
+- [ ] Add `'menu_{item}' => true` to `$defaults` array (~line 55-71)
+- [ ] Add `'label_{item}' => 'Item Label'` to `$defaults` array (~line 73-89)
+- [ ] Add `'icon_{item}' => 'IconName'` to `$defaults` array (~line 91-107)
+- [ ] Add `'{item}' => '/{item}'` to `$menu_items` array (~line 161-178)
+
+### 3. React Frontend - Sidebar Component
+**File:** `france-relocation-member-tools/portal/src/components/layout/Sidebar.tsx`
+
+- [ ] Import the icon from `lucide-react` (~line 2-25)
+- [ ] Add icon to `iconComponents` map (~line 30-52)
+- [ ] Add `'{item}'` to appropriate section in `defaultSectionOrder` (~line 54-58) **← CRITICAL: often missed!**
+
+### 4. React Frontend - Routes
+**File:** `france-relocation-member-tools/portal/src/App.tsx`
+
+- [ ] Add route: `<Route path="/{item}" element={<ItemView />} />`
+- [ ] Import the view component
+
+### 5. Build
+- [ ] Run `cd france-relocation-member-tools/portal && npm run build`
+
+### Common Issues
+
+1. **Menu item enabled but not showing in sidebar**: Check `defaultSectionOrder` in `Sidebar.tsx`
+2. **Menu item not preserved when saving other tabs**: Check `$tab_fields['menu']` visibility array
+3. **Icon not rendering**: Check icon import and `iconComponents` map in `Sidebar.tsx`
+4. **404 when clicking menu item**: Check route exists in `App.tsx`
+
 ## WordPress.com Hosting Notes
 
 - Script combining can break ES modules - use `data-cfasync="false"` attributes
