@@ -178,6 +178,9 @@ See previous session notes for full analysis and migration plan.
 | `portal/src/components/guides/index.ts` | Updated with all new exports |
 | `includes/class-framt-portal-api.php` | Added get_cached_knowledge_base(), updated search_knowledge_base() |
 | `relo2france-theme/template-auth.php` | Replace hardcoded colors with CSS variables |
+| `relo2france-theme/functions.php` | Added JSDoc to all 14 theme functions |
+| `portal/package.json` | Added eslint-plugin-import dependency |
+| `portal/.eslintrc.cjs` | Added import plugin with ordering rules |
 
 ---
 
@@ -205,7 +208,7 @@ npm run type-check  # TypeScript validation without emit
 
 **Current Status:**
 - Tests: 45/45 passing
-- Lint: 0 errors, 0 warnings
+- Lint: 0 errors (warnings for import ordering as guide for developers)
 - Build: Successful
 
 ---
@@ -218,10 +221,10 @@ From the comprehensive review, most issues have been addressed. Remaining items:
 - Encryption fallback returns unencrypted legacy values (intentional for migration)
 
 ### Theme
-- Missing JSDoc on some functions
+- ~~Missing JSDoc on some functions~~ (DONE - Added JSDoc to all 14 functions)
 
 ### Configuration
-- Consider adding eslint-plugin-import for import ordering
+- ~~Consider adding eslint-plugin-import for import ordering~~ (DONE - Added with import/order rules)
 
 ---
 
@@ -230,6 +233,7 @@ From the comprehensive review, most issues have been addressed. Remaining items:
 1. `Comprehensive code review fixes: security, efficiency, and consistency`
 2. `Refactor guides components and add performance improvements`
 3. `Add constants, CSS variables, and .env.example`
+4. `Add JSDoc to theme and eslint-plugin-import for import ordering`
 
 ---
 

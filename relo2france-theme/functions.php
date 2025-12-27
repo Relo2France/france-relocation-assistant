@@ -62,7 +62,10 @@ function relo2france_setup() {
 add_action('after_setup_theme', 'relo2france_setup');
 
 /**
- * Enqueue Scripts and Styles
+ * Enqueue theme scripts and styles.
+ *
+ * @since 1.0.0
+ * @return void
  */
 function relo2france_scripts() {
     // Main stylesheet
@@ -85,7 +88,10 @@ function relo2france_scripts() {
 add_action('wp_enqueue_scripts', 'relo2france_scripts');
 
 /**
- * Register Widget Areas
+ * Register widget areas for the theme.
+ *
+ * @since 1.0.0
+ * @return void
  */
 function relo2france_widgets_init() {
     register_sidebar(array(
@@ -121,11 +127,10 @@ function relo2france_widgets_init() {
 add_action('widgets_init', 'relo2france_widgets_init');
 
 /**
- * Custom template tags
- */
-
-/**
- * Display site logo or title
+ * Display site logo or fallback to site title with branding.
+ *
+ * @since 1.0.0
+ * @return void
  */
 function relo2france_site_logo() {
     if (has_custom_logo()) {
@@ -152,7 +157,10 @@ function relo2france_site_logo() {
 }
 
 /**
- * Display navigation menu
+ * Display the primary navigation menu.
+ *
+ * @since 1.0.0
+ * @return void
  */
 function relo2france_primary_menu() {
     if (has_nav_menu('primary')) {
@@ -166,7 +174,10 @@ function relo2france_primary_menu() {
 }
 
 /**
- * Display footer menu
+ * Display the footer navigation menu.
+ *
+ * @since 1.0.0
+ * @return void
  */
 function relo2france_footer_menu() {
     if (has_nav_menu('footer')) {
@@ -181,7 +192,11 @@ function relo2france_footer_menu() {
 }
 
 /**
- * Add custom body classes
+ * Add custom body classes based on page context.
+ *
+ * @since 1.0.0
+ * @param array $classes Existing body classes.
+ * @return array Modified body classes.
  */
 function relo2france_body_classes($classes) {
     // Add class if France Relocation Assistant plugin is active
@@ -206,7 +221,10 @@ function relo2france_body_classes($classes) {
 add_filter('body_class', 'relo2france_body_classes');
 
 /**
- * Hide admin bar on auth pages
+ * Hide the admin bar on authentication pages.
+ *
+ * @since 1.1.0
+ * @return void
  */
 function relo2france_hide_admin_bar_on_auth() {
     if (is_page_template('template-auth.php')) {
@@ -216,7 +234,11 @@ function relo2france_hide_admin_bar_on_auth() {
 add_action('template_redirect', 'relo2france_hide_admin_bar_on_auth');
 
 /**
- * Customize excerpt length
+ * Customize the excerpt length.
+ *
+ * @since 1.0.0
+ * @param int $length Default excerpt length.
+ * @return int Modified excerpt length.
  */
 function relo2france_excerpt_length($length) {
     return 30;
@@ -224,7 +246,11 @@ function relo2france_excerpt_length($length) {
 add_filter('excerpt_length', 'relo2france_excerpt_length');
 
 /**
- * Customize excerpt more text
+ * Customize the excerpt "more" text.
+ *
+ * @since 1.0.0
+ * @param string $more Default more string.
+ * @return string Modified more string (ellipsis).
  */
 function relo2france_excerpt_more($more) {
     return '&hellip;';
@@ -232,7 +258,11 @@ function relo2france_excerpt_more($more) {
 add_filter('excerpt_more', 'relo2france_excerpt_more');
 
 /**
- * Add theme customizer options
+ * Register theme customizer options.
+ *
+ * @since 1.0.0
+ * @param WP_Customize_Manager $wp_customize Theme customizer object.
+ * @return void
  */
 function relo2france_customize_register($wp_customize) {
     // Header Section (New)
@@ -331,21 +361,31 @@ function relo2france_customize_register($wp_customize) {
 add_action('customize_register', 'relo2france_customize_register');
 
 /**
- * Sanitize checkbox
+ * Sanitize checkbox value for customizer.
+ *
+ * @since 1.0.0
+ * @param bool $checked Checkbox value to sanitize.
+ * @return bool Sanitized boolean value.
  */
 function relo2france_sanitize_checkbox($checked) {
     return ( isset( $checked ) && true === $checked );
 }
 
 /**
- * Check if France Relocation Assistant plugin is active
+ * Check if the France Relocation Assistant plugin is active.
+ *
+ * @since 1.0.0
+ * @return bool True if plugin is active, false otherwise.
  */
 function relo2france_fra_active() {
     return class_exists('France_Relocation_Assistant');
 }
 
 /**
- * Admin notice if plugin is not active
+ * Display admin notice if the plugin is not active.
+ *
+ * @since 1.0.0
+ * @return void
  */
 function relo2france_admin_notice() {
     if (!relo2france_fra_active()) {
