@@ -1719,12 +1719,30 @@ class FRAMT_Schengen_API {
 
         $this->ensure_location_table();
 
-        $user_id  = get_current_user_id();
-        $params   = $request->get_json_params();
-        $lat      = (float) ( $params['lat'] ?? 0 );
-        $lng      = (float) ( $params['lng'] ?? 0 );
+        $user_id = get_current_user_id();
+
+        // Try JSON params first, then fall back to regular params
+        $params = $request->get_json_params();
+        if ( empty( $params ) ) {
+            $params = $request->get_params();
+        }
+
+        // Debug: log what we received
+        error_log( 'FRAMT Location Store - Params: ' . print_r( $params, true ) );
+
+        $lat      = isset( $params['lat'] ) ? (float) $params['lat'] : null;
+        $lng      = isset( $params['lng'] ) ? (float) $params['lng'] : null;
         $accuracy = isset( $params['accuracy'] ) ? (float) $params['accuracy'] : null;
         $source   = sanitize_text_field( $params['source'] ?? 'browser' );
+
+        // Check if coordinates are present
+        if ( null === $lat || null === $lng ) {
+            return new WP_Error(
+                'missing_coords',
+                'Missing latitude or longitude. Received: lat=' . var_export( $lat, true ) . ', lng=' . var_export( $lng, true ),
+                array( 'status' => 400 )
+            );
+        }
 
         // Validate coordinates
         if ( $lat < -90 || $lat > 90 ) {
@@ -1760,12 +1778,29 @@ class FRAMT_Schengen_API {
         );
 
         if ( false === $result ) {
-            return new WP_Error( 'db_error', 'Failed to store location.', array( 'status' => 500 ) );
+            error_log( 'FRAMT Location Store - DB Error: ' . $wpdb->last_error );
+            error_log( 'FRAMT Location Store - Last Query: ' . $wpdb->last_query );
+            return new WP_Error(
+                'db_error',
+                'Failed to store location: ' . $wpdb->last_error,
+                array( 'status' => 500 )
+            );
         }
 
+        $insert_id = $wpdb->insert_id;
+        error_log( 'FRAMT Location Store - Success, ID: ' . $insert_id );
+
         $location = $wpdb->get_row(
-            $wpdb->prepare( "SELECT * FROM $table WHERE id = %d", $wpdb->insert_id )
+            $wpdb->prepare( "SELECT * FROM $table WHERE id = %d", $insert_id )
         );
+
+        if ( ! $location ) {
+            return new WP_Error(
+                'fetch_error',
+                'Location saved but could not be retrieved.',
+                array( 'status' => 500 )
+            );
+        }
 
         return rest_ensure_response( array(
             'success'  => true,
