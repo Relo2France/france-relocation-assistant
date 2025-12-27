@@ -5839,38 +5839,38 @@ Focus on practical advice while being careful not to state incorrect facts. When
 
         global $wpdb;
 
+        // Get table names from schema
+        $table_projects = FRAMT_Portal_Schema::get_table( 'projects' );
+        $table_tasks    = FRAMT_Portal_Schema::get_table( 'tasks' );
+        $table_notes    = FRAMT_Portal_Schema::get_table( 'notes' );
+        $table_files    = FRAMT_Portal_Schema::get_table( 'files' );
+        $table_activity = FRAMT_Portal_Schema::get_table( 'activity' );
+
         // Get user's projects
         $projects = $wpdb->get_col(
             $wpdb->prepare(
-                "SELECT id FROM {$wpdb->prefix}framt_projects WHERE user_id = %d",
+                "SELECT id FROM $table_projects WHERE user_id = %d",
                 $user_id
             )
         );
 
-        // Delete tasks, notes, files, and task checklists for user's projects
+        // Delete tasks, notes, files for user's projects
         if ( ! empty( $projects ) ) {
             $project_ids = implode( ',', array_map( 'intval', $projects ) );
 
-            // Delete task checklists for tasks in user's projects
-            $wpdb->query(
-                "DELETE tc FROM {$wpdb->prefix}framt_task_checklists tc
-                 INNER JOIN {$wpdb->prefix}framt_tasks t ON tc.task_id = t.id
-                 WHERE t.project_id IN ($project_ids)"
-            );
-
             // Delete tasks
             $wpdb->query(
-                "DELETE FROM {$wpdb->prefix}framt_tasks WHERE project_id IN ($project_ids)"
+                "DELETE FROM $table_tasks WHERE project_id IN ($project_ids)"
             );
 
             // Delete notes
             $wpdb->query(
-                "DELETE FROM {$wpdb->prefix}framt_notes WHERE project_id IN ($project_ids)"
+                "DELETE FROM $table_notes WHERE project_id IN ($project_ids)"
             );
 
             // Delete files (both records and physical files)
             $files = $wpdb->get_results(
-                "SELECT id, file_path FROM {$wpdb->prefix}framt_files WHERE project_id IN ($project_ids)"
+                "SELECT id, file_path FROM $table_files WHERE project_id IN ($project_ids)"
             );
             foreach ( $files as $file ) {
                 if ( ! empty( $file->file_path ) && file_exists( $file->file_path ) ) {
@@ -5878,17 +5878,17 @@ Focus on practical advice while being careful not to state incorrect facts. When
                 }
             }
             $wpdb->query(
-                "DELETE FROM {$wpdb->prefix}framt_files WHERE project_id IN ($project_ids)"
-            );
-
-            // Delete projects
-            $wpdb->query(
-                $wpdb->prepare(
-                    "DELETE FROM {$wpdb->prefix}framt_projects WHERE user_id = %d",
-                    $user_id
-                )
+                "DELETE FROM $table_files WHERE project_id IN ($project_ids)"
             );
         }
+
+        // Delete projects (always try, even if we didn't find any above)
+        $wpdb->query(
+            $wpdb->prepare(
+                "DELETE FROM $table_projects WHERE user_id = %d",
+                $user_id
+            )
+        );
 
         // Delete support messages and replies
         $messages = $wpdb->get_col(
@@ -5965,7 +5965,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
         // Delete activity log
         $wpdb->query(
             $wpdb->prepare(
-                "DELETE FROM {$wpdb->prefix}fra_activity WHERE user_id = %d",
+                "DELETE FROM $table_activity WHERE user_id = %d",
                 $user_id
             )
         );
