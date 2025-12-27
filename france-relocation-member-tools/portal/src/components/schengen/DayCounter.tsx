@@ -117,7 +117,6 @@ export default function DayCounter({
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span
           className={clsx('font-bold', config.textSize, colors.text)}
-          role="text"
           aria-label={`${daysUsed} days used`}
         >
           {daysUsed}

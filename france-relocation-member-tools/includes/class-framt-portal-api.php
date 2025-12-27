@@ -536,6 +536,17 @@ class FRAMT_Portal_API {
             )
         );
 
+        // Profile reset endpoint (keeps account, deletes all portal data)
+        register_rest_route(
+            self::NAMESPACE,
+            '/profile/reset',
+            array(
+                'methods'             => 'POST',
+                'callback'            => array( $this, 'reset_profile' ),
+                'permission_callback' => array( $this, 'check_member_permission' ),
+            )
+        );
+
         // Account deletion endpoint
         register_rest_route(
             self::NAMESPACE,
@@ -2696,6 +2707,7 @@ class FRAMT_Portal_API {
             // Timeline
             'timeline'              => get_user_meta( $user_id, 'fra_timeline', true ),
             'target_move_date'      => get_user_meta( $user_id, 'fra_target_move_date', true ),
+            'move_date_certainty'   => get_user_meta( $user_id, 'fra_move_date_certainty', true ) ?: 'anticipated',
             'application_location'  => get_user_meta( $user_id, 'fra_application_location', true ),
 
             // Financial
@@ -2764,6 +2776,7 @@ class FRAMT_Portal_API {
             // Timeline
             'timeline',
             'target_move_date',
+            'move_date_certainty',
             'application_location',
 
             // Financial
@@ -5789,6 +5802,145 @@ Focus on practical advice while being careful not to state incorrect facts. When
     private function get_product_features( $product_id ) {
         $features = get_post_meta( $product_id, '_fra_product_features', true );
         return is_array( $features ) ? $features : array();
+    }
+
+    /**
+     * Reset user profile
+     *
+     * Resets all portal data while keeping the user account intact.
+     * This makes it appear as if the user is visiting for the first time.
+     * Requires confirmation phrase to prevent accidental reset.
+     *
+     * @param WP_REST_Request $request Request object
+     * @return WP_REST_Response|WP_Error
+     */
+    public function reset_profile( $request ) {
+        $user_id = get_current_user_id();
+
+        if ( ! $user_id ) {
+            return new WP_Error(
+                'rest_not_logged_in',
+                'You must be logged in to reset your profile.',
+                array( 'status' => 401 )
+            );
+        }
+
+        // Get confirmation phrase from request
+        $confirmation = sanitize_text_field( $request->get_param( 'confirmation' ) );
+
+        // Require exact phrase "RESET MY PROFILE" for confirmation
+        if ( 'RESET MY PROFILE' !== $confirmation ) {
+            return new WP_Error(
+                'rest_confirmation_required',
+                'Please type "RESET MY PROFILE" to confirm profile reset.',
+                array( 'status' => 400 )
+            );
+        }
+
+        global $wpdb;
+
+        // Get user's projects
+        $projects = $wpdb->get_col(
+            $wpdb->prepare(
+                "SELECT id FROM {$wpdb->prefix}framt_projects WHERE user_id = %d",
+                $user_id
+            )
+        );
+
+        // Delete tasks, notes, files, and task checklists for user's projects
+        if ( ! empty( $projects ) ) {
+            $project_ids = implode( ',', array_map( 'intval', $projects ) );
+
+            // Delete task checklists for tasks in user's projects
+            $wpdb->query(
+                "DELETE tc FROM {$wpdb->prefix}framt_task_checklists tc
+                 INNER JOIN {$wpdb->prefix}framt_tasks t ON tc.task_id = t.id
+                 WHERE t.project_id IN ($project_ids)"
+            );
+
+            // Delete tasks
+            $wpdb->query(
+                "DELETE FROM {$wpdb->prefix}framt_tasks WHERE project_id IN ($project_ids)"
+            );
+
+            // Delete notes
+            $wpdb->query(
+                "DELETE FROM {$wpdb->prefix}framt_notes WHERE project_id IN ($project_ids)"
+            );
+
+            // Delete files (both records and physical files)
+            $files = $wpdb->get_results(
+                "SELECT id, file_path FROM {$wpdb->prefix}framt_files WHERE project_id IN ($project_ids)"
+            );
+            foreach ( $files as $file ) {
+                if ( ! empty( $file->file_path ) && file_exists( $file->file_path ) ) {
+                    wp_delete_file( $file->file_path );
+                }
+            }
+            $wpdb->query(
+                "DELETE FROM {$wpdb->prefix}framt_files WHERE project_id IN ($project_ids)"
+            );
+
+            // Delete projects
+            $wpdb->query(
+                $wpdb->prepare(
+                    "DELETE FROM {$wpdb->prefix}framt_projects WHERE user_id = %d",
+                    $user_id
+                )
+            );
+        }
+
+        // Delete support messages and replies
+        $messages = $wpdb->get_col(
+            $wpdb->prepare(
+                "SELECT id FROM {$wpdb->prefix}framt_messages WHERE user_id = %d",
+                $user_id
+            )
+        );
+        if ( ! empty( $messages ) ) {
+            $message_ids = implode( ',', array_map( 'intval', $messages ) );
+            $wpdb->query( "DELETE FROM {$wpdb->prefix}framt_message_replies WHERE message_id IN ($message_ids)" );
+            $wpdb->query(
+                $wpdb->prepare(
+                    "DELETE FROM {$wpdb->prefix}framt_messages WHERE user_id = %d",
+                    $user_id
+                )
+            );
+        }
+
+        // Delete all user meta with fra_ prefix (profile data, checklist progress, etc.)
+        $wpdb->query(
+            $wpdb->prepare(
+                "DELETE FROM {$wpdb->usermeta} WHERE user_id = %d AND meta_key LIKE 'fra_%%'",
+                $user_id
+            )
+        );
+
+        // Delete generated documents and research reports
+        $wpdb->query(
+            $wpdb->prepare(
+                "DELETE FROM {$wpdb->prefix}framt_generated_documents WHERE user_id = %d",
+                $user_id
+            )
+        );
+
+        $wpdb->query(
+            $wpdb->prepare(
+                "DELETE FROM {$wpdb->prefix}framt_research_reports WHERE user_id = %d",
+                $user_id
+            )
+        );
+
+        // Clear any cached data
+        wp_cache_delete( "framt_profile_{$user_id}", 'framt' );
+        wp_cache_delete( "framt_project_{$user_id}", 'framt' );
+
+        return rest_ensure_response(
+            array(
+                'success' => true,
+                'message' => 'Your profile has been reset. You can now start fresh as if it were your first visit.',
+            )
+        );
     }
 
     /**

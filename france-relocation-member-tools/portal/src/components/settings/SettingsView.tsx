@@ -11,6 +11,7 @@ import {
   ChevronUp,
   AlertTriangle,
   Trash2,
+  RefreshCw,
   Menu,
   GripVertical,
   LayoutDashboard,
@@ -37,6 +38,7 @@ import {
   useUpdateMemberProfile,
   useProfileCompletion,
   useDeleteAccount,
+  useResetProfile,
 } from '@/hooks/useApi';
 import { usePortalStore } from '@/store';
 import type { UserSettings, MemberProfile, MenuSectionOrder } from '@/types';
@@ -150,6 +152,7 @@ function PortalAccountSection() {
   const { data: user, isLoading: userLoading } = useCurrentUser();
   const updateProfile = useUpdateProfile();
   const deleteAccount = useDeleteAccount();
+  const resetProfile = useResetProfile();
 
   const [formData, setFormData] = useState({
     first_name: '',
@@ -159,6 +162,9 @@ function PortalAccountSection() {
   const [initialized, setInitialized] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [resetConfirmText, setResetConfirmText] = useState('');
+  const [resetSuccess, setResetSuccess] = useState(false);
 
   // Initialize form when user data loads
   if (user && !initialized) {
@@ -184,7 +190,22 @@ function PortalAccountSection() {
     });
   };
 
+  const handleResetProfile = () => {
+    resetProfile.mutate(resetConfirmText, {
+      onSuccess: () => {
+        setResetSuccess(true);
+        setShowResetConfirm(false);
+        setResetConfirmText('');
+        // Reload the page after a brief delay to show fresh state
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
+      },
+    });
+  };
+
   const isDeleteEnabled = deleteConfirmText === 'DELETE MY ACCOUNT';
+  const isResetEnabled = resetConfirmText === 'RESET MY PROFILE';
 
   if (userLoading) {
     return <SettingsSkeleton />;
@@ -345,6 +366,105 @@ function PortalAccountSection() {
       <div className="card p-6 border-red-200">
         <h2 className="text-lg font-semibold text-red-600 mb-4">Danger Zone</h2>
 
+        {/* Reset Profile Section */}
+        <div className="p-4 bg-amber-50 rounded-lg mb-4">
+          <div className="flex items-start gap-3">
+            <RefreshCw className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <h3 className="font-medium text-gray-900">Reset Visa Profile</h3>
+              <p className="text-sm text-gray-600 mt-1">
+                Reset all your profile data, tasks, documents, and progress. Your account will remain active, but it will be as if you're starting fresh as a new member.
+              </p>
+
+              {resetSuccess ? (
+                <div className="mt-4 p-3 bg-green-100 border border-green-200 rounded-lg flex items-center gap-2">
+                  <Check className="w-5 h-5 text-green-600" />
+                  <p className="text-sm font-medium text-green-800">
+                    Profile reset successfully! Reloading page...
+                  </p>
+                </div>
+              ) : !showResetConfirm ? (
+                <button
+                  type="button"
+                  onClick={() => setShowResetConfirm(true)}
+                  className="mt-4 px-4 py-2 bg-amber-600 text-white text-sm font-medium rounded-lg hover:bg-amber-700 transition-colors flex items-center gap-2"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  Reset My Profile
+                </button>
+              ) : (
+                <div className="mt-4 space-y-4">
+                  <div className="p-3 bg-amber-100 border border-amber-200 rounded-lg">
+                    <p className="text-sm font-medium text-amber-800">
+                      This will delete all your tasks, documents, notes, profile information, and progress. Your account will remain active but all relocation data will be removed.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label htmlFor="reset-confirm" className="block text-sm font-medium text-gray-700 mb-1">
+                      Type <span className="font-mono bg-gray-100 px-1 rounded">RESET MY PROFILE</span> to confirm:
+                    </label>
+                    <input
+                      type="text"
+                      id="reset-confirm"
+                      value={resetConfirmText}
+                      onChange={(e) => setResetConfirmText(e.target.value)}
+                      placeholder="RESET MY PROFILE"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                      autoComplete="off"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={handleResetProfile}
+                      disabled={!isResetEnabled || resetProfile.isPending}
+                      className={clsx(
+                        'px-4 py-2 text-sm font-medium rounded-lg flex items-center gap-2 transition-colors',
+                        isResetEnabled && !resetProfile.isPending
+                          ? 'bg-amber-600 text-white hover:bg-amber-700'
+                          : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      )}
+                    >
+                      {resetProfile.isPending ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Resetting...
+                        </>
+                      ) : (
+                        <>
+                          <RefreshCw className="w-4 h-4" />
+                          Reset Profile
+                        </>
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowResetConfirm(false);
+                        setResetConfirmText('');
+                      }}
+                      className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+
+                  {resetProfile.isError && (
+                    <p className="text-sm text-red-600">
+                      {resetProfile.error instanceof Error
+                        ? resetProfile.error.message
+                        : 'Failed to reset profile. Please try again or contact support.'}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Delete Account Section */}
         <div className="p-4 bg-red-50 rounded-lg">
           <div className="flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
@@ -585,6 +705,11 @@ function VisaProfileSection() {
           { value: 'undecided', label: 'Undecided' },
         ]},
         { key: 'target_move_date', label: 'Target Move Date', type: 'date' },
+        { key: 'move_date_certainty', label: 'How certain is this date?', type: 'select', options: [
+          { value: 'fixed', label: 'Fixed - I have tickets/lease starting this date' },
+          { value: 'anticipated', label: 'Anticipated - Planning for this date but may adjust' },
+          { value: 'flexible', label: 'Flexible - No firm date yet' },
+        ]},
         { key: 'application_location', label: 'Where are you applying from?', type: 'select', options: [
           { value: 'us', label: 'United States (initial application)' },
           { value: 'france', label: 'France (renewal/reapplication)' },

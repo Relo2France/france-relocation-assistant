@@ -343,6 +343,11 @@ export interface MemberProfile {
   target_location: string;
   application_location: ApplicationLocation;
 
+  // Timeline
+  timeline: TimelineType;
+  target_move_date: string;
+  move_date_certainty: MoveDateCertainty;
+
   // Financial Information
   financial_resources: FinancialRange;
   income_sources: string;
@@ -360,6 +365,8 @@ export type ProfileVisaType = 'undecided' | 'visitor' | 'talent_passport' | 'emp
 export type WorkInFranceType = 'no' | 'yes_local' | 'yes_remote' | 'yes_self' | 'undecided';
 export type ApplicationLocation = 'us' | 'france';
 export type FinancialRange = 'under_50k' | '50k_100k' | '100k_200k' | '200k_500k' | 'over_500k';
+export type TimelineType = 'asap' | '1_3_months' | '3_6_months' | '6_12_months' | '12_plus_months' | 'flexible';
+export type MoveDateCertainty = 'fixed' | 'anticipated' | 'flexible';
 
 // Checklist types
 export interface Checklist {

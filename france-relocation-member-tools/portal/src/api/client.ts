@@ -401,6 +401,17 @@ export const profileApi = {
     }),
 
   getCompletion: () => apiFetch<{ percentage: number; missing_fields: string[] }>('/profile/completion'),
+
+  /**
+   * Reset all profile data and portal data (tasks, notes, files, etc.)
+   * Keeps the user account but deletes all relocation-related data.
+   * Requires confirmation phrase "RESET MY PROFILE" to prevent accidents.
+   */
+  reset: (confirmation: string) =>
+    apiFetch<{ success: boolean; message: string }>('/profile/reset', {
+      method: 'POST',
+      body: JSON.stringify({ confirmation }),
+    }),
 };
 
 // Checklists API

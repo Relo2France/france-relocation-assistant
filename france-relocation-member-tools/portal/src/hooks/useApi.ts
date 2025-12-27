@@ -163,6 +163,18 @@ export function useDeleteAccount() {
   });
 }
 
+export function useResetProfile() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (confirmation: string) => profileApi.reset(confirmation),
+    onSuccess: () => {
+      // Invalidate all queries to force refresh after reset
+      queryClient.invalidateQueries();
+    },
+  });
+}
+
 // Projects hooks
 export function useProjects() {
   return useQuery({
