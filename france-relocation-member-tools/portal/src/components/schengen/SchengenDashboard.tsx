@@ -18,10 +18,15 @@ import {
   Calculator,
   CalendarDays,
   Lock,
+  Settings,
+  Bell,
+  Send,
+  Loader2,
+  CheckCircle,
 } from 'lucide-react';
 import type { SchengenTrip } from '@/types';
 import { useSchengenStore } from './useSchengenStore';
-import { useSchengenFeatureStatus } from '@/hooks/useApi';
+import { useSchengenFeatureStatus, useTestSchengenAlert } from '@/hooks/useApi';
 import {
   getSchengenSummary,
   formatDate,
@@ -35,15 +40,17 @@ import CalendarView from './CalendarView';
 import ReportExport from './ReportExport';
 import Modal from '@/components/shared/Modal';
 
-type ViewTab = 'trips' | 'calendar' | 'planning';
+type ViewTab = 'trips' | 'calendar' | 'planning' | 'settings';
 
 export default function SchengenDashboard() {
-  const { trips, settings, isLoaded, addTrip, updateTrip, deleteTrip } = useSchengenStore();
+  const { trips, settings, isLoaded, addTrip, updateTrip, deleteTrip, updateSettings } = useSchengenStore();
   const { data: featureStatus, isLoading: featureLoading } = useSchengenFeatureStatus();
+  const testAlertMutation = useTestSchengenAlert();
 
   const [showTripForm, setShowTripForm] = useState(false);
   const [editingTrip, setEditingTrip] = useState<SchengenTrip | null>(null);
   const [activeTab, setActiveTab] = useState<ViewTab>('trips');
+  const [testAlertMessage, setTestAlertMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   // Calculate summary from trips
   const summary = useMemo(() => {
@@ -335,6 +342,20 @@ export default function SchengenDashboard() {
               {!isPremium && <Lock className="w-3 h-3 text-gray-400" aria-hidden="true" />}
             </span>
           </button>
+          <button
+            onClick={() => setActiveTab('settings')}
+            className={clsx(
+              'pb-3 px-1 border-b-2 font-medium text-sm transition-colors',
+              activeTab === 'settings'
+                ? 'border-primary-600 text-primary-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            )}
+          >
+            <span className="flex items-center gap-2">
+              <Settings className="w-4 h-4" aria-hidden="true" />
+              Settings
+            </span>
+          </button>
         </nav>
       </div>
 
@@ -382,6 +403,145 @@ export default function SchengenDashboard() {
             upgradeUrl={featureStatus?.upgradeUrl}
           />
         )
+      )}
+
+      {activeTab === 'settings' && (
+        <div className="card p-6 space-y-6">
+          {/* Header */}
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-primary-100 rounded-lg">
+              <Settings className="w-5 h-5 text-primary-600" aria-hidden="true" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">Tracker Settings</h3>
+              <p className="text-sm text-gray-500">
+                Configure alerts and notification preferences
+              </p>
+            </div>
+          </div>
+
+          {/* Email Alerts Toggle */}
+          <div className="border-t border-gray-200 pt-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <Bell className="w-5 h-5 text-blue-600" aria-hidden="true" />
+                </div>
+                <div>
+                  <h4 className="font-medium text-gray-900">Email Alerts</h4>
+                  <p className="text-sm text-gray-500">
+                    Receive email notifications when approaching your 90-day limit
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => updateSettings({ emailAlerts: !settings.emailAlerts })}
+                className={clsx(
+                  'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
+                  settings.emailAlerts ? 'bg-primary-600' : 'bg-gray-200'
+                )}
+                role="switch"
+                aria-checked={settings.emailAlerts}
+              >
+                <span
+                  className={clsx(
+                    'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
+                    settings.emailAlerts ? 'translate-x-5' : 'translate-x-0'
+                  )}
+                />
+              </button>
+            </div>
+
+            {/* Alert info when enabled */}
+            {settings.emailAlerts && (
+              <div className="mt-4 ml-14 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-800">
+                  <span className="font-medium">Alert thresholds:</span> You will receive email alerts when you reach 60 days (warning), 80 days (danger), and 85 days (urgent).
+                </p>
+              </div>
+            )}
+
+            {/* Test Alert Button */}
+            {settings.emailAlerts && (
+              <div className="mt-4 ml-14">
+                <button
+                  onClick={() => {
+                    setTestAlertMessage(null);
+                    testAlertMutation.mutate(undefined, {
+                      onSuccess: (result) => {
+                        setTestAlertMessage({
+                          type: result.success ? 'success' : 'error',
+                          text: result.message,
+                        });
+                      },
+                      onError: (error) => {
+                        setTestAlertMessage({
+                          type: 'error',
+                          text: error instanceof Error ? error.message : 'Failed to send test alert',
+                        });
+                      },
+                    });
+                  }}
+                  disabled={testAlertMutation.isPending}
+                  className={clsx(
+                    'inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-colors',
+                    testAlertMutation.isPending
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                  )}
+                >
+                  {testAlertMutation.isPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4" aria-hidden="true" />
+                      Send Test Alert
+                    </>
+                  )}
+                </button>
+
+                {/* Test alert result message */}
+                {testAlertMessage && (
+                  <div
+                    className={clsx(
+                      'mt-3 p-3 rounded-lg flex items-center gap-2 text-sm',
+                      testAlertMessage.type === 'success'
+                        ? 'bg-green-50 text-green-800 border border-green-200'
+                        : 'bg-red-50 text-red-800 border border-red-200'
+                    )}
+                  >
+                    {testAlertMessage.type === 'success' ? (
+                      <CheckCircle className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
+                    ) : (
+                      <AlertTriangle className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
+                    )}
+                    {testAlertMessage.text}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Threshold Settings (display only) */}
+          <div className="border-t border-gray-200 pt-6">
+            <h4 className="font-medium text-gray-900 mb-4">Warning Thresholds</h4>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="text-sm font-medium text-yellow-800">Warning Level</p>
+                <p className="text-lg font-bold text-yellow-900">{settings.yellowThreshold} days</p>
+                <p className="text-xs text-yellow-700 mt-1">Status turns yellow</p>
+              </div>
+              <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                <p className="text-sm font-medium text-orange-800">Danger Level</p>
+                <p className="text-lg font-bold text-orange-900">{settings.redThreshold} days</p>
+                <p className="text-xs text-orange-700 mt-1">Status turns red</p>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Add trip modal */}

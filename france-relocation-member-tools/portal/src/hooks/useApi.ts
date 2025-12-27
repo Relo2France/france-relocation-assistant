@@ -970,3 +970,9 @@ export function useGenerateSchengenReport() {
     mutationFn: schengenApi.generateReport,
   });
 }
+
+export function useTestSchengenAlert() {
+  return useMutation({
+    mutationFn: schengenApi.testAlert,
+  });
+}

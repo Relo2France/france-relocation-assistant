@@ -331,6 +331,7 @@ final class FRA_Member_Tools {
             'includes/class-framt-portal-api.php',
             'includes/class-framt-portal-settings.php',
             'includes/class-framt-schengen-api.php',
+            'includes/class-framt-schengen-alerts.php',
         );
 
         foreach ($required_files as $file) {
@@ -410,6 +411,17 @@ final class FRA_Member_Tools {
             $this->log_error('Failed to initialize Schengen API: ' . $e->getMessage());
         } catch (Error $e) {
             $this->log_error('Fatal error initializing Schengen API: ' . $e->getMessage());
+        }
+
+        // Schengen Email Alerts
+        try {
+            if (class_exists('FRAMT_Schengen_Alerts')) {
+                $this->components['schengen_alerts'] = FRAMT_Schengen_Alerts::get_instance();
+            }
+        } catch (Exception $e) {
+            $this->log_error('Failed to initialize Schengen Alerts: ' . $e->getMessage());
+        } catch (Error $e) {
+            $this->log_error('Fatal error initializing Schengen Alerts: ' . $e->getMessage());
         }
 
         // Check if portal schema needs update
