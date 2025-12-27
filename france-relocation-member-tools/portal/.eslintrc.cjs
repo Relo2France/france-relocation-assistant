@@ -31,7 +31,14 @@ module.exports = {
     sourceType: 'module',
     project: ['./tsconfig.json'],
   },
-  plugins: ['react-refresh', '@typescript-eslint'],
+  plugins: ['react-refresh', '@typescript-eslint', 'import'],
+  settings: {
+    'import/resolver': {
+      node: {
+        extensions: ['.js', '.jsx', '.ts', '.tsx'],
+      },
+    },
+  },
   rules: {
     // React Refresh - warn if component can't be fast-refreshed
     'react-refresh/only-export-components': [
@@ -60,8 +67,39 @@ module.exports = {
     'no-var': 'error',
     'eqeqeq': ['error', 'always', { null: 'ignore' }],
 
-    // Disable import sorting (too noisy for existing codebase)
-    'sort-imports': 'off',
+    // Import ordering - consistent structure across files
+    'import/order': [
+      'warn',
+      {
+        groups: [
+          'builtin',
+          'external',
+          'internal',
+          ['parent', 'sibling'],
+          'index',
+          'type',
+        ],
+        pathGroups: [
+          {
+            pattern: 'react',
+            group: 'external',
+            position: 'before',
+          },
+          {
+            pattern: '@/**',
+            group: 'internal',
+          },
+        ],
+        pathGroupsExcludedImportTypes: ['react'],
+        'newlines-between': 'never',
+        alphabetize: {
+          order: 'asc',
+          caseInsensitive: true,
+        },
+      },
+    ],
+    'import/no-duplicates': 'error',
+    'sort-imports': ['warn', { ignoreDeclarationSort: true }],
 
     // Allow escape characters in regex-like strings (common in markdown parsing)
     'no-useless-escape': 'off',
