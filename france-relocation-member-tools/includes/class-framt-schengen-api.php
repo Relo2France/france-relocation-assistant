@@ -75,17 +75,6 @@ class FRAMT_Schengen_API {
     private static $instance = null;
 
     /**
-     * Schengen country codes for location tracking
-     *
-     * @var array
-     */
-    private static $schengen_codes = array(
-        'AT', 'BE', 'BG', 'HR', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE',
-        'GR', 'HU', 'IS', 'IT', 'LV', 'LI', 'LT', 'LU', 'MT', 'NL',
-        'NO', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE', 'CH',
-    );
-
-    /**
      * Get singleton instance
      *
      * @return FRAMT_Schengen_API
@@ -1551,7 +1540,7 @@ class FRAMT_Schengen_API {
      *
      * @return string
      */
-    private function get_location_table(): string {
+    private function get_location_table() {
         global $wpdb;
         return $wpdb->prefix . 'fra_schengen_location_log';
     }
@@ -1559,7 +1548,7 @@ class FRAMT_Schengen_API {
     /**
      * Ensure location table exists
      */
-    private function ensure_location_table(): void {
+    private function ensure_location_table() {
         global $wpdb;
 
         $table = $this->get_location_table();
@@ -1596,8 +1585,13 @@ class FRAMT_Schengen_API {
      * @param string $code Country code.
      * @return bool
      */
-    private function is_schengen_code( string $code ): bool {
-        return in_array( strtoupper( $code ), self::$schengen_codes, true );
+    private function is_schengen_code( $code ) {
+        $schengen_codes = array(
+            'AT', 'BE', 'BG', 'HR', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE',
+            'GR', 'HU', 'IS', 'IT', 'LV', 'LI', 'LT', 'LU', 'MT', 'NL',
+            'NO', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE', 'CH',
+        );
+        return in_array( strtoupper( (string) $code ), $schengen_codes, true );
     }
 
     /**
@@ -1607,7 +1601,7 @@ class FRAMT_Schengen_API {
      * @param float $lng Longitude.
      * @return array
      */
-    private function perform_geocode( float $lat, float $lng ): array {
+    private function perform_geocode( $lat, $lng ) {
         // Check cache
         $cache_key = 'framt_geocode_' . md5( $lat . '_' . $lng );
         $cached = get_transient( $cache_key );
@@ -1662,7 +1656,7 @@ class FRAMT_Schengen_API {
      * @param object $location Location row.
      * @return array
      */
-    private function format_location( $location ): array {
+    private function format_location( $location ) {
         return array(
             'id'          => (int) $location->id,
             'lat'         => (float) $location->lat,
