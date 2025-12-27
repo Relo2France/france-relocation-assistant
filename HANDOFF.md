@@ -2,7 +2,7 @@
 
 **Date:** December 27, 2025
 **Branch:** `claude/review-handoff-bSeKm`
-**Last Commit:** `Comprehensive code review fixes: security, efficiency, and consistency`
+**Last Commit:** `Refactor guides components and add performance improvements`
 
 ---
 
@@ -23,7 +23,7 @@ The React portal is fully functional with 40+ REST API endpoints. All major feat
 
 ## 2. What We Completed This Session
 
-### 2.1 Full Codebase Review
+### 2.1 Full Codebase Review (Previous Session)
 
 Performed comprehensive code review across all 6 major areas:
 - React Portal Components (35+ issues found)
@@ -35,7 +35,7 @@ Performed comprehensive code review across all 6 major areas:
 
 **Total: 120 issues identified, 10+ critical/high priority fixes implemented**
 
-### 2.2 CRITICAL Security Fixes
+### 2.2 CRITICAL Security Fixes (Previous Session)
 
 #### XSS Prevention - SafeHtml Component
 **Files:** `portal/src/components/shared/SafeHtml.tsx` (NEW), `GuidesView.tsx`
@@ -69,117 +69,69 @@ $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table_messages))
 #### Output Escaping in Theme
 **Files:** `functions.php`, `footer.php`, `single.php`
 
-Fixed 4 instances of unescaped output:
-```php
-// BEFORE:
-<?php bloginfo('name'); ?>
-
-// AFTER:
-<?php echo esc_html(get_bloginfo('name')); ?>
-```
+Fixed 4 instances of unescaped output.
 
 #### Permission Check Type Safety
 **File:** `class-framt-portal-api.php:1196,1230,1264`
 
-Added strict type casting to permission checks:
+Added strict type casting to permission checks.
+
+### 2.3 GuidesView Component Refactoring (Current Session)
+
+Split the massive GuidesView.tsx (1350+ lines) into focused, maintainable components:
+
+| File | Purpose | Lines |
+|------|---------|-------|
+| `guidesData.ts` | Static guide data, types, helper functions | ~260 |
+| `GuideCards.tsx` | GuideCard, FeaturedGuideCard, PersonalizedGuideCard | ~120 |
+| `GuideDetail.tsx` | Guide detail view with AI chat integration | ~280 |
+| `PersonalizedGuideDetail.tsx` | AI-generated personalized guides view | ~260 |
+| `GuideMessageContent.tsx` | Markdown parser for chat messages | ~150 |
+| `GuidesView.tsx` | Main view (refactored) | ~253 |
+| `index.ts` | Barrel export with all exports | ~12 |
+
+### 2.4 Barrel Exports for All Component Folders (Current Session)
+
+Added missing barrel exports to complete the component organization:
+
+| Folder | File | Exports |
+|--------|------|---------|
+| `dashboard/` | `index.ts` | Dashboard, ActivityFeed, ProgressTracker, TaskCard, WelcomeBanner |
+| `layout/` | `index.ts` | Header, Sidebar |
+| `shared/` | `index.ts` | ErrorBoundary, Modal, SafeHtml, SaveButton, VirtualList |
+
+### 2.5 PHP Performance Improvements (Current Session)
+
+#### Transient Caching for Knowledge Base
+**File:** `includes/class-framt-portal-api.php`
+
+Added `get_cached_knowledge_base()` helper with 1-hour transient caching:
+
 ```php
-// BEFORE:
-if ($project->user_id !== get_current_user_id())
+private function get_cached_knowledge_base() {
+    $cache_key = 'framt_knowledge_base';
+    $knowledge_base = get_transient( $cache_key );
 
-// AFTER:
-if ((int) $project->user_id !== (int) get_current_user_id())
+    if ( false !== $knowledge_base ) {
+        return $knowledge_base;
+    }
+
+    // Load from file...
+    $knowledge_base = include $kb_file;
+
+    // Cache for 1 hour
+    set_transient( $cache_key, $knowledge_base, HOUR_IN_SECONDS );
+
+    return $knowledge_base;
+}
 ```
 
-### 2.3 Efficiency Improvements
+### 2.6 Efficiency Improvements (Previous Session)
 
-#### React Query staleTime
-**File:** `portal/src/hooks/useApi.ts`
-
-Added `staleTime` to 12+ hooks to prevent unnecessary refetches:
-- `useProjects()` - 30s
-- `useProject()` - 30s
-- `useTasks()` - 30s
-- `useTask()` - 30s
-- `useActivity()` - 10s (more dynamic)
-- `useFiles()` - 30s
-- `useFile()` - 30s
-- `useNotes()` - 30s
-- `useNote()` - 30s
-- `useChecklists()` - 60s (static data)
-- `useChecklist()` - 60s
-- `useSearchChatTopics()` - 30s
-
-#### FileGrid Responsive Fix
-**File:** `portal/src/components/documents/FileGrid.tsx`
-
-Fixed useMemo with empty dependency array - columns now properly update on window resize:
-```tsx
-// BEFORE: useMemo with [] deps (never updated)
-// AFTER: useState + useEffect with resize listener
-useEffect(() => {
-  const updateColumns = () => {
-    const width = window.innerWidth;
-    if (width < 768) setColumns(2);
-    else if (width < 1024) setColumns(3);
-    // ...
-  };
-  window.addEventListener('resize', updateColumns);
-  return () => window.removeEventListener('resize', updateColumns);
-}, []);
-```
-
-#### LazyView Component Recreation
-**File:** `portal/src/App.tsx`
-
-Fixed function being recreated on every render by using useMemo:
-```tsx
-// BEFORE: const LazyView = () => { switch... } (recreated every render)
-// AFTER: const viewElement = useMemo(() => { switch... }, [activeView]);
-```
-
-### 2.4 Consistency Fixes
-
-#### Version Alignment
-Updated all readme.txt files to match plugin headers:
-- Main Plugin: 1.5.1 → **3.6.4**
-- Member Tools: 1.1.8 → **2.1.0**
-- GitHub Sync: 1.0.0 → **2.2.0**
-- Portal package.json: 2.0.0 → **2.1.0**
-
-#### Type Organization
-**Files:** `api/client.ts`, `types/index.ts`
-
-Moved `FamilyMember`, `FamilyMembersResponse`, `FamilyFeatureStatus` interfaces from client.ts to types/index.ts for consistency with other 100+ type definitions.
-
-#### Query Keys Consistency
-**File:** `portal/src/hooks/useApi.ts`
-
-Added `chatSearch` to queryKeys object and updated `useSearchChatTopics` to use it:
-```typescript
-export const queryKeys = {
-  // ...existing keys...
-  chatSearch: (query: string) => ['chatSearch', query] as const,
-};
-```
-
-### 2.5 Additional Improvements
-
-#### New type-check Script
-**File:** `portal/package.json`
-
-Added `type-check` script for CI/CD validation:
-```json
-"type-check": "tsc --noEmit"
-```
-
-#### Theme Type Safety
-**File:** `relo2france-theme/functions.php:337`
-
-Fixed loose comparison:
-```php
-// BEFORE: true == $checked
-// AFTER: true === $checked
-```
+- Added `staleTime` to 12+ React Query hooks
+- Fixed FileGrid responsive column calculation
+- Fixed LazyView component recreation with useMemo
+- Added `type-check` npm script
 
 ---
 
@@ -203,28 +155,22 @@ See previous session notes for full analysis and migration plan.
 
 | File | Description |
 |------|-------------|
-| `portal/src/components/shared/SafeHtml.tsx` | XSS-safe HTML rendering with DOMPurify |
+| `portal/src/components/guides/guidesData.ts` | Static guide data, types, getSuggestedQuestionsForGuide |
+| `portal/src/components/guides/GuideCards.tsx` | Card components (Guide, Featured, Personalized) |
+| `portal/src/components/guides/GuideDetail.tsx` | Guide detail with AI chat |
+| `portal/src/components/guides/GuideMessageContent.tsx` | Markdown parser for chat |
+| `portal/src/components/guides/PersonalizedGuideDetail.tsx` | Personalized guide view |
+| `portal/src/components/dashboard/index.ts` | Dashboard barrel export |
+| `portal/src/components/layout/index.ts` | Layout barrel export |
+| `portal/src/components/shared/index.ts` | Shared barrel export |
 
 ### Modified Files
 
 | File | Changes |
 |------|---------|
-| `portal/package.json` | Version 2.1.0, added DOMPurify, type-check script |
-| `portal/src/App.tsx` | useMemo for view routing |
-| `portal/src/api/client.ts` | Family types import from @/types |
-| `portal/src/hooks/useApi.ts` | staleTime on 12+ hooks, chatSearch query key |
-| `portal/src/types/index.ts` | Added FamilyMember types |
-| `portal/src/components/guides/GuidesView.tsx` | SafeHtml component usage |
-| `portal/src/components/documents/FileGrid.tsx` | Responsive column fix |
-| `portal/src/components/family/FamilyView.tsx` | Updated FamilyMember import |
-| `includes/class-framt-dashboard.php` | SQL injection fix |
-| `includes/class-framt-portal-api.php` | Permission check type casting |
-| `france-relocation-assistant-plugin/readme.txt` | Version 3.6.4 |
-| `france-relocation-member-tools/readme.txt` | Version 2.1.0 |
-| `france-relocation-github-sync/readme.txt` | Version 2.2.0 |
-| `relo2france-theme/functions.php` | Output escaping, strict comparison |
-| `relo2france-theme/footer.php` | Output escaping |
-| `relo2france-theme/single.php` | Output escaping |
+| `portal/src/components/guides/GuidesView.tsx` | Refactored to use new components (1350→253 lines) |
+| `portal/src/components/guides/index.ts` | Updated with all new exports |
+| `includes/class-framt-portal-api.php` | Added get_cached_knowledge_base(), updated search_knowledge_base() |
 
 ---
 
@@ -246,7 +192,7 @@ npm test:coverage # With coverage
 npm run lint        # Allow warnings
 npm run lint:strict # Zero warnings
 
-# Type check (new)
+# Type check
 npm run type-check  # TypeScript validation without emit
 ```
 
@@ -262,14 +208,11 @@ npm run type-check  # TypeScript validation without emit
 From the comprehensive review, these items were identified but not fixed (lower priority):
 
 ### React Components
-- GuidesView.tsx is 1350+ lines - should be split into smaller components
-- Missing barrel exports in some component folders
 - Magic numbers should be extracted to constants
 
 ### PHP Backend
-- Encryption fallback returns unencrypted legacy values (security regression risk)
+- Encryption fallback returns unencrypted legacy values (intentional for migration)
 - Missing permission checks on analytics AJAX
-- Missing transient caching in search_knowledge_base()
 
 ### Theme
 - Hardcoded colors should use CSS variables
@@ -284,6 +227,7 @@ From the comprehensive review, these items were identified but not fixed (lower 
 ## 7. Commit Summary
 
 1. `Comprehensive code review fixes: security, efficiency, and consistency`
+2. `Refactor guides components and add performance improvements`
 
 ---
 
