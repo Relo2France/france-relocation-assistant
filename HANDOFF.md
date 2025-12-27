@@ -16,7 +16,7 @@
 | Member Tools Plugin | v2.1.0 | Active |
 | React Portal | v2.1.0 | Active |
 | Theme | v1.2.4 | Active |
-| **Schengen Tracker Plugin** | **v1.0.0** | **Planned** |
+| **Schengen Tracker Plugin** | **v1.0.0** | **Complete** |
 
 The React portal is fully functional with 40+ REST API endpoints. All major features are complete including profile management, task tracking, document generation, checklists, AI-powered guides, and **Schengen day tracking with premium features**.
 
@@ -38,6 +38,36 @@ The React portal is fully functional with 40+ REST API endpoints. All major feat
 ---
 
 ## 2. What We Completed This Session
+
+### 2.0 Schengen Tracker Plugin Extraction (Phase 0)
+
+Extracted the Schengen Tracker into a standalone WordPress plugin following Option C (Hybrid) architecture:
+
+**New Plugin:** `relo2france-schengen-tracker/`
+
+| File | Purpose |
+|------|---------|
+| `relo2france-schengen-tracker.php` | Main plugin file with autoloader, activation hooks |
+| `includes/class-r2f-schengen-core.php` | Core singleton, admin menu, shortcode |
+| `includes/class-r2f-schengen-schema.php` | Database schema (reuses `fra_schengen_trips` table) |
+| `includes/class-r2f-schengen-premium.php` | Premium gating (like Family Members pattern) |
+| `includes/class-r2f-schengen-api.php` | Full REST API (`r2f-schengen/v1/` namespace) |
+| `includes/class-r2f-schengen-alerts.php` | Daily cron email alerts at 8am UTC |
+| `templates/dashboard.php` | Standalone frontend template |
+| `assets/css/schengen-frontend.css` | Modern dashboard styling |
+| `assets/js/schengen-frontend.js` | jQuery-based trip management |
+
+**Member Tools Integration:**
+- Added `includes/class-framt-schengen-bridge.php` - Bridges MemberPress membership checks
+- Bridge provides `r2f_schengen_premium_check` filter for premium access
+- Portal URLs routed to `/portal/?view=schengen`
+
+**GitHub Sync:** Added `relo2france-schengen-tracker` to plugins list
+
+**Premium Gating Flow:**
+1. User meta override (`r2f_schengen_enabled` = '1' or '0')
+2. Filter hook (`r2f_schengen_premium_check`) - Member Tools hooks here
+3. Global setting fallback (`r2f_schengen_global_enabled`)
 
 ### 2.1 Comprehensive Codebase Review
 
