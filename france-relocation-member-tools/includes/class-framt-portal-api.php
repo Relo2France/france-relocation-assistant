@@ -5916,7 +5916,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
             )
         );
 
-        // Delete generated documents and research reports
+        // Delete generated documents
         $wpdb->query(
             $wpdb->prepare(
                 "DELETE FROM {$wpdb->prefix}framt_generated_documents WHERE user_id = %d",
@@ -5924,9 +5924,10 @@ Focus on practical advice while being careful not to state incorrect facts. When
             )
         );
 
+        // Delete user's saved research report links (the reports themselves are shared)
         $wpdb->query(
             $wpdb->prepare(
-                "DELETE FROM {$wpdb->prefix}framt_research_reports WHERE user_id = %d",
+                "DELETE FROM {$wpdb->prefix}framt_research_report_links WHERE user_id = %d",
                 $user_id
             )
         );
@@ -5961,11 +5962,21 @@ Focus on practical advice while being careful not to state incorrect facts. When
         );
         delete_user_meta( $user_id, 'framt_schengen_settings' );
 
+        // Explicitly delete key profile fields to ensure they're gone
+        delete_user_meta( $user_id, 'fra_target_move_date' );
+        delete_user_meta( $user_id, 'fra_visa_type' );
+        delete_user_meta( $user_id, 'fra_timeline' );
+        delete_user_meta( $user_id, 'fra_move_date_certainty' );
+
         // Clear any cached data
         wp_cache_delete( "framt_profile_{$user_id}", 'framt' );
         wp_cache_delete( "framt_project_{$user_id}", 'framt' );
         wp_cache_delete( $user_id, 'user_meta' );
         clean_user_cache( $user_id );
+
+        // Force refresh of user meta cache
+        update_user_meta( $user_id, 'fra_profile_reset_at', current_time( 'mysql' ) );
+        delete_user_meta( $user_id, 'fra_profile_reset_at' );
 
         return rest_ensure_response(
             array(
