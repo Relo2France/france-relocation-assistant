@@ -1436,6 +1436,9 @@ class FRAMT_Portal_API {
         $project    = new FRAMT_Project( $project_id );
         $params     = $request->get_json_params();
 
+        // Track old move date for due date recalculation
+        $old_target_move_date = $project->target_move_date;
+
         if ( isset( $params['title'] ) ) {
             $project->title = sanitize_text_field( $params['title'] );
         }
@@ -1466,6 +1469,15 @@ class FRAMT_Portal_API {
                 'Failed to update project.',
                 array( 'status' => 500 )
             );
+        }
+
+        // Recalculate task due dates if move date changed
+        $new_target_move_date = $project->target_move_date;
+        if ( ! empty( $new_target_move_date ) && $new_target_move_date !== $old_target_move_date ) {
+            // Sync to user meta
+            update_user_meta( $project->user_id, 'fra_target_move_date', $new_target_move_date );
+            // Recalculate all task due dates
+            $this->recalculate_task_due_dates( $project->user_id, $new_target_move_date );
         }
 
         return rest_ensure_response( $project->to_array() );
@@ -2765,10 +2777,11 @@ class FRAMT_Portal_API {
             'marriage_cert_apostilled',
         );
 
-        // Track old values for fields that trigger task generation
-        $old_visa_type  = get_user_meta( $user_id, 'fra_visa_type', true );
-        $old_has_pets   = get_user_meta( $user_id, 'fra_has_pets', true );
-        $old_applicants = get_user_meta( $user_id, 'fra_applicants', true );
+        // Track old values for fields that trigger task generation or due date updates
+        $old_visa_type       = get_user_meta( $user_id, 'fra_visa_type', true );
+        $old_has_pets        = get_user_meta( $user_id, 'fra_has_pets', true );
+        $old_applicants      = get_user_meta( $user_id, 'fra_applicants', true );
+        $old_target_move_date = get_user_meta( $user_id, 'fra_target_move_date', true );
 
         // Update each field if provided
         foreach ( $allowed_fields as $field ) {
@@ -2788,9 +2801,10 @@ class FRAMT_Portal_API {
         update_user_meta( $user_id, 'fra_profile_updated', current_time( 'mysql' ) );
 
         // Get new values
-        $new_visa_type  = get_user_meta( $user_id, 'fra_visa_type', true );
-        $new_has_pets   = get_user_meta( $user_id, 'fra_has_pets', true );
-        $new_applicants = get_user_meta( $user_id, 'fra_applicants', true );
+        $new_visa_type        = get_user_meta( $user_id, 'fra_visa_type', true );
+        $new_has_pets         = get_user_meta( $user_id, 'fra_has_pets', true );
+        $new_applicants       = get_user_meta( $user_id, 'fra_applicants', true );
+        $new_target_move_date = get_user_meta( $user_id, 'fra_target_move_date', true );
 
         // Sync project visa type and generate tasks if visa type changed
         if ( ! empty( $new_visa_type ) && $new_visa_type !== $old_visa_type ) {
@@ -2805,6 +2819,18 @@ class FRAMT_Portal_API {
             'old_applicants' => $old_applicants,
             'new_applicants' => $new_applicants,
         ) );
+
+        // Recalculate task due dates if move date changed
+        if ( ! empty( $new_target_move_date ) && $new_target_move_date !== $old_target_move_date ) {
+            // Sync move date to project
+            $project = FRAMT_Project::get_or_create( $user_id );
+            if ( $project && $project->id ) {
+                $project->target_move_date = $new_target_move_date;
+                $project->save();
+            }
+            // Recalculate all task due dates
+            $this->recalculate_task_due_dates( $user_id, $new_target_move_date );
+        }
 
         return $this->get_member_profile( $request );
     }
@@ -6001,6 +6027,12 @@ Focus on practical advice while being careful not to state incorrect facts. When
             return 0;
         }
 
+        // Get move date for due date calculation
+        $move_date = $project->target_move_date;
+        if ( empty( $move_date ) ) {
+            $move_date = get_user_meta( $user_id, 'fra_target_move_date', true );
+        }
+
         $tasks_created = 0;
 
         foreach ( $templates as $template ) {
@@ -6019,12 +6051,128 @@ Focus on practical advice while being careful not to state incorrect facts. When
             $task->priority   = sanitize_key( $template['priority'] ?? 'medium' );
             $task->task_type  = sanitize_key( $template['task_type'] ?? 'task' );
 
+            // Calculate due date if move date exists and template has days_offset
+            if ( ! empty( $move_date ) && isset( $template['days_offset'] ) ) {
+                $task->due_date = $this->calculate_due_date( $move_date, $template['days_offset'] );
+            }
+
             if ( $task->save() ) {
                 $tasks_created++;
             }
         }
 
         return $tasks_created;
+    }
+
+    /**
+     * Calculate due date based on move date and days offset
+     *
+     * @param string $move_date   Target move date (Y-m-d format)
+     * @param int    $days_offset Days offset from move date (negative = before, positive = after)
+     * @return string Due date in Y-m-d format
+     */
+    private function calculate_due_date( $move_date, $days_offset ) {
+        $date = new DateTime( $move_date );
+        $date->modify( sprintf( '%+d days', $days_offset ) );
+
+        // Don't set due dates in the past
+        $today = new DateTime( 'today' );
+        if ( $date < $today && $days_offset < 0 ) {
+            // For pre-arrival tasks with past due dates, set to 7 days from now
+            $date = new DateTime( 'today' );
+            $date->modify( '+7 days' );
+        }
+
+        return $date->format( 'Y-m-d' );
+    }
+
+    /**
+     * Recalculate due dates for all tasks when move date changes
+     *
+     * @param int    $user_id   User ID
+     * @param string $move_date New move date
+     * @return int Number of tasks updated
+     */
+    public function recalculate_task_due_dates( $user_id, $move_date ) {
+        global $wpdb;
+
+        $project = FRAMT_Project::get_or_create( $user_id );
+        if ( ! $project || ! $project->id || empty( $move_date ) ) {
+            return 0;
+        }
+
+        // Get all incomplete tasks for this project
+        $tasks = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT id, title, stage FROM {$wpdb->prefix}framt_tasks
+                WHERE project_id = %d AND status != 'done'",
+                $project->id
+            )
+        );
+
+        if ( empty( $tasks ) ) {
+            return 0;
+        }
+
+        // Build a map of task titles to their offsets from all templates
+        $offset_map = $this->get_task_offset_map();
+
+        $tasks_updated = 0;
+
+        foreach ( $tasks as $task_row ) {
+            // Look up the offset for this task
+            if ( isset( $offset_map[ $task_row->title ] ) ) {
+                $offset   = $offset_map[ $task_row->title ];
+                $due_date = $this->calculate_due_date( $move_date, $offset );
+
+                $wpdb->update(
+                    $wpdb->prefix . 'framt_tasks',
+                    array( 'due_date' => $due_date ),
+                    array( 'id' => $task_row->id ),
+                    array( '%s' ),
+                    array( '%d' )
+                );
+                $tasks_updated++;
+            }
+        }
+
+        return $tasks_updated;
+    }
+
+    /**
+     * Build a map of task titles to their days_offset values
+     *
+     * @return array Associative array of title => days_offset
+     */
+    private function get_task_offset_map() {
+        $offset_map = array();
+
+        // Get templates from all visa types and conditional tasks
+        $visa_types = array( 'visitor', 'talent_passport', 'employee', 'entrepreneur', 'student', 'retiree', 'undecided' );
+
+        foreach ( $visa_types as $visa_type ) {
+            $templates = $this->get_visa_task_templates( $visa_type );
+            foreach ( $templates as $template ) {
+                if ( isset( $template['days_offset'] ) ) {
+                    $offset_map[ $template['title'] ] = $template['days_offset'];
+                }
+            }
+        }
+
+        // Add conditional task templates
+        $conditional_templates = array_merge(
+            $this->get_pet_task_templates(),
+            $this->get_spouse_task_templates(),
+            $this->get_children_task_templates()
+        );
+
+        foreach ( $conditional_templates as $template ) {
+            if ( isset( $template['days_offset'] ) ) {
+                $offset_map[ $template['title'] ] = $template['days_offset'];
+            }
+        }
+
+        return $offset_map;
     }
 
     /**
@@ -6122,6 +6270,17 @@ Focus on practical advice while being careful not to state incorrect facts. When
         $task->priority   = sanitize_key( $template['priority'] ?? 'medium' );
         $task->task_type  = sanitize_key( $template['task_type'] ?? 'task' );
 
+        // Calculate due date if move date exists and template has days_offset
+        $project = new FRAMT_Project( $project_id );
+        $move_date = $project->target_move_date;
+        if ( empty( $move_date ) ) {
+            $move_date = get_user_meta( $user_id, 'fra_target_move_date', true );
+        }
+
+        if ( ! empty( $move_date ) && isset( $template['days_offset'] ) ) {
+            $task->due_date = $this->calculate_due_date( $move_date, $template['days_offset'] );
+        }
+
         return $task->save() ? 1 : 0;
     }
 
@@ -6133,14 +6292,16 @@ Focus on practical advice while being careful not to state incorrect facts. When
      */
     private function get_visa_task_templates( $visa_type ) {
         // Common tasks for all visa types
+        // days_offset: negative = days before move, positive = days after move
         $common_tasks = array(
-            // Pre-arrival stage
+            // Pre-arrival stage (before move date)
             array(
                 'title'       => 'Gather all required documents',
                 'description' => 'Collect passport, birth certificate, marriage certificate (if applicable), proof of income, and other supporting documents.',
                 'stage'       => 'pre-arrival',
                 'priority'    => 'high',
                 'task_type'   => 'document',
+                'days_offset' => -120, // 4 months before move
             ),
             array(
                 'title'       => 'Get documents apostilled',
@@ -6148,6 +6309,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                 'stage'       => 'pre-arrival',
                 'priority'    => 'high',
                 'task_type'   => 'document',
+                'days_offset' => -90, // 3 months before move
             ),
             array(
                 'title'       => 'Get documents translated',
@@ -6155,6 +6317,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                 'stage'       => 'pre-arrival',
                 'priority'    => 'high',
                 'task_type'   => 'document',
+                'days_offset' => -75, // 2.5 months before move
             ),
             array(
                 'title'       => 'Open French bank account',
@@ -6162,6 +6325,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                 'stage'       => 'pre-arrival',
                 'priority'    => 'medium',
                 'task_type'   => 'financial',
+                'days_offset' => -60, // 2 months before move
             ),
             array(
                 'title'       => 'Research health insurance options',
@@ -6169,6 +6333,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                 'stage'       => 'pre-arrival',
                 'priority'    => 'high',
                 'task_type'   => 'task',
+                'days_offset' => -90, // 3 months before move
             ),
             array(
                 'title'       => 'Book temporary accommodation',
@@ -6176,15 +6341,17 @@ Focus on practical advice while being careful not to state incorrect facts. When
                 'stage'       => 'pre-arrival',
                 'priority'    => 'high',
                 'task_type'   => 'task',
+                'days_offset' => -30, // 1 month before move
             ),
 
-            // Arrival stage
+            // Arrival stage (shortly after move date)
             array(
                 'title'       => 'Validate visa (if VLS-TS)',
                 'description' => 'Validate your long-stay visa within 3 months of arrival at the OFII.',
                 'stage'       => 'arrival',
                 'priority'    => 'high',
                 'task_type'   => 'appointment',
+                'days_offset' => 14, // 2 weeks after move
             ),
             array(
                 'title'       => 'Register for social security',
@@ -6192,6 +6359,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                 'stage'       => 'arrival',
                 'priority'    => 'high',
                 'task_type'   => 'task',
+                'days_offset' => 7, // 1 week after move
             ),
             array(
                 'title'       => 'Find permanent housing',
@@ -6199,6 +6367,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                 'stage'       => 'arrival',
                 'priority'    => 'high',
                 'task_type'   => 'task',
+                'days_offset' => 21, // 3 weeks after move
             ),
             array(
                 'title'       => 'Set up utilities',
@@ -6206,15 +6375,17 @@ Focus on practical advice while being careful not to state incorrect facts. When
                 'stage'       => 'arrival',
                 'priority'    => 'medium',
                 'task_type'   => 'task',
+                'days_offset' => 30, // 1 month after move
             ),
 
-            // Settlement stage
+            // Settlement stage (1-3 months after move)
             array(
                 'title'       => 'Get Carte Vitale',
                 'description' => 'Once registered with social security, apply for your Carte Vitale health card.',
                 'stage'       => 'settlement',
                 'priority'    => 'medium',
                 'task_type'   => 'document',
+                'days_offset' => 60, // 2 months after move
             ),
             array(
                 'title'       => 'Apply for CAF benefits',
@@ -6222,6 +6393,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                 'stage'       => 'settlement',
                 'priority'    => 'medium',
                 'task_type'   => 'financial',
+                'days_offset' => 45, // 1.5 months after move
             ),
             array(
                 'title'       => 'Exchange driving license',
@@ -6229,15 +6401,17 @@ Focus on practical advice while being careful not to state incorrect facts. When
                 'stage'       => 'settlement',
                 'priority'    => 'low',
                 'task_type'   => 'document',
+                'days_offset' => 90, // 3 months after move
             ),
 
-            // Integration stage
+            // Integration stage (3+ months after move)
             array(
                 'title'       => 'Enroll in French language classes',
                 'description' => 'Sign up for French language courses to improve integration.',
                 'stage'       => 'integration',
                 'priority'    => 'medium',
                 'task_type'   => 'task',
+                'days_offset' => 30, // 1 month after move (start early)
             ),
             array(
                 'title'       => 'File French tax return',
@@ -6245,10 +6419,12 @@ Focus on practical advice while being careful not to state incorrect facts. When
                 'stage'       => 'integration',
                 'priority'    => 'medium',
                 'task_type'   => 'financial',
+                'days_offset' => 180, // 6 months after move (next tax season)
             ),
         );
 
         // Visa-specific tasks
+        // days_offset: negative = days before move, positive = days after move
         $visa_specific_tasks = array();
 
         switch ( $visa_type ) {
@@ -6260,6 +6436,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                         'stage'       => 'pre-arrival',
                         'priority'    => 'high',
                         'task_type'   => 'document',
+                        'days_offset' => -90, // 3 months before move
                     ),
                     array(
                         'title'       => 'Sign declaration not to work',
@@ -6267,6 +6444,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                         'stage'       => 'pre-arrival',
                         'priority'    => 'high',
                         'task_type'   => 'document',
+                        'days_offset' => -60, // 2 months before move
                     ),
                     array(
                         'title'       => 'Arrange comprehensive health insurance',
@@ -6274,6 +6452,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                         'stage'       => 'pre-arrival',
                         'priority'    => 'high',
                         'task_type'   => 'task',
+                        'days_offset' => -45, // 1.5 months before move
                     ),
                 );
                 break;
@@ -6286,6 +6465,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                         'stage'       => 'pre-arrival',
                         'priority'    => 'high',
                         'task_type'   => 'document',
+                        'days_offset' => -120, // 4 months before move
                     ),
                     array(
                         'title'       => 'Prepare diploma/qualification proof',
@@ -6293,6 +6473,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                         'stage'       => 'pre-arrival',
                         'priority'    => 'high',
                         'task_type'   => 'document',
+                        'days_offset' => -90, // 3 months before move
                     ),
                     array(
                         'title'       => 'Register with URSSAF',
@@ -6300,6 +6481,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                         'stage'       => 'arrival',
                         'priority'    => 'high',
                         'task_type'   => 'task',
+                        'days_offset' => 14, // 2 weeks after move
                     ),
                 );
                 break;
@@ -6312,6 +6494,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                         'stage'       => 'pre-arrival',
                         'priority'    => 'high',
                         'task_type'   => 'document',
+                        'days_offset' => -150, // 5 months before move
                     ),
                     array(
                         'title'       => 'Get employment contract certified',
@@ -6319,6 +6502,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                         'stage'       => 'pre-arrival',
                         'priority'    => 'high',
                         'task_type'   => 'document',
+                        'days_offset' => -90, // 3 months before move
                     ),
                     array(
                         'title'       => 'Understand French labor rights',
@@ -6326,6 +6510,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                         'stage'       => 'arrival',
                         'priority'    => 'medium',
                         'task_type'   => 'task',
+                        'days_offset' => 7, // 1 week after move
                     ),
                 );
                 break;
@@ -6338,6 +6523,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                         'stage'       => 'pre-arrival',
                         'priority'    => 'high',
                         'task_type'   => 'document',
+                        'days_offset' => -120, // 4 months before move
                     ),
                     array(
                         'title'       => 'Prove business funding',
@@ -6345,6 +6531,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                         'stage'       => 'pre-arrival',
                         'priority'    => 'high',
                         'task_type'   => 'financial',
+                        'days_offset' => -90, // 3 months before move
                     ),
                     array(
                         'title'       => 'Register business in France',
@@ -6352,6 +6539,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                         'stage'       => 'arrival',
                         'priority'    => 'high',
                         'task_type'   => 'task',
+                        'days_offset' => 14, // 2 weeks after move
                     ),
                     array(
                         'title'       => 'Set up business bank account',
@@ -6359,6 +6547,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                         'stage'       => 'arrival',
                         'priority'    => 'high',
                         'task_type'   => 'financial',
+                        'days_offset' => 21, // 3 weeks after move
                     ),
                 );
                 break;
@@ -6371,6 +6560,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                         'stage'       => 'pre-arrival',
                         'priority'    => 'high',
                         'task_type'   => 'document',
+                        'days_offset' => -180, // 6 months before move (applications due early)
                     ),
                     array(
                         'title'       => 'Register on Campus France',
@@ -6378,6 +6568,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                         'stage'       => 'pre-arrival',
                         'priority'    => 'high',
                         'task_type'   => 'task',
+                        'days_offset' => -150, // 5 months before move
                     ),
                     array(
                         'title'       => 'Prove financial resources for studies',
@@ -6385,6 +6576,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                         'stage'       => 'pre-arrival',
                         'priority'    => 'high',
                         'task_type'   => 'financial',
+                        'days_offset' => -90, // 3 months before move
                     ),
                     array(
                         'title'       => 'Apply for CROUS housing',
@@ -6392,6 +6584,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                         'stage'       => 'pre-arrival',
                         'priority'    => 'medium',
                         'task_type'   => 'task',
+                        'days_offset' => -120, // 4 months before move
                     ),
                     array(
                         'title'       => 'Complete university enrollment',
@@ -6399,6 +6592,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                         'stage'       => 'arrival',
                         'priority'    => 'high',
                         'task_type'   => 'task',
+                        'days_offset' => 7, // 1 week after move
                     ),
                 );
                 break;
@@ -6411,6 +6605,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                         'stage'       => 'pre-arrival',
                         'priority'    => 'high',
                         'task_type'   => 'document',
+                        'days_offset' => -90, // 3 months before move
                     ),
                     array(
                         'title'       => 'Arrange pension transfer',
@@ -6418,6 +6613,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                         'stage'       => 'pre-arrival',
                         'priority'    => 'medium',
                         'task_type'   => 'financial',
+                        'days_offset' => -60, // 2 months before move
                     ),
                     array(
                         'title'       => 'Research S1 health form',
@@ -6425,6 +6621,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                         'stage'       => 'pre-arrival',
                         'priority'    => 'high',
                         'task_type'   => 'task',
+                        'days_offset' => -90, // 3 months before move
                     ),
                 );
                 break;
@@ -6443,6 +6640,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
      * @return array Task templates for pet owners
      */
     private function get_pet_task_templates() {
+        // days_offset: negative = days before move, positive = days after move
         return array(
             array(
                 'title'       => 'Get pet microchipped',
@@ -6450,6 +6648,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                 'stage'       => 'pre-arrival',
                 'priority'    => 'high',
                 'task_type'   => 'task',
+                'days_offset' => -120, // 4 months before move (must be done before vaccinations)
             ),
             array(
                 'title'       => 'Update pet vaccinations',
@@ -6457,6 +6656,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                 'stage'       => 'pre-arrival',
                 'priority'    => 'high',
                 'task_type'   => 'appointment',
+                'days_offset' => -90, // 3 months before move (needs 21+ days before travel)
             ),
             array(
                 'title'       => 'Get EU pet passport or health certificate',
@@ -6464,6 +6664,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                 'stage'       => 'pre-arrival',
                 'priority'    => 'high',
                 'task_type'   => 'document',
+                'days_offset' => -14, // 2 weeks before move (must be within 10 days of travel)
             ),
             array(
                 'title'       => 'Research pet travel requirements',
@@ -6471,6 +6672,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                 'stage'       => 'pre-arrival',
                 'priority'    => 'medium',
                 'task_type'   => 'task',
+                'days_offset' => -150, // 5 months before move (early research)
             ),
             array(
                 'title'       => 'Book pet-friendly accommodation',
@@ -6478,6 +6680,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                 'stage'       => 'pre-arrival',
                 'priority'    => 'high',
                 'task_type'   => 'task',
+                'days_offset' => -60, // 2 months before move
             ),
             array(
                 'title'       => 'Find a French veterinarian',
@@ -6485,6 +6688,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                 'stage'       => 'arrival',
                 'priority'    => 'medium',
                 'task_type'   => 'task',
+                'days_offset' => 14, // 2 weeks after move
             ),
         );
     }
@@ -6495,6 +6699,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
      * @return array Task templates for applicants with spouse
      */
     private function get_spouse_task_templates() {
+        // days_offset: negative = days before move, positive = days after move
         return array(
             array(
                 'title'       => 'Get marriage certificate apostilled',
@@ -6502,6 +6707,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                 'stage'       => 'pre-arrival',
                 'priority'    => 'high',
                 'task_type'   => 'document',
+                'days_offset' => -90, // 3 months before move
             ),
             array(
                 'title'       => 'Translate marriage certificate',
@@ -6509,6 +6715,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                 'stage'       => 'pre-arrival',
                 'priority'    => 'high',
                 'task_type'   => 'document',
+                'days_offset' => -75, // 2.5 months before move (after apostille)
             ),
             array(
                 'title'       => 'Gather spouse documents',
@@ -6516,6 +6723,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                 'stage'       => 'pre-arrival',
                 'priority'    => 'high',
                 'task_type'   => 'document',
+                'days_offset' => -120, // 4 months before move
             ),
             array(
                 'title'       => 'Apply for spouse visa',
@@ -6523,6 +6731,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                 'stage'       => 'pre-arrival',
                 'priority'    => 'high',
                 'task_type'   => 'task',
+                'days_offset' => -60, // 2 months before move
             ),
             array(
                 'title'       => 'Register spouse for social security',
@@ -6530,6 +6739,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                 'stage'       => 'arrival',
                 'priority'    => 'medium',
                 'task_type'   => 'task',
+                'days_offset' => 21, // 3 weeks after move
             ),
         );
     }
@@ -6540,6 +6750,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
      * @return array Task templates for applicants with children
      */
     private function get_children_task_templates() {
+        // days_offset: negative = days before move, positive = days after move
         return array(
             array(
                 'title'       => 'Get birth certificates apostilled',
@@ -6547,6 +6758,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                 'stage'       => 'pre-arrival',
                 'priority'    => 'high',
                 'task_type'   => 'document',
+                'days_offset' => -90, // 3 months before move
             ),
             array(
                 'title'       => 'Translate birth certificates',
@@ -6554,6 +6766,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                 'stage'       => 'pre-arrival',
                 'priority'    => 'high',
                 'task_type'   => 'document',
+                'days_offset' => -75, // 2.5 months before move
             ),
             array(
                 'title'       => 'Gather children vaccination records',
@@ -6561,6 +6774,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                 'stage'       => 'pre-arrival',
                 'priority'    => 'high',
                 'task_type'   => 'document',
+                'days_offset' => -60, // 2 months before move
             ),
             array(
                 'title'       => 'Research French schools',
@@ -6568,6 +6782,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                 'stage'       => 'pre-arrival',
                 'priority'    => 'medium',
                 'task_type'   => 'task',
+                'days_offset' => -120, // 4 months before move (early research)
             ),
             array(
                 'title'       => 'Apply for child visas',
@@ -6575,6 +6790,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                 'stage'       => 'pre-arrival',
                 'priority'    => 'high',
                 'task_type'   => 'task',
+                'days_offset' => -60, // 2 months before move
             ),
             array(
                 'title'       => 'Enroll children in school',
@@ -6582,6 +6798,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                 'stage'       => 'arrival',
                 'priority'    => 'high',
                 'task_type'   => 'task',
+                'days_offset' => 7, // 1 week after move
             ),
             array(
                 'title'       => 'Apply for family CAF benefits',
@@ -6589,10 +6806,12 @@ Focus on practical advice while being careful not to state incorrect facts. When
                 'stage'       => 'settlement',
                 'priority'    => 'medium',
                 'task_type'   => 'financial',
+                'days_offset' => 45, // 1.5 months after move
             ),
             array(
                 'title'       => 'Register children for health coverage',
                 'description' => 'Add children as ayants droit for French health insurance.',
+                'days_offset' => 21, // 3 weeks after move
                 'stage'       => 'arrival',
                 'priority'    => 'high',
                 'task_type'   => 'task',
