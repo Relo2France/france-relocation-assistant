@@ -155,6 +155,11 @@ See previous session notes for full analysis and migration plan.
 
 | File | Description |
 |------|-------------|
+| `portal/src/constants/timing.ts` | STALE_TIME, REFETCH_INTERVAL, TRANSITION_DURATION constants |
+| `portal/src/constants/layout.ts` | SIDEBAR, HEADER, LOADING, BREAKPOINTS constants |
+| `portal/src/constants/features.ts` | VIRTUALIZATION, SEARCH, CHAT, PROFILE_COMPLETION constants |
+| `portal/src/constants/index.ts` | Constants barrel export |
+| `portal/.env.example` | Environment variables template for development |
 | `portal/src/components/guides/guidesData.ts` | Static guide data, types, getSuggestedQuestionsForGuide |
 | `portal/src/components/guides/GuideCards.tsx` | Card components (Guide, Featured, Personalized) |
 | `portal/src/components/guides/GuideDetail.tsx` | Guide detail with AI chat |
@@ -168,9 +173,11 @@ See previous session notes for full analysis and migration plan.
 
 | File | Changes |
 |------|---------|
+| `portal/src/hooks/useApi.ts` | Use STALE_TIME and SEARCH constants |
 | `portal/src/components/guides/GuidesView.tsx` | Refactored to use new components (1350→253 lines) |
 | `portal/src/components/guides/index.ts` | Updated with all new exports |
 | `includes/class-framt-portal-api.php` | Added get_cached_knowledge_base(), updated search_knowledge_base() |
+| `relo2france-theme/template-auth.php` | Replace hardcoded colors with CSS variables |
 
 ---
 
@@ -205,22 +212,16 @@ npm run type-check  # TypeScript validation without emit
 
 ## 6. Remaining Issues (Lower Priority)
 
-From the comprehensive review, these items were identified but not fixed (lower priority):
-
-### React Components
-- Magic numbers should be extracted to constants
+From the comprehensive review, most issues have been addressed. Remaining items:
 
 ### PHP Backend
 - Encryption fallback returns unencrypted legacy values (intentional for migration)
-- Missing permission checks on analytics AJAX
 
 ### Theme
-- Hardcoded colors should use CSS variables
 - Missing JSDoc on some functions
 
 ### Configuration
 - Consider adding eslint-plugin-import for import ordering
-- Add .env.example template
 
 ---
 
@@ -228,6 +229,7 @@ From the comprehensive review, these items were identified but not fixed (lower 
 
 1. `Comprehensive code review fixes: security, efficiency, and consistency`
 2. `Refactor guides components and add performance improvements`
+3. `Add constants, CSS variables, and .env.example`
 
 ---
 

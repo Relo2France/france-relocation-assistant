@@ -68,16 +68,16 @@ if (!defined('ABSPATH')) {
         /* Fallback styles if plugin CSS doesn't load */
         .r2f-auth-fallback {
             min-height: 100vh;
-            background: linear-gradient(135deg, #172554 0%, #1e3a8a 50%, #3b82f6 100%);
+            background: linear-gradient(135deg, var(--r2f-auth-blue-dark) 0%, var(--r2f-auth-blue) 50%, var(--r2f-auth-blue-light) 100%);
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 2rem;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
-        
+
         .r2f-auth-fallback-card {
-            background: #ffffff;
+            background: var(--r2f-white);
             border-radius: 16px;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
             padding: 2.5rem;
@@ -85,16 +85,20 @@ if (!defined('ABSPATH')) {
             width: 100%;
             text-align: center;
         }
-        
+
         .r2f-auth-fallback-card h1 {
-            color: #1e3a8a;
+            color: var(--r2f-auth-blue);
             font-size: 1.5rem;
             margin: 0 0 1rem 0;
         }
-        
+
         .r2f-auth-fallback-card p {
-            color: #6b7280;
+            color: var(--r2f-text-light);
             margin: 0;
+        }
+
+        .r2f-auth-fallback-card a {
+            color: var(--r2f-auth-blue);
         }
     </style>
 </head>
@@ -134,7 +138,7 @@ if (function_exists('wp_body_open')) {
                         <h1><?php the_title(); ?></h1>
                         <?php the_content(); ?>
                         <p style="margin-top: 1rem;">
-                            <a href="<?php echo esc_url(home_url('/')); ?>" style="color: #1e3a8a;">← Back to home</a>
+                            <a href="<?php echo esc_url(home_url('/')); ?>">← Back to home</a>
                         </p>
                     </div>
                 </div>
@@ -149,7 +153,7 @@ if (function_exists('wp_body_open')) {
                 <h1>Page Not Found</h1>
                 <p>The page you're looking for doesn't exist.</p>
                 <p style="margin-top: 1rem;">
-                    <a href="<?php echo esc_url(home_url('/')); ?>" style="color: #1e3a8a;">← Back to home</a>
+                    <a href="<?php echo esc_url(home_url('/')); ?>">← Back to home</a>
                 </p>
             </div>
         </div>
