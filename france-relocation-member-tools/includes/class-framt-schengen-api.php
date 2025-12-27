@@ -31,6 +31,43 @@ class FRAMT_Schengen_API {
     const NAMESPACE = 'fra-portal/v1';
 
     /**
+     * Valid Schengen countries
+     *
+     * @var array
+     */
+    const SCHENGEN_COUNTRIES = array(
+        'Austria',
+        'Belgium',
+        'Bulgaria',
+        'Croatia',
+        'Czech Republic',
+        'Denmark',
+        'Estonia',
+        'Finland',
+        'France',
+        'Germany',
+        'Greece',
+        'Hungary',
+        'Iceland',
+        'Italy',
+        'Latvia',
+        'Liechtenstein',
+        'Lithuania',
+        'Luxembourg',
+        'Malta',
+        'Netherlands',
+        'Norway',
+        'Poland',
+        'Portugal',
+        'Romania',
+        'Slovakia',
+        'Slovenia',
+        'Spain',
+        'Sweden',
+        'Switzerland',
+    );
+
+    /**
      * Singleton instance
      *
      * @var FRAMT_Schengen_API|null
@@ -201,6 +238,7 @@ class FRAMT_Schengen_API {
             'country' => array(
                 'type'              => 'string',
                 'required'          => true,
+                'enum'              => self::SCHENGEN_COUNTRIES,
                 'sanitize_callback' => 'sanitize_text_field',
             ),
             'category' => array(
@@ -541,12 +579,27 @@ class FRAMT_Schengen_API {
 
         $settings = $this->get_user_settings( $user_id );
 
-        if ( isset( $params['yellowThreshold'] ) ) {
-            $settings['yellow_threshold'] = max( 1, min( 89, (int) $params['yellowThreshold'] ) );
+        // Get proposed threshold values (or use current)
+        $yellow = isset( $params['yellowThreshold'] )
+            ? max( 1, min( 89, (int) $params['yellowThreshold'] ) )
+            : $settings['yellow_threshold'];
+
+        $red = isset( $params['redThreshold'] )
+            ? max( 1, min( 90, (int) $params['redThreshold'] ) )
+            : $settings['red_threshold'];
+
+        // Validate that yellow threshold is less than red threshold
+        if ( $yellow >= $red ) {
+            return new WP_Error(
+                'invalid_thresholds',
+                'Yellow threshold must be less than red threshold.',
+                array( 'status' => 400 )
+            );
         }
-        if ( isset( $params['redThreshold'] ) ) {
-            $settings['red_threshold'] = max( 1, min( 90, (int) $params['redThreshold'] ) );
-        }
+
+        $settings['yellow_threshold'] = $yellow;
+        $settings['red_threshold']    = $red;
+
         if ( isset( $params['emailAlerts'] ) ) {
             $settings['email_alerts'] = (bool) $params['emailAlerts'];
         }

@@ -78,10 +78,7 @@ export default function TripForm({
     }
 
     // Check for excessively long trips
-    const duration = getTripDuration({
-      startDate,
-      endDate,
-    } as SchengenTrip);
+    const duration = getTripDuration({ startDate, endDate });
 
     if (duration > 90) {
       setError('A single trip cannot exceed 90 days.');
@@ -98,7 +95,7 @@ export default function TripForm({
   };
 
   const duration = startDate && endDate
-    ? getTripDuration({ startDate, endDate } as SchengenTrip)
+    ? getTripDuration({ startDate, endDate })
     : null;
 
   return (
