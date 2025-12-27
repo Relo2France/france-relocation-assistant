@@ -2,7 +2,7 @@
 
 **Date:** December 27, 2025
 **Branch:** `claude/resume-from-handoff-JlK7B`
-**Last Commit:** `Merge main branch and resolve conflicts`
+**Last Commit:** `Fix profile reset table names - use schema helper`
 
 ---
 
@@ -17,82 +17,78 @@
 | React Portal | v2.1.0 | Active |
 | Theme | v1.2.4 | Active |
 
-The React portal is fully functional with 40+ REST API endpoints. All major features are complete including profile management, task tracking, document generation, checklists, AI-powered guides, and **Schengen day tracking with premium features**.
+The React portal is fully functional with 40+ REST API endpoints. All major features are complete including profile management, task tracking, document generation, checklists, AI-powered guides, Schengen day tracking, and **profile reset functionality**.
 
 ---
 
 ## 2. What We Completed This Session
 
-### 2.1 Comprehensive Codebase Review
+### 2.1 Profile Reset Feature (NEW)
 
-Performed full review of all 7 major areas, identifying **216 issues total**:
+Added complete "Reset Visa Profile" functionality in Settings → Portal Account → Danger Zone:
 
-| Area | Critical | High | Medium | Low | Total |
-|------|----------|------|--------|-----|-------|
-| React Components | 12 | 28 | 35 | 17 | 92 |
-| Hooks/API/Store | 2 | 6 | 12 | 8 | 28 |
-| TypeScript Types | 5 | 3 | 4 | 4 | 16 |
-| PHP Main Plugin | 3 | 5 | 8 | 9 | 25 |
-| PHP Member Tools | 1 | 5 | 4 | 3 | 13 |
-| WordPress Theme | 1 | 5 | 9 | 9 | 24 |
-| Configuration | 2 | 3 | 5 | 8 | 18 |
+**Backend (`class-framt-portal-api.php`):**
+- Added REST endpoint `POST /profile/reset`
+- Requires confirmation phrase "RESET MY PROFILE"
+- Deletes all user portal data comprehensively
 
-### 2.2 Security Fixes Implemented
+**Frontend (`SettingsView.tsx`):**
+- Added amber warning section in Danger Zone
+- Confirmation input with exact phrase matching
+- Success message with auto-reload after 2 seconds
 
-1. **Theme header.php** - Added `esc_html()` to `bloginfo('name')` output
-2. **Portal template-portal.php** - Added `wp_strip_all_tags()` to custom CSS output
-3. **Main plugin api-proxy.php** - Added proper permission callback for `/fra/v1/chat` endpoint
+**Data deleted on reset:**
+| Data Type | Table/Storage |
+|-----------|---------------|
+| Projects | `fra_projects` |
+| Tasks | `fra_tasks` |
+| Notes | `fra_notes` |
+| Files | `fra_files` + physical files |
+| Activity log | `fra_activity` |
+| Schengen trips | `fra_schengen_trips` |
+| Schengen settings | `framt_schengen_settings` user meta |
+| Messages | `framt_messages`, `framt_message_replies` |
+| Generated documents | `framt_generated_documents` |
+| Research report links | `framt_research_report_links` |
+| WordPress documents | `fra_document` post type |
+| User uploads folder | `uploads/fra-portal/{user_id}/` |
+| Profile meta | All `fra_*` user meta keys |
 
-### 2.3 TypeScript Type Fixes
+### 2.2 Automatic Task Due Date Calculation
 
-1. Fixed `FamilyMember` interface - changed `created_at`/`updated_at` to camelCase
-2. Fixed `FamilyMembersResponse` interface - `feature_enabled` → `featureEnabled`, `can_edit` → `canEdit`
-3. Fixed `FamilyFeatureStatus` interface - `upgrade_url` → `upgradeUrl`
-4. Updated `FamilyView.tsx` to use new property names
+Tasks now automatically get due dates based on the user's move date:
 
-### 2.4 React Query Performance Improvements
+- Added `days_offset` to all 50+ task templates (e.g., -120 = 4 months before move)
+- Created `calculate_due_date()` function for smart date calculation
+- Created `recalculate_task_due_dates()` to update existing tasks when move date changes
+- Hooked into `update_member_profile()` and `update_project()` to trigger recalculation
+- Smart handling for past dates (sets to 7 days from now if calculated date is in past)
 
-Added missing `staleTime` values to 7 hooks:
-- `useTaskChecklist` - 30 seconds
-- `useGeneratedDocuments` - 1 minute
-- `useVerificationHistory` - 1 minute
-- `useGuide` - 1 hour (static content)
-- `usePersonalizedGuide` - 5 minutes
-- `useSubscriptions` - 5 minutes
-- `usePayments` - 5 minutes
+### 2.3 Move Date Certainty Setting
 
-Also replaced magic number `60000` with `REFETCH_INTERVAL.SUPPORT_UNREAD` constant.
+Added setting for users to indicate how firm their move date is:
 
-### 2.5 React Component Fixes
+- New field `move_date_certainty` with options: `fixed`, `anticipated`, `flexible`
+- Added to PHP profile API (`fra_move_date_certainty` user meta)
+- Added TypeScript types (`MoveDateCertainty`, `TimelineType`)
+- Added UI dropdown in Settings → Visa Profile → Timeline section
 
-Fixed profile section initialization pattern in 3 components:
-- `PersonalSection.tsx` - Replaced `initialized` state with `useRef`
-- `ApplicantSection.tsx` - Same pattern fix
-- `VisaSection.tsx` - Same pattern fix
+### 2.4 Schengen Tracker Improvements
 
-### 2.6 ESLint Configuration Improvements
+- Added `actionError` state to display API errors to users
+- Error banner shows when trip add/update/delete fails (previously silent)
+- Added dismiss button for error messages
+- Fixed ARIA role issue in `DayCounter.tsx` (removed invalid `role="text"`)
 
-Added new plugins and rules:
-- Added `eslint-plugin-react` for React best practices
-- Added `eslint-plugin-jsx-a11y` for accessibility enforcement
-- Added `eslint-plugin-import` for import ordering
-- Configured as warnings (not errors) for existing codebase
-- Total: 57+ warnings now tracked (accessibility + import ordering)
+### 2.5 Bug Fix: Profile Reset Table Names
 
-### 2.7 Accessibility Improvements
+**Critical fix:** The reset function was using wrong table names:
+- `framt_projects` → should be `fra_projects`
+- `framt_tasks` → should be `fra_tasks`
+- `framt_notes` → should be `fra_notes`
+- `framt_files` → should be `fra_files`
 
-1. Header search input - Added `aria-label="Search across portal"`
-2. Header search icon - Added `aria-hidden="true"`
-3. Changed search input type to `type="search"`
-
-### 2.8 Theme Documentation
-
-Added JSDoc to all 14 theme functions in `relo2france-theme/functions.php` for better IDE support and maintainability.
-
-### 2.9 Configuration Improvements
-
-1. Updated `.gitignore` with comprehensive entries
-2. Fixed theme.js version number (1.2.3 → 1.2.4)
+Now uses `FRAMT_Portal_Schema::get_table()` for correct names.
 
 ---
 
@@ -101,33 +97,18 @@ Added JSDoc to all 14 theme functions in `relo2france-theme/functions.php` for b
 ### PHP Files
 | File | Changes |
 |------|---------|
-| `relo2france-theme/header.php` | Added esc_html() to bloginfo output |
-| `relo2france-theme/functions.php` | Added JSDoc to all 14 theme functions |
-| `relo2france-theme/template-auth.php` | Replace hardcoded colors with CSS variables |
-| `france-relocation-member-tools/templates/template-portal.php` | Added wp_strip_all_tags() to custom CSS |
-| `france-relocation-assistant-plugin/includes/api-proxy.php` | Added check_chat_permission() method |
-| `france-relocation-member-tools/includes/class-framt-portal-api.php` | Added get_cached_knowledge_base(), updated search_knowledge_base() |
+| `class-framt-portal-api.php` | Added reset_profile(), calculate_due_date(), recalculate_task_due_dates(), days_offset to task templates, move_date_certainty field |
+| `class-framt-portal-api.php` | Fixed table names using FRAMT_Portal_Schema::get_table() |
 
 ### TypeScript/React Files
 | File | Changes |
 |------|---------|
-| `portal/src/types/index.ts` | Fixed FamilyMember, FamilyMembersResponse, FamilyFeatureStatus naming |
-| `portal/src/hooks/useApi.ts` | Added staleTime to 7 hooks, added REFETCH_INTERVAL import, use STALE_TIME and SEARCH constants |
-| `portal/src/components/profile/PersonalSection.tsx` | Fixed initialization pattern with useRef |
-| `portal/src/components/profile/ApplicantSection.tsx` | Fixed initialization pattern with useRef |
-| `portal/src/components/profile/VisaSection.tsx` | Fixed initialization pattern with useRef |
-| `portal/src/components/family/FamilyView.tsx` | Updated to use camelCase property names |
-| `portal/src/components/layout/Header.tsx` | Added accessibility attributes |
-| `portal/src/components/guides/GuidesView.tsx` | Refactored to use new components (1350→253 lines) |
-| `portal/src/components/guides/index.ts` | Updated with all new exports |
-
-### Configuration Files
-| File | Changes |
-|------|---------|
-| `portal/package.json` | Added eslint-plugin-react, eslint-plugin-jsx-a11y, eslint-plugin-import |
-| `portal/.eslintrc.cjs` | Added React, a11y, and import plugins with configured rules |
-| `portal/.gitignore` | Expanded with comprehensive entries |
-| `relo2france-theme/assets/js/theme.js` | Updated version to 1.2.4 |
+| `portal/src/types/index.ts` | Added MoveDateCertainty, TimelineType types; added move_date_certainty to MemberProfile |
+| `portal/src/api/client.ts` | Added profileApi.reset() function |
+| `portal/src/hooks/useApi.ts` | Added useResetProfile() hook |
+| `portal/src/components/settings/SettingsView.tsx` | Added Reset Profile UI, move_date_certainty dropdown |
+| `portal/src/components/schengen/SchengenDashboard.tsx` | Added actionError state and error display banner |
+| `portal/src/components/schengen/DayCounter.tsx` | Removed invalid ARIA role="text" |
 
 ---
 
@@ -138,40 +119,56 @@ cd france-relocation-member-tools/portal
 
 # Build
 npm install
-npm run build
+npm run build  # Successful
 ```
 
 **Current Status:**
-- **Tests:** 45/45 passing
 - **Type Check:** 0 errors
-- **Lint:** 0 errors, warnings for accessibility and import ordering (guide for developers)
+- **Lint:** 1 error fixed (ARIA role), warnings for accessibility and import ordering
 - **Build:** Successful
 
 ---
 
-## 5. Known Remaining Issues
+## 5. API Endpoints Added
 
-### High Priority (Address Soon)
-- 57 accessibility warnings (click handlers without keyboard support, label associations)
-- Profile sections could benefit from optimistic updates
-
-### Intentional Technical Decisions (Not Issues)
-- **Encryption fallback** - Returns unencrypted legacy values during migration period (by design)
-- **Dual profile storage** - Requires dedicated migration session
-
-### Lower Priority (Technical Debt)
-- Dual Profile Storage still requires migration
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/profile/reset` | POST | Reset all user portal data (requires confirmation) |
 
 ---
 
-## 6. Commit Summary
+## 6. Known Issues / Next Steps
 
-1. `Comprehensive code review fixes: security, efficiency, and consistency`
-2. `Refactor guides components and add performance improvements`
-3. `Add constants, CSS variables, and .env.example`
-4. `Add JSDoc to theme and eslint-plugin-import for import ordering`
-5. `Comprehensive codebase review: consistency, efficiency, and documentation`
-6. `Merge main branch and resolve conflicts`
+### Schengen Trip Edit/Delete
+User reported issues with editing trip dates and deleting trips. Error display was added to help debug, but root cause may need further investigation if issue persists. Check browser console for specific error messages.
+
+### Potential Improvements
+- Add loading spinner during reset operation
+- Consider adding "undo" grace period for reset
+- Profile reset could log an activity entry before clearing (for admin tracking)
+
+---
+
+## 7. Commit Summary (This Session)
+
+1. `Add profile reset feature and fix ARIA accessibility`
+2. `Fix profile reset to delete all user data`
+3. `Add Schengen error display and include tracker data in reset`
+4. `Fix profile reset for move date and research reports`
+5. `Fix profile reset: add activity deletion and direct SQL for move date`
+6. `Fix profile reset table names - use schema helper`
+
+---
+
+## 8. Previous Session Summary
+
+### Comprehensive Codebase Review
+- Reviewed 7 major areas, identified 216 issues
+- Implemented security fixes (XSS prevention, permission callbacks)
+- Fixed TypeScript naming conventions
+- Added React Query staleTime values
+- Added ESLint plugins for React, accessibility, imports
+- Added JSDoc to theme functions
 
 ---
 
