@@ -2696,6 +2696,7 @@ class FRAMT_Portal_API {
             // Timeline
             'timeline'              => get_user_meta( $user_id, 'fra_timeline', true ),
             'target_move_date'      => get_user_meta( $user_id, 'fra_target_move_date', true ),
+            'move_date_certainty'   => get_user_meta( $user_id, 'fra_move_date_certainty', true ) ?: 'anticipated',
             'application_location'  => get_user_meta( $user_id, 'fra_application_location', true ),
 
             // Financial
@@ -2764,6 +2765,7 @@ class FRAMT_Portal_API {
             // Timeline
             'timeline',
             'target_move_date',
+            'move_date_certainty',
             'application_location',
 
             // Financial

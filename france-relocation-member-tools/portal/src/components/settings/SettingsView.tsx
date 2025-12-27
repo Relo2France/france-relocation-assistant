@@ -585,6 +585,11 @@ function VisaProfileSection() {
           { value: 'undecided', label: 'Undecided' },
         ]},
         { key: 'target_move_date', label: 'Target Move Date', type: 'date' },
+        { key: 'move_date_certainty', label: 'How certain is this date?', type: 'select', options: [
+          { value: 'fixed', label: 'Fixed - I have tickets/lease starting this date' },
+          { value: 'anticipated', label: 'Anticipated - Planning for this date but may adjust' },
+          { value: 'flexible', label: 'Flexible - No firm date yet' },
+        ]},
         { key: 'application_location', label: 'Where are you applying from?', type: 'select', options: [
           { value: 'us', label: 'United States (initial application)' },
           { value: 'france', label: 'France (renewal/reapplication)' },
