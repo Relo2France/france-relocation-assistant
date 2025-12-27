@@ -20,8 +20,8 @@ import {
   familyApi,
   schengenApi,
 } from '@/api/client';
-import type { FamilyMember } from '@/api/client';
 import type {
+  FamilyMember,
   Task,
   TaskStatus,
   Project,
@@ -67,6 +67,7 @@ export const queryKeys = {
   glossarySearch: (query: string) => ['glossary', 'search', query] as const,
   verificationHistory: (projectId: number) => ['verificationHistory', projectId] as const,
   guides: ['guides'] as const,
+  chatSearch: (query: string) => ['chatSearch', query] as const,
   guide: (type: string) => ['guide', type] as const,
   personalizedGuide: (type: string) => ['personalizedGuide', type] as const,
   chatCategories: ['chatCategories'] as const,
@@ -166,6 +167,7 @@ export function useProjects() {
   return useQuery({
     queryKey: queryKeys.projects,
     queryFn: projectsApi.list,
+    staleTime: 30000, // 30 seconds
   });
 }
 
@@ -174,6 +176,7 @@ export function useProject(id: number) {
     queryKey: queryKeys.project(id),
     queryFn: () => projectsApi.get(id),
     enabled: id > 0,
+    staleTime: 30000, // 30 seconds
   });
 }
 
@@ -197,6 +200,7 @@ export function useTasks(projectId: number, filters?: TaskFilters) {
     queryKey: queryKeys.tasks(projectId, filters),
     queryFn: () => tasksApi.list(projectId, filters),
     enabled: projectId > 0,
+    staleTime: 30000, // 30 seconds
   });
 }
 
@@ -205,6 +209,7 @@ export function useTask(id: number) {
     queryKey: queryKeys.task(id),
     queryFn: () => tasksApi.get(id),
     enabled: id > 0,
+    staleTime: 30000, // 30 seconds
   });
 }
 
@@ -267,6 +272,7 @@ export function useActivity(projectId: number, options?: { limit?: number; offse
     queryKey: queryKeys.activity(projectId),
     queryFn: () => activityApi.list(projectId, options),
     enabled: projectId > 0,
+    staleTime: 10000, // 10 seconds - activity is more dynamic
   });
 }
 
@@ -276,6 +282,7 @@ export function useFiles(projectId: number, filters?: FileFilters) {
     queryKey: queryKeys.files(projectId, filters),
     queryFn: () => filesApi.list(projectId, filters),
     enabled: projectId > 0,
+    staleTime: 30000, // 30 seconds
   });
 }
 
@@ -284,6 +291,7 @@ export function useFile(id: number) {
     queryKey: queryKeys.file(id),
     queryFn: () => filesApi.get(id),
     enabled: id > 0,
+    staleTime: 30000, // 30 seconds
   });
 }
 
@@ -342,6 +350,7 @@ export function useNotes(projectId: number, filters?: NoteFilters) {
     queryKey: queryKeys.notes(projectId, filters),
     queryFn: () => notesApi.list(projectId, filters),
     enabled: projectId > 0,
+    staleTime: 30000, // 30 seconds
   });
 }
 
@@ -350,6 +359,7 @@ export function useNote(id: number) {
     queryKey: queryKeys.note(id),
     queryFn: () => notesApi.get(id),
     enabled: id > 0,
+    staleTime: 30000, // 30 seconds
   });
 }
 
@@ -443,6 +453,7 @@ export function useChecklists(visaType?: string) {
   return useQuery({
     queryKey: queryKeys.checklists(visaType),
     queryFn: () => checklistsApi.list(visaType),
+    staleTime: 60000, // 1 minute - static data
   });
 }
 
@@ -451,6 +462,7 @@ export function useChecklist(type: string) {
     queryKey: queryKeys.checklist(type),
     queryFn: () => checklistsApi.get(type),
     enabled: !!type,
+    staleTime: 60000, // 1 minute - static data
   });
 }
 
@@ -667,9 +679,10 @@ export function useSendChatMessage() {
 
 export function useSearchChatTopics(query: string) {
   return useQuery({
-    queryKey: ['chatSearch', query],
+    queryKey: queryKeys.chatSearch(query),
     queryFn: () => chatApi.searchTopics(query),
     enabled: query.length >= 2,
+    staleTime: 30000, // 30 seconds
   });
 }
 

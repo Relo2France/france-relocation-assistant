@@ -1,4 +1,4 @@
-import { useEffect, lazy, Suspense } from 'react';
+import { useEffect, lazy, Suspense, useMemo } from 'react';
 import { clsx } from 'clsx';
 import { useCurrentUser } from '@/hooks/useApi';
 import { usePortalStore } from '@/store';
@@ -46,14 +46,12 @@ function ViewLoadingFallback() {
 function ViewRouter() {
   const { activeView } = usePortalStore();
 
-  // Dashboard is eagerly loaded, others are lazy
-  if (activeView === 'dashboard') {
-    return <Dashboard />;
-  }
-
-  // All other views are lazy loaded with Suspense
-  const LazyView = () => {
+  // Memoize the view element to prevent recreation on every render
+  // Dashboard is eagerly loaded, others are lazy loaded via Suspense
+  const viewElement = useMemo(() => {
     switch (activeView) {
+      case 'dashboard':
+        return <Dashboard />;
       case 'tasks':
         return <TasksView />;
       case 'messages':
@@ -88,11 +86,11 @@ function ViewRouter() {
       default:
         return <Dashboard />;
     }
-  };
+  }, [activeView]);
 
   return (
     <Suspense fallback={<ViewLoadingFallback />}>
-      <LazyView />
+      {viewElement}
     </Suspense>
   );
 }

@@ -37,6 +37,7 @@ import {
   useSendChatMessage,
 } from '@/hooks/useApi';
 import { usePortalStore } from '@/store';
+import SafeHtml from '@/components/shared/SafeHtml';
 import type { GuideType, ChatMessage as ChatMessageType } from '@/types';
 
 interface Guide {
@@ -1301,9 +1302,9 @@ function PersonalizedGuideDetail({ guideType, onBack }: PersonalizedGuideDetailP
                     <h3 className="text-lg font-semibold text-gray-900 mb-3">
                       {section.title}
                     </h3>
-                    <div
+                    <SafeHtml
+                      html={section.content}
                       className="prose prose-sm max-w-none text-gray-700"
-                      dangerouslySetInnerHTML={{ __html: section.content }}
                     />
 
                     {section.tips && section.tips.length > 0 && (

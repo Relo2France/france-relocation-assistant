@@ -11,7 +11,7 @@ import {
   FolderOpen,
   Shield,
 } from 'lucide-react';
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { VirtualGrid } from '@/components/shared/VirtualList';
 import { useVirtualization } from '@/hooks/useVirtualization';
 import type { PortalFile, FileType } from '@/types';
@@ -55,14 +55,27 @@ export default function FileGrid({
 }: FileGridProps) {
   const shouldVirtualize = useVirtualization(files.length, 40);
 
-  // Determine column count based on viewport (simplified for SSR compatibility)
-  const columns = useMemo(() => {
+  // Determine column count based on viewport with resize handling
+  const [columns, setColumns] = useState(() => {
     if (typeof window === 'undefined') return 4;
     const width = window.innerWidth;
     if (width < 768) return 2;
     if (width < 1024) return 3;
     if (width < 1280) return 4;
     return 5;
+  });
+
+  useEffect(() => {
+    const updateColumns = () => {
+      const width = window.innerWidth;
+      if (width < 768) setColumns(2);
+      else if (width < 1024) setColumns(3);
+      else if (width < 1280) setColumns(4);
+      else setColumns(5);
+    };
+
+    window.addEventListener('resize', updateColumns);
+    return () => window.removeEventListener('resize', updateColumns);
   }, []);
 
   if (isLoading) {

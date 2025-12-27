@@ -4,7 +4,7 @@ Tags: github, sync, auto-update
 Requires at least: 5.8
 Tested up to: 6.4
 Requires PHP: 7.4
-Stable tag: 1.0.0
+Stable tag: 2.2.0
 License: GPLv2 or later
 
 Automatically syncs France Relocation plugins from GitHub by polling for changes.

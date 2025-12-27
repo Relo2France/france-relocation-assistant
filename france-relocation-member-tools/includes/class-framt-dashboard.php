@@ -322,7 +322,8 @@ class FRAMT_Dashboard {
         $table_replies = $wpdb->prefix . 'framt_message_replies';
         
         // Check if table exists
-        $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table_messages'") === $table_messages;
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is safe
+        $table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_messages ) ) === $table_messages;
         if (!$table_exists) {
             return ''; // Table not created yet
         }

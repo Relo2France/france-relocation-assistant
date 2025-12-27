@@ -42,7 +42,7 @@
             <div class="footer-bottom">
                 <div class="footer-flags">🇺🇸 → 🇫🇷</div>
                 <p>
-                    &copy; <?php echo date('Y'); ?> <?php bloginfo('name'); ?>. 
+                    &copy; <?php echo esc_html( date( 'Y' ) ); ?> <?php echo esc_html( get_bloginfo( 'name' ) ); ?>. 
                     <?php esc_html_e('All rights reserved.', 'relo2france'); ?>
                 </p>
                 <p>

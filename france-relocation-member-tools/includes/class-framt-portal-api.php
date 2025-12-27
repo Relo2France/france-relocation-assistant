@@ -1193,7 +1193,7 @@ class FRAMT_Portal_API {
             );
         }
 
-        if ( $project->user_id !== get_current_user_id() && ! current_user_can( 'manage_options' ) ) {
+        if ( (int) $project->user_id !== (int) get_current_user_id() && ! current_user_can( 'manage_options' ) ) {
             return new WP_Error(
                 'rest_forbidden',
                 'You do not have permission to access this project.',
@@ -1227,7 +1227,7 @@ class FRAMT_Portal_API {
             );
         }
 
-        if ( $task->user_id !== get_current_user_id() && ! current_user_can( 'manage_options' ) ) {
+        if ( (int) $task->user_id !== (int) get_current_user_id() && ! current_user_can( 'manage_options' ) ) {
             return new WP_Error(
                 'rest_forbidden',
                 'You do not have permission to access this task.',
@@ -1261,7 +1261,7 @@ class FRAMT_Portal_API {
             );
         }
 
-        if ( $task->user_id !== get_current_user_id() && ! current_user_can( 'manage_options' ) ) {
+        if ( (int) $task->user_id !== (int) get_current_user_id() && ! current_user_can( 'manage_options' ) ) {
             return new WP_Error(
                 'rest_forbidden',
                 'You do not have permission to access this task.',

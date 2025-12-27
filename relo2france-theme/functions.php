@@ -137,13 +137,13 @@ function relo2france_site_logo() {
             <div>
                 <h1 class="site-title">
                     <a href="<?php echo esc_url(home_url('/')); ?>">
-                        <?php bloginfo('name'); ?>
+                        <?php echo esc_html( get_bloginfo( 'name' ) ); ?>
                     </a>
                 </h1>
                 <?php 
                 $description = get_bloginfo('description', 'display');
                 if ($description || is_customize_preview()) : ?>
-                    <p class="site-description"><?php echo $description; ?></p>
+                    <p class="site-description"><?php echo esc_html( $description ); ?></p>
                 <?php endif; ?>
             </div>
         </div>
@@ -334,7 +334,7 @@ add_action('customize_register', 'relo2france_customize_register');
  * Sanitize checkbox
  */
 function relo2france_sanitize_checkbox($checked) {
-    return ((isset($checked) && true == $checked) ? true : false);
+    return ( isset( $checked ) && true === $checked );
 }
 
 /**
