@@ -247,11 +247,12 @@ export default function FilePreview({ file, isOpen, onClose, projectId }: FilePr
 
                 {/* Description */}
                 <div className="pt-3 border-t border-gray-100">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="file-description" className="block text-sm font-medium text-gray-700 mb-1">
                     Description
                   </label>
                   {isEditing ? (
                     <textarea
+                      id="file-description"
                       value={editDescription}
                       onChange={(e) => setEditDescription(e.target.value)}
                       className="textarea text-sm"
@@ -259,7 +260,7 @@ export default function FilePreview({ file, isOpen, onClose, projectId }: FilePr
                       placeholder="Add a description..."
                     />
                   ) : (
-                    <p className="text-sm text-gray-600">
+                    <p id="file-description" className="text-sm text-gray-600">
                       {file.description || 'No description'}
                     </p>
                   )}

@@ -43,7 +43,6 @@ export default function DocumentTypeSelector({
               key={docType.type}
               onClick={() => onSelect(docType.type as GeneratedDocumentType)}
               className="card p-6 text-left hover:shadow-lg transition-all hover:-translate-y-0.5 group"
-              role="listitem"
               aria-label={`Generate ${docType.label}`}
             >
               <div className={clsx('w-12 h-12 rounded-lg flex items-center justify-center mb-4', colorClass)}>

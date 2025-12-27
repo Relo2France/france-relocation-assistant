@@ -185,9 +185,19 @@ function TaskListItem({ task, onClick, onStatusChange, compact }: TaskListItemPr
     onStatusChange(task.id, nextStatus);
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (onClick && (e.key === 'Enter' || e.key === ' ')) {
+      e.preventDefault();
+      onClick();
+    }
+  };
+
   return (
     <div
       onClick={onClick}
+      onKeyDown={handleKeyDown}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
       className={clsx(
         'flex items-center gap-4 transition-colors',
         compact ? 'px-6 py-3' : 'p-4 rounded-lg border border-gray-200',
