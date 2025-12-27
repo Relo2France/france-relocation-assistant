@@ -783,13 +783,17 @@ class FRAMT_Schengen_API {
 
     /**
      * Check if Schengen premium features are enabled for user
-     * TOGGLE POINT: Modify this to integrate with MemberPress or other membership plugins
+     *
+     * Priority order:
+     * 1. User meta manual override (admin can enable/disable per user)
+     * 2. MemberPress membership check (if installed)
+     * 3. Global beta setting fallback
      *
      * @param int $user_id User ID.
      * @return bool
      */
     private function is_schengen_premium_enabled( int $user_id ): bool {
-        // Option 1: Check user meta flag (manual override)
+        // Priority 1: Check user meta flag (manual override by admin)
         $manual_override = get_user_meta( $user_id, 'framt_schengen_premium_enabled', true );
         if ( '1' === $manual_override ) {
             return true;
@@ -798,26 +802,39 @@ class FRAMT_Schengen_API {
             return false;
         }
 
-        // Option 2: Check global setting (enable for all members during beta)
-        $global_enabled = get_option( 'framt_schengen_premium_enabled', '1' ); // Default ON for now
+        // Priority 2: Check MemberPress membership level
+        if ( class_exists( 'MeprUser' ) ) {
+            $mepr_user = new \MeprUser( $user_id );
+
+            // Check if user has any active membership
+            if ( $mepr_user->is_active() ) {
+                // Get configured premium membership IDs (comma-separated)
+                // Default to empty, meaning ANY active membership grants access
+                $premium_membership_ids = get_option( 'framt_schengen_premium_memberships', '' );
+
+                if ( empty( $premium_membership_ids ) ) {
+                    // No specific memberships configured = any active membership gets access
+                    return true;
+                }
+
+                // Check specific membership IDs
+                $membership_ids = array_map( 'trim', explode( ',', $premium_membership_ids ) );
+                foreach ( $membership_ids as $membership_id ) {
+                    if ( $mepr_user->is_active_on_membership( (int) $membership_id ) ) {
+                        return true;
+                    }
+                }
+            }
+
+            // MemberPress is installed but user doesn't have qualifying membership
+            return false;
+        }
+
+        // Priority 3: Fallback - check global setting (for non-MemberPress sites or beta testing)
+        $global_enabled = get_option( 'framt_schengen_premium_enabled', '0' ); // Default OFF
         if ( '1' === $global_enabled ) {
             return true;
         }
-
-        // Option 3: Check MemberPress membership level (for future integration)
-        // Uncomment and modify when ready to integrate with MemberPress:
-        /*
-        if ( function_exists( 'mepr_get_current_user' ) ) {
-            $mepr_user = mepr_get_current_user();
-            $premium_levels = array( 'premium', 'schengen-pro', 'professional' );
-            foreach ( $mepr_user->active_product_subscriptions() as $product_id ) {
-                $product = new MeprProduct( $product_id );
-                if ( in_array( $product->post_name, $premium_levels, true ) ) {
-                    return true;
-                }
-            }
-        }
-        */
 
         return false;
     }
@@ -847,9 +864,42 @@ class FRAMT_Schengen_API {
             'canAddTrip'      => $is_premium || $trip_count < self::FREE_TRIP_LIMIT,
             'canUsePlanning'  => $is_premium,
             'canExportPdf'    => $is_premium,
-            'upgradeUrl'      => $is_premium ? null : home_url( '/membership/' ),
+            'upgradeUrl'      => $is_premium ? null : $this->get_upgrade_url(),
             'upgradeMessage'  => $is_premium ? null : 'Upgrade to Premium for unlimited trips, planning tools, and PDF reports.',
         ) );
+    }
+
+    /**
+     * Get the upgrade URL for premium features
+     *
+     * Checks in order:
+     * 1. Custom setting for Schengen upgrade URL
+     * 2. MemberPress registration page (if installed)
+     * 3. Site membership page fallback
+     *
+     * @return string Upgrade URL.
+     */
+    private function get_upgrade_url(): string {
+        // Check for custom Schengen upgrade URL setting
+        $custom_url = get_option( 'framt_schengen_upgrade_url', '' );
+        if ( ! empty( $custom_url ) ) {
+            return $custom_url;
+        }
+
+        // Try to get MemberPress registration page
+        if ( class_exists( 'MeprOptions' ) ) {
+            $mepr_options = \MeprOptions::fetch();
+            if ( ! empty( $mepr_options->account_page_id ) ) {
+                $account_url = get_permalink( $mepr_options->account_page_id );
+                if ( $account_url ) {
+                    return $account_url;
+                }
+            }
+        }
+
+        // Fallback to site membership page
+        $membership_url = get_option( 'fra_membership_url', '/membership/' );
+        return home_url( $membership_url );
     }
 
     // ============================================
