@@ -214,6 +214,149 @@ class FRAMT_Schengen_API {
                 'permission_callback' => array( $this, 'check_permission' ),
             )
         );
+
+        // ============================================
+        // Location Tracking (Phase 1.1)
+        // ============================================
+
+        // Store current location (check-in)
+        register_rest_route(
+            self::NAMESPACE,
+            '/schengen/location',
+            array(
+                'methods'             => 'POST',
+                'callback'            => array( $this, 'store_location' ),
+                'permission_callback' => array( $this, 'check_permission' ),
+                'args'                => array(
+                    'lat' => array(
+                        'type'              => 'number',
+                        'required'          => true,
+                        'sanitize_callback' => 'floatval',
+                    ),
+                    'lng' => array(
+                        'type'              => 'number',
+                        'required'          => true,
+                        'sanitize_callback' => 'floatval',
+                    ),
+                    'accuracy' => array(
+                        'type'              => 'number',
+                        'sanitize_callback' => 'floatval',
+                    ),
+                    'source' => array(
+                        'type'    => 'string',
+                        'enum'    => array( 'browser', 'manual', 'calendar', 'checkin' ),
+                        'default' => 'browser',
+                    ),
+                ),
+            )
+        );
+
+        // Get location history
+        register_rest_route(
+            self::NAMESPACE,
+            '/schengen/location/history',
+            array(
+                'methods'             => 'GET',
+                'callback'            => array( $this, 'get_location_history' ),
+                'permission_callback' => array( $this, 'check_permission' ),
+                'args'                => array(
+                    'limit' => array(
+                        'type'    => 'integer',
+                        'default' => 30,
+                        'minimum' => 1,
+                        'maximum' => 100,
+                    ),
+                    'offset' => array(
+                        'type'    => 'integer',
+                        'default' => 0,
+                        'minimum' => 0,
+                    ),
+                ),
+            )
+        );
+
+        // Get today's location status
+        register_rest_route(
+            self::NAMESPACE,
+            '/schengen/location/today',
+            array(
+                'methods'             => 'GET',
+                'callback'            => array( $this, 'get_location_today' ),
+                'permission_callback' => array( $this, 'check_permission' ),
+            )
+        );
+
+        // Reverse geocode coordinates
+        register_rest_route(
+            self::NAMESPACE,
+            '/schengen/location/geocode',
+            array(
+                'methods'             => 'POST',
+                'callback'            => array( $this, 'reverse_geocode' ),
+                'permission_callback' => array( $this, 'check_permission' ),
+                'args'                => array(
+                    'lat' => array(
+                        'type'     => 'number',
+                        'required' => true,
+                    ),
+                    'lng' => array(
+                        'type'     => 'number',
+                        'required' => true,
+                    ),
+                ),
+            )
+        );
+
+        // Delete location entry
+        register_rest_route(
+            self::NAMESPACE,
+            '/schengen/location/(?P<id>\d+)',
+            array(
+                'methods'             => 'DELETE',
+                'callback'            => array( $this, 'delete_location' ),
+                'permission_callback' => array( $this, 'check_location_permission' ),
+            )
+        );
+
+        // Clear all location history
+        register_rest_route(
+            self::NAMESPACE,
+            '/schengen/location/clear',
+            array(
+                'methods'             => 'POST',
+                'callback'            => array( $this, 'clear_location_history' ),
+                'permission_callback' => array( $this, 'check_permission' ),
+            )
+        );
+
+        // Get/Update location settings
+        register_rest_route(
+            self::NAMESPACE,
+            '/schengen/location/settings',
+            array(
+                array(
+                    'methods'             => 'GET',
+                    'callback'            => array( $this, 'get_location_settings' ),
+                    'permission_callback' => array( $this, 'check_permission' ),
+                ),
+                array(
+                    'methods'             => 'PUT',
+                    'callback'            => array( $this, 'update_location_settings' ),
+                    'permission_callback' => array( $this, 'check_permission' ),
+                ),
+            )
+        );
+
+        // Detect country from IP
+        register_rest_route(
+            self::NAMESPACE,
+            '/schengen/location/detect',
+            array(
+                'methods'             => 'GET',
+                'callback'            => array( $this, 'detect_from_ip' ),
+                'permission_callback' => array( $this, 'check_permission' ),
+            )
+        );
     }
 
     /**
@@ -1384,6 +1527,541 @@ class FRAMT_Schengen_API {
 
         $alerts = FRAMT_Schengen_Alerts::get_instance();
         $result = $alerts->test_alert( $user_id );
+
+        return rest_ensure_response( $result );
+    }
+
+    // ============================================
+    // Location Tracking Methods (Phase 1.1)
+    // ============================================
+
+    /**
+     * Schengen country codes
+     *
+     * @var array
+     */
+    private static $schengen_codes = array(
+        'AT', 'BE', 'BG', 'HR', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE',
+        'GR', 'HU', 'IS', 'IT', 'LV', 'LI', 'LT', 'LU', 'MT', 'NL',
+        'NO', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE', 'CH',
+    );
+
+    /**
+     * Get location table name
+     *
+     * @return string
+     */
+    private function get_location_table(): string {
+        global $wpdb;
+        return $wpdb->prefix . 'fra_schengen_location_log';
+    }
+
+    /**
+     * Ensure location table exists
+     */
+    private function ensure_location_table(): void {
+        global $wpdb;
+
+        $table = $this->get_location_table();
+        $table_exists = $wpdb->get_var( $wpdb->prepare( "SHOW TABLES LIKE %s", $table ) );
+
+        if ( $table_exists !== $table ) {
+            $charset_collate = $wpdb->get_charset_collate();
+
+            $sql = "CREATE TABLE $table (
+                id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+                user_id bigint(20) unsigned NOT NULL,
+                lat decimal(10,8) NOT NULL,
+                lng decimal(11,8) NOT NULL,
+                accuracy float DEFAULT NULL,
+                country_code varchar(2) DEFAULT NULL,
+                country_name varchar(100) DEFAULT NULL,
+                city varchar(100) DEFAULT NULL,
+                is_schengen tinyint(1) DEFAULT 0,
+                source varchar(20) DEFAULT 'browser',
+                recorded_at datetime DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (id),
+                KEY idx_user_date (user_id, recorded_at),
+                KEY idx_user_country (user_id, country_code)
+            ) $charset_collate;";
+
+            require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+            dbDelta( $sql );
+        }
+    }
+
+    /**
+     * Check if country code is in Schengen zone
+     *
+     * @param string $code Country code.
+     * @return bool
+     */
+    private function is_schengen_code( string $code ): bool {
+        return in_array( strtoupper( $code ), self::$schengen_codes, true );
+    }
+
+    /**
+     * Reverse geocode using OpenStreetMap Nominatim
+     *
+     * @param float $lat Latitude.
+     * @param float $lng Longitude.
+     * @return array
+     */
+    private function perform_geocode( float $lat, float $lng ): array {
+        // Check cache
+        $cache_key = 'framt_geocode_' . md5( $lat . '_' . $lng );
+        $cached = get_transient( $cache_key );
+
+        if ( false !== $cached ) {
+            return $cached;
+        }
+
+        $url = add_query_arg(
+            array(
+                'format' => 'json',
+                'lat'    => $lat,
+                'lon'    => $lng,
+                'zoom'   => 10,
+            ),
+            'https://nominatim.openstreetmap.org/reverse'
+        );
+
+        $response = wp_remote_get( $url, array(
+            'headers' => array(
+                'User-Agent' => 'Relo2France-Portal/2.0 (contact@relo2france.com)',
+            ),
+            'timeout' => 10,
+        ) );
+
+        if ( is_wp_error( $response ) ) {
+            return array( 'error' => $response->get_error_message() );
+        }
+
+        $data = json_decode( wp_remote_retrieve_body( $response ), true );
+
+        if ( empty( $data ) || isset( $data['error'] ) ) {
+            return array( 'error' => $data['error'] ?? 'Geocoding failed' );
+        }
+
+        $address = $data['address'] ?? array();
+        $result = array(
+            'country_code' => isset( $address['country_code'] ) ? strtoupper( $address['country_code'] ) : null,
+            'country_name' => $address['country'] ?? null,
+            'city'         => $address['city'] ?? $address['town'] ?? $address['village'] ?? null,
+            'is_schengen'  => isset( $address['country_code'] ) && $this->is_schengen_code( $address['country_code'] ),
+        );
+
+        set_transient( $cache_key, $result, HOUR_IN_SECONDS );
+
+        return $result;
+    }
+
+    /**
+     * Format location for API response
+     *
+     * @param object $location Location row.
+     * @return array
+     */
+    private function format_location( $location ): array {
+        return array(
+            'id'          => (int) $location->id,
+            'lat'         => (float) $location->lat,
+            'lng'         => (float) $location->lng,
+            'accuracy'    => $location->accuracy ? (float) $location->accuracy : null,
+            'countryCode' => $location->country_code,
+            'countryName' => $location->country_name,
+            'city'        => $location->city,
+            'isSchengen'  => (bool) $location->is_schengen,
+            'source'      => $location->source,
+            'recordedAt'  => $location->recorded_at,
+        );
+    }
+
+    /**
+     * Check permission for location entry
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return bool|WP_Error
+     */
+    public function check_location_permission( WP_REST_Request $request ) {
+        $permission = $this->check_permission();
+        if ( is_wp_error( $permission ) ) {
+            return $permission;
+        }
+
+        global $wpdb;
+        $location_id = (int) $request->get_param( 'id' );
+        $table = $this->get_location_table();
+
+        $location = $wpdb->get_row(
+            $wpdb->prepare( "SELECT * FROM $table WHERE id = %d", $location_id )
+        );
+
+        if ( ! $location ) {
+            return new WP_Error( 'not_found', 'Location not found.', array( 'status' => 404 ) );
+        }
+
+        if ( (int) $location->user_id !== get_current_user_id() ) {
+            return new WP_Error( 'forbidden', 'Access denied.', array( 'status' => 403 ) );
+        }
+
+        return true;
+    }
+
+    /**
+     * Store a location check-in
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response|WP_Error
+     */
+    public function store_location( WP_REST_Request $request ) {
+        global $wpdb;
+
+        $this->ensure_location_table();
+
+        $user_id  = get_current_user_id();
+        $params   = $request->get_json_params();
+        $lat      = (float) ( $params['lat'] ?? 0 );
+        $lng      = (float) ( $params['lng'] ?? 0 );
+        $accuracy = isset( $params['accuracy'] ) ? (float) $params['accuracy'] : null;
+        $source   = sanitize_text_field( $params['source'] ?? 'browser' );
+
+        // Validate coordinates
+        if ( $lat < -90 || $lat > 90 ) {
+            return new WP_Error( 'invalid_lat', 'Latitude must be between -90 and 90.', array( 'status' => 400 ) );
+        }
+        if ( $lng < -180 || $lng > 180 ) {
+            return new WP_Error( 'invalid_lng', 'Longitude must be between -180 and 180.', array( 'status' => 400 ) );
+        }
+
+        // Reverse geocode
+        $geo = $this->perform_geocode( $lat, $lng );
+        $country_code = $geo['country_code'] ?? null;
+        $country_name = $geo['country_name'] ?? null;
+        $city         = $geo['city'] ?? null;
+        $is_schengen  = $geo['is_schengen'] ?? false;
+
+        $table = $this->get_location_table();
+        $result = $wpdb->insert(
+            $table,
+            array(
+                'user_id'      => $user_id,
+                'lat'          => $lat,
+                'lng'          => $lng,
+                'accuracy'     => $accuracy,
+                'country_code' => $country_code,
+                'country_name' => $country_name,
+                'city'         => $city,
+                'is_schengen'  => $is_schengen ? 1 : 0,
+                'source'       => $source,
+                'recorded_at'  => current_time( 'mysql', true ),
+            ),
+            array( '%d', '%f', '%f', '%f', '%s', '%s', '%s', '%d', '%s', '%s' )
+        );
+
+        if ( false === $result ) {
+            return new WP_Error( 'db_error', 'Failed to store location.', array( 'status' => 500 ) );
+        }
+
+        $location = $wpdb->get_row(
+            $wpdb->prepare( "SELECT * FROM $table WHERE id = %d", $wpdb->insert_id )
+        );
+
+        return rest_ensure_response( array(
+            'success'  => true,
+            'location' => $this->format_location( $location ),
+            'message'  => $is_schengen
+                ? sprintf( 'Location recorded in %s (Schengen zone).', $country_name )
+                : sprintf( 'Location recorded in %s.', $country_name ?: 'Unknown location' ),
+        ) );
+    }
+
+    /**
+     * Get location history
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response
+     */
+    public function get_location_history( WP_REST_Request $request ) {
+        global $wpdb;
+
+        $this->ensure_location_table();
+
+        $user_id = get_current_user_id();
+        $limit   = (int) $request->get_param( 'limit' );
+        $offset  = (int) $request->get_param( 'offset' );
+        $table   = $this->get_location_table();
+
+        $total = (int) $wpdb->get_var(
+            $wpdb->prepare( "SELECT COUNT(*) FROM $table WHERE user_id = %d", $user_id )
+        );
+
+        $locations = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT * FROM $table WHERE user_id = %d ORDER BY recorded_at DESC LIMIT %d OFFSET %d",
+                $user_id, $limit, $offset
+            )
+        );
+
+        return rest_ensure_response( array(
+            'locations' => array_map( array( $this, 'format_location' ), $locations ),
+            'total'     => $total,
+            'limit'     => $limit,
+            'offset'    => $offset,
+        ) );
+    }
+
+    /**
+     * Get today's location status
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response
+     */
+    public function get_location_today( WP_REST_Request $request ) {
+        global $wpdb;
+
+        $this->ensure_location_table();
+
+        $user_id = get_current_user_id();
+        $table   = $this->get_location_table();
+        $today   = current_time( 'Y-m-d' );
+
+        $today_locations = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT * FROM $table WHERE user_id = %d AND DATE(recorded_at) = %s ORDER BY recorded_at DESC",
+                $user_id, $today
+            )
+        );
+
+        $last_location = $wpdb->get_row(
+            $wpdb->prepare(
+                "SELECT * FROM $table WHERE user_id = %d ORDER BY recorded_at DESC LIMIT 1",
+                $user_id
+            )
+        );
+
+        return rest_ensure_response( array(
+            'hasCheckedInToday' => ! empty( $today_locations ),
+            'todayLocations'    => array_map( array( $this, 'format_location' ), $today_locations ),
+            'lastLocation'      => $last_location ? $this->format_location( $last_location ) : null,
+            'reminderEnabled'   => false,
+            'trackingEnabled'   => true,
+        ) );
+    }
+
+    /**
+     * Reverse geocode endpoint
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response|WP_Error
+     */
+    public function reverse_geocode( WP_REST_Request $request ) {
+        $params = $request->get_json_params();
+        $lat = (float) $params['lat'];
+        $lng = (float) $params['lng'];
+
+        $result = $this->perform_geocode( $lat, $lng );
+
+        if ( isset( $result['error'] ) ) {
+            return new WP_Error( 'geocode_error', $result['error'], array( 'status' => 500 ) );
+        }
+
+        return rest_ensure_response( $result );
+    }
+
+    /**
+     * Delete a location entry
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response|WP_Error
+     */
+    public function delete_location( WP_REST_Request $request ) {
+        global $wpdb;
+
+        $location_id = (int) $request->get_param( 'id' );
+        $table = $this->get_location_table();
+
+        $result = $wpdb->delete( $table, array( 'id' => $location_id ), array( '%d' ) );
+
+        if ( false === $result ) {
+            return new WP_Error( 'db_error', 'Failed to delete location.', array( 'status' => 500 ) );
+        }
+
+        return rest_ensure_response( array( 'deleted' => true, 'id' => $location_id ) );
+    }
+
+    /**
+     * Clear all location history
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response|WP_Error
+     */
+    public function clear_location_history( WP_REST_Request $request ) {
+        global $wpdb;
+
+        $user_id = get_current_user_id();
+        $table = $this->get_location_table();
+
+        $result = $wpdb->delete( $table, array( 'user_id' => $user_id ), array( '%d' ) );
+
+        if ( false === $result ) {
+            return new WP_Error( 'db_error', 'Failed to clear history.', array( 'status' => 500 ) );
+        }
+
+        return rest_ensure_response( array( 'cleared' => true, 'message' => 'Location history cleared.' ) );
+    }
+
+    /**
+     * Get location settings
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response
+     */
+    public function get_location_settings( WP_REST_Request $request ) {
+        $user_id = get_current_user_id();
+        $settings = get_user_meta( $user_id, 'framt_schengen_location_settings', true );
+
+        if ( ! is_array( $settings ) ) {
+            $settings = array();
+        }
+
+        return rest_ensure_response( array_merge(
+            array(
+                'tracking_enabled' => true,
+                'daily_reminder'   => false,
+                'auto_detect'      => false,
+            ),
+            $settings
+        ) );
+    }
+
+    /**
+     * Update location settings
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response
+     */
+    public function update_location_settings( WP_REST_Request $request ) {
+        $user_id = get_current_user_id();
+        $params = $request->get_json_params();
+
+        $settings = get_user_meta( $user_id, 'framt_schengen_location_settings', true );
+        if ( ! is_array( $settings ) ) {
+            $settings = array();
+        }
+
+        if ( isset( $params['trackingEnabled'] ) ) {
+            $settings['tracking_enabled'] = (bool) $params['trackingEnabled'];
+        }
+        if ( isset( $params['dailyReminder'] ) ) {
+            $settings['daily_reminder'] = (bool) $params['dailyReminder'];
+        }
+        if ( isset( $params['autoDetect'] ) ) {
+            $settings['auto_detect'] = (bool) $params['autoDetect'];
+        }
+
+        update_user_meta( $user_id, 'framt_schengen_location_settings', $settings );
+
+        return rest_ensure_response( array_merge(
+            array(
+                'tracking_enabled' => true,
+                'daily_reminder'   => false,
+                'auto_detect'      => false,
+            ),
+            $settings
+        ) );
+    }
+
+    /**
+     * Detect country from IP
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response
+     */
+    public function detect_from_ip( WP_REST_Request $request ) {
+        // Get IP
+        $ip = null;
+        $headers = array( 'HTTP_CF_CONNECTING_IP', 'HTTP_X_FORWARDED_FOR', 'HTTP_X_REAL_IP', 'REMOTE_ADDR' );
+
+        foreach ( $headers as $header ) {
+            if ( ! empty( $_SERVER[ $header ] ) ) {
+                $ip = sanitize_text_field( wp_unslash( $_SERVER[ $header ] ) );
+                if ( strpos( $ip, ',' ) !== false ) {
+                    $ip = trim( explode( ',', $ip )[0] );
+                }
+                if ( filter_var( $ip, FILTER_VALIDATE_IP ) ) {
+                    break;
+                }
+                $ip = null;
+            }
+        }
+
+        // Local IP check
+        if ( ! $ip || $ip === '127.0.0.1' || strpos( $ip, '192.168.' ) === 0 || strpos( $ip, '10.' ) === 0 ) {
+            return rest_ensure_response( array(
+                'detected'    => false,
+                'reason'      => 'local_ip',
+                'message'     => 'Cannot detect from local IP.',
+                'countryCode' => null,
+                'countryName' => null,
+                'city'        => null,
+                'isSchengen'  => false,
+            ) );
+        }
+
+        // Check cache
+        $cache_key = 'framt_ip_geo_' . md5( $ip );
+        $cached = get_transient( $cache_key );
+
+        if ( false !== $cached ) {
+            return rest_ensure_response( $cached );
+        }
+
+        // Call ip-api.com
+        $response = wp_remote_get(
+            'http://ip-api.com/json/' . $ip . '?fields=status,message,country,countryCode,city,query',
+            array( 'timeout' => 5 )
+        );
+
+        if ( is_wp_error( $response ) ) {
+            return rest_ensure_response( array(
+                'detected'    => false,
+                'reason'      => 'api_error',
+                'message'     => 'IP lookup failed.',
+                'countryCode' => null,
+                'countryName' => null,
+                'city'        => null,
+                'isSchengen'  => false,
+            ) );
+        }
+
+        $data = json_decode( wp_remote_retrieve_body( $response ), true );
+
+        if ( empty( $data ) || ( isset( $data['status'] ) && 'fail' === $data['status'] ) ) {
+            return rest_ensure_response( array(
+                'detected'    => false,
+                'reason'      => 'lookup_failed',
+                'message'     => $data['message'] ?? 'IP lookup failed.',
+                'countryCode' => null,
+                'countryName' => null,
+                'city'        => null,
+                'isSchengen'  => false,
+            ) );
+        }
+
+        $country_code = $data['countryCode'] ?? null;
+
+        $result = array(
+            'detected'    => true,
+            'reason'      => 'ip_lookup',
+            'message'     => sprintf( 'Detected: %s', $data['country'] ?? 'Unknown' ),
+            'countryCode' => $country_code,
+            'countryName' => $data['country'] ?? null,
+            'city'        => $data['city'] ?? null,
+            'isSchengen'  => $country_code ? $this->is_schengen_code( $country_code ) : false,
+        );
+
+        set_transient( $cache_key, $result, HOUR_IN_SECONDS );
 
         return rest_ensure_response( $result );
     }
