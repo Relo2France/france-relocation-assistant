@@ -1,8 +1,8 @@
 # Session Handoff Document
 
 **Date:** December 27, 2025
-**Branch:** `claude/review-handoff-docs-QtcLj`
-**Last Commit:** `Extract Schengen Tracker to standalone plugin (Phase 0)`
+**Branch:** `claude/add-github-sync-self-update-QtcLj`
+**Last Commit:** `Fix portal to read ?view= parameter from URL on initial load`
 
 ---
 
@@ -16,24 +16,20 @@
 | Member Tools Plugin | v2.1.0 | Active |
 | React Portal | v2.1.0 | Active |
 | Theme | v1.2.4 | Active |
-| **Schengen Tracker Plugin** | **v1.0.0** | **Complete** |
+| **Schengen Tracker Plugin** | **v1.0.0** | **Installed & Active** |
 
 The React portal is fully functional with 40+ REST API endpoints. All major features are complete including profile management, task tracking, document generation, checklists, AI-powered guides, Schengen day tracking, and profile reset functionality.
 
-### Architecture Decision: Schengen Tracker Extraction
+### Schengen Tracker: Phase 0 Complete
 
-**Decision:** Extract Schengen Tracker into standalone plugin (`relo2france-schengen-tracker`)
+The Schengen Tracker has been extracted into a standalone plugin (`relo2france-schengen-tracker`) and is now installed and active on the production site.
 
-**Rationale:**
-- Can be sold/marketed independently to digital nomads, frequent travelers
-- Competes with Monaeo ($999/year) at a fraction of the price
-- Cleaner architecture with dedicated codebase
-- Separate release cycle from Member Tools
+**Architecture:** Option C (Hybrid - Standalone Plugin + Portal Integration)
+- Works independently via `[schengen_tracker]` shortcode
+- Integrates with Member Tools Portal at `/portal/?view=schengen`
+- Premium gating via MemberPress (like Family Members feature)
 
-**Premium Model:** Entire feature is Premium (like Family Members)
-- Free users see preview/upgrade prompt
-- Premium members (MemberPress) get full access
-- See: `SCHENGEN-MONAEO-PARITY-PLAN.md` for full details
+**Plan Document:** `SCHENGEN-MONAEO-PARITY-PLAN.md`
 
 ---
 
@@ -41,7 +37,7 @@ The React portal is fully functional with 40+ REST API endpoints. All major feat
 
 ### 2.0 Schengen Tracker Plugin Extraction (Phase 0)
 
-Extracted the Schengen Tracker into a standalone WordPress plugin following Option C (Hybrid) architecture:
+Extracted the Schengen Tracker into a standalone WordPress plugin:
 
 **New Plugin:** `relo2france-schengen-tracker/`
 
@@ -60,60 +56,47 @@ Extracted the Schengen Tracker into a standalone WordPress plugin following Opti
 **Member Tools Integration:**
 - Added `includes/class-framt-schengen-bridge.php` - Bridges MemberPress membership checks
 - Bridge provides `r2f_schengen_premium_check` filter for premium access
-- Portal URLs routed to `/portal/?view=schengen`
-
-**GitHub Sync:** Added `relo2france-schengen-tracker` to plugins list
 
 **Premium Gating Flow:**
 1. User meta override (`r2f_schengen_enabled` = '1' or '0')
 2. Filter hook (`r2f_schengen_premium_check`) - Member Tools hooks here
 3. Global setting fallback (`r2f_schengen_global_enabled`)
 
-### 2.1 Fixed All Accessibility Warnings (37 issues)
+### 2.1 GitHub Sync Self-Update Fix
 
-Resolved all jsx-a11y ESLint warnings in the React portal:
+Added GitHub Sync to its own managed plugins list so it can update itself:
 
-**Click events with keyboard handlers (8 files):**
-- `TaskCard.tsx` - Added role, tabIndex, onKeyDown for clickable div
-- `FileGrid.tsx` - Added keyboard support for file preview area
-- `FileUpload.tsx` - Added keyboard support for drop zone
-- `TaskList.tsx` - Added keyboard support for task list items
-- `TaskDetail.tsx` - Added keyboard support for editable title/description
-- `Modal.tsx` - Added role="presentation" to overlay divs
-- `GenerateReportModal.tsx` - Added role="presentation" to overlay
+```php
+'france-relocation-github-sync' => array(
+    'file' => 'france-relocation-github-sync/france-relocation-github-sync.php',
+    'name' => 'France Relocation GitHub Sync',
+),
+```
 
-**Label associations (6 files):**
-- `ChecklistItem.tsx` - Added htmlFor/id to notes textarea
-- `AIVerification.tsx` - Used aria-labelledby for button groups, htmlFor for file input
-- `FilePreview.tsx` - Added htmlFor/id for description field
-- `FamilyView.tsx` - Added htmlFor/id to all 7 form fields, used fieldset for checkboxes
-- `TripForm.tsx` - Used aria-labelledby for radio group
-- `TaskForm.tsx` - Used aria-labelledby for task type radio group
+**Why this matters:** Previously, when new plugins were added to GitHub Sync, the user couldn't see them until manually editing the plugin file. Now GitHub Sync can update itself to pick up new plugin entries.
 
-**AutoFocus warnings (6 files):**
-- `NoteCard.tsx` - Replaced autoFocus with useRef/useEffect pattern
-- `NoteForm.tsx` - Replaced autoFocus with useRef/useEffect pattern
-- `TaskChecklist.tsx` - Replaced autoFocus with useRef/useEffect pattern
-- `TaskDetail.tsx` - Replaced autoFocus with useRef/useEffect pattern
-- `TaskForm.tsx` - Replaced autoFocus with useRef/useEffect pattern (both forms)
+### 2.2 Portal URL Routing Fix
 
-**Role/focus issues (2 files):**
-- `DocumentTypeSelector.tsx` - Removed invalid role="listitem" from button
-- `TaskBoard.tsx` - Added tabIndex={0} to listbox element
+Fixed the portal to read the `?view=` parameter from the URL on initial page load.
 
-### 2.2 Added Optimistic Updates to Profile Hooks
+**Problem:** Direct links like `https://relo2france.com/portal/?view=schengen` would always show the dashboard instead of the requested view.
 
-Enhanced React Query mutations for instant UI feedback:
+**Solution:** Updated `portal/src/store/index.ts` to read the initial view from `URLSearchParams`:
 
-**`useUpdateMemberProfile`:**
-- Added `onMutate` to immediately update cache before API completes
-- Added `onError` to rollback to previous data on failure
-- Maintains server data sync via `onSuccess`
+```typescript
+const getInitialView = (): string => {
+  if (typeof window !== 'undefined') {
+    const params = new URLSearchParams(window.location.search);
+    const view = params.get('view');
+    if (view) {
+      return view;
+    }
+  }
+  return 'dashboard';
+};
+```
 
-**`useUpdateSettings`:**
-- Same optimistic pattern for user settings
-
-This improves perceived performance by showing changes immediately while the API call completes in the background.
+Now direct links to any portal view work correctly.
 
 ---
 
@@ -122,32 +105,15 @@ This improves perceived performance by showing changes immediately while the API
 ### New Plugin Files
 | File | Purpose |
 |------|---------|
-| `relo2france-schengen-tracker/*` | Complete standalone Schengen Tracker plugin |
+| `relo2france-schengen-tracker/*` | Complete standalone Schengen Tracker plugin (9 files) |
 | `france-relocation-member-tools/includes/class-framt-schengen-bridge.php` | MemberPress bridge |
-| `france-relocation-github-sync/france-relocation-github-sync.php` | Added new plugin to sync |
 
-### TypeScript/React Files
+### Modified Files
 | File | Changes |
 |------|---------|
-| `portal/src/hooks/useApi.ts` | Added optimistic updates to useUpdateMemberProfile and useUpdateSettings |
-| `portal/src/components/dashboard/TaskCard.tsx` | Added keyboard handler, role, tabIndex |
-| `portal/src/components/documents/FileGrid.tsx` | Added keyboard handler, role, tabIndex |
-| `portal/src/components/documents/FileUpload.tsx` | Added keyboard handler, role, tabIndex |
-| `portal/src/components/documents/AIVerification.tsx` | Fixed label associations |
-| `portal/src/components/documents/FilePreview.tsx` | Fixed label associations |
-| `portal/src/components/documents/DocumentTypeSelector.tsx` | Removed invalid role |
-| `portal/src/components/checklists/ChecklistItem.tsx` | Fixed label association |
-| `portal/src/components/family/FamilyView.tsx` | Fixed 7 label associations, used fieldset |
-| `portal/src/components/messages/NoteCard.tsx` | Replaced autoFocus with ref pattern |
-| `portal/src/components/messages/NoteForm.tsx` | Replaced autoFocus with ref pattern |
-| `portal/src/components/research/GenerateReportModal.tsx` | Added role="presentation" |
-| `portal/src/components/schengen/TripForm.tsx` | Fixed label association |
-| `portal/src/components/shared/Modal.tsx` | Added role="presentation" to overlays |
-| `portal/src/components/tasks/TaskBoard.tsx` | Added tabIndex to listbox |
-| `portal/src/components/tasks/TaskChecklist.tsx` | Replaced autoFocus with ref pattern |
-| `portal/src/components/tasks/TaskDetail.tsx` | Added keyboard handler, replaced autoFocus |
-| `portal/src/components/tasks/TaskForm.tsx` | Fixed label, replaced autoFocus (2 forms) |
-| `portal/src/components/tasks/TaskList.tsx` | Added keyboard handler, role, tabIndex |
+| `france-relocation-github-sync/france-relocation-github-sync.php` | Added GitHub Sync and Schengen Tracker to managed plugins |
+| `france-relocation-member-tools/portal/src/store/index.ts` | Read `?view=` parameter on initial load |
+| `france-relocation-member-tools/france-relocation-member-tools.php` | Load Schengen Bridge class |
 
 ---
 
@@ -155,61 +121,40 @@ This improves perceived performance by showing changes immediately while the API
 
 ```bash
 cd france-relocation-member-tools/portal
-
-# Build
 npm install
 npm run build  # Successful
 ```
 
 **Current Status:**
 - **Type Check:** 0 errors
-- **Lint:** 0 jsx-a11y warnings (all 37 fixed)
 - **Build:** Successful
+- **Schengen Tracker:** Installed and active on production
+- **Portal URL routing:** Working (direct links now work)
 
 ---
 
-## 5. Previous Session Summary (Earlier Today)
-
-### Profile Reset Feature
-- Added complete "Reset Visa Profile" functionality
-- REST endpoint `POST /profile/reset` with confirmation
-- Comprehensive data deletion across all tables
-
-### Automatic Task Due Date Calculation
-- Added `days_offset` to 50+ task templates
-- Auto-recalculate when move date changes
-
-### Move Date Certainty Setting
-- New field with options: fixed, anticipated, flexible
-
-### Schengen Tracker Improvements
-- Added error display for API failures
-
-### Critical Bug Fix
-- Fixed table names using FRAMT_Portal_Schema::get_table()
-
----
-
-## 6. Schengen Tracker Enhancement Plan
-
-A comprehensive plan has been created to bring the Schengen Tracker to feature parity with Monaeo ($999/year product), plus unique features.
+## 5. Schengen Tracker Enhancement Plan - Next Phases
 
 **Plan Document:** `SCHENGEN-MONAEO-PARITY-PLAN.md`
 
-### Implementation Phases
-
-| Phase | Description | Priority |
-|-------|-------------|----------|
+| Phase | Description | Status |
+|-------|-------------|--------|
 | **0** | Plugin Extraction & Premium Setup | **Complete** |
-| **1** | Browser Geolocation + Smart Detection | P1 |
-| **2** | Google/Outlook Calendar Sync | P1 |
-| **3** | Multi-Jurisdiction (US States, etc.) | P1 |
-| **4** | Professional PDF Reports | P1 |
-| **5** | Push + In-App Notifications | P1 |
-| **6** | CSV/ICS Import + PWA | P2 |
-| **7** | AI Suggestions + Family + Analytics | P3 |
+| **1** | Browser Geolocation + Smart Detection | Next |
+| **2** | Google/Outlook Calendar Sync | Pending |
+| **3** | Multi-Jurisdiction (US States, etc.) | Pending |
+| **4** | Professional PDF Reports | Pending |
+| **5** | Push + In-App Notifications | Pending |
+| **6** | CSV/ICS Import + PWA | Pending |
+| **7** | AI Suggestions + Family + Analytics | Pending |
 
-### What We Can't Replicate
+### Phase 1 Overview: Browser Geolocation + Smart Detection
+- Browser Geolocation API for automatic location detection
+- "Check In" button to record current location
+- Smart country detection from coordinates
+- Location history tracking
+
+### What We Can't Replicate from Monaeo
 - True background GPS (requires native mobile app)
 - Credit card import (requires Plaid + PCI compliance)
 - "Audit-certified" claims (requires legal partnership)
@@ -223,30 +168,41 @@ A comprehensive plan has been created to bring the Schengen Tracker to feature p
 
 ---
 
-## 7. Known Issues / Next Steps
+## 6. Known Issues / Notes
+
+### GitHub Sync Managed Plugins
+The current managed plugins list is:
+1. France Relocation Assistant
+2. France Relocation Member Tools
+3. France Relocation GitHub Sync (self-updates)
+4. Relo2France Schengen Tracker
+
+### Portal Direct Links
+All portal views now support direct linking:
+- `/portal/?view=dashboard`
+- `/portal/?view=schengen`
+- `/portal/?view=profile`
+- etc.
 
 ### Lower Priority: Dual Profile Storage Migration
-Profile data currently exists in both:
-1. User meta (`fra_*` prefixed keys) - main source
-2. Projects table (`visa_type`, `target_move_date`)
-
-A future migration could consolidate this to ensure consistency.
-
-### Schengen Trip Edit/Delete
-User reported issues with editing trip dates and deleting trips. Error display was added to help debug. Check browser console for specific error messages.
-
-### Potential Improvements
-- Add loading spinner during reset operation
-- Consider adding "undo" grace period for reset
-- Profile reset could log an activity entry before clearing
+Profile data currently exists in both user meta and projects table. A future migration could consolidate this.
 
 ---
 
-## 8. Commit Summary (This Session)
+## 7. Commit Summary (This Session)
 
-1. `Fix all accessibility warnings (37 issues resolved)`
-2. `Add optimistic updates to profile hooks`
-3. `Extract Schengen Tracker to standalone plugin (Phase 0)`
+1. `Extract Schengen Tracker to standalone plugin (Phase 0)`
+2. `Merge main and resolve HANDOFF.md conflict`
+3. `Add GitHub Sync to its own managed plugins list for self-updates`
+4. `Fix portal to read ?view= parameter from URL on initial load`
+
+---
+
+## 8. To Resume Next Session
+
+1. **Merge pending PR:** Branch `claude/add-github-sync-self-update-QtcLj` has the URL routing fix
+2. **Continue with Phase 1:** Browser Geolocation + Smart Detection
+3. **Reference:** `SCHENGEN-MONAEO-PARITY-PLAN.md` for detailed implementation specs
 
 ---
 
