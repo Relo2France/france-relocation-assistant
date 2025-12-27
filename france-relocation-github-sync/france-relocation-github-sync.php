@@ -101,6 +101,10 @@ class FRA_GitHub_Sync {
             'file' => 'france-relocation-member-tools/france-relocation-member-tools.php',
             'name' => 'France Relocation Member Tools',
         ),
+        'relo2france-schengen-tracker' => array(
+            'file' => 'relo2france-schengen-tracker/relo2france-schengen-tracker.php',
+            'name' => 'Relo2France Schengen Tracker',
+        ),
     );
 
     /**

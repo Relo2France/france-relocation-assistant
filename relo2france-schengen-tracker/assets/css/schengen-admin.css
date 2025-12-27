@@ -1,0 +1,66 @@
+/**
+ * Schengen Tracker Admin Styles
+ *
+ * @package R2F_Schengen_Tracker
+ * @since   1.0.0
+ */
+
+/* Settings Page */
+.r2f-schengen-admin-wrap {
+	max-width: 800px;
+}
+
+.r2f-schengen-admin-wrap h1 {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.r2f-schengen-admin-notice {
+	padding: 12px 15px;
+	margin: 15px 0;
+	border-radius: 4px;
+}
+
+.r2f-schengen-admin-notice.info {
+	background: #e7f3ff;
+	border-left: 4px solid #2271b1;
+}
+
+/* Form Styling */
+.r2f-schengen-admin-wrap .form-table th {
+	width: 200px;
+	padding-left: 0;
+}
+
+.r2f-schengen-admin-wrap .form-table td {
+	padding-left: 0;
+}
+
+.r2f-schengen-admin-wrap .description {
+	font-style: normal;
+	color: #646970;
+}
+
+/* Shortcode Display */
+.r2f-schengen-shortcode-info {
+	background: #f6f7f7;
+	padding: 20px;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	margin-top: 20px;
+}
+
+.r2f-schengen-shortcode-info h2 {
+	margin-top: 0;
+	font-size: 16px;
+}
+
+.r2f-schengen-shortcode-info code {
+	display: inline-block;
+	padding: 8px 15px;
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	font-size: 14px;
+}
