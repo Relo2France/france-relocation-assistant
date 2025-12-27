@@ -59,6 +59,18 @@ const getInitialSettings = (): PortalSettings => {
   return defaultSettings;
 };
 
+// Get initial view from URL ?view= parameter
+const getInitialView = (): string => {
+  if (typeof window !== 'undefined') {
+    const params = new URLSearchParams(window.location.search);
+    const view = params.get('view');
+    if (view) {
+      return view;
+    }
+  }
+  return 'dashboard';
+};
+
 interface PortalState {
   // User state
   user: User | null;
@@ -129,8 +141,8 @@ export const usePortalStore = create<PortalState>((set, get) => {
     toggleSidebar: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
     setSidebarCollapsed: (sidebarCollapsed) => set({ sidebarCollapsed }),
 
-    // Active view
-    activeView: 'dashboard',
+    // Active view - initialized from URL ?view= parameter
+    activeView: getInitialView(),
     setActiveView: (activeView) => set({ activeView }),
 
     // Settings tab navigation
