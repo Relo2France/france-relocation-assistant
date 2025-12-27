@@ -960,6 +960,17 @@ export interface LocationSettings {
   auto_detect: boolean;
 }
 
+export interface IPDetectionResult {
+  detected: boolean;
+  reason: 'ip_lookup' | 'local_ip' | 'api_error' | 'lookup_failed';
+  message: string;
+  countryCode: string | null;
+  countryName: string | null;
+  city: string | null;
+  isSchengen: boolean;
+  ip?: string | null;
+}
+
 // ============================================
 // Family Members Types
 // ============================================

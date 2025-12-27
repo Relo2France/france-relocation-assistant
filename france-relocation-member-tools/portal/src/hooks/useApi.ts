@@ -1148,3 +1148,12 @@ export function useGeocodeLocation() {
       schengenApi.geocode(lat, lng),
   });
 }
+
+export function useIPDetection() {
+  return useQuery({
+    queryKey: ['schengenIPDetection'] as const,
+    queryFn: schengenApi.detectFromIP,
+    staleTime: STALE_TIME.MEDIUM, // 5 minutes - IP doesn't change often
+    retry: 1, // Only retry once for IP detection
+  });
+}
