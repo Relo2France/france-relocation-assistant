@@ -1,7 +1,7 @@
 /**
  * ESLint Configuration for React Portal
  *
- * Enforces TypeScript best practices, React patterns, and code quality.
+ * Enforces TypeScript best practices, React patterns, accessibility, and code quality.
  */
 
 module.exports = {
@@ -14,7 +14,10 @@ module.exports = {
   extends: [
     'eslint:recommended',
     'plugin:@typescript-eslint/recommended',
+    'plugin:react/recommended',
+    'plugin:react/jsx-runtime',
     'plugin:react-hooks/recommended',
+    'plugin:jsx-a11y/recommended',
   ],
   ignorePatterns: [
     'dist',
@@ -31,8 +34,11 @@ module.exports = {
     sourceType: 'module',
     project: ['./tsconfig.json'],
   },
-  plugins: ['react-refresh', '@typescript-eslint', 'import'],
+  plugins: ['react-refresh', '@typescript-eslint', 'react', 'jsx-a11y', 'import'],
   settings: {
+    react: {
+      version: 'detect',
+    },
     'import/resolver': {
       node: {
         extensions: ['.js', '.jsx', '.ts', '.tsx'],
@@ -45,6 +51,20 @@ module.exports = {
       'warn',
       { allowConstantExport: true },
     ],
+
+    // React - disable prop-types (we use TypeScript)
+    'react/prop-types': 'off',
+
+    // React - relaxed rules for existing codebase
+    'react/no-unescaped-entities': 'warn',
+
+    // Accessibility - set as warnings for existing codebase (upgrade to errors over time)
+    'jsx-a11y/click-events-have-key-events': 'warn',
+    'jsx-a11y/no-static-element-interactions': 'warn',
+    'jsx-a11y/no-autofocus': 'warn',
+    'jsx-a11y/label-has-associated-control': 'warn',
+    'jsx-a11y/interactive-supports-focus': 'warn',
+    'jsx-a11y/no-interactive-element-to-noninteractive-role': 'warn',
 
     // TypeScript - relaxed rules for pragmatic development
     '@typescript-eslint/no-unused-vars': [

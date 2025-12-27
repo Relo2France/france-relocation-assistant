@@ -1,8 +1,8 @@
 /**
  * Relo2France Theme JavaScript
- * 
+ *
  * @package Relo2France
- * @version 1.2.3
+ * @version 1.2.4
  */
 
 (function() {

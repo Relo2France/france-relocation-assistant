@@ -5,7 +5,7 @@
  * Handles legal names, DOB, nationality, and passport information.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { AlertCircle } from 'lucide-react';
 import { useUpdateMemberProfile } from '@/hooks/useApi';
 import SaveButton from '@/components/shared/SaveButton';
@@ -17,6 +17,7 @@ interface PersonalSectionProps {
 
 export default function PersonalSection({ profile }: PersonalSectionProps) {
   const updateProfile = useUpdateMemberProfile();
+  const initializedRef = useRef(false);
   const [formData, setFormData] = useState({
     legal_first_name: '',
     legal_middle_name: '',
@@ -26,11 +27,10 @@ export default function PersonalSection({ profile }: PersonalSectionProps) {
     passport_number: '',
     passport_expiry: '',
   });
-  const [initialized, setInitialized] = useState(false);
 
-  // Initialize form when profile data loads
+  // Sync form with profile data when first loaded
   useEffect(() => {
-    if (profile && !initialized) {
+    if (profile && !initializedRef.current) {
       setFormData({
         legal_first_name: profile.legal_first_name || '',
         legal_middle_name: profile.legal_middle_name || '',
@@ -40,9 +40,9 @@ export default function PersonalSection({ profile }: PersonalSectionProps) {
         passport_number: profile.passport_number || '',
         passport_expiry: profile.passport_expiry || '',
       });
-      setInitialized(true);
+      initializedRef.current = true;
     }
-  }, [profile, initialized]);
+  }, [profile]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

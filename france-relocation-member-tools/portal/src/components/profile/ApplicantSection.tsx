@@ -5,7 +5,7 @@
  * Handles spouse details, children info, and pet information.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useUpdateMemberProfile } from '@/hooks/useApi';
 import SaveButton from '@/components/shared/SaveButton';
 import {
@@ -26,6 +26,7 @@ interface ApplicantSectionProps {
 
 export default function ApplicantSection({ profile }: ApplicantSectionProps) {
   const updateProfile = useUpdateMemberProfile();
+  const initializedRef = useRef(false);
   const [formData, setFormData] = useState({
     applicants: 'alone' as ApplicantType,
     spouse_legal_first_name: '',
@@ -38,10 +39,10 @@ export default function ApplicantSection({ profile }: ApplicantSectionProps) {
     has_pets: 'no' as PetType,
     pet_details: '',
   });
-  const [initialized, setInitialized] = useState(false);
 
+  // Sync form with profile data when first loaded
   useEffect(() => {
-    if (profile && !initialized) {
+    if (profile && !initializedRef.current) {
       setFormData({
         applicants: (profile.applicants as ApplicantType) || 'alone',
         spouse_legal_first_name: profile.spouse_legal_first_name || '',
@@ -54,9 +55,9 @@ export default function ApplicantSection({ profile }: ApplicantSectionProps) {
         has_pets: (profile.has_pets as PetType) || 'no',
         pet_details: profile.pet_details || '',
       });
-      setInitialized(true);
+      initializedRef.current = true;
     }
-  }, [profile, initialized]);
+  }, [profile]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

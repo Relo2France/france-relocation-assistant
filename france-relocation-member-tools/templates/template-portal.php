@@ -458,7 +458,7 @@ $react_settings = array(
 
         <?php if ( ! empty( $settings['custom_css'] ) ) : ?>
         /* Custom CSS */
-        <?php echo $settings['custom_css']; ?>
+        <?php echo wp_strip_all_tags( $settings['custom_css'] ); ?>
         <?php endif; ?>
     </style>
 </head>
