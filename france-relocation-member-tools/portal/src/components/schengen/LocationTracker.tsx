@@ -207,9 +207,14 @@ export default function LocationTracker({ compact = false }: LocationTrackerProp
         {storeLocationMutation.error && (
           <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-lg mb-4">
             <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0" aria-hidden="true" />
-            <p className="text-sm text-red-800">
-              Failed to save location. Please try again.
-            </p>
+            <div className="text-sm text-red-800">
+              <p className="font-medium">Failed to save location.</p>
+              <p className="mt-1 text-xs">
+                {storeLocationMutation.error instanceof Error
+                  ? storeLocationMutation.error.message
+                  : 'Please try again.'}
+              </p>
+            </div>
           </div>
         )}
 
