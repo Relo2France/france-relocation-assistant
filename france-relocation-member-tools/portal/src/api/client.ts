@@ -43,6 +43,9 @@ import type {
   SchengenSimulationResult,
   SchengenReportResponse,
   SchengenTestAlertResult,
+  TaskFilters,
+  FileFilters,
+  NoteFilters,
 } from '@/types';
 
 /**
@@ -96,6 +99,38 @@ async function apiFetch<T>(
   if (!response.ok) {
     const error = await response.json().catch(() => ({
       message: 'An error occurred',
+    }));
+    throw new Error(error.message || `HTTP error ${response.status}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * FormData fetch function for file uploads
+ * Similar to apiFetch but doesn't set Content-Type (browser sets it with boundary)
+ */
+async function apiFormDataFetch<T>(
+  endpoint: string,
+  formData: FormData,
+  signal?: AbortSignal
+): Promise<T> {
+  const wpData = getWpData();
+  const url = `${wpData.apiUrl}${endpoint}`;
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'X-WP-Nonce': wpData.nonce,
+    },
+    credentials: 'same-origin',
+    body: formData,
+    signal,
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({
+      message: 'Request failed',
     }));
     throw new Error(error.message || `HTTP error ${response.status}`);
   }
@@ -182,7 +217,7 @@ export const projectsApi = {
 
 // Tasks API
 export const tasksApi = {
-  list: (projectId: number, filters?: { stage?: string; status?: string; task_type?: string }) => {
+  list: (projectId: number, filters?: TaskFilters) => {
     const params = new URLSearchParams();
     if (filters?.stage) params.set('stage', filters.stage);
     if (filters?.status) params.set('status', filters.status);
@@ -268,7 +303,7 @@ export const userApi = {
 
 // Files API
 export const filesApi = {
-  list: (projectId: number, filters?: { category?: FileCategory; file_type?: string }) => {
+  list: (projectId: number, filters?: FileFilters) => {
     const params = new URLSearchParams();
     if (filters?.category) params.set('category', filters.category);
     if (filters?.file_type) params.set('file_type', filters.file_type);
@@ -285,34 +320,18 @@ export const filesApi = {
    * @param data - Optional metadata (category, description)
    * @param signal - Optional AbortSignal for cancellation
    */
-  upload: async (
+  upload: (
     projectId: number,
     file: File,
     data?: { category?: FileCategory; description?: string },
     signal?: AbortSignal
   ) => {
-    const wpData = getWpData();
     const formData = new FormData();
     formData.append('file', file);
     if (data?.category) formData.append('category', data.category);
     if (data?.description) formData.append('description', data.description);
 
-    const response = await fetch(`${wpData.apiUrl}/projects/${projectId}/files`, {
-      method: 'POST',
-      headers: {
-        'X-WP-Nonce': wpData.nonce,
-      },
-      credentials: 'same-origin',
-      body: formData,
-      signal,
-    });
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: 'Upload failed' }));
-      throw new Error(error.message || `HTTP error ${response.status}`);
-    }
-
-    return response.json() as Promise<PortalFile>;
+    return apiFormDataFetch<PortalFile>(`/projects/${projectId}/files`, formData, signal);
   },
 
   update: (id: number, data: { category?: FileCategory; description?: string }) =>
@@ -335,7 +354,7 @@ export const filesApi = {
 
 // Notes API
 export const notesApi = {
-  list: (projectId: number, filters?: { task_id?: number; pinned?: boolean }) => {
+  list: (projectId: number, filters?: NoteFilters) => {
     const params = new URLSearchParams();
     if (filters?.task_id) params.set('task_id', String(filters.task_id));
     if (filters?.pinned) params.set('pinned', 'true');
@@ -471,27 +490,12 @@ export const verificationApi = {
       body: JSON.stringify(data),
     }),
 
-  verifyFile: async (projectId: number, file: File, verificationType: string) => {
-    const wpData = getWpData();
+  verifyFile: (projectId: number, file: File, verificationType: string) => {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('verification_type', verificationType);
 
-    const response = await fetch(`${wpData.apiUrl}/projects/${projectId}/verify`, {
-      method: 'POST',
-      headers: {
-        'X-WP-Nonce': wpData.nonce,
-      },
-      credentials: 'same-origin',
-      body: formData,
-    });
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: 'Verification failed' }));
-      throw new Error(error.message || `HTTP error ${response.status}`);
-    }
-
-    return response.json() as Promise<VerificationResult>;
+    return apiFormDataFetch<VerificationResult>(`/projects/${projectId}/verify`, formData);
   },
 
   getHistory: (projectId: number) =>

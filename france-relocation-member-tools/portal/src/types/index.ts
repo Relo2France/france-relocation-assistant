@@ -213,6 +213,23 @@ export interface Note {
 
 export type NoteVisibility = 'private' | 'team' | 'shared';
 
+// Filter types for API queries
+export interface TaskFilters {
+  stage?: string;
+  status?: string;
+  task_type?: string;
+}
+
+export interface FileFilters {
+  category?: FileCategory;
+  file_type?: string;
+}
+
+export interface NoteFilters {
+  task_id?: number;
+  pinned?: boolean;
+}
+
 // API Response types
 export interface ApiError {
   code: string;
