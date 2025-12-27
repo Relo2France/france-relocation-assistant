@@ -861,6 +861,25 @@ export interface SchengenReportResponse {
   };
 }
 
+export interface SchengenTestAlertResult {
+  success: boolean;
+  message: string;
+  alert_level?: string;
+  days_used?: number;
+  thresholds?: {
+    warning: number;
+    danger: number;
+    urgent: number;
+  };
+  summary?: {
+    days_used: number;
+    days_remaining: number;
+    window_start: string;
+    window_end: string;
+    next_expiration: string | null;
+  };
+}
+
 // WordPress global types
 declare global {
   interface Window {

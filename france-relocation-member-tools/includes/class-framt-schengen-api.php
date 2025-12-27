@@ -166,6 +166,17 @@ class FRAMT_Schengen_API {
                 'permission_callback' => array( $this, 'check_premium_permission' ),
             )
         );
+
+        // Test email alert (for debugging)
+        register_rest_route(
+            self::NAMESPACE,
+            '/schengen/test-alert',
+            array(
+                'methods'             => 'POST',
+                'callback'            => array( $this, 'test_alert' ),
+                'permission_callback' => array( $this, 'check_permission' ),
+            )
+        );
     }
 
     /**
@@ -1245,5 +1256,32 @@ class FRAMT_Schengen_API {
 </html>';
 
         return $html;
+    }
+
+    // ============================================
+    // Email Alert Testing
+    // ============================================
+
+    /**
+     * Test email alert for current user
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response|WP_Error
+     */
+    public function test_alert( WP_REST_Request $request ) {
+        $user_id = get_current_user_id();
+
+        if ( ! class_exists( 'FRAMT_Schengen_Alerts' ) ) {
+            return new WP_Error(
+                'alerts_unavailable',
+                'Schengen alerts system is not available.',
+                array( 'status' => 500 )
+            );
+        }
+
+        $alerts = FRAMT_Schengen_Alerts::get_instance();
+        $result = $alerts->test_alert( $user_id );
+
+        return rest_ensure_response( $result );
     }
 }

@@ -42,6 +42,7 @@ import type {
   SchengenFeatureStatus,
   SchengenSimulationResult,
   SchengenReportResponse,
+  SchengenTestAlertResult,
 } from '@/types';
 
 /**
@@ -796,4 +797,10 @@ export const schengenApi = {
 
   // Generate PDF report (premium feature)
   generateReport: () => apiFetch<SchengenReportResponse>('/schengen/report'),
+
+  // Test email alert (sends a test alert to current user)
+  testAlert: () =>
+    apiFetch<SchengenTestAlertResult>('/schengen/test-alert', {
+      method: 'POST',
+    }),
 };
