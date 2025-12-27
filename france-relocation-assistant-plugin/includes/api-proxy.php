@@ -72,7 +72,7 @@ class FRA_API_Proxy {
         register_rest_route('fra/v1', '/chat', array(
             'methods' => 'POST',
             'callback' => array($this, 'rest_chat_handler'),
-            'permission_callback' => '__return_true', // Rate limiting handles access
+            'permission_callback' => array( $this, 'check_chat_permission' ),
             'args' => array(
                 'message' => array(
                     'required' => true,
@@ -97,6 +97,35 @@ class FRA_API_Proxy {
             'callback' => array($this, 'rest_status_handler'),
             'permission_callback' => '__return_true'
         ));
+    }
+
+    /**
+     * Permission callback for chat endpoint
+     *
+     * Allows access for logged-in users or rate-limited anonymous users.
+     *
+     * @return bool|WP_Error True if permitted, WP_Error otherwise
+     */
+    public function check_chat_permission() {
+        // Logged-in users always have access (rate limiting still applies in handler)
+        if ( is_user_logged_in() ) {
+            return true;
+        }
+
+        // Anonymous users: check if rate limiting allows access
+        $rate_check = fra_check_rate_limit();
+        if ( ! $rate_check['allowed'] ) {
+            return new WP_Error(
+                'rate_limited',
+                $rate_check['message'],
+                array(
+                    'status' => 429,
+                    'retry_after' => $rate_check['retry_after']
+                )
+            );
+        }
+
+        return true;
     }
 
     /**

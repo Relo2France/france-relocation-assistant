@@ -53,8 +53,8 @@ export default function FamilyView() {
   const [deletingMember, setDeletingMember] = useState<FamilyMember | null>(null);
 
   const familyMembers = familyData?.members || [];
-  const canEdit = familyData?.can_edit ?? false;
-  const featureEnabled = familyData?.feature_enabled ?? false;
+  const canEdit = familyData?.canEdit ?? false;
+  const featureEnabled = familyData?.featureEnabled ?? false;
 
   if (isLoading) {
     return <FamilyViewSkeleton />;

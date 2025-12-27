@@ -35,7 +35,7 @@
             <!-- Site Title -->
             <h1 class="header-site-title">
                 <a href="<?php echo esc_url(home_url('/')); ?>">
-                    <?php bloginfo('name'); ?>
+                    <?php echo esc_html( get_bloginfo( 'name' ) ); ?>
                 </a>
             </h1>
             

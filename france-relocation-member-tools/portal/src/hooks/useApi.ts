@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { STALE_TIME, SEARCH } from '@/constants';
+import { STALE_TIME, SEARCH, REFETCH_INTERVAL } from '@/constants';
 import {
   dashboardApi,
   projectsApi,
@@ -493,6 +493,7 @@ export function useTaskChecklist(taskId: number) {
     queryKey: queryKeys.taskChecklist(taskId),
     queryFn: () => checklistsApi.getTaskChecklist(taskId),
     enabled: taskId > 0,
+    staleTime: STALE_TIME.DEFAULT, // 30 seconds
   });
 }
 
@@ -547,6 +548,7 @@ export function useGeneratedDocuments(projectId: number) {
     queryKey: queryKeys.generatedDocuments(projectId),
     queryFn: () => documentGeneratorApi.listGenerated(projectId),
     enabled: projectId > 0,
+    staleTime: STALE_TIME.SHORT, // 1 minute
   });
 }
 
@@ -618,6 +620,7 @@ export function useVerificationHistory(projectId: number) {
     queryKey: queryKeys.verificationHistory(projectId),
     queryFn: () => verificationApi.getHistory(projectId),
     enabled: projectId > 0,
+    staleTime: STALE_TIME.SHORT, // 1 minute
   });
 }
 
@@ -638,6 +641,7 @@ export function useGuide(type: string) {
     queryKey: queryKeys.guide(type),
     queryFn: () => guidesApi.get(type),
     enabled: !!type,
+    staleTime: STALE_TIME.LONG, // 1 hour - guides are static content
   });
 }
 
@@ -646,6 +650,7 @@ export function usePersonalizedGuide(type: string) {
     queryKey: queryKeys.personalizedGuide(type),
     queryFn: () => guidesApi.getPersonalized(type),
     enabled: !!type,
+    staleTime: STALE_TIME.MEDIUM, // 5 minutes
   });
 }
 
@@ -703,6 +708,7 @@ export function useSubscriptions() {
   return useQuery({
     queryKey: queryKeys.subscriptions,
     queryFn: membershipApi.getSubscriptions,
+    staleTime: STALE_TIME.MEDIUM, // 5 minutes
   });
 }
 
@@ -710,6 +716,7 @@ export function usePayments() {
   return useQuery({
     queryKey: queryKeys.payments,
     queryFn: membershipApi.getPayments,
+    staleTime: STALE_TIME.MEDIUM, // 5 minutes
   });
 }
 
@@ -787,7 +794,7 @@ export function useSupportUnreadCount() {
     queryKey: queryKeys.supportUnreadCount,
     queryFn: supportApi.getUnreadCount,
     staleTime: STALE_TIME.DEFAULT, // 30 seconds
-    refetchInterval: 60000, // Refetch every minute
+    refetchInterval: REFETCH_INTERVAL.SUPPORT_UNREAD, // 1 minute
   });
 }
 

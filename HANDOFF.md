@@ -1,8 +1,8 @@
 # Session Handoff Document
 
 **Date:** December 27, 2025
-**Branch:** `claude/review-handoff-bSeKm`
-**Last Commit:** `Refactor guides components and add performance improvements`
+**Branch:** `claude/resume-from-handoff-JlK7B`
+**Last Commit:** `Comprehensive codebase review: consistency, efficiency, and documentation`
 
 ---
 
@@ -23,165 +23,105 @@ The React portal is fully functional with 40+ REST API endpoints. All major feat
 
 ## 2. What We Completed This Session
 
-### 2.1 Full Codebase Review (Previous Session)
+### 2.1 Comprehensive Codebase Review
 
-Performed comprehensive code review across all 6 major areas:
-- React Portal Components (35+ issues found)
-- React Hooks & API Client (14 issues found)
-- PHP Main Plugin (25 issues found)
-- PHP Member Tools Plugin (15 issues found)
-- WordPress Theme (18 issues found)
-- Configuration Files (13 issues found)
+Performed full review of all 7 major areas, identifying **216 issues total**:
 
-**Total: 120 issues identified, 10+ critical/high priority fixes implemented**
+| Area | Critical | High | Medium | Low | Total |
+|------|----------|------|--------|-----|-------|
+| React Components | 12 | 28 | 35 | 17 | 92 |
+| Hooks/API/Store | 2 | 6 | 12 | 8 | 28 |
+| TypeScript Types | 5 | 3 | 4 | 4 | 16 |
+| PHP Main Plugin | 3 | 5 | 8 | 9 | 25 |
+| PHP Member Tools | 1 | 5 | 4 | 3 | 13 |
+| WordPress Theme | 1 | 5 | 9 | 9 | 24 |
+| Configuration | 2 | 3 | 5 | 8 | 18 |
 
-### 2.2 CRITICAL Security Fixes (Previous Session)
+### 2.2 Security Fixes Implemented
 
-#### XSS Prevention - SafeHtml Component
-**Files:** `portal/src/components/shared/SafeHtml.tsx` (NEW), `GuidesView.tsx`
+1. **Theme header.php** - Added `esc_html()` to `bloginfo('name')` output
+2. **Portal template-portal.php** - Added `wp_strip_all_tags()` to custom CSS output
+3. **Main plugin api-proxy.php** - Added proper permission callback for `/fra/v1/chat` endpoint
 
-Replaced `dangerouslySetInnerHTML` with a new SafeHtml component using DOMPurify for HTML sanitization:
+### 2.3 TypeScript Type Fixes
 
-```tsx
-// NEW: SafeHtml component with DOMPurify
-import DOMPurify from 'dompurify';
+1. Fixed `FamilyMember` interface - changed `created_at`/`updated_at` to camelCase
+2. Fixed `FamilyMembersResponse` interface - `feature_enabled` → `featureEnabled`, `can_edit` → `canEdit`
+3. Fixed `FamilyFeatureStatus` interface - `upgrade_url` → `upgradeUrl`
+4. Updated `FamilyView.tsx` to use new property names
 
-export default function SafeHtml({ html, className, as: Component = 'div' }: SafeHtmlProps) {
-  const sanitizedHtml = DOMPurify.sanitize(html, {
-    ALLOWED_TAGS: ['p', 'br', 'strong', 'b', 'em', 'i', 'u', 's', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'a', 'blockquote', 'code', 'pre', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'span', 'div'],
-    ALLOWED_ATTR: ['href', 'target', 'rel', 'class', 'id'],
-  });
-  return <Component className={className} dangerouslySetInnerHTML={{ __html: sanitizedHtml }} />;
-}
-```
+### 2.4 React Query Performance Improvements
 
-#### SQL Injection Fix
-**File:** `includes/class-framt-dashboard.php:325`
+Added missing `staleTime` values to 7 hooks:
+- `useTaskChecklist` - 30 seconds
+- `useGeneratedDocuments` - 1 minute
+- `useVerificationHistory` - 1 minute
+- `useGuide` - 1 hour (static content)
+- `usePersonalizedGuide` - 5 minutes
+- `useSubscriptions` - 5 minutes
+- `usePayments` - 5 minutes
 
-```php
-// BEFORE (vulnerable):
-$wpdb->get_var("SHOW TABLES LIKE '$table_messages'")
+Also replaced magic number `60000` with `REFETCH_INTERVAL.SUPPORT_UNREAD` constant.
 
-// AFTER (secure):
-$wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table_messages))
-```
+### 2.5 React Component Fixes
 
-#### Output Escaping in Theme
-**Files:** `functions.php`, `footer.php`, `single.php`
+Fixed profile section initialization pattern in 3 components:
+- `PersonalSection.tsx` - Replaced `initialized` state with `useRef`
+- `ApplicantSection.tsx` - Same pattern fix
+- `VisaSection.tsx` - Same pattern fix
 
-Fixed 4 instances of unescaped output.
+### 2.6 ESLint Configuration Improvements
 
-#### Permission Check Type Safety
-**File:** `class-framt-portal-api.php:1196,1230,1264`
+Added new plugins and rules:
+- Added `eslint-plugin-react` for React best practices
+- Added `eslint-plugin-jsx-a11y` for accessibility enforcement
+- Configured as warnings (not errors) for existing codebase
+- Total: 57 accessibility warnings now tracked
 
-Added strict type casting to permission checks.
+### 2.7 Accessibility Improvements
 
-### 2.3 GuidesView Component Refactoring (Current Session)
+1. Header search input - Added `aria-label="Search across portal"`
+2. Header search icon - Added `aria-hidden="true"`
+3. Changed search input type to `type="search"`
 
-Split the massive GuidesView.tsx (1350+ lines) into focused, maintainable components:
+### 2.8 Configuration Improvements
 
-| File | Purpose | Lines |
-|------|---------|-------|
-| `guidesData.ts` | Static guide data, types, helper functions | ~260 |
-| `GuideCards.tsx` | GuideCard, FeaturedGuideCard, PersonalizedGuideCard | ~120 |
-| `GuideDetail.tsx` | Guide detail view with AI chat integration | ~280 |
-| `PersonalizedGuideDetail.tsx` | AI-generated personalized guides view | ~260 |
-| `GuideMessageContent.tsx` | Markdown parser for chat messages | ~150 |
-| `GuidesView.tsx` | Main view (refactored) | ~253 |
-| `index.ts` | Barrel export with all exports | ~12 |
-
-### 2.4 Barrel Exports for All Component Folders (Current Session)
-
-Added missing barrel exports to complete the component organization:
-
-| Folder | File | Exports |
-|--------|------|---------|
-| `dashboard/` | `index.ts` | Dashboard, ActivityFeed, ProgressTracker, TaskCard, WelcomeBanner |
-| `layout/` | `index.ts` | Header, Sidebar |
-| `shared/` | `index.ts` | ErrorBoundary, Modal, SafeHtml, SaveButton, VirtualList |
-
-### 2.5 PHP Performance Improvements (Current Session)
-
-#### Transient Caching for Knowledge Base
-**File:** `includes/class-framt-portal-api.php`
-
-Added `get_cached_knowledge_base()` helper with 1-hour transient caching:
-
-```php
-private function get_cached_knowledge_base() {
-    $cache_key = 'framt_knowledge_base';
-    $knowledge_base = get_transient( $cache_key );
-
-    if ( false !== $knowledge_base ) {
-        return $knowledge_base;
-    }
-
-    // Load from file...
-    $knowledge_base = include $kb_file;
-
-    // Cache for 1 hour
-    set_transient( $cache_key, $knowledge_base, HOUR_IN_SECONDS );
-
-    return $knowledge_base;
-}
-```
-
-### 2.6 Efficiency Improvements (Previous Session)
-
-- Added `staleTime` to 12+ React Query hooks
-- Fixed FileGrid responsive column calculation
-- Fixed LazyView component recreation with useMemo
-- Added `type-check` npm script
+1. Updated `.gitignore` with comprehensive entries
+2. Fixed theme.js version number (1.2.3 → 1.2.4)
 
 ---
 
-## 3. Known Technical Debt (From Previous Session)
+## 3. Files Modified This Session
 
-### Dual Profile Storage (Analyzed - Requires Migration)
-
-**STATUS:** Full analysis complete. Requires careful migration in dedicated session.
-
-The profile system uses two storage mechanisms that are NOT synchronized:
-- User Meta Storage (`fra_*` prefix) - used by REST API
-- Database Table (`wp_framt_profiles`) - used by document generation
-
-See previous session notes for full analysis and migration plan.
-
----
-
-## 4. Files Created/Modified This Session
-
-### New Files
-
-| File | Description |
-|------|-------------|
-| `portal/src/constants/timing.ts` | STALE_TIME, REFETCH_INTERVAL, TRANSITION_DURATION constants |
-| `portal/src/constants/layout.ts` | SIDEBAR, HEADER, LOADING, BREAKPOINTS constants |
-| `portal/src/constants/features.ts` | VIRTUALIZATION, SEARCH, CHAT, PROFILE_COMPLETION constants |
-| `portal/src/constants/index.ts` | Constants barrel export |
-| `portal/.env.example` | Environment variables template for development |
-| `portal/src/components/guides/guidesData.ts` | Static guide data, types, getSuggestedQuestionsForGuide |
-| `portal/src/components/guides/GuideCards.tsx` | Card components (Guide, Featured, Personalized) |
-| `portal/src/components/guides/GuideDetail.tsx` | Guide detail with AI chat |
-| `portal/src/components/guides/GuideMessageContent.tsx` | Markdown parser for chat |
-| `portal/src/components/guides/PersonalizedGuideDetail.tsx` | Personalized guide view |
-| `portal/src/components/dashboard/index.ts` | Dashboard barrel export |
-| `portal/src/components/layout/index.ts` | Layout barrel export |
-| `portal/src/components/shared/index.ts` | Shared barrel export |
-
-### Modified Files
-
+### PHP Files
 | File | Changes |
 |------|---------|
-| `portal/src/hooks/useApi.ts` | Use STALE_TIME and SEARCH constants |
-| `portal/src/components/guides/GuidesView.tsx` | Refactored to use new components (1350→253 lines) |
-| `portal/src/components/guides/index.ts` | Updated with all new exports |
-| `includes/class-framt-portal-api.php` | Added get_cached_knowledge_base(), updated search_knowledge_base() |
-| `relo2france-theme/template-auth.php` | Replace hardcoded colors with CSS variables |
+| `relo2france-theme/header.php` | Added esc_html() to bloginfo output |
+| `france-relocation-member-tools/templates/template-portal.php` | Added wp_strip_all_tags() to custom CSS |
+| `france-relocation-assistant-plugin/includes/api-proxy.php` | Added check_chat_permission() method |
+
+### TypeScript/React Files
+| File | Changes |
+|------|---------|
+| `portal/src/types/index.ts` | Fixed FamilyMember, FamilyMembersResponse, FamilyFeatureStatus naming |
+| `portal/src/hooks/useApi.ts` | Added staleTime to 7 hooks, added REFETCH_INTERVAL import |
+| `portal/src/components/profile/PersonalSection.tsx` | Fixed initialization pattern with useRef |
+| `portal/src/components/profile/ApplicantSection.tsx` | Fixed initialization pattern with useRef |
+| `portal/src/components/profile/VisaSection.tsx` | Fixed initialization pattern with useRef |
+| `portal/src/components/family/FamilyView.tsx` | Updated to use camelCase property names |
+| `portal/src/components/layout/Header.tsx` | Added accessibility attributes |
+
+### Configuration Files
+| File | Changes |
+|------|---------|
+| `portal/package.json` | Added eslint-plugin-react and eslint-plugin-jsx-a11y |
+| `portal/.eslintrc.cjs` | Added React and a11y plugins, configured rules as warnings |
+| `portal/.gitignore` | Expanded with comprehensive entries |
+| `relo2france-theme/assets/js/theme.js` | Updated version to 1.2.4 |
 
 ---
 
-## 5. Build & Test Commands
+## 4. Build & Test Status
 
 ```bash
 cd france-relocation-member-tools/portal
@@ -189,47 +129,38 @@ cd france-relocation-member-tools/portal
 # Build
 npm install
 npm run build
-
-# Test
-npm test          # Watch mode
-npm test:run      # Single run (CI)
-npm test:coverage # With coverage
-
-# Lint
-npm run lint        # Allow warnings
-npm run lint:strict # Zero warnings
-
-# Type check
-npm run type-check  # TypeScript validation without emit
 ```
 
 **Current Status:**
-- Tests: 45/45 passing
-- Lint: 0 errors, 0 warnings
-- Build: Successful
+- **Tests:** 45/45 passing
+- **Type Check:** 0 errors
+- **Lint:** 0 errors, 57 warnings (accessibility issues to address over time)
+- **Build:** Successful
 
 ---
 
-## 6. Remaining Issues (Lower Priority)
+## 5. Known Remaining Issues
 
-From the comprehensive review, most issues have been addressed. Remaining items:
+### High Priority (Address Soon)
+- 57 accessibility warnings (click handlers without keyboard support, label associations)
+- Profile sections could benefit from optimistic updates
 
-### PHP Backend
-- Encryption fallback returns unencrypted legacy values (intentional for migration)
-
-### Theme
-- Missing JSDoc on some functions
-
-### Configuration
+### Medium Priority
+- Some components missing JSDoc documentation
 - Consider adding eslint-plugin-import for import ordering
 
+### Lower Priority (Technical Debt)
+- Dual Profile Storage still requires migration
+- Encryption fallback returns unencrypted legacy values (intentional)
+
 ---
 
-## 7. Commit Summary
+## 6. Commit Summary
 
-1. `Comprehensive code review fixes: security, efficiency, and consistency`
-2. `Refactor guides components and add performance improvements`
-3. `Add constants, CSS variables, and .env.example`
+1. Previous: `Comprehensive code review fixes: security, efficiency, and consistency`
+2. Previous: `Refactor guides components and add performance improvements`
+3. Previous: `Add constants, CSS variables, and .env.example`
+4. This session: `Comprehensive codebase review: consistency, efficiency, and documentation`
 
 ---
 

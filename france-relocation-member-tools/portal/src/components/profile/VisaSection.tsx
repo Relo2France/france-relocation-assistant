@@ -5,7 +5,7 @@
  * Handles visa type, employment status, and work plans.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useUpdateMemberProfile } from '@/hooks/useApi';
 import SaveButton from '@/components/shared/SaveButton';
 import {
@@ -26,6 +26,7 @@ interface VisaSectionProps {
 
 export default function VisaSection({ profile }: VisaSectionProps) {
   const updateProfile = useUpdateMemberProfile();
+  const initializedRef = useRef(false);
   const [formData, setFormData] = useState({
     visa_type: 'undecided' as ProfileVisaType,
     employment_status: 'not_working' as WorkStatus,
@@ -33,10 +34,10 @@ export default function VisaSection({ profile }: VisaSectionProps) {
     industry: '',
     employer_name: '',
   });
-  const [initialized, setInitialized] = useState(false);
 
+  // Sync form with profile data when first loaded
   useEffect(() => {
-    if (profile && !initialized) {
+    if (profile && !initializedRef.current) {
       setFormData({
         visa_type: (profile.visa_type as ProfileVisaType) || 'undecided',
         employment_status: (profile.employment_status as WorkStatus) || 'not_working',
@@ -44,9 +45,9 @@ export default function VisaSection({ profile }: VisaSectionProps) {
         industry: profile.industry || '',
         employer_name: profile.employer_name || '',
       });
-      setInitialized(true);
+      initializedRef.current = true;
     }
-  }, [profile, initialized]);
+  }, [profile]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

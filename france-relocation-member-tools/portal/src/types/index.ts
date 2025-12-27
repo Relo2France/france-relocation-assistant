@@ -915,19 +915,19 @@ export interface FamilyMember {
     photos: boolean;
   };
   notes?: string;
-  created_at?: string;
-  updated_at?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface FamilyMembersResponse {
   members: FamilyMember[];
-  feature_enabled: boolean;
-  can_edit: boolean;
+  featureEnabled: boolean;
+  canEdit: boolean;
 }
 
 export interface FamilyFeatureStatus {
   enabled: boolean;
-  upgrade_url: string | null;
+  upgradeUrl: string | null;
   message: string | null;
 }
 
