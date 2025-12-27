@@ -1,14 +1,112 @@
 # Schengen Tracker Enhancement Plan: Monaeo Feature Parity + Beyond
 
 **Created:** December 27, 2025
+**Updated:** December 27, 2025
 **Branch:** `claude/review-handoff-docs-QtcLj`
-**Status:** Planning
+**Status:** Planning → **Architecture Decided**
+
+---
+
+## Architecture Decision: Option C (Hybrid - Separate Plugin + Portal Integration)
+
+### Decision
+The Schengen Tracker will be extracted into a **standalone WordPress plugin** (`relo2france-schengen-tracker`) that:
+1. Can operate independently for general market (digital nomads, frequent travelers)
+2. Integrates seamlessly with the Relo2France Member Portal
+3. Uses consistent premium gating pattern (like Family Members feature)
+
+### Premium Feature Model
+The **entire Schengen Tracker is a Premium Feature**, following the Family Members pattern:
+- Free users see a preview/teaser with upgrade prompt
+- Premium members (via MemberPress) get full access
+- Admin can manually override per user via user meta
+
+### Plugin Structure
+```
+relo2france-schengen-tracker/           ← NEW STANDALONE PLUGIN
+├── relo2france-schengen-tracker.php    # Main plugin file
+├── includes/
+│   ├── class-r2f-schengen-core.php     # Core tracking logic
+│   ├── class-r2f-schengen-api.php      # REST API endpoints
+│   ├── class-r2f-schengen-alerts.php   # Email/push notifications
+│   ├── class-r2f-schengen-calendar.php # Calendar sync
+│   ├── class-r2f-schengen-import.php   # Data import
+│   ├── class-r2f-schengen-reports.php  # PDF generation
+│   └── class-r2f-schengen-schema.php   # Database tables
+├── assets/
+│   ├── css/
+│   └── js/
+├── templates/
+│   └── standalone-dashboard.php        # For non-portal use
+└── readme.txt
+
+france-relocation-member-tools/          ← EXISTING PLUGIN (INTEGRATION)
+├── portal/src/components/schengen/     # React components (shared)
+├── includes/
+│   └── class-framt-schengen-bridge.php # Bridge to standalone plugin
+```
+
+### Integration Hooks
+```php
+// Standalone plugin provides hooks for integration
+do_action( 'r2f_schengen_trip_created', $user_id, $trip_data );
+do_action( 'r2f_schengen_alert_triggered', $user_id, $alert_level );
+apply_filters( 'r2f_schengen_premium_check', $is_premium, $user_id );
+
+// Member Tools plugin hooks into standalone
+add_filter( 'r2f_schengen_premium_check', function( $is_premium, $user_id ) {
+    // Use MemberPress or existing premium logic
+    return FRAMT_Portal_API::is_premium_member( $user_id );
+}, 10, 2 );
+```
+
+### Premium Gating (Consistent with Family Feature)
+
+**PHP Pattern:**
+```php
+// In standalone plugin
+public function is_schengen_feature_enabled( $user_id ) {
+    // 1. Check user meta override
+    $override = get_user_meta( $user_id, 'r2f_schengen_enabled', true );
+    if ( '1' === $override ) return true;
+    if ( '0' === $override ) return false;
+
+    // 2. Allow other plugins to filter (Member Tools hooks in here)
+    $is_premium = apply_filters( 'r2f_schengen_premium_check', false, $user_id );
+    if ( $is_premium ) return true;
+
+    // 3. Fallback to global setting
+    return '1' === get_option( 'r2f_schengen_enabled', '0' );
+}
+```
+
+**React Pattern:**
+```typescript
+// Following Family feature pattern
+export interface SchengenFeatureStatus {
+  enabled: boolean;
+  upgradeUrl: string | null;
+  message: string | null;
+}
+
+// In SchengenView.tsx
+const { data: featureStatus } = useSchengenFeatureStatus();
+
+if (!featureStatus?.enabled) {
+  return <PremiumFeaturePrompt
+    feature="Schengen Tracker"
+    upgradeUrl={featureStatus?.upgradeUrl}
+  />;
+}
+
+return <SchengenDashboard />;
+```
 
 ---
 
 ## Executive Summary
 
-This plan outlines the implementation strategy to bring the Relo2France Schengen Tracker to feature parity with Monaeo ($999/year product), plus additional features that exceed their offering. The plan is organized into 6 phases over an estimated development effort.
+This plan outlines the implementation strategy to bring the Relo2France Schengen Tracker to feature parity with Monaeo ($999/year product), plus additional features that exceed their offering. The enhanced tracker will be a **standalone plugin** that integrates with the Member Portal as a **Premium Feature**.
 
 ### Feature Categories
 
@@ -56,13 +154,258 @@ This plan outlines the implementation strategy to bring the Relo2France Schengen
 - Add disclaimer: "Consult your tax advisor"
 
 ### 4. Native Mobile Apps
-**Monaeo:** Native iOS (15.6+) and Android apps
+**Monaeo:** Native iOS/Android apps
 **Our Limitation:** Would require React Native development, app store accounts
 **Workaround:**
 - PWA with "Add to Home Screen" capability
 - Responsive design optimized for mobile
 - Push notifications via Web Push API
 - Future: Consider React Native if demand justifies
+
+---
+
+## Phase 0: Plugin Extraction & Premium Setup (PREREQUISITE)
+
+This phase extracts the Schengen Tracker into a standalone plugin and establishes premium gating.
+
+### 0.1 Create Standalone Plugin Structure
+
+**New Plugin:** `relo2france-schengen-tracker/`
+
+```
+relo2france-schengen-tracker/
+├── relo2france-schengen-tracker.php      # Main plugin file
+├── includes/
+│   ├── class-r2f-schengen-loader.php     # Autoloader
+│   ├── class-r2f-schengen-core.php       # Core singleton
+│   ├── class-r2f-schengen-api.php        # REST API (migrated from FRAMT)
+│   ├── class-r2f-schengen-alerts.php     # Email alerts (migrated)
+│   ├── class-r2f-schengen-schema.php     # Database tables
+│   └── class-r2f-schengen-premium.php    # Premium feature gating
+├── assets/
+│   ├── css/schengen-standalone.css
+│   └── js/schengen-standalone.js
+├── templates/
+│   ├── dashboard.php                      # Shortcode template
+│   └── email-alert.php                    # Email template
+├── languages/
+│   └── r2f-schengen.pot
+├── uninstall.php
+└── readme.txt
+```
+
+### 0.2 Migration Steps
+
+**Step 1: Create new plugin with core files**
+```php
+<?php
+/**
+ * Plugin Name: Relo2France Schengen Tracker
+ * Description: Track your Schengen 90/180 day compliance with calendar sync, alerts, and reports.
+ * Version: 1.0.0
+ * Author: Relo2France
+ * License: GPL-2.0+
+ * Text Domain: r2f-schengen
+ */
+
+if ( ! defined( 'ABSPATH' ) ) exit;
+
+define( 'R2F_SCHENGEN_VERSION', '1.0.0' );
+define( 'R2F_SCHENGEN_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
+define( 'R2F_SCHENGEN_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
+
+// Autoloader
+require_once R2F_SCHENGEN_PLUGIN_DIR . 'includes/class-r2f-schengen-loader.php';
+
+// Initialize
+function r2f_schengen_init() {
+    R2F_Schengen_Core::get_instance();
+}
+add_action( 'plugins_loaded', 'r2f_schengen_init' );
+```
+
+**Step 2: Migrate existing code from Member Tools**
+| Source File | Target File |
+|-------------|-------------|
+| `class-framt-schengen-api.php` | `class-r2f-schengen-api.php` |
+| `class-framt-schengen-alerts.php` | `class-r2f-schengen-alerts.php` |
+| Schema in `class-framt-portal-schema.php` | `class-r2f-schengen-schema.php` |
+
+**Step 3: Update REST API namespace**
+```php
+// Old: /wp-json/fra-portal/v1/schengen/
+// New: /wp-json/r2f-schengen/v1/
+
+// Backward compatibility alias
+register_rest_route( 'fra-portal/v1', '/schengen/(?P<endpoint>.*)', array(
+    'methods'  => WP_REST_Server::ALLMETHODS,
+    'callback' => array( $this, 'legacy_redirect' ),
+) );
+```
+
+**Step 4: Create bridge in Member Tools**
+```php
+// france-relocation-member-tools/includes/class-framt-schengen-bridge.php
+class FRAMT_Schengen_Bridge {
+    public function __construct() {
+        // Hook into standalone plugin's premium check
+        add_filter( 'r2f_schengen_premium_check', array( $this, 'check_memberpress' ), 10, 2 );
+
+        // Pass portal context to standalone
+        add_filter( 'r2f_schengen_context', array( $this, 'add_portal_context' ) );
+    }
+
+    public function check_memberpress( $is_premium, $user_id ) {
+        // Use existing FRAMT premium logic
+        return FRAMT_Portal_API::get_instance()->is_premium_member( $user_id );
+    }
+}
+```
+
+### 0.3 Premium Gating Implementation
+
+**Standalone Plugin (default: disabled)**
+```php
+class R2F_Schengen_Premium {
+    const USER_META_KEY = 'r2f_schengen_enabled';
+    const GLOBAL_OPTION = 'r2f_schengen_global_enabled';
+
+    public function is_feature_enabled( $user_id ) {
+        // 1. User meta override (admin can enable/disable per user)
+        $override = get_user_meta( $user_id, self::USER_META_KEY, true );
+        if ( '1' === $override ) return true;
+        if ( '0' === $override ) return false;
+
+        // 2. Filter for other plugins (Member Tools hooks here)
+        $filtered = apply_filters( 'r2f_schengen_premium_check', null, $user_id );
+        if ( null !== $filtered ) return (bool) $filtered;
+
+        // 3. Global fallback (default OFF for standalone)
+        return '1' === get_option( self::GLOBAL_OPTION, '0' );
+    }
+
+    public function get_feature_status( $user_id ) {
+        $enabled = $this->is_feature_enabled( $user_id );
+
+        return array(
+            'enabled'     => $enabled,
+            'upgradeUrl'  => $enabled ? null : $this->get_upgrade_url(),
+            'message'     => $enabled ? null : __(
+                'Schengen Tracker is a premium feature. Upgrade to access.',
+                'r2f-schengen'
+            ),
+        );
+    }
+
+    private function get_upgrade_url() {
+        // Allow other plugins to provide upgrade URL
+        return apply_filters(
+            'r2f_schengen_upgrade_url',
+            get_option( 'r2f_schengen_upgrade_url', home_url( '/pricing/' ) )
+        );
+    }
+}
+```
+
+**Member Tools Integration (enables for premium members)**
+```php
+// In FRAMT_Schengen_Bridge
+add_filter( 'r2f_schengen_premium_check', function( $is_premium, $user_id ) {
+    // Check MemberPress membership
+    if ( class_exists( 'MeprUser' ) ) {
+        $mepr_user = new \MeprUser( $user_id );
+        if ( $mepr_user->is_active() ) {
+            return true;
+        }
+    }
+    return $is_premium;
+}, 10, 2 );
+
+add_filter( 'r2f_schengen_upgrade_url', function( $url ) {
+    return home_url( '/membership/' );
+} );
+```
+
+### 0.4 React Component Updates
+
+**Update feature status endpoint:**
+```typescript
+// api/client.ts
+export const schengenApi = {
+  // Feature status now from standalone plugin
+  getFeatureStatus: () =>
+    apiFetch<SchengenFeatureStatus>('/r2f-schengen/v1/feature-status'),
+
+  // ... other endpoints
+};
+```
+
+**Update SchengenView with premium gating:**
+```typescript
+// components/schengen/SchengenView.tsx
+import { PremiumFeaturePrompt } from '@/components/common/PremiumFeaturePrompt';
+
+export default function SchengenView() {
+  const { data: featureStatus, isLoading } = useSchengenFeatureStatus();
+
+  if (isLoading) {
+    return <SchengenSkeleton />;
+  }
+
+  if (!featureStatus?.enabled) {
+    return (
+      <PremiumFeaturePrompt
+        title="Schengen 90/180 Day Tracker"
+        description="Track your Schengen zone stays, get alerts before you exceed limits, plan future trips, and generate compliance reports."
+        features={[
+          'Automatic day counting with 180-day rolling window',
+          'Email alerts when approaching limits',
+          'Calendar sync with Google & Outlook',
+          'PDF reports for border officials',
+          '"What If" trip planning tool',
+        ]}
+        upgradeUrl={featureStatus?.upgradeUrl}
+        upgradeMessage={featureStatus?.message}
+      />
+    );
+  }
+
+  return <SchengenDashboard />;
+}
+```
+
+### 0.5 Database Migration
+
+**Table Rename (Optional - for clean separation)**
+```sql
+-- Option A: Keep existing table (simpler)
+-- Tables remain as wp_fra_schengen_trips
+
+-- Option B: Rename for standalone (cleaner)
+RENAME TABLE wp_fra_schengen_trips TO wp_r2f_schengen_trips;
+
+-- Add backward compatibility view
+CREATE VIEW wp_fra_schengen_trips AS SELECT * FROM wp_r2f_schengen_trips;
+```
+
+**Recommended: Option A** - Keep existing table names to avoid migration complexity.
+
+### 0.6 Checklist for Phase 0
+
+- [ ] Create new plugin directory structure
+- [ ] Migrate `class-framt-schengen-api.php` → `class-r2f-schengen-api.php`
+- [ ] Migrate `class-framt-schengen-alerts.php` → `class-r2f-schengen-alerts.php`
+- [ ] Extract schema creation to standalone plugin
+- [ ] Create `R2F_Schengen_Premium` class with filter hooks
+- [ ] Create `FRAMT_Schengen_Bridge` in Member Tools
+- [ ] Update React API endpoints to use new namespace
+- [ ] Add `SchengenView` wrapper with premium check
+- [ ] Create `PremiumFeaturePrompt` component (reusable with Family)
+- [ ] Add legacy REST route aliases for backward compatibility
+- [ ] Test standalone mode (plugin active, Member Tools inactive)
+- [ ] Test integrated mode (both plugins active)
+- [ ] Update plugin version numbers
+- [ ] Create uninstall.php for clean removal
 
 ---
 

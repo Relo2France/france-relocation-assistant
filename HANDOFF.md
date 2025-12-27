@@ -1,8 +1,8 @@
 # Session Handoff Document
 
 **Date:** December 27, 2025
-**Branch:** `claude/resume-from-handoff-JlK7B`
-**Last Commit:** `Merge main branch and resolve conflicts`
+**Branch:** `claude/review-handoff-docs-QtcLj`
+**Last Commit:** `Add comprehensive Schengen Tracker enhancement plan`
 
 ---
 
@@ -16,8 +16,24 @@
 | Member Tools Plugin | v2.1.0 | Active |
 | React Portal | v2.1.0 | Active |
 | Theme | v1.2.4 | Active |
+| **Schengen Tracker Plugin** | **v1.0.0** | **Planned** |
 
 The React portal is fully functional with 40+ REST API endpoints. All major features are complete including profile management, task tracking, document generation, checklists, AI-powered guides, and **Schengen day tracking with premium features**.
+
+### Architecture Decision: Schengen Tracker Extraction
+
+**Decision:** Extract Schengen Tracker into standalone plugin (`relo2france-schengen-tracker`)
+
+**Rationale:**
+- Can be sold/marketed independently to digital nomads, frequent travelers
+- Competes with Monaeo ($999/year) at a fraction of the price
+- Cleaner architecture with dedicated codebase
+- Separate release cycle from Member Tools
+
+**Premium Model:** Entire feature is Premium (like Family Members)
+- Free users see preview/upgrade prompt
+- Premium members (MemberPress) get full access
+- See: `SCHENGEN-MONAEO-PARITY-PLAN.md` for full details
 
 ---
 
@@ -164,7 +180,40 @@ npm run build
 
 ---
 
-## 6. Commit Summary
+## 6. Schengen Tracker Enhancement Plan
+
+A comprehensive plan has been created to bring the Schengen Tracker to feature parity with Monaeo ($999/year product), plus unique features.
+
+**Plan Document:** `SCHENGEN-MONAEO-PARITY-PLAN.md`
+
+### Implementation Phases
+
+| Phase | Description | Priority |
+|-------|-------------|----------|
+| **0** | Plugin Extraction & Premium Setup | **Prerequisite** |
+| **1** | Browser Geolocation + Smart Detection | P1 |
+| **2** | Google/Outlook Calendar Sync | P1 |
+| **3** | Multi-Jurisdiction (US States, etc.) | P1 |
+| **4** | Professional PDF Reports | P1 |
+| **5** | Push + In-App Notifications | P1 |
+| **6** | CSV/ICS Import + PWA | P2 |
+| **7** | AI Suggestions + Family + Analytics | P3 |
+
+### What We Can't Replicate
+- True background GPS (requires native mobile app)
+- Credit card import (requires Plaid + PCI compliance)
+- "Audit-certified" claims (requires legal partnership)
+
+### Unique "Plus" Features (Beyond Monaeo)
+- "What If" planning tool with suggestions
+- AI-powered trip recommendations
+- Family/group tracking
+- Integration with France relocation workflow
+- Analytics dashboard
+
+---
+
+## 7. Commit Summary
 
 1. `Comprehensive code review fixes: security, efficiency, and consistency`
 2. `Refactor guides components and add performance improvements`
