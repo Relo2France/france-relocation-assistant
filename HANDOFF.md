@@ -2,7 +2,7 @@
 
 **Date:** December 27, 2025
 **Branch:** `claude/review-handoff-bSeKm`
-**Last Commit:** `Refactor guides components and add performance improvements`
+**Last Commit:** `Add JSDoc to theme and eslint-plugin-import for import ordering`
 
 ---
 
@@ -133,6 +133,21 @@ private function get_cached_knowledge_base() {
 - Fixed LazyView component recreation with useMemo
 - Added `type-check` npm script
 
+### 2.7 Code Quality Improvements (Current Session)
+
+#### Theme Documentation
+Added JSDoc to all 14 theme functions in `relo2france-theme/functions.php` for better IDE support and maintainability.
+
+#### ESLint Import Ordering
+**File:** `portal/.eslintrc.cjs`
+
+Added `eslint-plugin-import` with ordering rules:
+- Groups: builtin → external → internal → parent/sibling → index → type
+- React imports prioritized at top
+- `@/` path aliases recognized as internal imports
+- Alphabetical ordering within groups
+- Set as **warnings** to guide developers without blocking builds
+
 ---
 
 ## 3. Known Technical Debt (From Previous Session)
@@ -213,18 +228,17 @@ npm run type-check  # TypeScript validation without emit
 
 ---
 
-## 6. Remaining Issues (Lower Priority)
+## 6. Remaining Issues
 
-From the comprehensive review, most issues have been addressed. Remaining items:
+From the comprehensive review, **all actionable items have been addressed**.
 
-### PHP Backend
-- Encryption fallback returns unencrypted legacy values (intentional for migration)
+### Intentional Technical Decisions (Not Issues)
+- **Encryption fallback** - Returns unencrypted legacy values during migration period (by design)
+- **Dual profile storage** - Requires dedicated migration session (documented in Section 3)
 
-### Theme
-- ~~Missing JSDoc on some functions~~ (DONE - Added JSDoc to all 14 functions)
-
-### Configuration
-- ~~Consider adding eslint-plugin-import for import ordering~~ (DONE - Added with import/order rules)
+### Completed This Session
+- ✅ Added JSDoc to all 14 theme functions
+- ✅ Added eslint-plugin-import with import/order rules
 
 ---
 
