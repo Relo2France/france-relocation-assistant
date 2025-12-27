@@ -101,10 +101,11 @@ export default function DocumentGenerator({
         return; // Don't proceed if required questions not answered
       }
 
-      // Generate preview
+      // Generate preview - selectedType is guaranteed non-null when currentStep === 2
+      if (!selectedType) return;
       previewMutation.mutate(
         {
-          document_type: selectedType!,
+          document_type: selectedType,
           language,
           answers,
         },
@@ -129,9 +130,11 @@ export default function DocumentGenerator({
   };
 
   const handleGenerate = (format: 'pdf' | 'docx') => {
+    // selectedType is guaranteed non-null when reaching step 4
+    if (!selectedType) return;
     generateMutation.mutate(
       {
-        document_type: selectedType!,
+        document_type: selectedType,
         language,
         answers,
       },

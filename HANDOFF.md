@@ -1,8 +1,8 @@
 # Session Handoff Document
 
 **Date:** December 27, 2025
-**Branch:** `claude/resume-handoff-XZrGY`
-**Last Commit:** See git log
+**Branch:** `claude/continue-from-handoff-1zH4l`
+**Last Commit:** `Comprehensive code review and fixes for Schengen tracker`
 
 ---
 
@@ -22,122 +22,106 @@ The React portal is fully functional with 40+ REST API endpoints. All major feat
 
 ## 2. What We Completed This Session
 
-### 2.1 Email Alerts for Schengen Limit
+### 2.1 Comprehensive Code Review & Cleanup
 
-Created automatic email notification system for users approaching their 90-day limit:
+Performed full code review with automated agent exploration, fixing 16 identified issues across the Schengen tracker codebase.
 
-**New File:** `includes/class-framt-schengen-alerts.php`
-- WP Cron scheduled daily at 8:00 AM UTC
-- Three alert thresholds: Warning (60 days), Danger (80 days), Urgent (85 days)
-- Duplicate prevention: Won't re-send same level alert within 7 days
-- Respects user email_alerts preference in Schengen settings
-- Test alert endpoint: `POST /schengen/test-alert`
+### 2.2 CRITICAL: Timezone Inconsistency Fix
 
-**Frontend Updates:**
-- New Settings tab in SchengenDashboard with email toggle
-- Test Alert button to verify email delivery
-- Visual threshold display
+**Files Modified:** `portal/src/components/schengen/schengenUtils.ts`
 
-### 2.2 MemberPress Integration for Premium Gating
+Fixed critical bug where frontend JavaScript was using browser's local timezone while PHP backend used UTC. This could cause day count mismatches for users in different timezones.
 
-Enhanced `is_schengen_premium_enabled()` in `class-framt-schengen-api.php`:
-
-```php
-// Priority order:
-1. User meta override (`framt_schengen_premium_enabled`)
-2. MemberPress membership check (if installed)
-3. Global beta setting fallback
-
-// MemberPress integration:
-- Checks MeprUser::is_active()
-- Supports comma-separated membership IDs via `framt_schengen_premium_memberships` option
-- Empty config = any active membership gets access
+**New Helper Functions:**
+```typescript
+// Ensure all dates are parsed as UTC midnight
+function parseAsUTC(dateStr: string | Date): Date
+function getTodayUTC(): Date
+function toISODateString(date: Date): string
 ```
 
-Dynamic upgrade URL via `get_upgrade_url()`:
-1. Custom URL option
-2. MemberPress account page
-3. Site membership page fallback
+All date calculation functions now use these helpers:
+- `calculateSchengenDays()`
+- `getSchengenDatesInWindow()`
+- `findNextExpiration()`
+- `getSchengenSummary()`
+- `daysBetween()` - now accepts `Date | string`
+- `wouldTripViolate()`
+- `findEarliestEntryDate()`
+- `findMaxTripLength()`
 
-### 2.3 Calendar View Mobile Responsiveness
+### 2.3 Security Improvements in PHP API
 
-Updated `CalendarView.tsx` with responsive breakpoints:
-- Compact header with smaller icons on mobile
-- Single-letter weekdays (S M T W T F S) on mobile
-- Smaller calendar cells (44px vs 60px min-height)
-- Trip indicators hide country text on mobile, show only plane icon
-- Legend text shortened for mobile displays
+**File:** `includes/class-framt-schengen-api.php`
 
-### 2.4 Unit Tests for Schengen Algorithm
+1. **Country Enum Validation**: Added `SCHENGEN_COUNTRIES` constant with 29 valid countries, now validated in REST API schema
 
-Created comprehensive test suite with 45 tests:
+2. **Threshold Validation**: `update_settings()` now validates that yellow threshold < red threshold, returning 400 error if invalid
 
-**New File:** `portal/src/components/schengen/schengenUtils.test.ts`
+```php
+const SCHENGEN_COUNTRIES = array(
+    'Austria', 'Belgium', 'Bulgaria', 'Croatia', ...
+);
 
-Test coverage:
-- `calculateSchengenDays`: Window calculations, overlapping trips, clipping
-- `getSchengenStatus`: Threshold-based status determination
-- `findNextExpiration`: Expiration date calculation
-- `wouldTripViolate`: Hypothetical trip validation
-- `findMaxTripLength`, `findEarliestEntryDate`: Planning helpers
-- Edge cases: Window boundaries, leap years, overlapping dates
+// In update_settings():
+if ( $yellow >= $red ) {
+    return new WP_Error( 'invalid_thresholds', ... );
+}
+```
 
-**Test Infrastructure:**
-- Added vitest, @testing-library/react, jsdom
-- Configured in `vite.config.ts`
-- Scripts: `npm test`, `npm test:run`, `npm test:coverage`
+### 2.4 ESLint Fixes (0 errors, 0 warnings)
 
-### 2.5 ESLint Configuration
+**All 6 ESLint warnings fixed:**
 
-**New File:** `portal/.eslintrc.cjs`
+1. `DocumentGenerator.tsx` - Removed non-null assertions with proper null checks
+2. `FileUpload.tsx` - Wrapped `processUpload` in `useCallback` with proper dependencies
+3. `CalendarView.tsx` - Memoized `today` to prevent useMemo recalculation on every render
+4. `VirtualList.tsx` - Moved `useVirtualization` hook to separate file
+5. `useApi.ts` - Added guard clause in `useSupportTicket` instead of non-null assertion
+6. `TripForm.tsx` - Removed `as SchengenTrip` casting (not needed after `getTripDuration` signature change)
 
-Configuration includes:
-- TypeScript recommended rules (relaxed unused vars)
-- React Hooks plugin for dependency checking
-- React Refresh plugin for HMR
-- Pragmatic approach: warnings for style, errors for bugs
-- Test file overrides for more permissive linting
+### 2.5 Code Organization
 
-Scripts: `npm run lint`, `npm run lint:strict`
+**New File:** `portal/src/hooks/useVirtualization.ts`
+
+Moved `useVirtualization` hook to separate file to fix react-refresh warning. Re-exported from `VirtualList.tsx` was causing HMR issues.
+
+### 2.6 ESLint Script Fix
+
+**File:** `portal/package.json`
+
+Fixed lint scripts to use `npx eslint` to avoid conflict between global ESLint v9 and local ESLint v8 (different config formats).
 
 ---
 
 ## 3. Known Technical Debt
 
-### Dual Profile Storage (Documented, Not Fixed)
+### Dual Profile Storage (Not Fixed - Future Session)
 
-The profile system currently uses two storage mechanisms that can get out of sync:
+The profile system uses two storage mechanisms that can get out of sync:
 
 **User Meta Storage (`fra_*` prefix):**
 ```php
-// class-framt-profile.php::get_portal_profile()
 get_user_meta($user_id, 'fra_legal_first_name', true);
-get_user_meta($user_id, 'fra_date_of_birth', true);
-// ... ~30 individual meta keys
 ```
 
 **Database Table Storage (`wp_framt_profiles`):**
 ```sql
-CREATE TABLE wp_framt_profiles (
-    id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-    user_id bigint(20) unsigned NOT NULL,
-    profile_data longtext NOT NULL,  -- JSON blob
-    created_at datetime,
-    updated_at datetime
-);
+profile_data longtext NOT NULL,  -- JSON blob
 ```
-
-**Current Behavior:**
-- `get_portal_profile()` reads from user meta
-- `get_profile_from_db()` reads from database table
-- `save_profile()` writes to database table
-- Some code reads user meta, some reads from table
 
 **Recommended Fix (Future Session):**
 1. Consolidate to user meta only (WordPress-native, queryable)
 2. Remove or deprecate the database table
 3. Migration script to ensure no data loss
-4. Update all read/write methods to use single source
+
+### Minor Issues Noted (Low Priority)
+
+From code review:
+- Nonce-in-URL for downloads is standard WordPress pattern (not a vulnerability)
+- Some type assertions in API client could be tightened
+- Cache key complexity in React Query could be simplified
+- Error boundaries should be added for Schengen components
 
 ---
 
@@ -147,24 +131,23 @@ CREATE TABLE wp_framt_profiles (
 
 | File | Description |
 |------|-------------|
-| `includes/class-framt-schengen-alerts.php` | Email alert system with WP Cron |
-| `portal/src/components/schengen/schengenUtils.test.ts` | 45 unit tests for algorithm |
-| `portal/src/test/setup.ts` | Vitest test setup |
-| `portal/.eslintrc.cjs` | ESLint configuration |
+| `portal/src/hooks/useVirtualization.ts` | Virtualization threshold hook |
 
 ### Modified Files
 
 | File | Changes |
 |------|---------|
-| `france-relocation-member-tools.php` | Added Schengen Alerts class |
-| `includes/class-framt-schengen-api.php` | MemberPress integration, test-alert endpoint |
-| `portal/src/api/client.ts` | Added testAlert function |
-| `portal/src/hooks/useApi.ts` | Added useTestSchengenAlert hook |
-| `portal/src/types/index.ts` | Added SchengenTestAlertResult type |
-| `portal/src/components/schengen/SchengenDashboard.tsx` | Settings tab with email toggle |
-| `portal/src/components/schengen/CalendarView.tsx` | Mobile responsiveness |
-| `portal/vite.config.ts` | Added vitest configuration |
-| `portal/package.json` | Added test scripts and dependencies |
+| `portal/package.json` | Fixed ESLint scripts to use npx |
+| `portal/src/components/schengen/schengenUtils.ts` | UTC date handling throughout |
+| `portal/src/components/schengen/CalendarView.tsx` | Memoized today's date |
+| `portal/src/components/schengen/TripForm.tsx` | Removed unsafe type casting |
+| `portal/src/components/documents/DocumentGenerator.tsx` | Proper null checks |
+| `portal/src/components/documents/FileUpload.tsx` | useCallback dependencies |
+| `portal/src/components/documents/FileGrid.tsx` | Updated imports |
+| `portal/src/components/tasks/TaskList.tsx` | Updated imports |
+| `portal/src/components/shared/VirtualList.tsx` | Removed hook export |
+| `portal/src/hooks/useApi.ts` | Guard clause for ticketId |
+| `includes/class-framt-schengen-api.php` | Country enum + threshold validation |
 
 ---
 
@@ -187,24 +170,17 @@ npm run lint        # Allow warnings
 npm run lint:strict # Zero warnings
 ```
 
----
-
-## 6. API Endpoints Added
-
-| Endpoint | Method | Purpose |
-|----------|--------|---------|
-| `/schengen/test-alert` | POST | Send test email alert to current user |
+**Current Status:**
+- Tests: 45/45 passing
+- Lint: 0 errors, 0 warnings
+- Build: Successful
 
 ---
 
-## 7. Commit Summary
+## 6. Commit Summary
 
-1. `Add Schengen email alerts with cron-based notifications`
-2. `Add MemberPress integration for Schengen premium gating`
-3. `Improve Schengen calendar view mobile responsiveness`
-4. `Add unit tests for Schengen 90/180 day algorithm`
-5. `Add ESLint configuration for React portal`
-6. `Update HANDOFF.md with session work` (this commit)
+1. `Fix ESLint scripts to use local version via npx`
+2. `Comprehensive code review and fixes for Schengen tracker`
 
 ---
 

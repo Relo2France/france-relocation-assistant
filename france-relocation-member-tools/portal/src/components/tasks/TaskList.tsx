@@ -8,7 +8,8 @@ import {
   MoreVertical,
   Plus,
 } from 'lucide-react';
-import VirtualList, { useVirtualization } from '@/components/shared/VirtualList';
+import VirtualList from '@/components/shared/VirtualList';
+import { useVirtualization } from '@/hooks/useVirtualization';
 import type { Task, TaskStatus } from '@/types';
 
 interface TaskListProps {

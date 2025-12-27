@@ -51,29 +51,7 @@ export default function FileUpload({ projectId, onUploadComplete, className }: F
     return null;
   };
 
-  const handleFiles = useCallback((files: FileList | File[]) => {
-    const fileArray = Array.from(files);
-
-    const newUploads: UploadingFile[] = fileArray.map((file) => {
-      const error = validateFile(file);
-      return {
-        id: `${file.name}-${Date.now()}`,
-        file,
-        progress: 0,
-        status: error ? 'error' : 'pending',
-        error: error || undefined,
-      };
-    });
-
-    setUploadQueue((prev) => [...prev, ...newUploads]);
-
-    // Start uploading valid files
-    newUploads.filter((u) => u.status === 'pending').forEach((upload) => {
-      processUpload(upload);
-    });
-  }, []);
-
-  const processUpload = async (upload: UploadingFile) => {
+  const processUpload = useCallback(async (upload: UploadingFile) => {
     setUploadQueue((prev) =>
       prev.map((u) =>
         u.id === upload.id ? { ...u, status: 'uploading', progress: 10 } : u
@@ -111,7 +89,29 @@ export default function FileUpload({ projectId, onUploadComplete, className }: F
         )
       );
     }
-  };
+  }, [uploadFile, onUploadComplete]);
+
+  const handleFiles = useCallback((files: FileList | File[]) => {
+    const fileArray = Array.from(files);
+
+    const newUploads: UploadingFile[] = fileArray.map((file) => {
+      const error = validateFile(file);
+      return {
+        id: `${file.name}-${Date.now()}`,
+        file,
+        progress: 0,
+        status: error ? 'error' : 'pending',
+        error: error || undefined,
+      };
+    });
+
+    setUploadQueue((prev) => [...prev, ...newUploads]);
+
+    // Start uploading valid files
+    newUploads.filter((u) => u.status === 'pending').forEach((upload) => {
+      processUpload(upload);
+    });
+  }, [processUpload]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();

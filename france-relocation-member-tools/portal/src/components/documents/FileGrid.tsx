@@ -12,7 +12,8 @@ import {
   Shield,
 } from 'lucide-react';
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { VirtualGrid, useVirtualization } from '@/components/shared/VirtualList';
+import { VirtualGrid } from '@/components/shared/VirtualList';
+import { useVirtualization } from '@/hooks/useVirtualization';
 import type { PortalFile, FileType } from '@/types';
 
 interface FileGridProps {

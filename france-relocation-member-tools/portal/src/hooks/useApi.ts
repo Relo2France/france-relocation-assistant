@@ -755,7 +755,11 @@ export function useSupportTickets() {
 export function useSupportTicket(ticketId: number | null) {
   return useQuery({
     queryKey: queryKeys.supportTicket(ticketId || 0),
-    queryFn: () => supportApi.getTicket(ticketId!),
+    queryFn: () => {
+      // Guard is redundant due to `enabled: !!ticketId` but satisfies type checker
+      if (!ticketId) throw new Error('ticketId is required');
+      return supportApi.getTicket(ticketId);
+    },
     enabled: !!ticketId,
     staleTime: 10000, // 10 seconds
   });

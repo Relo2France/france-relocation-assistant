@@ -37,7 +37,14 @@ const MONTHS_SHORT = [
 ];
 
 export default function CalendarView({ trips, windowStart, windowEnd }: CalendarViewProps) {
-  const today = new Date();
+  // Memoize today's date string to avoid unnecessary re-renders
+  // Only recalculates when component mounts or date actually changes
+  const todayStr = useMemo(() => {
+    const now = new Date();
+    return now.toISOString().split('T')[0];
+  }, []);
+  const today = useMemo(() => new Date(todayStr), [todayStr]);
+
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
 
@@ -68,7 +75,6 @@ export default function CalendarView({ trips, windowStart, windowEnd }: Calendar
 
     const windowStartDate = new Date(windowStart);
     const windowEndDate = new Date(windowEnd);
-    const todayStr = today.toISOString().split('T')[0];
 
     // Add days from previous month to fill first week
     const startPadding = firstDay.getDay();
@@ -115,7 +121,7 @@ export default function CalendarView({ trips, windowStart, windowEnd }: Calendar
     }
 
     return days;
-  }, [currentMonth, currentYear, tripDays, windowStart, windowEnd, today]);
+  }, [currentMonth, currentYear, tripDays, windowStart, windowEnd, today, todayStr]);
 
   const goToPreviousMonth = () => {
     if (currentMonth === 0) {
