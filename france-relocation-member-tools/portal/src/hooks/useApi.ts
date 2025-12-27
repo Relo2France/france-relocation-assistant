@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { STALE_TIME, SEARCH } from '@/constants';
 import {
   dashboardApi,
   projectsApi,
@@ -98,7 +99,7 @@ export function useDashboard() {
   return useQuery({
     queryKey: queryKeys.dashboard,
     queryFn: dashboardApi.get,
-    staleTime: 30000, // 30 seconds
+    staleTime: STALE_TIME.DEFAULT, // 30 seconds
   });
 }
 
@@ -122,7 +123,7 @@ export function useCurrentUser() {
   return useQuery({
     queryKey: queryKeys.user,
     queryFn: userApi.me,
-    staleTime: 60000 * 5, // 5 minutes
+    staleTime: STALE_TIME.MEDIUM, // 5 minutes
   });
 }
 
@@ -141,7 +142,7 @@ export function useUserSettings() {
   return useQuery({
     queryKey: queryKeys.userSettings,
     queryFn: userApi.getSettings,
-    staleTime: 60000 * 5, // 5 minutes
+    staleTime: STALE_TIME.MEDIUM, // 5 minutes
   });
 }
 
@@ -167,7 +168,7 @@ export function useProjects() {
   return useQuery({
     queryKey: queryKeys.projects,
     queryFn: projectsApi.list,
-    staleTime: 30000, // 30 seconds
+    staleTime: STALE_TIME.DEFAULT, // 30 seconds
   });
 }
 
@@ -176,7 +177,7 @@ export function useProject(id: number) {
     queryKey: queryKeys.project(id),
     queryFn: () => projectsApi.get(id),
     enabled: id > 0,
-    staleTime: 30000, // 30 seconds
+    staleTime: STALE_TIME.DEFAULT, // 30 seconds
   });
 }
 
@@ -200,7 +201,7 @@ export function useTasks(projectId: number, filters?: TaskFilters) {
     queryKey: queryKeys.tasks(projectId, filters),
     queryFn: () => tasksApi.list(projectId, filters),
     enabled: projectId > 0,
-    staleTime: 30000, // 30 seconds
+    staleTime: STALE_TIME.DEFAULT, // 30 seconds
   });
 }
 
@@ -209,7 +210,7 @@ export function useTask(id: number) {
     queryKey: queryKeys.task(id),
     queryFn: () => tasksApi.get(id),
     enabled: id > 0,
-    staleTime: 30000, // 30 seconds
+    staleTime: STALE_TIME.DEFAULT, // 30 seconds
   });
 }
 
@@ -272,7 +273,7 @@ export function useActivity(projectId: number, options?: { limit?: number; offse
     queryKey: queryKeys.activity(projectId),
     queryFn: () => activityApi.list(projectId, options),
     enabled: projectId > 0,
-    staleTime: 10000, // 10 seconds - activity is more dynamic
+    staleTime: STALE_TIME.DYNAMIC, // 10 seconds - activity is more dynamic
   });
 }
 
@@ -282,7 +283,7 @@ export function useFiles(projectId: number, filters?: FileFilters) {
     queryKey: queryKeys.files(projectId, filters),
     queryFn: () => filesApi.list(projectId, filters),
     enabled: projectId > 0,
-    staleTime: 30000, // 30 seconds
+    staleTime: STALE_TIME.DEFAULT, // 30 seconds
   });
 }
 
@@ -291,7 +292,7 @@ export function useFile(id: number) {
     queryKey: queryKeys.file(id),
     queryFn: () => filesApi.get(id),
     enabled: id > 0,
-    staleTime: 30000, // 30 seconds
+    staleTime: STALE_TIME.DEFAULT, // 30 seconds
   });
 }
 
@@ -350,7 +351,7 @@ export function useNotes(projectId: number, filters?: NoteFilters) {
     queryKey: queryKeys.notes(projectId, filters),
     queryFn: () => notesApi.list(projectId, filters),
     enabled: projectId > 0,
-    staleTime: 30000, // 30 seconds
+    staleTime: STALE_TIME.DEFAULT, // 30 seconds
   });
 }
 
@@ -359,7 +360,7 @@ export function useNote(id: number) {
     queryKey: queryKeys.note(id),
     queryFn: () => notesApi.get(id),
     enabled: id > 0,
-    staleTime: 30000, // 30 seconds
+    staleTime: STALE_TIME.DEFAULT, // 30 seconds
   });
 }
 
@@ -421,7 +422,7 @@ export function useMemberProfile() {
   return useQuery({
     queryKey: queryKeys.profile,
     queryFn: profileApi.get,
-    staleTime: 60000 * 5, // 5 minutes
+    staleTime: STALE_TIME.MEDIUM, // 5 minutes
   });
 }
 
@@ -441,7 +442,7 @@ export function useProfileCompletion() {
   return useQuery({
     queryKey: queryKeys.profileCompletion,
     queryFn: profileApi.getCompletion,
-    staleTime: 60000, // 1 minute
+    staleTime: STALE_TIME.SHORT, // 1 minute
   });
 }
 
@@ -453,7 +454,7 @@ export function useChecklists(visaType?: string) {
   return useQuery({
     queryKey: queryKeys.checklists(visaType),
     queryFn: () => checklistsApi.list(visaType),
-    staleTime: 60000, // 1 minute - static data
+    staleTime: STALE_TIME.SHORT, // 1 minute - static data
   });
 }
 
@@ -462,7 +463,7 @@ export function useChecklist(type: string) {
     queryKey: queryKeys.checklist(type),
     queryFn: () => checklistsApi.get(type),
     enabled: !!type,
-    staleTime: 60000, // 1 minute - static data
+    staleTime: STALE_TIME.SHORT, // 1 minute - static data
   });
 }
 
@@ -537,7 +538,7 @@ export function useDocumentTypes() {
   return useQuery({
     queryKey: queryKeys.documentTypes,
     queryFn: documentGeneratorApi.getTypes,
-    staleTime: 60000 * 60, // 1 hour
+    staleTime: STALE_TIME.LONG, // 1 hour
   });
 }
 
@@ -584,7 +585,7 @@ export function useGlossary() {
   return useQuery({
     queryKey: queryKeys.glossary,
     queryFn: glossaryApi.getAll,
-    staleTime: 60000 * 60, // 1 hour
+    staleTime: STALE_TIME.LONG, // 1 hour
   });
 }
 
@@ -592,7 +593,7 @@ export function useGlossarySearch(query: string) {
   return useQuery({
     queryKey: queryKeys.glossarySearch(query),
     queryFn: () => glossaryApi.search(query),
-    enabled: query.length >= 2,
+    enabled: query.length >= SEARCH.MIN_QUERY_LENGTH,
   });
 }
 
@@ -628,7 +629,7 @@ export function useGuides() {
   return useQuery({
     queryKey: queryKeys.guides,
     queryFn: guidesApi.list,
-    staleTime: 60000 * 5, // 5 minutes
+    staleTime: STALE_TIME.MEDIUM, // 5 minutes
   });
 }
 
@@ -667,7 +668,7 @@ export function useChatCategories() {
   return useQuery({
     queryKey: queryKeys.chatCategories,
     queryFn: chatApi.getCategories,
-    staleTime: 60000 * 60, // 1 hour
+    staleTime: STALE_TIME.LONG, // 1 hour
   });
 }
 
@@ -681,8 +682,8 @@ export function useSearchChatTopics(query: string) {
   return useQuery({
     queryKey: queryKeys.chatSearch(query),
     queryFn: () => chatApi.searchTopics(query),
-    enabled: query.length >= 2,
-    staleTime: 30000, // 30 seconds
+    enabled: query.length >= SEARCH.MIN_QUERY_LENGTH,
+    staleTime: STALE_TIME.DEFAULT, // 30 seconds
   });
 }
 
@@ -694,7 +695,7 @@ export function useMembership() {
   return useQuery({
     queryKey: queryKeys.membership,
     queryFn: membershipApi.getInfo,
-    staleTime: 60000 * 5, // 5 minutes
+    staleTime: STALE_TIME.MEDIUM, // 5 minutes
   });
 }
 
@@ -752,7 +753,7 @@ export function useUpgradeOptions() {
   return useQuery({
     queryKey: queryKeys.upgradeOptions,
     queryFn: membershipApi.getUpgradeOptions,
-    staleTime: 60000 * 60, // 1 hour
+    staleTime: STALE_TIME.LONG, // 1 hour
   });
 }
 
@@ -764,7 +765,7 @@ export function useSupportTickets() {
   return useQuery({
     queryKey: queryKeys.supportTickets,
     queryFn: supportApi.getTickets,
-    staleTime: 30000, // 30 seconds
+    staleTime: STALE_TIME.DEFAULT, // 30 seconds
   });
 }
 
@@ -777,7 +778,7 @@ export function useSupportTicket(ticketId: number | null) {
       return supportApi.getTicket(ticketId);
     },
     enabled: !!ticketId,
-    staleTime: 10000, // 10 seconds
+    staleTime: STALE_TIME.DYNAMIC, // 10 seconds
   });
 }
 
@@ -785,7 +786,7 @@ export function useSupportUnreadCount() {
   return useQuery({
     queryKey: queryKeys.supportUnreadCount,
     queryFn: supportApi.getUnreadCount,
-    staleTime: 30000, // 30 seconds
+    staleTime: STALE_TIME.DEFAULT, // 30 seconds
     refetchInterval: 60000, // Refetch every minute
   });
 }
@@ -835,7 +836,7 @@ export function useSavedReports() {
   return useQuery({
     queryKey: queryKeys.savedReports,
     queryFn: researchApi.getSavedReports,
-    staleTime: 60000, // 1 minute
+    staleTime: STALE_TIME.SHORT, // 1 minute
   });
 }
 
@@ -847,7 +848,7 @@ export function useFamilyMembers() {
   return useQuery({
     queryKey: queryKeys.familyMembers,
     queryFn: familyApi.getAll,
-    staleTime: 30000, // 30 seconds
+    staleTime: STALE_TIME.DEFAULT, // 30 seconds
   });
 }
 
@@ -855,7 +856,7 @@ export function useFamilyFeatureStatus() {
   return useQuery({
     queryKey: queryKeys.familyFeatureStatus,
     queryFn: familyApi.getFeatureStatus,
-    staleTime: 60000 * 5, // 5 minutes
+    staleTime: STALE_TIME.MEDIUM, // 5 minutes
   });
 }
 
@@ -901,7 +902,7 @@ export function useSchengenTrips() {
   return useQuery({
     queryKey: queryKeys.schengenTrips,
     queryFn: schengenApi.getTrips,
-    staleTime: 30000, // 30 seconds
+    staleTime: STALE_TIME.DEFAULT, // 30 seconds
   });
 }
 
@@ -909,7 +910,7 @@ export function useSchengenSummary() {
   return useQuery({
     queryKey: queryKeys.schengenSummary,
     queryFn: schengenApi.getSummary,
-    staleTime: 30000, // 30 seconds
+    staleTime: STALE_TIME.DEFAULT, // 30 seconds
   });
 }
 
@@ -917,7 +918,7 @@ export function useSchengenSettings() {
   return useQuery({
     queryKey: queryKeys.schengenSettings,
     queryFn: schengenApi.getSettings,
-    staleTime: 60000 * 5, // 5 minutes
+    staleTime: STALE_TIME.MEDIUM, // 5 minutes
   });
 }
 
@@ -975,7 +976,7 @@ export function useSchengenFeatureStatus() {
   return useQuery({
     queryKey: queryKeys.schengenFeatureStatus,
     queryFn: schengenApi.getFeatureStatus,
-    staleTime: 60000 * 5, // 5 minutes
+    staleTime: STALE_TIME.MEDIUM, // 5 minutes
   });
 }
 
