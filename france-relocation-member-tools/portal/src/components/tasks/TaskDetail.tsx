@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { clsx } from 'clsx';
 import {
   Calendar,
@@ -43,8 +43,16 @@ export default function TaskDetail({ task, isOpen, onClose }: TaskDetailProps) {
   const [editedTitle, setEditedTitle] = useState('');
   const [editedDescription, setEditedDescription] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const titleInputRef = useRef<HTMLInputElement>(null);
 
   const updateTask = useUpdateTask();
+
+  // Focus title input when entering edit mode
+  useEffect(() => {
+    if (isEditing && titleInputRef.current) {
+      titleInputRef.current.focus();
+    }
+  }, [isEditing]);
   const updateStatus = useUpdateTaskStatus();
   const deleteTask = useDeleteTask();
 
@@ -122,12 +130,12 @@ export default function TaskDetail({ task, isOpen, onClose }: TaskDetailProps) {
         {isEditing ? (
           <div className="space-y-3">
             <input
+              ref={titleInputRef}
               type="text"
               value={editedTitle}
               onChange={(e) => setEditedTitle(e.target.value)}
               className="input text-lg font-semibold"
               placeholder="Task title"
-              autoFocus
             />
             <textarea
               value={editedDescription}
@@ -145,7 +153,18 @@ export default function TaskDetail({ task, isOpen, onClose }: TaskDetailProps) {
             </div>
           </div>
         ) : (
-          <div onClick={handleStartEdit} className="cursor-pointer group">
+          <div
+            onClick={handleStartEdit}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleStartEdit();
+              }
+            }}
+            role="button"
+            tabIndex={0}
+            className="cursor-pointer group"
+          >
             <h3 className="text-xl font-semibold text-gray-900 group-hover:text-primary-600">
               {task.title}
             </h3>

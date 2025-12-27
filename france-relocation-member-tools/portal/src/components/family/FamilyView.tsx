@@ -463,10 +463,11 @@ function FamilyMemberModal({ member, onClose }: FamilyMemberModalProps) {
 
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="family-member-name" className="block text-sm font-medium text-gray-700 mb-1">
               Full Name
             </label>
             <input
+              id="family-member-name"
               type="text"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -476,10 +477,11 @@ function FamilyMemberModal({ member, onClose }: FamilyMemberModalProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="family-member-relationship" className="block text-sm font-medium text-gray-700 mb-1">
               Relationship
             </label>
             <select
+              id="family-member-relationship"
               value={formData.relationship}
               onChange={(e) => setFormData({ ...formData, relationship: e.target.value as FamilyMember['relationship'] })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
@@ -492,10 +494,11 @@ function FamilyMemberModal({ member, onClose }: FamilyMemberModalProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="family-member-birthdate" className="block text-sm font-medium text-gray-700 mb-1">
               Date of Birth
             </label>
             <input
+              id="family-member-birthdate"
               type="date"
               value={formData.birthDate}
               onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
@@ -504,10 +507,11 @@ function FamilyMemberModal({ member, onClose }: FamilyMemberModalProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="family-member-nationality" className="block text-sm font-medium text-gray-700 mb-1">
               Nationality
             </label>
             <input
+              id="family-member-nationality"
               type="text"
               value={formData.nationality}
               onChange={(e) => setFormData({ ...formData, nationality: e.target.value })}
@@ -516,10 +520,11 @@ function FamilyMemberModal({ member, onClose }: FamilyMemberModalProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="family-member-visa-status" className="block text-sm font-medium text-gray-700 mb-1">
               Visa Status
             </label>
             <select
+              id="family-member-visa-status"
               value={formData.visaStatus}
               onChange={(e) => setFormData({ ...formData, visaStatus: e.target.value as FamilyMember['visaStatus'] })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
@@ -531,10 +536,10 @@ function FamilyMemberModal({ member, onClose }: FamilyMemberModalProps) {
             </select>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+          <fieldset>
+            <legend className="block text-sm font-medium text-gray-700 mb-2">
               Documents
-            </label>
+            </legend>
             <div className="space-y-2">
               {[
                 { key: 'passport' as const, label: 'Passport' },
@@ -553,13 +558,14 @@ function FamilyMemberModal({ member, onClose }: FamilyMemberModalProps) {
                 </label>
               ))}
             </div>
-          </div>
+          </fieldset>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="family-member-notes" className="block text-sm font-medium text-gray-700 mb-1">
               Notes (optional)
             </label>
             <textarea
+              id="family-member-notes"
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               rows={3}

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { clsx } from 'clsx';
 import {
   MoreVertical,
@@ -20,8 +20,16 @@ export default function NoteCard({ note, projectId }: NoteCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(note.content);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const editTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   const togglePin = useToggleNotePin();
+
+  // Focus textarea when entering edit mode
+  useEffect(() => {
+    if (isEditing && editTextareaRef.current) {
+      editTextareaRef.current.focus();
+    }
+  }, [isEditing]);
   const deleteNote = useDeleteNote();
   const updateNote = useUpdateNote();
 
@@ -121,11 +129,11 @@ export default function NoteCard({ note, projectId }: NoteCardProps) {
       {isEditing ? (
         <div className="space-y-3">
           <textarea
+            ref={editTextareaRef}
             value={editContent}
             onChange={(e) => setEditContent(e.target.value)}
             className="textarea w-full"
             rows={4}
-            autoFocus
           />
           <div className="flex items-center justify-end gap-2">
             <button

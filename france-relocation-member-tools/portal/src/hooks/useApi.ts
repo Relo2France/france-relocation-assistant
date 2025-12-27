@@ -151,6 +151,26 @@ export function useUpdateSettings() {
 
   return useMutation({
     mutationFn: (data: Partial<UserSettings>) => userApi.updateSettings(data),
+    // Optimistic update: immediately update cache before API completes
+    onMutate: async (newData) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.userSettings });
+
+      const previousSettings = queryClient.getQueryData<UserSettings>(queryKeys.userSettings);
+
+      if (previousSettings) {
+        queryClient.setQueryData<UserSettings>(queryKeys.userSettings, {
+          ...previousSettings,
+          ...newData,
+        });
+      }
+
+      return { previousSettings };
+    },
+    onError: (_err, _newData, context) => {
+      if (context?.previousSettings) {
+        queryClient.setQueryData(queryKeys.userSettings, context.previousSettings);
+      }
+    },
     onSuccess: (updatedSettings) => {
       queryClient.setQueryData(queryKeys.userSettings, updatedSettings);
     },
@@ -443,7 +463,33 @@ export function useUpdateMemberProfile() {
 
   return useMutation({
     mutationFn: (data: Partial<MemberProfile>) => profileApi.update(data),
+    // Optimistic update: immediately update cache before API completes
+    onMutate: async (newData) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: queryKeys.profile });
+
+      // Snapshot previous value
+      const previousProfile = queryClient.getQueryData<MemberProfile>(queryKeys.profile);
+
+      // Optimistically update cache
+      if (previousProfile) {
+        queryClient.setQueryData<MemberProfile>(queryKeys.profile, {
+          ...previousProfile,
+          ...newData,
+        });
+      }
+
+      // Return context for rollback
+      return { previousProfile };
+    },
+    onError: (_err, _newData, context) => {
+      // Roll back on error
+      if (context?.previousProfile) {
+        queryClient.setQueryData(queryKeys.profile, context.previousProfile);
+      }
+    },
     onSuccess: (updatedProfile) => {
+      // Replace with server data (in case of computed fields)
       queryClient.setQueryData(queryKeys.profile, updatedProfile);
       queryClient.invalidateQueries({ queryKey: queryKeys.profileCompletion });
     },

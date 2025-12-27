@@ -2,7 +2,7 @@
 
 **Date:** December 27, 2025
 **Branch:** `claude/review-handoff-docs-QtcLj`
-**Last Commit:** `Add comprehensive Schengen Tracker enhancement plan`
+**Last Commit:** `Extract Schengen Tracker to standalone plugin (Phase 0)`
 
 ---
 
@@ -18,7 +18,7 @@
 | Theme | v1.2.4 | Active |
 | **Schengen Tracker Plugin** | **v1.0.0** | **Complete** |
 
-The React portal is fully functional with 40+ REST API endpoints. All major features are complete including profile management, task tracking, document generation, checklists, AI-powered guides, and **Schengen day tracking with premium features**.
+The React portal is fully functional with 40+ REST API endpoints. All major features are complete including profile management, task tracking, document generation, checklists, AI-powered guides, Schengen day tracking, and profile reset functionality.
 
 ### Architecture Decision: Schengen Tracker Extraction
 
@@ -69,111 +69,85 @@ Extracted the Schengen Tracker into a standalone WordPress plugin following Opti
 2. Filter hook (`r2f_schengen_premium_check`) - Member Tools hooks here
 3. Global setting fallback (`r2f_schengen_global_enabled`)
 
-### 2.1 Comprehensive Codebase Review
+### 2.1 Fixed All Accessibility Warnings (37 issues)
 
-Performed full review of all 7 major areas, identifying **216 issues total**:
+Resolved all jsx-a11y ESLint warnings in the React portal:
 
-| Area | Critical | High | Medium | Low | Total |
-|------|----------|------|--------|-----|-------|
-| React Components | 12 | 28 | 35 | 17 | 92 |
-| Hooks/API/Store | 2 | 6 | 12 | 8 | 28 |
-| TypeScript Types | 5 | 3 | 4 | 4 | 16 |
-| PHP Main Plugin | 3 | 5 | 8 | 9 | 25 |
-| PHP Member Tools | 1 | 5 | 4 | 3 | 13 |
-| WordPress Theme | 1 | 5 | 9 | 9 | 24 |
-| Configuration | 2 | 3 | 5 | 8 | 18 |
+**Click events with keyboard handlers (8 files):**
+- `TaskCard.tsx` - Added role, tabIndex, onKeyDown for clickable div
+- `FileGrid.tsx` - Added keyboard support for file preview area
+- `FileUpload.tsx` - Added keyboard support for drop zone
+- `TaskList.tsx` - Added keyboard support for task list items
+- `TaskDetail.tsx` - Added keyboard support for editable title/description
+- `Modal.tsx` - Added role="presentation" to overlay divs
+- `GenerateReportModal.tsx` - Added role="presentation" to overlay
 
-### 2.2 Security Fixes Implemented
+**Label associations (6 files):**
+- `ChecklistItem.tsx` - Added htmlFor/id to notes textarea
+- `AIVerification.tsx` - Used aria-labelledby for button groups, htmlFor for file input
+- `FilePreview.tsx` - Added htmlFor/id for description field
+- `FamilyView.tsx` - Added htmlFor/id to all 7 form fields, used fieldset for checkboxes
+- `TripForm.tsx` - Used aria-labelledby for radio group
+- `TaskForm.tsx` - Used aria-labelledby for task type radio group
 
-1. **Theme header.php** - Added `esc_html()` to `bloginfo('name')` output
-2. **Portal template-portal.php** - Added `wp_strip_all_tags()` to custom CSS output
-3. **Main plugin api-proxy.php** - Added proper permission callback for `/fra/v1/chat` endpoint
+**AutoFocus warnings (6 files):**
+- `NoteCard.tsx` - Replaced autoFocus with useRef/useEffect pattern
+- `NoteForm.tsx` - Replaced autoFocus with useRef/useEffect pattern
+- `TaskChecklist.tsx` - Replaced autoFocus with useRef/useEffect pattern
+- `TaskDetail.tsx` - Replaced autoFocus with useRef/useEffect pattern
+- `TaskForm.tsx` - Replaced autoFocus with useRef/useEffect pattern (both forms)
 
-### 2.3 TypeScript Type Fixes
+**Role/focus issues (2 files):**
+- `DocumentTypeSelector.tsx` - Removed invalid role="listitem" from button
+- `TaskBoard.tsx` - Added tabIndex={0} to listbox element
 
-1. Fixed `FamilyMember` interface - changed `created_at`/`updated_at` to camelCase
-2. Fixed `FamilyMembersResponse` interface - `feature_enabled` → `featureEnabled`, `can_edit` → `canEdit`
-3. Fixed `FamilyFeatureStatus` interface - `upgrade_url` → `upgradeUrl`
-4. Updated `FamilyView.tsx` to use new property names
+### 2.2 Added Optimistic Updates to Profile Hooks
 
-### 2.4 React Query Performance Improvements
+Enhanced React Query mutations for instant UI feedback:
 
-Added missing `staleTime` values to 7 hooks:
-- `useTaskChecklist` - 30 seconds
-- `useGeneratedDocuments` - 1 minute
-- `useVerificationHistory` - 1 minute
-- `useGuide` - 1 hour (static content)
-- `usePersonalizedGuide` - 5 minutes
-- `useSubscriptions` - 5 minutes
-- `usePayments` - 5 minutes
+**`useUpdateMemberProfile`:**
+- Added `onMutate` to immediately update cache before API completes
+- Added `onError` to rollback to previous data on failure
+- Maintains server data sync via `onSuccess`
 
-Also replaced magic number `60000` with `REFETCH_INTERVAL.SUPPORT_UNREAD` constant.
+**`useUpdateSettings`:**
+- Same optimistic pattern for user settings
 
-### 2.5 React Component Fixes
-
-Fixed profile section initialization pattern in 3 components:
-- `PersonalSection.tsx` - Replaced `initialized` state with `useRef`
-- `ApplicantSection.tsx` - Same pattern fix
-- `VisaSection.tsx` - Same pattern fix
-
-### 2.6 ESLint Configuration Improvements
-
-Added new plugins and rules:
-- Added `eslint-plugin-react` for React best practices
-- Added `eslint-plugin-jsx-a11y` for accessibility enforcement
-- Added `eslint-plugin-import` for import ordering
-- Configured as warnings (not errors) for existing codebase
-- Total: 57+ warnings now tracked (accessibility + import ordering)
-
-### 2.7 Accessibility Improvements
-
-1. Header search input - Added `aria-label="Search across portal"`
-2. Header search icon - Added `aria-hidden="true"`
-3. Changed search input type to `type="search"`
-
-### 2.8 Theme Documentation
-
-Added JSDoc to all 14 theme functions in `relo2france-theme/functions.php` for better IDE support and maintainability.
-
-### 2.9 Configuration Improvements
-
-1. Updated `.gitignore` with comprehensive entries
-2. Fixed theme.js version number (1.2.3 → 1.2.4)
+This improves perceived performance by showing changes immediately while the API call completes in the background.
 
 ---
 
 ## 3. Files Modified This Session
 
-### PHP Files
-| File | Changes |
+### New Plugin Files
+| File | Purpose |
 |------|---------|
-| `relo2france-theme/header.php` | Added esc_html() to bloginfo output |
-| `relo2france-theme/functions.php` | Added JSDoc to all 14 theme functions |
-| `relo2france-theme/template-auth.php` | Replace hardcoded colors with CSS variables |
-| `france-relocation-member-tools/templates/template-portal.php` | Added wp_strip_all_tags() to custom CSS |
-| `france-relocation-assistant-plugin/includes/api-proxy.php` | Added check_chat_permission() method |
-| `france-relocation-member-tools/includes/class-framt-portal-api.php` | Added get_cached_knowledge_base(), updated search_knowledge_base() |
+| `relo2france-schengen-tracker/*` | Complete standalone Schengen Tracker plugin |
+| `france-relocation-member-tools/includes/class-framt-schengen-bridge.php` | MemberPress bridge |
+| `france-relocation-github-sync/france-relocation-github-sync.php` | Added new plugin to sync |
 
 ### TypeScript/React Files
 | File | Changes |
 |------|---------|
-| `portal/src/types/index.ts` | Fixed FamilyMember, FamilyMembersResponse, FamilyFeatureStatus naming |
-| `portal/src/hooks/useApi.ts` | Added staleTime to 7 hooks, added REFETCH_INTERVAL import, use STALE_TIME and SEARCH constants |
-| `portal/src/components/profile/PersonalSection.tsx` | Fixed initialization pattern with useRef |
-| `portal/src/components/profile/ApplicantSection.tsx` | Fixed initialization pattern with useRef |
-| `portal/src/components/profile/VisaSection.tsx` | Fixed initialization pattern with useRef |
-| `portal/src/components/family/FamilyView.tsx` | Updated to use camelCase property names |
-| `portal/src/components/layout/Header.tsx` | Added accessibility attributes |
-| `portal/src/components/guides/GuidesView.tsx` | Refactored to use new components (1350→253 lines) |
-| `portal/src/components/guides/index.ts` | Updated with all new exports |
-
-### Configuration Files
-| File | Changes |
-|------|---------|
-| `portal/package.json` | Added eslint-plugin-react, eslint-plugin-jsx-a11y, eslint-plugin-import |
-| `portal/.eslintrc.cjs` | Added React, a11y, and import plugins with configured rules |
-| `portal/.gitignore` | Expanded with comprehensive entries |
-| `relo2france-theme/assets/js/theme.js` | Updated version to 1.2.4 |
+| `portal/src/hooks/useApi.ts` | Added optimistic updates to useUpdateMemberProfile and useUpdateSettings |
+| `portal/src/components/dashboard/TaskCard.tsx` | Added keyboard handler, role, tabIndex |
+| `portal/src/components/documents/FileGrid.tsx` | Added keyboard handler, role, tabIndex |
+| `portal/src/components/documents/FileUpload.tsx` | Added keyboard handler, role, tabIndex |
+| `portal/src/components/documents/AIVerification.tsx` | Fixed label associations |
+| `portal/src/components/documents/FilePreview.tsx` | Fixed label associations |
+| `portal/src/components/documents/DocumentTypeSelector.tsx` | Removed invalid role |
+| `portal/src/components/checklists/ChecklistItem.tsx` | Fixed label association |
+| `portal/src/components/family/FamilyView.tsx` | Fixed 7 label associations, used fieldset |
+| `portal/src/components/messages/NoteCard.tsx` | Replaced autoFocus with ref pattern |
+| `portal/src/components/messages/NoteForm.tsx` | Replaced autoFocus with ref pattern |
+| `portal/src/components/research/GenerateReportModal.tsx` | Added role="presentation" |
+| `portal/src/components/schengen/TripForm.tsx` | Fixed label association |
+| `portal/src/components/shared/Modal.tsx` | Added role="presentation" to overlays |
+| `portal/src/components/tasks/TaskBoard.tsx` | Added tabIndex to listbox |
+| `portal/src/components/tasks/TaskChecklist.tsx` | Replaced autoFocus with ref pattern |
+| `portal/src/components/tasks/TaskDetail.tsx` | Added keyboard handler, replaced autoFocus |
+| `portal/src/components/tasks/TaskForm.tsx` | Fixed label, replaced autoFocus (2 forms) |
+| `portal/src/components/tasks/TaskList.tsx` | Added keyboard handler, role, tabIndex |
 
 ---
 
@@ -184,29 +158,35 @@ cd france-relocation-member-tools/portal
 
 # Build
 npm install
-npm run build
+npm run build  # Successful
 ```
 
 **Current Status:**
-- **Tests:** 45/45 passing
 - **Type Check:** 0 errors
-- **Lint:** 0 errors, warnings for accessibility and import ordering (guide for developers)
+- **Lint:** 0 jsx-a11y warnings (all 37 fixed)
 - **Build:** Successful
 
 ---
 
-## 5. Known Remaining Issues
+## 5. Previous Session Summary (Earlier Today)
 
-### High Priority (Address Soon)
-- 57 accessibility warnings (click handlers without keyboard support, label associations)
-- Profile sections could benefit from optimistic updates
+### Profile Reset Feature
+- Added complete "Reset Visa Profile" functionality
+- REST endpoint `POST /profile/reset` with confirmation
+- Comprehensive data deletion across all tables
 
-### Intentional Technical Decisions (Not Issues)
-- **Encryption fallback** - Returns unencrypted legacy values during migration period (by design)
-- **Dual profile storage** - Requires dedicated migration session
+### Automatic Task Due Date Calculation
+- Added `days_offset` to 50+ task templates
+- Auto-recalculate when move date changes
 
-### Lower Priority (Technical Debt)
-- Dual Profile Storage still requires migration
+### Move Date Certainty Setting
+- New field with options: fixed, anticipated, flexible
+
+### Schengen Tracker Improvements
+- Added error display for API failures
+
+### Critical Bug Fix
+- Fixed table names using FRAMT_Portal_Schema::get_table()
 
 ---
 
@@ -220,7 +200,7 @@ A comprehensive plan has been created to bring the Schengen Tracker to feature p
 
 | Phase | Description | Priority |
 |-------|-------------|----------|
-| **0** | Plugin Extraction & Premium Setup | **Prerequisite** |
+| **0** | Plugin Extraction & Premium Setup | **Complete** |
 | **1** | Browser Geolocation + Smart Detection | P1 |
 | **2** | Google/Outlook Calendar Sync | P1 |
 | **3** | Multi-Jurisdiction (US States, etc.) | P1 |
@@ -243,14 +223,30 @@ A comprehensive plan has been created to bring the Schengen Tracker to feature p
 
 ---
 
-## 7. Commit Summary
+## 7. Known Issues / Next Steps
 
-1. `Comprehensive code review fixes: security, efficiency, and consistency`
-2. `Refactor guides components and add performance improvements`
-3. `Add constants, CSS variables, and .env.example`
-4. `Add JSDoc to theme and eslint-plugin-import for import ordering`
-5. `Comprehensive codebase review: consistency, efficiency, and documentation`
-6. `Merge main branch and resolve conflicts`
+### Lower Priority: Dual Profile Storage Migration
+Profile data currently exists in both:
+1. User meta (`fra_*` prefixed keys) - main source
+2. Projects table (`visa_type`, `target_move_date`)
+
+A future migration could consolidate this to ensure consistency.
+
+### Schengen Trip Edit/Delete
+User reported issues with editing trip dates and deleting trips. Error display was added to help debug. Check browser console for specific error messages.
+
+### Potential Improvements
+- Add loading spinner during reset operation
+- Consider adding "undo" grace period for reset
+- Profile reset could log an activity entry before clearing
+
+---
+
+## 8. Commit Summary (This Session)
+
+1. `Fix all accessibility warnings (37 issues resolved)`
+2. `Add optimistic updates to profile hooks`
+3. `Extract Schengen Tracker to standalone plugin (Phase 0)`
 
 ---
 

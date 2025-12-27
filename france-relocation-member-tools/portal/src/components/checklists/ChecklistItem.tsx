@@ -193,7 +193,7 @@ export default function ChecklistItem({
         {isExpanded && (
           <div className="mt-4 pt-4 border-t border-gray-100">
             <div className="flex items-start justify-between mb-2">
-              <label className="text-sm font-medium text-gray-700">Notes</label>
+              <label htmlFor={`checklist-notes-${item.id}`} className="text-sm font-medium text-gray-700">Notes</label>
               {!isEditingNotes && (
                 <button
                   onClick={() => setIsEditingNotes(true)}
@@ -208,6 +208,7 @@ export default function ChecklistItem({
             {isEditingNotes ? (
               <div className="space-y-2">
                 <textarea
+                  id={`checklist-notes-${item.id}`}
                   value={notesValue}
                   onChange={(e) => setNotesValue(e.target.value)}
                   placeholder="Add notes about this item..."

@@ -135,6 +135,13 @@ export default function FileUpload({ projectId, onUploadComplete, className }: F
     fileInputRef.current?.click();
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      handleClick();
+    }
+  };
+
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       handleFiles(e.target.files);
@@ -152,9 +159,12 @@ export default function FileUpload({ projectId, onUploadComplete, className }: F
       {/* Drop zone */}
       <div
         onClick={handleClick}
+        onKeyDown={handleKeyDown}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
+        role="button"
+        tabIndex={0}
         className={clsx(
           'border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors',
           isDragOver

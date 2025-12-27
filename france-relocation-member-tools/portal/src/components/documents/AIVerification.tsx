@@ -136,10 +136,10 @@ export default function AIVerification({
   return (
     <div className="space-y-6">
       {/* Verification Type Selector */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+      <div role="group" aria-labelledby="verification-type-label">
+        <span id="verification-type-label" className="block text-sm font-medium text-gray-700 mb-2">
           Verification Type
-        </label>
+        </span>
         <div className="grid grid-cols-1 gap-3">
           {verificationTypes.map((type) => (
             <button
@@ -180,7 +180,7 @@ export default function AIVerification({
       {/* File Upload Area */}
       {!selectedFile && (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="verification-file-input" className="block text-sm font-medium text-gray-700 mb-2">
             Upload Document
           </label>
           <div
@@ -196,6 +196,7 @@ export default function AIVerification({
             )}
           >
             <input
+              id="verification-file-input"
               type="file"
               onChange={handleFileSelect}
               accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"

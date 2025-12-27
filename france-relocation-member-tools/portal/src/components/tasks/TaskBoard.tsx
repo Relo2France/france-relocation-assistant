@@ -295,6 +295,7 @@ function BoardColumn({
       onDrop={onDrop}
       onKeyDown={handleColumnKeyDown}
       role="listbox"
+      tabIndex={0}
       aria-label={`${column.title} column, ${tasks.length} tasks`}
       aria-dropeffect={isKeyboardDragging ? 'move' : undefined}
     >

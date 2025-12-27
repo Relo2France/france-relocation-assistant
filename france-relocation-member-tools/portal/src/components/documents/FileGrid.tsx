@@ -189,11 +189,21 @@ function FileCardGrid({ file, onClick, onDownload, onDelete, onVerify }: FileIte
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onClick();
+    }
+  };
+
   return (
     <div className="card group hover:shadow-md transition-shadow">
       {/* Preview area */}
       <div
         onClick={onClick}
+        onKeyDown={handleKeyDown}
+        role="button"
+        tabIndex={0}
         className="aspect-square p-4 flex items-center justify-center cursor-pointer bg-gray-50 border-b border-gray-100"
       >
         {file.thumbnail_url ? (
