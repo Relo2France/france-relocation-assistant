@@ -75,6 +75,17 @@ class FRAMT_Schengen_API {
     private static $instance = null;
 
     /**
+     * Schengen country codes for location tracking
+     *
+     * @var array
+     */
+    private static $schengen_codes = array(
+        'AT', 'BE', 'BG', 'HR', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE',
+        'GR', 'HU', 'IS', 'IT', 'LV', 'LI', 'LT', 'LU', 'MT', 'NL',
+        'NO', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE', 'CH',
+    );
+
+    /**
      * Get singleton instance
      *
      * @return FRAMT_Schengen_API
@@ -1534,17 +1545,6 @@ class FRAMT_Schengen_API {
     // ============================================
     // Location Tracking Methods (Phase 1.1)
     // ============================================
-
-    /**
-     * Schengen country codes
-     *
-     * @var array
-     */
-    private static $schengen_codes = array(
-        'AT', 'BE', 'BG', 'HR', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE',
-        'GR', 'HU', 'IS', 'IT', 'LV', 'LI', 'LT', 'LU', 'MT', 'NL',
-        'NO', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE', 'CH',
-    );
 
     /**
      * Get location table name
