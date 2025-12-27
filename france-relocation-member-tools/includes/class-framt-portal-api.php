@@ -1193,7 +1193,7 @@ class FRAMT_Portal_API {
             );
         }
 
-        if ( $project->user_id !== get_current_user_id() && ! current_user_can( 'manage_options' ) ) {
+        if ( (int) $project->user_id !== (int) get_current_user_id() && ! current_user_can( 'manage_options' ) ) {
             return new WP_Error(
                 'rest_forbidden',
                 'You do not have permission to access this project.',
@@ -1227,7 +1227,7 @@ class FRAMT_Portal_API {
             );
         }
 
-        if ( $task->user_id !== get_current_user_id() && ! current_user_can( 'manage_options' ) ) {
+        if ( (int) $task->user_id !== (int) get_current_user_id() && ! current_user_can( 'manage_options' ) ) {
             return new WP_Error(
                 'rest_forbidden',
                 'You do not have permission to access this task.',
@@ -1261,7 +1261,7 @@ class FRAMT_Portal_API {
             );
         }
 
-        if ( $task->user_id !== get_current_user_id() && ! current_user_can( 'manage_options' ) ) {
+        if ( (int) $task->user_id !== (int) get_current_user_id() && ! current_user_can( 'manage_options' ) ) {
             return new WP_Error(
                 'rest_forbidden',
                 'You do not have permission to access this task.',
@@ -4273,19 +4273,9 @@ Signature:
      * @return array Matching KB articles with relevance scores
      */
     private function search_knowledge_base( $message, $context = 'general' ) {
-        // Load the knowledge base
-        $kb_file = WP_PLUGIN_DIR . '/france-relocation-assistant/includes/knowledge-base-default.php';
-        if ( ! file_exists( $kb_file ) ) {
-            // Try alternate path
-            $kb_file = ABSPATH . 'wp-content/plugins/france-relocation-assistant-plugin/includes/knowledge-base-default.php';
-        }
-
-        if ( ! file_exists( $kb_file ) ) {
-            return array();
-        }
-
-        $knowledge_base = include $kb_file;
-        if ( ! is_array( $knowledge_base ) ) {
+        // Load the knowledge base with transient caching
+        $knowledge_base = $this->get_cached_knowledge_base();
+        if ( empty( $knowledge_base ) ) {
             return array();
         }
 
@@ -4332,6 +4322,42 @@ Signature:
 
         // Return top 3 most relevant articles
         return array_slice( $results, 0, 3 );
+    }
+
+    /**
+     * Get knowledge base with transient caching
+     *
+     * @since 2.1.0
+     * @return array Knowledge base data or empty array
+     */
+    private function get_cached_knowledge_base() {
+        $cache_key = 'framt_knowledge_base';
+        $knowledge_base = get_transient( $cache_key );
+
+        if ( false !== $knowledge_base ) {
+            return $knowledge_base;
+        }
+
+        // Load from file
+        $kb_file = WP_PLUGIN_DIR . '/france-relocation-assistant/includes/knowledge-base-default.php';
+        if ( ! file_exists( $kb_file ) ) {
+            // Try alternate path
+            $kb_file = ABSPATH . 'wp-content/plugins/france-relocation-assistant-plugin/includes/knowledge-base-default.php';
+        }
+
+        if ( ! file_exists( $kb_file ) ) {
+            return array();
+        }
+
+        $knowledge_base = include $kb_file;
+        if ( ! is_array( $knowledge_base ) ) {
+            return array();
+        }
+
+        // Cache for 1 hour (knowledge base doesn't change frequently)
+        set_transient( $cache_key, $knowledge_base, HOUR_IN_SECONDS );
+
+        return $knowledge_base;
     }
 
     /**

@@ -64,8 +64,8 @@ get_header();
                 <?php if ($prev_post) : ?>
                     <div class="nav-previous">
                         <span class="nav-label"><?php esc_html_e('Previous Post', 'relo2france'); ?></span>
-                        <a href="<?php echo get_permalink($prev_post); ?>">
-                            &larr; <?php echo get_the_title($prev_post); ?>
+                        <a href="<?php echo esc_url( get_permalink( $prev_post ) ); ?>">
+                            &larr; <?php echo esc_html( get_the_title( $prev_post ) ); ?>
                         </a>
                     </div>
                 <?php endif; ?>
@@ -73,8 +73,8 @@ get_header();
                 <?php if ($next_post) : ?>
                     <div class="nav-next">
                         <span class="nav-label"><?php esc_html_e('Next Post', 'relo2france'); ?></span>
-                        <a href="<?php echo get_permalink($next_post); ?>">
-                            <?php echo get_the_title($next_post); ?> &rarr;
+                        <a href="<?php echo esc_url( get_permalink( $next_post ) ); ?>">
+                            <?php echo esc_html( get_the_title( $next_post ) ); ?> &rarr;
                         </a>
                     </div>
                 <?php endif; ?>

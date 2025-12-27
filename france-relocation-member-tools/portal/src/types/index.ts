@@ -897,6 +897,40 @@ export interface SchengenTestAlertResult {
   };
 }
 
+// ============================================
+// Family Members Types
+// ============================================
+
+export interface FamilyMember {
+  id: number;
+  name: string;
+  relationship: 'spouse' | 'child' | 'parent' | 'other';
+  birthDate: string;
+  nationality: string;
+  visaStatus: 'pending' | 'applied' | 'approved' | 'not_required';
+  documents: {
+    passport: boolean;
+    birthCertificate: boolean;
+    marriageCertificate?: boolean;
+    photos: boolean;
+  };
+  notes?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface FamilyMembersResponse {
+  members: FamilyMember[];
+  feature_enabled: boolean;
+  can_edit: boolean;
+}
+
+export interface FamilyFeatureStatus {
+  enabled: boolean;
+  upgrade_url: string | null;
+  message: string | null;
+}
+
 // WordPress global types
 declare global {
   interface Window {

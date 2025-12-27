@@ -23,7 +23,7 @@ import {
   useUpdateFamilyMember,
   useDeleteFamilyMember,
 } from '@/hooks/useApi';
-import type { FamilyMember } from '@/api/client';
+import type { FamilyMember } from '@/types';
 
 const relationshipLabels: Record<string, string> = {
   spouse: 'Spouse',

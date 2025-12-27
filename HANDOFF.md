@@ -1,8 +1,8 @@
 # Session Handoff Document
 
 **Date:** December 27, 2025
-**Branch:** `claude/continue-from-handoff-1zH4l`
-**Last Commit:** `Technical debt cleanup: type-safe query keys and API improvements`
+**Branch:** `claude/review-handoff-bSeKm`
+**Last Commit:** `Refactor guides components and add performance improvements`
 
 ---
 
@@ -12,9 +12,10 @@
 
 | Component | Version | Status |
 |-----------|---------|--------|
-| Main Plugin | v2.9.83 | Active |
+| Main Plugin | v3.6.4 | Active |
 | Member Tools Plugin | v2.1.0 | Active |
-| Theme | v1.2.3 | Active |
+| React Portal | v2.1.0 | Active |
+| Theme | v1.2.4 | Active |
 
 The React portal is fully functional with 40+ REST API endpoints. All major features are complete including profile management, task tracking, document generation, checklists, AI-powered guides, and **Schengen day tracking with premium features**.
 
@@ -22,166 +23,129 @@ The React portal is fully functional with 40+ REST API endpoints. All major feat
 
 ## 2. What We Completed This Session
 
-### 2.1 Comprehensive Code Review & Cleanup
+### 2.1 Full Codebase Review (Previous Session)
 
-Performed full code review with automated agent exploration, fixing 16 identified issues across the Schengen tracker codebase.
+Performed comprehensive code review across all 6 major areas:
+- React Portal Components (35+ issues found)
+- React Hooks & API Client (14 issues found)
+- PHP Main Plugin (25 issues found)
+- PHP Member Tools Plugin (15 issues found)
+- WordPress Theme (18 issues found)
+- Configuration Files (13 issues found)
 
-### 2.2 CRITICAL: Timezone Inconsistency Fix
+**Total: 120 issues identified, 10+ critical/high priority fixes implemented**
 
-**Files Modified:** `portal/src/components/schengen/schengenUtils.ts`
+### 2.2 CRITICAL Security Fixes (Previous Session)
 
-Fixed critical bug where frontend JavaScript was using browser's local timezone while PHP backend used UTC. This could cause day count mismatches for users in different timezones.
+#### XSS Prevention - SafeHtml Component
+**Files:** `portal/src/components/shared/SafeHtml.tsx` (NEW), `GuidesView.tsx`
 
-**New Helper Functions:**
-```typescript
-// Ensure all dates are parsed as UTC midnight
-function parseAsUTC(dateStr: string | Date): Date
-function getTodayUTC(): Date
-function toISODateString(date: Date): string
+Replaced `dangerouslySetInnerHTML` with a new SafeHtml component using DOMPurify for HTML sanitization:
+
+```tsx
+// NEW: SafeHtml component with DOMPurify
+import DOMPurify from 'dompurify';
+
+export default function SafeHtml({ html, className, as: Component = 'div' }: SafeHtmlProps) {
+  const sanitizedHtml = DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: ['p', 'br', 'strong', 'b', 'em', 'i', 'u', 's', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'a', 'blockquote', 'code', 'pre', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'span', 'div'],
+    ALLOWED_ATTR: ['href', 'target', 'rel', 'class', 'id'],
+  });
+  return <Component className={className} dangerouslySetInnerHTML={{ __html: sanitizedHtml }} />;
+}
 ```
 
-All date calculation functions now use these helpers:
-- `calculateSchengenDays()`
-- `getSchengenDatesInWindow()`
-- `findNextExpiration()`
-- `getSchengenSummary()`
-- `daysBetween()` - now accepts `Date | string`
-- `wouldTripViolate()`
-- `findEarliestEntryDate()`
-- `findMaxTripLength()`
-
-### 2.3 Security Improvements in PHP API
-
-**File:** `includes/class-framt-schengen-api.php`
-
-1. **Country Enum Validation**: Added `SCHENGEN_COUNTRIES` constant with 29 valid countries, now validated in REST API schema
-
-2. **Threshold Validation**: `update_settings()` now validates that yellow threshold < red threshold, returning 400 error if invalid
+#### SQL Injection Fix
+**File:** `includes/class-framt-dashboard.php:325`
 
 ```php
-const SCHENGEN_COUNTRIES = array(
-    'Austria', 'Belgium', 'Bulgaria', 'Croatia', ...
-);
+// BEFORE (vulnerable):
+$wpdb->get_var("SHOW TABLES LIKE '$table_messages'")
 
-// In update_settings():
-if ( $yellow >= $red ) {
-    return new WP_Error( 'invalid_thresholds', ... );
+// AFTER (secure):
+$wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table_messages))
+```
+
+#### Output Escaping in Theme
+**Files:** `functions.php`, `footer.php`, `single.php`
+
+Fixed 4 instances of unescaped output.
+
+#### Permission Check Type Safety
+**File:** `class-framt-portal-api.php:1196,1230,1264`
+
+Added strict type casting to permission checks.
+
+### 2.3 GuidesView Component Refactoring (Current Session)
+
+Split the massive GuidesView.tsx (1350+ lines) into focused, maintainable components:
+
+| File | Purpose | Lines |
+|------|---------|-------|
+| `guidesData.ts` | Static guide data, types, helper functions | ~260 |
+| `GuideCards.tsx` | GuideCard, FeaturedGuideCard, PersonalizedGuideCard | ~120 |
+| `GuideDetail.tsx` | Guide detail view with AI chat integration | ~280 |
+| `PersonalizedGuideDetail.tsx` | AI-generated personalized guides view | ~260 |
+| `GuideMessageContent.tsx` | Markdown parser for chat messages | ~150 |
+| `GuidesView.tsx` | Main view (refactored) | ~253 |
+| `index.ts` | Barrel export with all exports | ~12 |
+
+### 2.4 Barrel Exports for All Component Folders (Current Session)
+
+Added missing barrel exports to complete the component organization:
+
+| Folder | File | Exports |
+|--------|------|---------|
+| `dashboard/` | `index.ts` | Dashboard, ActivityFeed, ProgressTracker, TaskCard, WelcomeBanner |
+| `layout/` | `index.ts` | Header, Sidebar |
+| `shared/` | `index.ts` | ErrorBoundary, Modal, SafeHtml, SaveButton, VirtualList |
+
+### 2.5 PHP Performance Improvements (Current Session)
+
+#### Transient Caching for Knowledge Base
+**File:** `includes/class-framt-portal-api.php`
+
+Added `get_cached_knowledge_base()` helper with 1-hour transient caching:
+
+```php
+private function get_cached_knowledge_base() {
+    $cache_key = 'framt_knowledge_base';
+    $knowledge_base = get_transient( $cache_key );
+
+    if ( false !== $knowledge_base ) {
+        return $knowledge_base;
+    }
+
+    // Load from file...
+    $knowledge_base = include $kb_file;
+
+    // Cache for 1 hour
+    set_transient( $cache_key, $knowledge_base, HOUR_IN_SECONDS );
+
+    return $knowledge_base;
 }
 ```
 
-### 2.4 ESLint Fixes (0 errors, 0 warnings)
+### 2.6 Efficiency Improvements (Previous Session)
 
-**All 6 ESLint warnings fixed:**
-
-1. `DocumentGenerator.tsx` - Removed non-null assertions with proper null checks
-2. `FileUpload.tsx` - Wrapped `processUpload` in `useCallback` with proper dependencies
-3. `CalendarView.tsx` - Memoized `today` to prevent useMemo recalculation on every render
-4. `VirtualList.tsx` - Moved `useVirtualization` hook to separate file
-5. `useApi.ts` - Added guard clause in `useSupportTicket` instead of non-null assertion
-6. `TripForm.tsx` - Removed `as SchengenTrip` casting (not needed after `getTripDuration` signature change)
-
-### 2.5 Code Organization
-
-**New File:** `portal/src/hooks/useVirtualization.ts`
-
-Moved `useVirtualization` hook to separate file to fix react-refresh warning. Re-exported from `VirtualList.tsx` was causing HMR issues.
-
-### 2.6 ESLint Script Fix
-
-**File:** `portal/package.json`
-
-Fixed lint scripts to use `npx eslint` to avoid conflict between global ESLint v9 and local ESLint v8 (different config formats).
-
-### 2.7 React Query Cache Key Type Safety
-
-**Files Modified:**
-- `portal/src/types/index.ts` - Added `TaskFilters`, `FileFilters`, `NoteFilters` interfaces
-- `portal/src/hooks/useApi.ts` - Updated query keys and hooks to use typed filters
-- `portal/src/api/client.ts` - Updated API functions to use typed filters
-
-**Problem:** Query keys used generic `object` type for filters, which lost type safety.
-
-**Fix:** Added proper filter type interfaces:
-```typescript
-// types/index.ts
-export interface TaskFilters {
-  stage?: string;
-  status?: string;
-  task_type?: string;
-}
-
-export interface FileFilters {
-  category?: FileCategory;
-  file_type?: string;
-}
-
-export interface NoteFilters {
-  task_id?: number;
-  pinned?: boolean;
-}
-```
-
-### 2.8 API Client Type Safety
-
-**File:** `portal/src/api/client.ts`
-
-Added `apiFormDataFetch<T>()` helper function to properly type FormData uploads instead of using `as` casts:
-```typescript
-async function apiFormDataFetch<T>(
-  endpoint: string,
-  formData: FormData,
-  signal?: AbortSignal
-): Promise<T>
-```
-
-Updated `filesApi.upload` and `verificationApi.verifyFile` to use this helper.
+- Added `staleTime` to 12+ React Query hooks
+- Fixed FileGrid responsive column calculation
+- Fixed LazyView component recreation with useMemo
+- Added `type-check` npm script
 
 ---
 
-## 3. Known Technical Debt
+## 3. Known Technical Debt (From Previous Session)
 
 ### Dual Profile Storage (Analyzed - Requires Migration)
 
 **STATUS:** Full analysis complete. Requires careful migration in dedicated session.
 
 The profile system uses two storage mechanisms that are NOT synchronized:
+- User Meta Storage (`fra_*` prefix) - used by REST API
+- Database Table (`wp_framt_profiles`) - used by document generation
 
-**User Meta Storage (`fra_*` prefix) - ACTIVE:**
-- Used by REST API endpoints (GET/PUT /profile)
-- Used by Dashboard display
-- 33 fields with `fra_` prefix
-
-**Database Table Storage (`wp_framt_profiles`) - ORPHANED:**
-- Only used by document generation and guide chat
-- Stores JSON blob in `profile_data` column
-- NOT synced with user meta
-
-**Critical Finding:** The `framt_profile_updated` action hook is defined but NEVER fires anywhere in the codebase. This breaks the intended sync to the main plugin.
-
-**Data Flow Issues:**
-1. REST API updates → user meta only → database table becomes stale
-2. Document generation → database table only → user meta becomes stale
-3. Dashboard reads user meta → shows stale data after document generation
-
-**Files Affected:**
-| File | Storage Used |
-|------|--------------|
-| `class-framt-portal-api.php:2644-2810` | User Meta |
-| `class-framt-dashboard.php:90-120` | User Meta |
-| `class-framt-profile.php:466-733` | Both (different methods) |
-| `france-relocation-member-tools.php:2006-2111` | Database Table |
-
-**Recommended Migration (Future Session):**
-1. Migrate document/guide generation to use user meta
-2. Add `do_action('framt_profile_updated', ...)` after profile updates
-3. Remove `wp_framt_profiles` table (or deprecate)
-4. Consider caching profile data (33 separate meta calls per read)
-
-### Previously Noted Issues (Now Resolved)
-
-~~Cache key complexity in React Query~~ → Fixed with typed filter interfaces
-~~Some type assertions in API client~~ → Fixed with apiFormDataFetch helper
-~~Error boundaries for Schengen~~ → Already exist at app level in App.tsx
+See previous session notes for full analysis and migration plan.
 
 ---
 
@@ -191,25 +155,22 @@ The profile system uses two storage mechanisms that are NOT synchronized:
 
 | File | Description |
 |------|-------------|
-| `portal/src/hooks/useVirtualization.ts` | Virtualization threshold hook |
+| `portal/src/components/guides/guidesData.ts` | Static guide data, types, getSuggestedQuestionsForGuide |
+| `portal/src/components/guides/GuideCards.tsx` | Card components (Guide, Featured, Personalized) |
+| `portal/src/components/guides/GuideDetail.tsx` | Guide detail with AI chat |
+| `portal/src/components/guides/GuideMessageContent.tsx` | Markdown parser for chat |
+| `portal/src/components/guides/PersonalizedGuideDetail.tsx` | Personalized guide view |
+| `portal/src/components/dashboard/index.ts` | Dashboard barrel export |
+| `portal/src/components/layout/index.ts` | Layout barrel export |
+| `portal/src/components/shared/index.ts` | Shared barrel export |
 
 ### Modified Files
 
 | File | Changes |
 |------|---------|
-| `portal/package.json` | Fixed ESLint scripts to use npx |
-| `portal/src/components/schengen/schengenUtils.ts` | UTC date handling throughout |
-| `portal/src/components/schengen/CalendarView.tsx` | Memoized today's date |
-| `portal/src/components/schengen/TripForm.tsx` | Removed unsafe type casting |
-| `portal/src/components/documents/DocumentGenerator.tsx` | Proper null checks |
-| `portal/src/components/documents/FileUpload.tsx` | useCallback dependencies |
-| `portal/src/components/documents/FileGrid.tsx` | Updated imports |
-| `portal/src/components/tasks/TaskList.tsx` | Updated imports |
-| `portal/src/components/shared/VirtualList.tsx` | Removed hook export |
-| `portal/src/hooks/useApi.ts` | Guard clause + typed filter imports |
-| `portal/src/api/client.ts` | FormData helper + typed filters |
-| `portal/src/types/index.ts` | Added filter type interfaces |
-| `includes/class-framt-schengen-api.php` | Country enum + threshold validation |
+| `portal/src/components/guides/GuidesView.tsx` | Refactored to use new components (1350→253 lines) |
+| `portal/src/components/guides/index.ts` | Updated with all new exports |
+| `includes/class-framt-portal-api.php` | Added get_cached_knowledge_base(), updated search_knowledge_base() |
 
 ---
 
@@ -230,6 +191,9 @@ npm test:coverage # With coverage
 # Lint
 npm run lint        # Allow warnings
 npm run lint:strict # Zero warnings
+
+# Type check
+npm run type-check  # TypeScript validation without emit
 ```
 
 **Current Status:**
@@ -239,11 +203,31 @@ npm run lint:strict # Zero warnings
 
 ---
 
-## 6. Commit Summary
+## 6. Remaining Issues (Lower Priority)
 
-1. `Fix ESLint scripts to use local version via npx`
-2. `Comprehensive code review and fixes for Schengen tracker`
-3. `Technical debt cleanup: type-safe query keys and API improvements`
+From the comprehensive review, these items were identified but not fixed (lower priority):
+
+### React Components
+- Magic numbers should be extracted to constants
+
+### PHP Backend
+- Encryption fallback returns unencrypted legacy values (intentional for migration)
+- Missing permission checks on analytics AJAX
+
+### Theme
+- Hardcoded colors should use CSS variables
+- Missing JSDoc on some functions
+
+### Configuration
+- Consider adding eslint-plugin-import for import ordering
+- Add .env.example template
+
+---
+
+## 7. Commit Summary
+
+1. `Comprehensive code review fixes: security, efficiency, and consistency`
+2. `Refactor guides components and add performance improvements`
 
 ---
 
