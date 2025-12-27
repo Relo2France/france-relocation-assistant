@@ -5952,6 +5952,15 @@ Focus on practical advice while being careful not to state incorrect facts. When
             $this->delete_directory_recursive( $portal_dir );
         }
 
+        // Delete Schengen tracker data
+        $wpdb->query(
+            $wpdb->prepare(
+                "DELETE FROM {$wpdb->prefix}fra_schengen_trips WHERE user_id = %d",
+                $user_id
+            )
+        );
+        delete_user_meta( $user_id, 'framt_schengen_settings' );
+
         // Clear any cached data
         wp_cache_delete( "framt_profile_{$user_id}", 'framt' );
         wp_cache_delete( "framt_project_{$user_id}", 'framt' );

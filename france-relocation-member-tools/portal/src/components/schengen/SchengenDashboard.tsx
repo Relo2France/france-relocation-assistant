@@ -51,6 +51,7 @@ export default function SchengenDashboard() {
   const [editingTrip, setEditingTrip] = useState<SchengenTrip | null>(null);
   const [activeTab, setActiveTab] = useState<ViewTab>('trips');
   const [testAlertMessage, setTestAlertMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   // Calculate summary from trips
   const summary = useMemo(() => {
@@ -61,29 +62,38 @@ export default function SchengenDashboard() {
   }, [trips, settings.yellowThreshold, settings.redThreshold]);
 
   const handleAddTrip = async (tripData: Omit<SchengenTrip, 'id' | 'createdAt' | 'updatedAt'>) => {
+    setActionError(null);
     try {
       await addTrip(tripData);
       setShowTripForm(false);
     } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to add trip';
+      setActionError(message);
       console.error('Failed to add trip:', error);
     }
   };
 
   const handleEditTrip = async (tripData: Omit<SchengenTrip, 'id' | 'createdAt' | 'updatedAt'>) => {
     if (editingTrip) {
+      setActionError(null);
       try {
         await updateTrip(editingTrip.id, tripData);
         setEditingTrip(null);
       } catch (error) {
+        const message = error instanceof Error ? error.message : 'Failed to update trip';
+        setActionError(message);
         console.error('Failed to update trip:', error);
       }
     }
   };
 
   const handleDeleteTrip = async (id: string) => {
+    setActionError(null);
     try {
       await deleteTrip(id);
     } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to delete trip';
+      setActionError(message);
       console.error('Failed to delete trip:', error);
     }
   };
@@ -292,6 +302,22 @@ export default function SchengenDashboard() {
             <span className="font-medium">Limit reached:</span> You have used all 90 days allowed in this
             180-day window. Additional travel may result in overstay violations.
           </p>
+        </div>
+      )}
+
+      {/* Action error display */}
+      {actionError && (
+        <div className="flex items-center justify-between gap-3 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <div className="flex items-center gap-3">
+            <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0" aria-hidden="true" />
+            <p className="text-sm text-red-800">{actionError}</p>
+          </div>
+          <button
+            onClick={() => setActionError(null)}
+            className="text-red-600 hover:text-red-800 text-sm font-medium"
+          >
+            Dismiss
+          </button>
         </div>
       )}
 
