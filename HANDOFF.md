@@ -2,7 +2,7 @@
 
 **Date:** December 27, 2025
 **Branch:** `claude/resume-from-handoff-JlK7B`
-**Last Commit:** `Fix profile reset table names - use schema helper`
+**Last Commit:** `Add optimistic updates to profile hooks`
 
 ---
 
@@ -17,98 +17,84 @@
 | React Portal | v2.1.0 | Active |
 | Theme | v1.2.4 | Active |
 
-The React portal is fully functional with 40+ REST API endpoints. All major features are complete including profile management, task tracking, document generation, checklists, AI-powered guides, Schengen day tracking, and **profile reset functionality**.
+The React portal is fully functional with 40+ REST API endpoints. All major features are complete including profile management, task tracking, document generation, checklists, AI-powered guides, Schengen day tracking, and profile reset functionality.
 
 ---
 
 ## 2. What We Completed This Session
 
-### 2.1 Profile Reset Feature (NEW)
+### 2.1 Fixed All Accessibility Warnings (37 issues)
 
-Added complete "Reset Visa Profile" functionality in Settings → Portal Account → Danger Zone:
+Resolved all jsx-a11y ESLint warnings in the React portal:
 
-**Backend (`class-framt-portal-api.php`):**
-- Added REST endpoint `POST /profile/reset`
-- Requires confirmation phrase "RESET MY PROFILE"
-- Deletes all user portal data comprehensively
+**Click events with keyboard handlers (8 files):**
+- `TaskCard.tsx` - Added role, tabIndex, onKeyDown for clickable div
+- `FileGrid.tsx` - Added keyboard support for file preview area
+- `FileUpload.tsx` - Added keyboard support for drop zone
+- `TaskList.tsx` - Added keyboard support for task list items
+- `TaskDetail.tsx` - Added keyboard support for editable title/description
+- `Modal.tsx` - Added role="presentation" to overlay divs
+- `GenerateReportModal.tsx` - Added role="presentation" to overlay
 
-**Frontend (`SettingsView.tsx`):**
-- Added amber warning section in Danger Zone
-- Confirmation input with exact phrase matching
-- Success message with auto-reload after 2 seconds
+**Label associations (6 files):**
+- `ChecklistItem.tsx` - Added htmlFor/id to notes textarea
+- `AIVerification.tsx` - Used aria-labelledby for button groups, htmlFor for file input
+- `FilePreview.tsx` - Added htmlFor/id for description field
+- `FamilyView.tsx` - Added htmlFor/id to all 7 form fields, used fieldset for checkboxes
+- `TripForm.tsx` - Used aria-labelledby for radio group
+- `TaskForm.tsx` - Used aria-labelledby for task type radio group
 
-**Data deleted on reset:**
-| Data Type | Table/Storage |
-|-----------|---------------|
-| Projects | `fra_projects` |
-| Tasks | `fra_tasks` |
-| Notes | `fra_notes` |
-| Files | `fra_files` + physical files |
-| Activity log | `fra_activity` |
-| Schengen trips | `fra_schengen_trips` |
-| Schengen settings | `framt_schengen_settings` user meta |
-| Messages | `framt_messages`, `framt_message_replies` |
-| Generated documents | `framt_generated_documents` |
-| Research report links | `framt_research_report_links` |
-| WordPress documents | `fra_document` post type |
-| User uploads folder | `uploads/fra-portal/{user_id}/` |
-| Profile meta | All `fra_*` user meta keys |
+**AutoFocus warnings (6 files):**
+- `NoteCard.tsx` - Replaced autoFocus with useRef/useEffect pattern
+- `NoteForm.tsx` - Replaced autoFocus with useRef/useEffect pattern
+- `TaskChecklist.tsx` - Replaced autoFocus with useRef/useEffect pattern
+- `TaskDetail.tsx` - Replaced autoFocus with useRef/useEffect pattern
+- `TaskForm.tsx` - Replaced autoFocus with useRef/useEffect pattern (both forms)
 
-### 2.2 Automatic Task Due Date Calculation
+**Role/focus issues (2 files):**
+- `DocumentTypeSelector.tsx` - Removed invalid role="listitem" from button
+- `TaskBoard.tsx` - Added tabIndex={0} to listbox element
 
-Tasks now automatically get due dates based on the user's move date:
+### 2.2 Added Optimistic Updates to Profile Hooks
 
-- Added `days_offset` to all 50+ task templates (e.g., -120 = 4 months before move)
-- Created `calculate_due_date()` function for smart date calculation
-- Created `recalculate_task_due_dates()` to update existing tasks when move date changes
-- Hooked into `update_member_profile()` and `update_project()` to trigger recalculation
-- Smart handling for past dates (sets to 7 days from now if calculated date is in past)
+Enhanced React Query mutations for instant UI feedback:
 
-### 2.3 Move Date Certainty Setting
+**`useUpdateMemberProfile`:**
+- Added `onMutate` to immediately update cache before API completes
+- Added `onError` to rollback to previous data on failure
+- Maintains server data sync via `onSuccess`
 
-Added setting for users to indicate how firm their move date is:
+**`useUpdateSettings`:**
+- Same optimistic pattern for user settings
 
-- New field `move_date_certainty` with options: `fixed`, `anticipated`, `flexible`
-- Added to PHP profile API (`fra_move_date_certainty` user meta)
-- Added TypeScript types (`MoveDateCertainty`, `TimelineType`)
-- Added UI dropdown in Settings → Visa Profile → Timeline section
-
-### 2.4 Schengen Tracker Improvements
-
-- Added `actionError` state to display API errors to users
-- Error banner shows when trip add/update/delete fails (previously silent)
-- Added dismiss button for error messages
-- Fixed ARIA role issue in `DayCounter.tsx` (removed invalid `role="text"`)
-
-### 2.5 Bug Fix: Profile Reset Table Names
-
-**Critical fix:** The reset function was using wrong table names:
-- `framt_projects` → should be `fra_projects`
-- `framt_tasks` → should be `fra_tasks`
-- `framt_notes` → should be `fra_notes`
-- `framt_files` → should be `fra_files`
-
-Now uses `FRAMT_Portal_Schema::get_table()` for correct names.
+This improves perceived performance by showing changes immediately while the API call completes in the background.
 
 ---
 
 ## 3. Files Modified This Session
 
-### PHP Files
-| File | Changes |
-|------|---------|
-| `class-framt-portal-api.php` | Added reset_profile(), calculate_due_date(), recalculate_task_due_dates(), days_offset to task templates, move_date_certainty field |
-| `class-framt-portal-api.php` | Fixed table names using FRAMT_Portal_Schema::get_table() |
-
 ### TypeScript/React Files
 | File | Changes |
 |------|---------|
-| `portal/src/types/index.ts` | Added MoveDateCertainty, TimelineType types; added move_date_certainty to MemberProfile |
-| `portal/src/api/client.ts` | Added profileApi.reset() function |
-| `portal/src/hooks/useApi.ts` | Added useResetProfile() hook |
-| `portal/src/components/settings/SettingsView.tsx` | Added Reset Profile UI, move_date_certainty dropdown |
-| `portal/src/components/schengen/SchengenDashboard.tsx` | Added actionError state and error display banner |
-| `portal/src/components/schengen/DayCounter.tsx` | Removed invalid ARIA role="text" |
+| `portal/src/hooks/useApi.ts` | Added optimistic updates to useUpdateMemberProfile and useUpdateSettings |
+| `portal/src/components/dashboard/TaskCard.tsx` | Added keyboard handler, role, tabIndex |
+| `portal/src/components/documents/FileGrid.tsx` | Added keyboard handler, role, tabIndex |
+| `portal/src/components/documents/FileUpload.tsx` | Added keyboard handler, role, tabIndex |
+| `portal/src/components/documents/AIVerification.tsx` | Fixed label associations |
+| `portal/src/components/documents/FilePreview.tsx` | Fixed label associations |
+| `portal/src/components/documents/DocumentTypeSelector.tsx` | Removed invalid role |
+| `portal/src/components/checklists/ChecklistItem.tsx` | Fixed label association |
+| `portal/src/components/family/FamilyView.tsx` | Fixed 7 label associations, used fieldset |
+| `portal/src/components/messages/NoteCard.tsx` | Replaced autoFocus with ref pattern |
+| `portal/src/components/messages/NoteForm.tsx` | Replaced autoFocus with ref pattern |
+| `portal/src/components/research/GenerateReportModal.tsx` | Added role="presentation" |
+| `portal/src/components/schengen/TripForm.tsx` | Fixed label association |
+| `portal/src/components/shared/Modal.tsx` | Added role="presentation" to overlays |
+| `portal/src/components/tasks/TaskBoard.tsx` | Added tabIndex to listbox |
+| `portal/src/components/tasks/TaskChecklist.tsx` | Replaced autoFocus with ref pattern |
+| `portal/src/components/tasks/TaskDetail.tsx` | Added keyboard handler, replaced autoFocus |
+| `portal/src/components/tasks/TaskForm.tsx` | Fixed label, replaced autoFocus (2 forms) |
+| `portal/src/components/tasks/TaskList.tsx` | Added keyboard handler, role, tabIndex |
 
 ---
 
@@ -124,51 +110,56 @@ npm run build  # Successful
 
 **Current Status:**
 - **Type Check:** 0 errors
-- **Lint:** 1 error fixed (ARIA role), warnings for accessibility and import ordering
+- **Lint:** 0 jsx-a11y warnings (all 37 fixed)
 - **Build:** Successful
 
 ---
 
-## 5. API Endpoints Added
+## 5. Previous Session Summary (Earlier Today)
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/profile/reset` | POST | Reset all user portal data (requires confirmation) |
+### Profile Reset Feature
+- Added complete "Reset Visa Profile" functionality
+- REST endpoint `POST /profile/reset` with confirmation
+- Comprehensive data deletion across all tables
+
+### Automatic Task Due Date Calculation
+- Added `days_offset` to 50+ task templates
+- Auto-recalculate when move date changes
+
+### Move Date Certainty Setting
+- New field with options: fixed, anticipated, flexible
+
+### Schengen Tracker Improvements
+- Added error display for API failures
+
+### Critical Bug Fix
+- Fixed table names using FRAMT_Portal_Schema::get_table()
 
 ---
 
 ## 6. Known Issues / Next Steps
 
+### Lower Priority: Dual Profile Storage Migration
+Profile data currently exists in both:
+1. User meta (`fra_*` prefixed keys) - main source
+2. Projects table (`visa_type`, `target_move_date`)
+
+A future migration could consolidate this to ensure consistency.
+
 ### Schengen Trip Edit/Delete
-User reported issues with editing trip dates and deleting trips. Error display was added to help debug, but root cause may need further investigation if issue persists. Check browser console for specific error messages.
+User reported issues with editing trip dates and deleting trips. Error display was added to help debug. Check browser console for specific error messages.
 
 ### Potential Improvements
 - Add loading spinner during reset operation
 - Consider adding "undo" grace period for reset
-- Profile reset could log an activity entry before clearing (for admin tracking)
+- Profile reset could log an activity entry before clearing
 
 ---
 
 ## 7. Commit Summary (This Session)
 
-1. `Add profile reset feature and fix ARIA accessibility`
-2. `Fix profile reset to delete all user data`
-3. `Add Schengen error display and include tracker data in reset`
-4. `Fix profile reset for move date and research reports`
-5. `Fix profile reset: add activity deletion and direct SQL for move date`
-6. `Fix profile reset table names - use schema helper`
-
----
-
-## 8. Previous Session Summary
-
-### Comprehensive Codebase Review
-- Reviewed 7 major areas, identified 216 issues
-- Implemented security fixes (XSS prevention, permission callbacks)
-- Fixed TypeScript naming conventions
-- Added React Query staleTime values
-- Added ESLint plugins for React, accessibility, imports
-- Added JSDoc to theme functions
+1. `Fix all accessibility warnings (37 issues resolved)`
+2. `Add optimistic updates to profile hooks`
 
 ---
 
