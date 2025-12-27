@@ -25,7 +25,7 @@ class R2F_Schengen_Schema {
 	 *
 	 * @var string
 	 */
-	const DB_VERSION = '1.0.0';
+	const DB_VERSION = '1.1.0';
 
 	/**
 	 * Table definitions.
@@ -34,7 +34,8 @@ class R2F_Schengen_Schema {
 	 * @var array
 	 */
 	private static $tables = array(
-		'trips' => 'fra_schengen_trips', // Keep same name for backward compatibility.
+		'trips'        => 'fra_schengen_trips', // Keep same name for backward compatibility.
+		'location_log' => 'fra_schengen_location_log',
 	);
 
 	/**
@@ -65,7 +66,7 @@ class R2F_Schengen_Schema {
 
 		$charset_collate = $wpdb->get_charset_collate();
 
-		// Schengen trips table.
+		// Schengen trips table (with location columns added in v1.1.0).
 		$table_trips = self::get_table( 'trips' );
 		$sql_trips = "CREATE TABLE $table_trips (
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -75,6 +76,11 @@ class R2F_Schengen_Schema {
 			country varchar(100) NOT NULL,
 			category varchar(20) DEFAULT 'personal',
 			notes text,
+			location_source varchar(20) DEFAULT 'manual',
+			location_lat decimal(10,8) DEFAULT NULL,
+			location_lng decimal(11,8) DEFAULT NULL,
+			location_accuracy float DEFAULT NULL,
+			location_timestamp datetime DEFAULT NULL,
 			created_at datetime DEFAULT CURRENT_TIMESTAMP,
 			updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 			PRIMARY KEY (id),
@@ -85,6 +91,30 @@ class R2F_Schengen_Schema {
 
 		dbDelta( $sql_trips );
 
+		// Location log table (added in v1.1.0 for location history tracking).
+		$table_location_log = self::get_table( 'location_log' );
+		$sql_location_log = "CREATE TABLE $table_location_log (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			user_id bigint(20) unsigned NOT NULL,
+			lat decimal(10,8) NOT NULL,
+			lng decimal(11,8) NOT NULL,
+			accuracy float DEFAULT NULL,
+			country_code varchar(2) DEFAULT NULL,
+			country_name varchar(100) DEFAULT NULL,
+			city varchar(100) DEFAULT NULL,
+			is_schengen tinyint(1) DEFAULT 0,
+			source varchar(20) DEFAULT 'browser',
+			recorded_at datetime DEFAULT CURRENT_TIMESTAMP,
+			PRIMARY KEY (id),
+			KEY idx_user_date (user_id, recorded_at),
+			KEY idx_user_country (user_id, country_code)
+		) $charset_collate;";
+
+		dbDelta( $sql_location_log );
+
+		// Run migrations for existing installations.
+		self::maybe_migrate();
+
 		// Store database version.
 		update_option( 'r2f_schengen_db_version', self::DB_VERSION );
 
@@ -94,6 +124,41 @@ class R2F_Schengen_Schema {
 		 * @param string $db_version The database version.
 		 */
 		do_action( 'r2f_schengen_tables_created', self::DB_VERSION );
+	}
+
+	/**
+	 * Run database migrations if needed.
+	 */
+	private static function maybe_migrate() {
+		global $wpdb;
+
+		$current_version = get_option( 'r2f_schengen_db_version', '1.0.0' );
+
+		// Migration from 1.0.0 to 1.1.0: Add location columns to trips table.
+		if ( version_compare( $current_version, '1.1.0', '<' ) ) {
+			$table_trips = self::get_table( 'trips' );
+
+			// Check if location_source column exists.
+			$column_exists = $wpdb->get_results(
+				$wpdb->prepare(
+					"SHOW COLUMNS FROM $table_trips LIKE %s",
+					'location_source'
+				)
+			);
+
+			if ( empty( $column_exists ) ) {
+				// Add location columns.
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$wpdb->query(
+					"ALTER TABLE $table_trips
+					ADD COLUMN location_source varchar(20) DEFAULT 'manual' AFTER notes,
+					ADD COLUMN location_lat decimal(10,8) DEFAULT NULL AFTER location_source,
+					ADD COLUMN location_lng decimal(11,8) DEFAULT NULL AFTER location_lat,
+					ADD COLUMN location_accuracy float DEFAULT NULL AFTER location_lng,
+					ADD COLUMN location_timestamp datetime DEFAULT NULL AFTER location_accuracy"
+				);
+			}
+		}
 	}
 
 	/**
@@ -128,10 +193,13 @@ class R2F_Schengen_Schema {
 			return;
 		}
 
-		$table = self::get_table( 'trips' );
+		$table_trips        = self::get_table( 'trips' );
+		$table_location_log = self::get_table( 'location_log' );
 
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$wpdb->query( "DROP TABLE IF EXISTS $table" );
+		$wpdb->query( "DROP TABLE IF EXISTS $table_trips" );
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$wpdb->query( "DROP TABLE IF EXISTS $table_location_log" );
 
 		// Remove options.
 		delete_option( 'r2f_schengen_version' );

@@ -1,8 +1,8 @@
 # Session Handoff Document
 
 **Date:** December 27, 2025
-**Branch:** `claude/add-github-sync-self-update-QtcLj`
-**Last Commit:** `Fix portal to read ?view= parameter from URL on initial load`
+**Branch:** `claude/tracker-plugin-dev-1iVyB`
+**Last Commit:** Pending (Phase 1.1 complete)
 
 ---
 
@@ -16,18 +16,13 @@
 | Member Tools Plugin | v2.1.0 | Active |
 | React Portal | v2.1.0 | Active |
 | Theme | v1.2.4 | Active |
-| **Schengen Tracker Plugin** | **v1.0.0** | **Installed & Active** |
+| **Schengen Tracker Plugin** | **v1.1.0** | **Installed & Active** |
 
 The React portal is fully functional with 40+ REST API endpoints. All major features are complete including profile management, task tracking, document generation, checklists, AI-powered guides, Schengen day tracking, and profile reset functionality.
 
-### Schengen Tracker: Phase 0 Complete
+### Schengen Tracker: Phase 1.1 Complete
 
-The Schengen Tracker has been extracted into a standalone plugin (`relo2france-schengen-tracker`) and is now installed and active on the production site.
-
-**Architecture:** Option C (Hybrid - Standalone Plugin + Portal Integration)
-- Works independently via `[schengen_tracker]` shortcode
-- Integrates with Member Tools Portal at `/portal/?view=schengen`
-- Premium gating via MemberPress (like Family Members feature)
+Browser Geolocation integration has been implemented. Users can now check in their current location for Schengen tracking.
 
 **Plan Document:** `SCHENGEN-MONAEO-PARITY-PLAN.md`
 
@@ -35,85 +30,83 @@ The Schengen Tracker has been extracted into a standalone plugin (`relo2france-s
 
 ## 2. What We Completed This Session
 
-### 2.0 Schengen Tracker Plugin Extraction (Phase 0)
+### Phase 1.1: Browser Geolocation Integration
 
-Extracted the Schengen Tracker into a standalone WordPress plugin:
+#### Database Schema Updates
+- Updated `class-r2f-schengen-schema.php`:
+  - Added location columns to trips table (`location_source`, `location_lat`, `location_lng`, `location_accuracy`, `location_timestamp`)
+  - Created new `wp_fra_schengen_location_log` table for location history
+  - Added migration support for existing installations
+  - Bumped DB version to 1.1.0
 
-**New Plugin:** `relo2france-schengen-tracker/`
+#### PHP Backend - Location Class
+Created `class-r2f-schengen-location.php` with:
+- REST API endpoints:
+  - `POST /schengen/location` - Store location check-in
+  - `GET /schengen/location/history` - Get location history
+  - `GET /schengen/location/today` - Get today's status
+  - `POST /schengen/location/geocode` - Reverse geocode coordinates
+  - `DELETE /schengen/location/{id}` - Delete location entry
+  - `POST /schengen/location/clear` - Clear all location history
+  - `GET/PUT /schengen/location/settings` - Location settings
+- Reverse geocoding via OpenStreetMap Nominatim (free, no API key)
+- Schengen zone detection by country code
+- Location history management with privacy controls
 
-| File | Purpose |
-|------|---------|
-| `relo2france-schengen-tracker.php` | Main plugin file with autoloader, activation hooks |
-| `includes/class-r2f-schengen-core.php` | Core singleton, admin menu, shortcode |
-| `includes/class-r2f-schengen-schema.php` | Database schema (reuses `fra_schengen_trips` table) |
-| `includes/class-r2f-schengen-premium.php` | Premium gating (like Family Members pattern) |
-| `includes/class-r2f-schengen-api.php` | Full REST API (`r2f-schengen/v1/` namespace) |
-| `includes/class-r2f-schengen-alerts.php` | Daily cron email alerts at 8am UTC |
-| `templates/dashboard.php` | Standalone frontend template |
-| `assets/css/schengen-frontend.css` | Modern dashboard styling |
-| `assets/js/schengen-frontend.js` | jQuery-based trip management |
+#### React Frontend - Types & API
+- Added location types to `types/index.ts`:
+  - `SchengenLocation`, `LocationSource`, `LocationStoreResponse`
+  - `LocationHistoryResponse`, `LocationTodayStatus`, `GeocodeResult`, `LocationSettings`
+- Added API methods to `api/client.ts`:
+  - `storeLocation`, `getLocationHistory`, `getTodayStatus`
+  - `geocode`, `deleteLocation`, `clearLocationHistory`
+  - `getLocationSettings`, `updateLocationSettings`
 
-**Member Tools Integration:**
-- Added `includes/class-framt-schengen-bridge.php` - Bridges MemberPress membership checks
-- Bridge provides `r2f_schengen_premium_check` filter for premium access
+#### React Frontend - Hooks
+- Created `hooks/useGeolocation.ts`:
+  - Browser Geolocation API wrapper
+  - Permission status tracking
+  - Error handling with user-friendly messages
+  - High accuracy positioning with timeout/cache options
+- Added hooks to `hooks/useApi.ts`:
+  - `useSchengenLocationHistory`, `useSchengenLocationToday`
+  - `useSchengenLocationSettings`, `useStoreSchengenLocation`
+  - `useDeleteSchengenLocation`, `useClearSchengenLocationHistory`
+  - `useUpdateSchengenLocationSettings`, `useGeocodeLocation`
 
-**Premium Gating Flow:**
-1. User meta override (`r2f_schengen_enabled` = '1' or '0')
-2. Filter hook (`r2f_schengen_premium_check`) - Member Tools hooks here
-3. Global setting fallback (`r2f_schengen_global_enabled`)
-
-### 2.1 GitHub Sync Self-Update Fix
-
-Added GitHub Sync to its own managed plugins list so it can update itself:
-
-```php
-'france-relocation-github-sync' => array(
-    'file' => 'france-relocation-github-sync/france-relocation-github-sync.php',
-    'name' => 'France Relocation GitHub Sync',
-),
-```
-
-**Why this matters:** Previously, when new plugins were added to GitHub Sync, the user couldn't see them until manually editing the plugin file. Now GitHub Sync can update itself to pick up new plugin entries.
-
-### 2.2 Portal URL Routing Fix
-
-Fixed the portal to read the `?view=` parameter from the URL on initial page load.
-
-**Problem:** Direct links like `https://relo2france.com/portal/?view=schengen` would always show the dashboard instead of the requested view.
-
-**Solution:** Updated `portal/src/store/index.ts` to read the initial view from `URLSearchParams`:
-
-```typescript
-const getInitialView = (): string => {
-  if (typeof window !== 'undefined') {
-    const params = new URLSearchParams(window.location.search);
-    const view = params.get('view');
-    if (view) {
-      return view;
-    }
-  }
-  return 'dashboard';
-};
-```
-
-Now direct links to any portal view work correctly.
+#### React Frontend - Components
+- Created `components/schengen/LocationTracker.tsx`:
+  - Full view with check-in button, status display, history modal
+  - Compact widget view for dashboard integration
+  - Location history viewer with delete functionality
+  - Clear all history with confirmation modal
+  - Permission denied/unsupported browser warnings
+  - Schengen zone indicator for locations
+- Integrated into `SchengenDashboard.tsx`:
+  - Added "Location" tab in tab navigation
+  - Added compact LocationTracker widget in main dashboard
 
 ---
 
 ## 3. Files Modified This Session
 
-### New Plugin Files
+### New Files
 | File | Purpose |
 |------|---------|
-| `relo2france-schengen-tracker/*` | Complete standalone Schengen Tracker plugin (9 files) |
-| `france-relocation-member-tools/includes/class-framt-schengen-bridge.php` | MemberPress bridge |
+| `relo2france-schengen-tracker/includes/class-r2f-schengen-location.php` | Location handling class |
+| `france-relocation-member-tools/portal/src/hooks/useGeolocation.ts` | Browser geolocation hook |
+| `france-relocation-member-tools/portal/src/components/schengen/LocationTracker.tsx` | Location check-in component |
 
 ### Modified Files
 | File | Changes |
 |------|---------|
-| `france-relocation-github-sync/france-relocation-github-sync.php` | Added GitHub Sync and Schengen Tracker to managed plugins |
-| `france-relocation-member-tools/portal/src/store/index.ts` | Read `?view=` parameter on initial load |
-| `france-relocation-member-tools/france-relocation-member-tools.php` | Load Schengen Bridge class |
+| `relo2france-schengen-tracker/relo2france-schengen-tracker.php` | Version bump to 1.1.0 |
+| `relo2france-schengen-tracker/includes/class-r2f-schengen-core.php` | Added location handler, version 1.1.0 |
+| `relo2france-schengen-tracker/includes/class-r2f-schengen-schema.php` | Location columns, location_log table, migrations |
+| `france-relocation-member-tools/portal/src/types/index.ts` | Location types |
+| `france-relocation-member-tools/portal/src/api/client.ts` | Location API methods |
+| `france-relocation-member-tools/portal/src/hooks/useApi.ts` | Location hooks |
+| `france-relocation-member-tools/portal/src/components/schengen/SchengenDashboard.tsx` | Location tab + compact widget |
 
 ---
 
@@ -128,8 +121,8 @@ npm run build  # Successful
 **Current Status:**
 - **Type Check:** 0 errors
 - **Build:** Successful
-- **Schengen Tracker:** Installed and active on production
-- **Portal URL routing:** Working (direct links now work)
+- **Schengen Tracker:** v1.1.0 with location tracking
+- **Portal:** Built and ready
 
 ---
 
@@ -140,7 +133,8 @@ npm run build  # Successful
 | Phase | Description | Status |
 |-------|-------------|--------|
 | **0** | Plugin Extraction & Premium Setup | **Complete** |
-| **1** | Browser Geolocation + Smart Detection | Next |
+| **1.1** | Browser Geolocation Integration | **Complete** |
+| **1.2** | Smart Location Detection | Next |
 | **2** | Google/Outlook Calendar Sync | Pending |
 | **3** | Multi-Jurisdiction (US States, etc.) | Pending |
 | **4** | Professional PDF Reports | Pending |
@@ -148,60 +142,50 @@ npm run build  # Successful
 | **6** | CSV/ICS Import + PWA | Pending |
 | **7** | AI Suggestions + Family + Analytics | Pending |
 
-### Phase 1 Overview: Browser Geolocation + Smart Detection
-- Browser Geolocation API for automatic location detection
-- "Check In" button to record current location
-- Smart country detection from coordinates
-- Location history tracking
-
-### What We Can't Replicate from Monaeo
-- True background GPS (requires native mobile app)
-- Credit card import (requires Plaid + PCI compliance)
-- "Audit-certified" claims (requires legal partnership)
-
-### Unique "Plus" Features (Beyond Monaeo)
-- "What If" planning tool with suggestions
-- AI-powered trip recommendations
-- Family/group tracking
-- Integration with France relocation workflow
-- Analytics dashboard
+### Phase 1.2 Overview: Smart Location Detection
+- Timezone change detection
+- Language/locale change detection
+- IP-based country detection (fallback)
+- Daily check-in reminders
 
 ---
 
-## 6. Known Issues / Notes
+## 6. API Endpoints Added
 
-### GitHub Sync Managed Plugins
-The current managed plugins list is:
-1. France Relocation Assistant
-2. France Relocation Member Tools
-3. France Relocation GitHub Sync (self-updates)
-4. Relo2France Schengen Tracker
+Namespace: `/wp-json/r2f-schengen/v1/`
 
-### Portal Direct Links
-All portal views now support direct linking:
-- `/portal/?view=dashboard`
-- `/portal/?view=schengen`
-- `/portal/?view=profile`
-- etc.
-
-### Lower Priority: Dual Profile Storage Migration
-Profile data currently exists in both user meta and projects table. A future migration could consolidate this.
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/location` | POST | Store location check-in |
+| `/location/history` | GET | Get location history |
+| `/location/today` | GET | Get today's check-in status |
+| `/location/geocode` | POST | Reverse geocode coordinates |
+| `/location/{id}` | DELETE | Delete location entry |
+| `/location/clear` | POST | Clear all location history |
+| `/location/settings` | GET/PUT | Get/update location settings |
 
 ---
 
-## 7. Commit Summary (This Session)
+## 7. Testing Notes
 
-1. `Extract Schengen Tracker to standalone plugin (Phase 0)`
-2. `Merge main and resolve HANDOFF.md conflict`
-3. `Add GitHub Sync to its own managed plugins list for self-updates`
-4. `Fix portal to read ?view= parameter from URL on initial load`
+To test the new location features:
+1. Navigate to the portal's Schengen Tracker (`/portal/?view=schengen`)
+2. Click the "Location" tab to access full location tracking
+3. Use the compact check-in widget on the main dashboard
+4. Browser will prompt for location permission
+5. Check-in records should appear in history
+
+Database migrations run automatically when plugin is activated or admin page is visited.
 
 ---
 
 ## 8. To Resume Next Session
 
-1. **Merge pending PR:** Branch `claude/add-github-sync-self-update-QtcLj` has the URL routing fix
-2. **Continue with Phase 1:** Browser Geolocation + Smart Detection
+1. **Commit and push** the Phase 1.1 changes
+2. **Continue with Phase 1.2:** Smart Location Detection
+   - Timezone change detection
+   - Daily reminder notifications
+   - Auto-detect location changes
 3. **Reference:** `SCHENGEN-MONAEO-PARITY-PLAN.md` for detailed implementation specs
 
 ---

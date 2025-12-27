@@ -92,6 +92,10 @@ export const queryKeys = {
   schengenSummary: ['schengenSummary'] as const,
   schengenSettings: ['schengenSettings'] as const,
   schengenFeatureStatus: ['schengenFeatureStatus'] as const,
+  // Schengen location tracking (Phase 1)
+  schengenLocationHistory: ['schengenLocationHistory'] as const,
+  schengenLocationToday: ['schengenLocationToday'] as const,
+  schengenLocationSettings: ['schengenLocationSettings'] as const,
 };
 
 // Dashboard hook
@@ -1060,5 +1064,87 @@ export function useGenerateSchengenReport() {
 export function useTestSchengenAlert() {
   return useMutation({
     mutationFn: schengenApi.testAlert,
+  });
+}
+
+// ============================================
+// Schengen Location Hooks (Phase 1)
+// ============================================
+
+export function useSchengenLocationHistory(options?: { limit?: number; offset?: number }) {
+  return useQuery({
+    queryKey: queryKeys.schengenLocationHistory,
+    queryFn: () => schengenApi.getLocationHistory(options),
+    staleTime: STALE_TIME.DEFAULT, // 30 seconds
+  });
+}
+
+export function useSchengenLocationToday() {
+  return useQuery({
+    queryKey: queryKeys.schengenLocationToday,
+    queryFn: schengenApi.getTodayStatus,
+    staleTime: STALE_TIME.DEFAULT, // 30 seconds
+  });
+}
+
+export function useSchengenLocationSettings() {
+  return useQuery({
+    queryKey: queryKeys.schengenLocationSettings,
+    queryFn: schengenApi.getLocationSettings,
+    staleTime: STALE_TIME.MEDIUM, // 5 minutes
+  });
+}
+
+export function useStoreSchengenLocation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: schengenApi.storeLocation,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.schengenLocationHistory });
+      queryClient.invalidateQueries({ queryKey: queryKeys.schengenLocationToday });
+    },
+  });
+}
+
+export function useDeleteSchengenLocation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: schengenApi.deleteLocation,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.schengenLocationHistory });
+      queryClient.invalidateQueries({ queryKey: queryKeys.schengenLocationToday });
+    },
+  });
+}
+
+export function useClearSchengenLocationHistory() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: schengenApi.clearLocationHistory,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.schengenLocationHistory });
+      queryClient.invalidateQueries({ queryKey: queryKeys.schengenLocationToday });
+    },
+  });
+}
+
+export function useUpdateSchengenLocationSettings() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: schengenApi.updateLocationSettings,
+    onSuccess: (updatedSettings) => {
+      queryClient.setQueryData(queryKeys.schengenLocationSettings, updatedSettings);
+    },
+  });
+}
+
+export function useGeocodeLocation() {
+  return useMutation({
+    mutationFn: ({ lat, lng }: { lat: number; lng: number }) =>
+      schengenApi.geocode(lat, lng),
   });
 }

@@ -23,6 +23,7 @@ import {
   Send,
   Loader2,
   CheckCircle,
+  MapPin,
 } from 'lucide-react';
 import type { SchengenTrip } from '@/types';
 import { useSchengenStore } from './useSchengenStore';
@@ -38,9 +39,10 @@ import TripList from './TripList';
 import PlanningTool from './PlanningTool';
 import CalendarView from './CalendarView';
 import ReportExport from './ReportExport';
+import LocationTracker from './LocationTracker';
 import Modal from '@/components/shared/Modal';
 
-type ViewTab = 'trips' | 'calendar' | 'planning' | 'settings';
+type ViewTab = 'trips' | 'calendar' | 'planning' | 'location' | 'settings';
 
 export default function SchengenDashboard() {
   const { trips, settings, isLoaded, addTrip, updateTrip, deleteTrip, updateSettings } = useSchengenStore();
@@ -274,6 +276,9 @@ export default function SchengenDashboard() {
         </div>
       </div>
 
+      {/* Quick location check-in widget */}
+      <LocationTracker compact />
+
       {/* Warning banners */}
       {summary.status === 'warning' && (
         <div className="flex items-center gap-3 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
@@ -369,6 +374,20 @@ export default function SchengenDashboard() {
             </span>
           </button>
           <button
+            onClick={() => setActiveTab('location')}
+            className={clsx(
+              'pb-3 px-1 border-b-2 font-medium text-sm transition-colors',
+              activeTab === 'location'
+                ? 'border-primary-600 text-primary-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            )}
+          >
+            <span className="flex items-center gap-2">
+              <MapPin className="w-4 h-4" aria-hidden="true" />
+              Location
+            </span>
+          </button>
+          <button
             onClick={() => setActiveTab('settings')}
             className={clsx(
               'pb-3 px-1 border-b-2 font-medium text-sm transition-colors',
@@ -429,6 +448,10 @@ export default function SchengenDashboard() {
             upgradeUrl={featureStatus?.upgradeUrl}
           />
         )
+      )}
+
+      {activeTab === 'location' && (
+        <LocationTracker />
       )}
 
       {activeTab === 'settings' && (

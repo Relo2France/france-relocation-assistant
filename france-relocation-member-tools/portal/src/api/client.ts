@@ -49,6 +49,12 @@ import type {
   FamilyMember,
   FamilyMembersResponse,
   FamilyFeatureStatus,
+  LocationSource,
+  LocationStoreResponse,
+  LocationHistoryResponse,
+  LocationTodayStatus,
+  GeocodeResult,
+  LocationSettings,
 } from '@/types';
 
 /**
@@ -790,5 +796,63 @@ export const schengenApi = {
   testAlert: () =>
     apiFetch<SchengenTestAlertResult>('/schengen/test-alert', {
       method: 'POST',
+    }),
+
+  // ============================================
+  // Location Tracking (Phase 1)
+  // ============================================
+
+  // Store current location (check-in)
+  storeLocation: (data: { lat: number; lng: number; accuracy?: number; source?: LocationSource }) =>
+    apiFetch<LocationStoreResponse>('/schengen/location', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // Get location history
+  getLocationHistory: (options?: { limit?: number; offset?: number }) =>
+    apiFetch<LocationHistoryResponse>('/schengen/location/history', {
+      method: 'GET',
+      ...(options && {
+        headers: {
+          'X-Query-Params': JSON.stringify(options),
+        },
+      }),
+    }),
+
+  // Get today's location status
+  getTodayStatus: () => apiFetch<LocationTodayStatus>('/schengen/location/today'),
+
+  // Reverse geocode coordinates
+  geocode: (lat: number, lng: number) =>
+    apiFetch<GeocodeResult>('/schengen/location/geocode', {
+      method: 'POST',
+      body: JSON.stringify({ lat, lng }),
+    }),
+
+  // Delete a location entry
+  deleteLocation: (id: number) =>
+    apiFetch<{ deleted: boolean; id: number }>(`/schengen/location/${id}`, {
+      method: 'DELETE',
+    }),
+
+  // Clear all location history
+  clearLocationHistory: () =>
+    apiFetch<{ cleared: boolean; message: string }>('/schengen/location/clear', {
+      method: 'POST',
+    }),
+
+  // Get location settings
+  getLocationSettings: () => apiFetch<LocationSettings>('/schengen/location/settings'),
+
+  // Update location settings
+  updateLocationSettings: (data: Partial<LocationSettings>) =>
+    apiFetch<LocationSettings>('/schengen/location/settings', {
+      method: 'PUT',
+      body: JSON.stringify({
+        trackingEnabled: data.tracking_enabled,
+        dailyReminder: data.daily_reminder,
+        autoDetect: data.auto_detect,
+      }),
     }),
 };
