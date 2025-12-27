@@ -905,6 +905,62 @@ export interface SchengenTestAlertResult {
 }
 
 // ============================================
+// Schengen Location Types (Phase 1)
+// ============================================
+
+export type LocationSource = 'browser' | 'manual' | 'calendar' | 'checkin';
+
+export interface SchengenLocation {
+  id: number;
+  lat: number;
+  lng: number;
+  accuracy: number | null;
+  countryCode: string | null;
+  countryName: string | null;
+  city: string | null;
+  isSchengen: boolean;
+  source: LocationSource;
+  recordedAt: string;
+}
+
+export interface LocationStoreResponse {
+  success: boolean;
+  location: SchengenLocation;
+  message: string;
+}
+
+export interface LocationHistoryResponse {
+  locations: SchengenLocation[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface LocationTodayStatus {
+  hasCheckedInToday: boolean;
+  todayLocations: SchengenLocation[];
+  lastLocation: SchengenLocation | null;
+  reminderEnabled: boolean;
+  trackingEnabled: boolean;
+}
+
+export interface GeocodeResult {
+  country_code: string | null;
+  country_name: string | null;
+  city: string | null;
+  state: string | null;
+  display_name: string | null;
+  is_schengen: boolean;
+  error?: string;
+}
+
+export interface LocationSettings {
+  tracking_enabled: boolean;
+  daily_reminder: boolean;
+  auto_detect: boolean;
+}
+
+// ============================================
 // Family Members Types
 // ============================================
 
