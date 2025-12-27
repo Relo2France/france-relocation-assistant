@@ -5931,9 +5931,32 @@ Focus on practical advice while being careful not to state incorrect facts. When
             )
         );
 
+        // Delete WordPress posts of type fra_document owned by this user
+        $document_posts = get_posts(
+            array(
+                'post_type'   => 'fra_document',
+                'post_status' => 'any',
+                'author'      => $user_id,
+                'numberposts' => -1,
+                'fields'      => 'ids',
+            )
+        );
+        foreach ( $document_posts as $post_id ) {
+            wp_delete_post( $post_id, true );
+        }
+
+        // Delete user's uploads folder
+        $upload_dir  = wp_upload_dir();
+        $portal_dir  = $upload_dir['basedir'] . '/fra-portal/' . $user_id;
+        if ( is_dir( $portal_dir ) ) {
+            $this->delete_directory_recursive( $portal_dir );
+        }
+
         // Clear any cached data
         wp_cache_delete( "framt_profile_{$user_id}", 'framt' );
         wp_cache_delete( "framt_project_{$user_id}", 'framt' );
+        wp_cache_delete( $user_id, 'user_meta' );
+        clean_user_cache( $user_id );
 
         return rest_ensure_response(
             array(
@@ -5941,6 +5964,30 @@ Focus on practical advice while being careful not to state incorrect facts. When
                 'message' => 'Your profile has been reset. You can now start fresh as if it were your first visit.',
             )
         );
+    }
+
+    /**
+     * Recursively delete a directory and its contents
+     *
+     * @param string $dir Directory path
+     * @return bool
+     */
+    private function delete_directory_recursive( $dir ) {
+        if ( ! is_dir( $dir ) ) {
+            return false;
+        }
+
+        $files = array_diff( scandir( $dir ), array( '.', '..' ) );
+        foreach ( $files as $file ) {
+            $path = $dir . '/' . $file;
+            if ( is_dir( $path ) ) {
+                $this->delete_directory_recursive( $path );
+            } else {
+                wp_delete_file( $path );
+            }
+        }
+
+        return rmdir( $dir );
     }
 
     /**
