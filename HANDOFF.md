@@ -2,7 +2,7 @@
 
 **Date:** December 27, 2025
 **Branch:** `claude/continue-from-handoff-1zH4l`
-**Last Commit:** `Comprehensive code review and fixes for Schengen tracker`
+**Last Commit:** `Technical debt cleanup: type-safe query keys and API improvements`
 
 ---
 
@@ -92,36 +92,96 @@ Moved `useVirtualization` hook to separate file to fix react-refresh warning. Re
 
 Fixed lint scripts to use `npx eslint` to avoid conflict between global ESLint v9 and local ESLint v8 (different config formats).
 
+### 2.7 React Query Cache Key Type Safety
+
+**Files Modified:**
+- `portal/src/types/index.ts` - Added `TaskFilters`, `FileFilters`, `NoteFilters` interfaces
+- `portal/src/hooks/useApi.ts` - Updated query keys and hooks to use typed filters
+- `portal/src/api/client.ts` - Updated API functions to use typed filters
+
+**Problem:** Query keys used generic `object` type for filters, which lost type safety.
+
+**Fix:** Added proper filter type interfaces:
+```typescript
+// types/index.ts
+export interface TaskFilters {
+  stage?: string;
+  status?: string;
+  task_type?: string;
+}
+
+export interface FileFilters {
+  category?: FileCategory;
+  file_type?: string;
+}
+
+export interface NoteFilters {
+  task_id?: number;
+  pinned?: boolean;
+}
+```
+
+### 2.8 API Client Type Safety
+
+**File:** `portal/src/api/client.ts`
+
+Added `apiFormDataFetch<T>()` helper function to properly type FormData uploads instead of using `as` casts:
+```typescript
+async function apiFormDataFetch<T>(
+  endpoint: string,
+  formData: FormData,
+  signal?: AbortSignal
+): Promise<T>
+```
+
+Updated `filesApi.upload` and `verificationApi.verifyFile` to use this helper.
+
 ---
 
 ## 3. Known Technical Debt
 
-### Dual Profile Storage (Not Fixed - Future Session)
+### Dual Profile Storage (Analyzed - Requires Migration)
 
-The profile system uses two storage mechanisms that can get out of sync:
+**STATUS:** Full analysis complete. Requires careful migration in dedicated session.
 
-**User Meta Storage (`fra_*` prefix):**
-```php
-get_user_meta($user_id, 'fra_legal_first_name', true);
-```
+The profile system uses two storage mechanisms that are NOT synchronized:
 
-**Database Table Storage (`wp_framt_profiles`):**
-```sql
-profile_data longtext NOT NULL,  -- JSON blob
-```
+**User Meta Storage (`fra_*` prefix) - ACTIVE:**
+- Used by REST API endpoints (GET/PUT /profile)
+- Used by Dashboard display
+- 33 fields with `fra_` prefix
 
-**Recommended Fix (Future Session):**
-1. Consolidate to user meta only (WordPress-native, queryable)
-2. Remove or deprecate the database table
-3. Migration script to ensure no data loss
+**Database Table Storage (`wp_framt_profiles`) - ORPHANED:**
+- Only used by document generation and guide chat
+- Stores JSON blob in `profile_data` column
+- NOT synced with user meta
 
-### Minor Issues Noted (Low Priority)
+**Critical Finding:** The `framt_profile_updated` action hook is defined but NEVER fires anywhere in the codebase. This breaks the intended sync to the main plugin.
 
-From code review:
-- Nonce-in-URL for downloads is standard WordPress pattern (not a vulnerability)
-- Some type assertions in API client could be tightened
-- Cache key complexity in React Query could be simplified
-- Error boundaries should be added for Schengen components
+**Data Flow Issues:**
+1. REST API updates → user meta only → database table becomes stale
+2. Document generation → database table only → user meta becomes stale
+3. Dashboard reads user meta → shows stale data after document generation
+
+**Files Affected:**
+| File | Storage Used |
+|------|--------------|
+| `class-framt-portal-api.php:2644-2810` | User Meta |
+| `class-framt-dashboard.php:90-120` | User Meta |
+| `class-framt-profile.php:466-733` | Both (different methods) |
+| `france-relocation-member-tools.php:2006-2111` | Database Table |
+
+**Recommended Migration (Future Session):**
+1. Migrate document/guide generation to use user meta
+2. Add `do_action('framt_profile_updated', ...)` after profile updates
+3. Remove `wp_framt_profiles` table (or deprecate)
+4. Consider caching profile data (33 separate meta calls per read)
+
+### Previously Noted Issues (Now Resolved)
+
+~~Cache key complexity in React Query~~ → Fixed with typed filter interfaces
+~~Some type assertions in API client~~ → Fixed with apiFormDataFetch helper
+~~Error boundaries for Schengen~~ → Already exist at app level in App.tsx
 
 ---
 
@@ -146,7 +206,9 @@ From code review:
 | `portal/src/components/documents/FileGrid.tsx` | Updated imports |
 | `portal/src/components/tasks/TaskList.tsx` | Updated imports |
 | `portal/src/components/shared/VirtualList.tsx` | Removed hook export |
-| `portal/src/hooks/useApi.ts` | Guard clause for ticketId |
+| `portal/src/hooks/useApi.ts` | Guard clause + typed filter imports |
+| `portal/src/api/client.ts` | FormData helper + typed filters |
+| `portal/src/types/index.ts` | Added filter type interfaces |
 | `includes/class-framt-schengen-api.php` | Country enum + threshold validation |
 
 ---
@@ -181,6 +243,7 @@ npm run lint:strict # Zero warnings
 
 1. `Fix ESLint scripts to use local version via npx`
 2. `Comprehensive code review and fixes for Schengen tracker`
+3. `Technical debt cleanup: type-safe query keys and API improvements`
 
 ---
 

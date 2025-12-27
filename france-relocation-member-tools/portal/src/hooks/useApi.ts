@@ -36,6 +36,9 @@ import type {
   DashboardData,
   SchengenTrip,
   SchengenAlertSettings,
+  TaskFilters,
+  FileFilters,
+  NoteFilters,
 } from '@/types';
 
 // Query keys
@@ -43,15 +46,15 @@ export const queryKeys = {
   dashboard: ['dashboard'] as const,
   projects: ['projects'] as const,
   project: (id: number) => ['project', id] as const,
-  tasks: (projectId: number, filters?: object) => ['tasks', projectId, filters] as const,
+  tasks: (projectId: number, filters?: TaskFilters) => ['tasks', projectId, filters] as const,
   task: (id: number) => ['task', id] as const,
   taskChecklist: (taskId: number) => ['taskChecklist', taskId] as const,
   activity: (projectId: number) => ['activity', projectId] as const,
   user: ['user'] as const,
   userSettings: ['userSettings'] as const,
-  files: (projectId: number, filters?: object) => ['files', projectId, filters] as const,
+  files: (projectId: number, filters?: FileFilters) => ['files', projectId, filters] as const,
   file: (id: number) => ['file', id] as const,
-  notes: (projectId: number, filters?: object) => ['notes', projectId, filters] as const,
+  notes: (projectId: number, filters?: NoteFilters) => ['notes', projectId, filters] as const,
   note: (id: number) => ['note', id] as const,
   // New keys
   profile: ['profile'] as const,
@@ -189,7 +192,7 @@ export function useUpdateProject() {
 }
 
 // Tasks hooks
-export function useTasks(projectId: number, filters?: { stage?: string; status?: string; task_type?: string }) {
+export function useTasks(projectId: number, filters?: TaskFilters) {
   return useQuery({
     queryKey: queryKeys.tasks(projectId, filters),
     queryFn: () => tasksApi.list(projectId, filters),
@@ -268,7 +271,7 @@ export function useActivity(projectId: number, options?: { limit?: number; offse
 }
 
 // Files hooks
-export function useFiles(projectId: number, filters?: { category?: FileCategory; file_type?: string }) {
+export function useFiles(projectId: number, filters?: FileFilters) {
   return useQuery({
     queryKey: queryKeys.files(projectId, filters),
     queryFn: () => filesApi.list(projectId, filters),
@@ -334,7 +337,7 @@ export function useDownloadFile() {
 }
 
 // Notes hooks
-export function useNotes(projectId: number, filters?: { task_id?: number; pinned?: boolean }) {
+export function useNotes(projectId: number, filters?: NoteFilters) {
   return useQuery({
     queryKey: queryKeys.notes(projectId, filters),
     queryFn: () => notesApi.list(projectId, filters),
