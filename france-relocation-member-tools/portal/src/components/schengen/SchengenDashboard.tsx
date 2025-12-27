@@ -40,6 +40,7 @@ import PlanningTool from './PlanningTool';
 import CalendarView from './CalendarView';
 import ReportExport from './ReportExport';
 import LocationTracker from './LocationTracker';
+import LocationDetectionBanner from './LocationDetectionBanner';
 import Modal from '@/components/shared/Modal';
 
 type ViewTab = 'trips' | 'calendar' | 'planning' | 'location' | 'settings';
@@ -275,6 +276,9 @@ export default function SchengenDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Smart location detection banner */}
+      <LocationDetectionBanner enabled={settings.emailAlerts} />
 
       {/* Quick location check-in widget */}
       <LocationTracker compact />

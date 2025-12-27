@@ -55,6 +55,7 @@ import type {
   LocationTodayStatus,
   GeocodeResult,
   LocationSettings,
+  IPDetectionResult,
 } from '@/types';
 
 /**
@@ -855,4 +856,7 @@ export const schengenApi = {
         autoDetect: data.auto_detect,
       }),
     }),
+
+  // Detect country from IP (fallback)
+  detectFromIP: () => apiFetch<IPDetectionResult>('/schengen/location/detect'),
 };
