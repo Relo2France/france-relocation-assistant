@@ -86,6 +86,7 @@ export const queryKeys = {
   schengenTrip: (id: string) => ['schengenTrip', id] as const,
   schengenSummary: ['schengenSummary'] as const,
   schengenSettings: ['schengenSettings'] as const,
+  schengenFeatureStatus: ['schengenFeatureStatus'] as const,
 };
 
 // Dashboard hook
@@ -947,5 +948,25 @@ export function useUpdateSchengenSettings() {
       // Summary depends on settings thresholds, so invalidate it too
       queryClient.invalidateQueries({ queryKey: queryKeys.schengenSummary });
     },
+  });
+}
+
+export function useSchengenFeatureStatus() {
+  return useQuery({
+    queryKey: queryKeys.schengenFeatureStatus,
+    queryFn: schengenApi.getFeatureStatus,
+    staleTime: 60000 * 5, // 5 minutes
+  });
+}
+
+export function useSimulateSchengenTrip() {
+  return useMutation({
+    mutationFn: schengenApi.simulateTrip,
+  });
+}
+
+export function useGenerateSchengenReport() {
+  return useMutation({
+    mutationFn: schengenApi.generateReport,
   });
 }

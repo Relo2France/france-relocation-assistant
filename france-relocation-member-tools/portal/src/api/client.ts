@@ -39,6 +39,9 @@ import type {
   SchengenTrip,
   SchengenSummary,
   SchengenAlertSettings,
+  SchengenFeatureStatus,
+  SchengenSimulationResult,
+  SchengenReportResponse,
 } from '@/types';
 
 /**
@@ -777,4 +780,20 @@ export const schengenApi = {
       method: 'PUT',
       body: JSON.stringify(data),
     }),
+
+  // Get feature status (premium gating)
+  getFeatureStatus: () => apiFetch<SchengenFeatureStatus>('/schengen/feature-status'),
+
+  // Simulate a trip (premium feature - planning tool)
+  simulateTrip: (data: { startDate: string; endDate: string }) =>
+    apiFetch<SchengenSimulationResult>('/schengen/simulate', {
+      method: 'POST',
+      body: JSON.stringify({
+        start_date: data.startDate,
+        end_date: data.endDate,
+      }),
+    }),
+
+  // Generate PDF report (premium feature)
+  generateReport: () => apiFetch<SchengenReportResponse>('/schengen/report'),
 };
