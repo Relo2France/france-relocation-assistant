@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { clsx } from 'clsx';
 import Modal from '@/components/shared/Modal';
 import { useCreateTask } from '@/hooks/useApi';
@@ -28,8 +28,16 @@ export default function TaskForm({
   const [stage, setStage] = useState(defaultStage || '');
   const [dueDate, setDueDate] = useState('');
   const [taskType, setTaskType] = useState<'client' | 'team'>('client');
+  const titleInputRef = useRef<HTMLInputElement>(null);
 
   const createTask = useCreateTask(projectId);
+
+  // Focus title input when modal opens
+  useEffect(() => {
+    if (isOpen && titleInputRef.current) {
+      titleInputRef.current.focus();
+    }
+  }, [isOpen]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -102,13 +110,13 @@ export default function TaskForm({
             Task Title <span className="text-red-500">*</span>
           </label>
           <input
+            ref={titleInputRef}
             id="title"
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             className="input"
             placeholder="What needs to be done?"
-            autoFocus
           />
         </div>
 
@@ -200,10 +208,10 @@ export default function TaskForm({
         </div>
 
         {/* Task Type */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+        <div role="radiogroup" aria-labelledby="task-type-label">
+          <span id="task-type-label" className="block text-sm font-medium text-gray-700 mb-2">
             Task Type
-          </label>
+          </span>
           <div className="flex gap-4">
             <label className="flex items-center gap-2 cursor-pointer">
               <input
@@ -253,7 +261,13 @@ export function QuickAddForm({
   className,
 }: QuickAddFormProps) {
   const [title, setTitle] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
   const createTask = useCreateTask(projectId);
+
+  // Focus input on mount
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -283,13 +297,13 @@ export function QuickAddForm({
   return (
     <form onSubmit={handleSubmit} className={clsx('flex gap-2', className)}>
       <input
+        ref={inputRef}
         type="text"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         onKeyDown={handleKeyDown}
         className="input flex-1"
         placeholder="Add a task..."
-        autoFocus
       />
       <button
         type="submit"

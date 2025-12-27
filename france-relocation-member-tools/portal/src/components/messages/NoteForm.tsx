@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { clsx } from 'clsx';
 import { Send, X } from 'lucide-react';
 import { useCreateNote } from '@/hooks/useApi';
@@ -21,8 +21,16 @@ export default function NoteForm({
 }: NoteFormProps) {
   const [content, setContent] = useState('');
   const [isExpanded, setIsExpanded] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { user } = usePortalStore();
   const createNote = useCreateNote(projectId);
+
+  // Focus textarea when expanded
+  useEffect(() => {
+    if (isExpanded && textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  }, [isExpanded]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,12 +75,12 @@ export default function NoteForm({
           <div className="flex-1">
             {isExpanded ? (
               <textarea
+                ref={textareaRef}
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 placeholder={placeholder}
                 className="textarea w-full resize-none"
                 rows={4}
-                autoFocus
               />
             ) : (
               <button

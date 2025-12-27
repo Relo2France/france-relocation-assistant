@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { clsx } from 'clsx';
 import { Square, CheckSquare, Plus, X, Loader2 } from 'lucide-react';
 import {
@@ -17,8 +17,16 @@ export default function TaskChecklist({ taskId, editable = true }: TaskChecklist
   const [newItemTitle, setNewItemTitle] = useState('');
   const [isAddingItem, setIsAddingItem] = useState(false);
   const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
+  const newItemInputRef = useRef<HTMLInputElement>(null);
 
   const { data: checklist, isLoading } = useTaskChecklist(taskId);
+
+  // Focus input when adding new item
+  useEffect(() => {
+    if (isAddingItem && newItemInputRef.current) {
+      newItemInputRef.current.focus();
+    }
+  }, [isAddingItem]);
   const updateItem = useUpdateTaskChecklistItem(taskId);
   const addItem = useAddTaskChecklistItem(taskId);
   const deleteItem = useDeleteTaskChecklistItem(taskId);
@@ -147,6 +155,7 @@ export default function TaskChecklist({ taskId, editable = true }: TaskChecklist
           <div className="flex items-center gap-2 p-2">
             <Square className="w-4 h-4 text-gray-300 flex-shrink-0 mt-0.5" />
             <input
+              ref={newItemInputRef}
               type="text"
               value={newItemTitle}
               onChange={(e) => setNewItemTitle(e.target.value)}
@@ -158,7 +167,6 @@ export default function TaskChecklist({ taskId, editable = true }: TaskChecklist
               }}
               placeholder="Add item..."
               className="flex-1 text-sm bg-transparent border-none focus:outline-none focus:ring-0 p-0"
-              autoFocus
               disabled={addItem.isPending}
             />
             {addItem.isPending && (

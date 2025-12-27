@@ -22,9 +22,19 @@ export default function TaskCard({ task, onClick }: TaskCardProps) {
     urgent: 'priority-urgent',
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (onClick && (e.key === 'Enter' || e.key === ' ')) {
+      e.preventDefault();
+      onClick();
+    }
+  };
+
   return (
     <div
       onClick={onClick}
+      onKeyDown={handleKeyDown}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
       className={clsx(
         'flex items-center justify-between p-3 rounded-lg border transition-colors',
         task.is_overdue ? 'border-red-200 bg-red-50' : 'border-gray-200 bg-white hover:bg-gray-50',

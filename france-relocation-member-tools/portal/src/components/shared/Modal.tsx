@@ -62,6 +62,7 @@ export default function Modal({
   return (
     <div
       ref={overlayRef}
+      role="presentation"
       onClick={handleOverlayClick}
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 animate-in fade-in duration-200"
     >
@@ -157,6 +158,7 @@ export function Drawer({
   return (
     <div
       ref={overlayRef}
+      role="presentation"
       onClick={handleOverlayClick}
       className="fixed inset-0 z-50 bg-black/50 animate-in fade-in duration-200"
     >

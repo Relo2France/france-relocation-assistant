@@ -170,11 +170,11 @@ export default function TripForm({
       </div>
 
       {/* Category */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+      <div role="radiogroup" aria-labelledby="category-label">
+        <span id="category-label" className="block text-sm font-medium text-gray-700 mb-1">
           <Briefcase className="w-4 h-4 inline mr-1" aria-hidden="true" />
           Category
-        </label>
+        </span>
         <div className="flex gap-4">
           <label className="flex items-center gap-2 cursor-pointer">
             <input
