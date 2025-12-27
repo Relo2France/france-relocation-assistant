@@ -34,10 +34,15 @@ module.exports = {
     sourceType: 'module',
     project: ['./tsconfig.json'],
   },
-  plugins: ['react-refresh', '@typescript-eslint', 'react', 'jsx-a11y'],
+  plugins: ['react-refresh', '@typescript-eslint', 'react', 'jsx-a11y', 'import'],
   settings: {
     react: {
       version: 'detect',
+    },
+    'import/resolver': {
+      node: {
+        extensions: ['.js', '.jsx', '.ts', '.tsx'],
+      },
     },
   },
   rules: {
@@ -82,8 +87,39 @@ module.exports = {
     'no-var': 'error',
     'eqeqeq': ['error', 'always', { null: 'ignore' }],
 
-    // Disable import sorting (too noisy for existing codebase)
-    'sort-imports': 'off',
+    // Import ordering - consistent structure across files
+    'import/order': [
+      'warn',
+      {
+        groups: [
+          'builtin',
+          'external',
+          'internal',
+          ['parent', 'sibling'],
+          'index',
+          'type',
+        ],
+        pathGroups: [
+          {
+            pattern: 'react',
+            group: 'external',
+            position: 'before',
+          },
+          {
+            pattern: '@/**',
+            group: 'internal',
+          },
+        ],
+        pathGroupsExcludedImportTypes: ['react'],
+        'newlines-between': 'never',
+        alphabetize: {
+          order: 'asc',
+          caseInsensitive: true,
+        },
+      },
+    ],
+    'import/no-duplicates': 'error',
+    'sort-imports': ['warn', { ignoreDeclarationSort: true }],
 
     // Allow escape characters in regex-like strings (common in markdown parsing)
     'no-useless-escape': 'off',

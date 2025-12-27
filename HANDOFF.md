@@ -2,7 +2,7 @@
 
 **Date:** December 27, 2025
 **Branch:** `claude/resume-from-handoff-JlK7B`
-**Last Commit:** `Comprehensive codebase review: consistency, efficiency, and documentation`
+**Last Commit:** `Merge main branch and resolve conflicts`
 
 ---
 
@@ -75,8 +75,9 @@ Fixed profile section initialization pattern in 3 components:
 Added new plugins and rules:
 - Added `eslint-plugin-react` for React best practices
 - Added `eslint-plugin-jsx-a11y` for accessibility enforcement
+- Added `eslint-plugin-import` for import ordering
 - Configured as warnings (not errors) for existing codebase
-- Total: 57 accessibility warnings now tracked
+- Total: 57+ warnings now tracked (accessibility + import ordering)
 
 ### 2.7 Accessibility Improvements
 
@@ -84,7 +85,11 @@ Added new plugins and rules:
 2. Header search icon - Added `aria-hidden="true"`
 3. Changed search input type to `type="search"`
 
-### 2.8 Configuration Improvements
+### 2.8 Theme Documentation
+
+Added JSDoc to all 14 theme functions in `relo2france-theme/functions.php` for better IDE support and maintainability.
+
+### 2.9 Configuration Improvements
 
 1. Updated `.gitignore` with comprehensive entries
 2. Fixed theme.js version number (1.2.3 → 1.2.4)
@@ -97,25 +102,30 @@ Added new plugins and rules:
 | File | Changes |
 |------|---------|
 | `relo2france-theme/header.php` | Added esc_html() to bloginfo output |
+| `relo2france-theme/functions.php` | Added JSDoc to all 14 theme functions |
+| `relo2france-theme/template-auth.php` | Replace hardcoded colors with CSS variables |
 | `france-relocation-member-tools/templates/template-portal.php` | Added wp_strip_all_tags() to custom CSS |
 | `france-relocation-assistant-plugin/includes/api-proxy.php` | Added check_chat_permission() method |
+| `france-relocation-member-tools/includes/class-framt-portal-api.php` | Added get_cached_knowledge_base(), updated search_knowledge_base() |
 
 ### TypeScript/React Files
 | File | Changes |
 |------|---------|
 | `portal/src/types/index.ts` | Fixed FamilyMember, FamilyMembersResponse, FamilyFeatureStatus naming |
-| `portal/src/hooks/useApi.ts` | Added staleTime to 7 hooks, added REFETCH_INTERVAL import |
+| `portal/src/hooks/useApi.ts` | Added staleTime to 7 hooks, added REFETCH_INTERVAL import, use STALE_TIME and SEARCH constants |
 | `portal/src/components/profile/PersonalSection.tsx` | Fixed initialization pattern with useRef |
 | `portal/src/components/profile/ApplicantSection.tsx` | Fixed initialization pattern with useRef |
 | `portal/src/components/profile/VisaSection.tsx` | Fixed initialization pattern with useRef |
 | `portal/src/components/family/FamilyView.tsx` | Updated to use camelCase property names |
 | `portal/src/components/layout/Header.tsx` | Added accessibility attributes |
+| `portal/src/components/guides/GuidesView.tsx` | Refactored to use new components (1350→253 lines) |
+| `portal/src/components/guides/index.ts` | Updated with all new exports |
 
 ### Configuration Files
 | File | Changes |
 |------|---------|
-| `portal/package.json` | Added eslint-plugin-react and eslint-plugin-jsx-a11y |
-| `portal/.eslintrc.cjs` | Added React and a11y plugins, configured rules as warnings |
+| `portal/package.json` | Added eslint-plugin-react, eslint-plugin-jsx-a11y, eslint-plugin-import |
+| `portal/.eslintrc.cjs` | Added React, a11y, and import plugins with configured rules |
 | `portal/.gitignore` | Expanded with comprehensive entries |
 | `relo2france-theme/assets/js/theme.js` | Updated version to 1.2.4 |
 
@@ -134,7 +144,7 @@ npm run build
 **Current Status:**
 - **Tests:** 45/45 passing
 - **Type Check:** 0 errors
-- **Lint:** 0 errors, 57 warnings (accessibility issues to address over time)
+- **Lint:** 0 errors, warnings for accessibility and import ordering (guide for developers)
 - **Build:** Successful
 
 ---
@@ -145,22 +155,23 @@ npm run build
 - 57 accessibility warnings (click handlers without keyboard support, label associations)
 - Profile sections could benefit from optimistic updates
 
-### Medium Priority
-- Some components missing JSDoc documentation
-- Consider adding eslint-plugin-import for import ordering
+### Intentional Technical Decisions (Not Issues)
+- **Encryption fallback** - Returns unencrypted legacy values during migration period (by design)
+- **Dual profile storage** - Requires dedicated migration session
 
 ### Lower Priority (Technical Debt)
 - Dual Profile Storage still requires migration
-- Encryption fallback returns unencrypted legacy values (intentional)
 
 ---
 
 ## 6. Commit Summary
 
-1. Previous: `Comprehensive code review fixes: security, efficiency, and consistency`
-2. Previous: `Refactor guides components and add performance improvements`
-3. Previous: `Add constants, CSS variables, and .env.example`
-4. This session: `Comprehensive codebase review: consistency, efficiency, and documentation`
+1. `Comprehensive code review fixes: security, efficiency, and consistency`
+2. `Refactor guides components and add performance improvements`
+3. `Add constants, CSS variables, and .env.example`
+4. `Add JSDoc to theme and eslint-plugin-import for import ordering`
+5. `Comprehensive codebase review: consistency, efficiency, and documentation`
+6. `Merge main branch and resolve conflicts`
 
 ---
 
