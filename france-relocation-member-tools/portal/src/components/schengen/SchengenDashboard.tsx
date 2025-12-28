@@ -277,8 +277,8 @@ export default function SchengenDashboard() {
         </div>
       </div>
 
-      {/* Smart location detection banner */}
-      <LocationDetectionBanner enabled={settings.emailAlerts} />
+      {/* Smart location detection banner - always enabled, can be dismissed */}
+      <LocationDetectionBanner enabled />
 
       {/* Quick location check-in widget */}
       <LocationTracker compact />
