@@ -75,6 +75,13 @@ import type {
   CSVImportResult,
   CSVExportResult,
   SuggestionsResponse,
+  SchengenFamilyMember,
+  SchengenFamilySummary,
+  TripTraveler,
+  AnalyticsOverview,
+  TravelPatterns,
+  ComplianceHistoryPoint,
+  MonthlyBreakdown,
 } from '@/types';
 
 /**
@@ -1081,5 +1088,99 @@ export const schengenApi = {
       {
         method: 'POST',
       }
+    ),
+
+  // ============================================
+  // Family Tracking API (Phase 8)
+  // ============================================
+
+  // Get all family members with their summaries
+  getFamilySummaries: () =>
+    apiFetch<{
+      success: boolean;
+      primaryUser: { id: number; name: string; summary: SchengenFamilySummary };
+      family: Array<{ member: SchengenFamilyMember; summary: SchengenFamilySummary }>;
+    }>('/schengen/family/summaries'),
+
+  // Get all family members
+  getFamilyMembers: () =>
+    apiFetch<{ success: boolean; members: SchengenFamilyMember[] }>('/schengen/family'),
+
+  // Get single family member
+  getFamilyMember: (id: number) =>
+    apiFetch<{ success: boolean; member: SchengenFamilyMember }>(`/schengen/family/${id}`),
+
+  // Create family member
+  createFamilyMember: (data: Partial<SchengenFamilyMember>) =>
+    apiFetch<{ success: boolean; member: SchengenFamilyMember; message: string }>(
+      '/schengen/family',
+      {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }
+    ),
+
+  // Update family member
+  updateFamilyMember: (id: number, data: Partial<SchengenFamilyMember>) =>
+    apiFetch<{ success: boolean; member: SchengenFamilyMember; message: string }>(
+      `/schengen/family/${id}`,
+      {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }
+    ),
+
+  // Delete family member
+  deleteFamilyMember: (id: number) =>
+    apiFetch<{ success: boolean; message: string }>(`/schengen/family/${id}`, {
+      method: 'DELETE',
+    }),
+
+  // Get trip travelers
+  getTripTravelers: (tripId: number) =>
+    apiFetch<{ success: boolean; tripId: number; travelers: TripTraveler[] }>(
+      `/schengen/trips/${tripId}/travelers`
+    ),
+
+  // Update trip travelers
+  updateTripTravelers: (
+    tripId: number,
+    data: { includePrimaryUser: boolean; familyMemberIds: number[] }
+  ) =>
+    apiFetch<{ success: boolean; message: string }>(`/schengen/trips/${tripId}/travelers`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  // ============================================
+  // Analytics API (Phase 8)
+  // ============================================
+
+  // Get analytics overview
+  getAnalyticsOverview: (period = '180d') =>
+    apiFetch<AnalyticsOverview>(`/schengen/analytics?period=${period}`),
+
+  // Get travel patterns (countries visited)
+  getTravelPatterns: (period = '1y') =>
+    apiFetch<TravelPatterns>(`/schengen/analytics/patterns?period=${period}`),
+
+  // Get compliance history
+  getComplianceHistory: (period = '180d', familyMemberId?: number) =>
+    apiFetch<{ history: ComplianceHistoryPoint[] }>(
+      familyMemberId
+        ? `/schengen/analytics/history?period=${period}&familyMemberId=${familyMemberId}`
+        : `/schengen/analytics/history?period=${period}`
+    ),
+
+  // Get monthly breakdown
+  getMonthlyBreakdown: (year: number) =>
+    apiFetch<{ months: MonthlyBreakdown[]; year: number }>(
+      `/schengen/analytics/monthly?year=${year}`
+    ),
+
+  // Export analytics data
+  exportAnalytics: (format: 'json' | 'csv' = 'json', period = 'all') =>
+    apiFetch<{ success: boolean; format: string; filename: string; content?: string; data?: unknown }>(
+      `/schengen/analytics/export?format=${format}&period=${period}`
     ),
 };

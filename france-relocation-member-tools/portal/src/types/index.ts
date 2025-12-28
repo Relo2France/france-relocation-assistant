@@ -1209,6 +1209,132 @@ export interface NotificationPreferences {
   quiet_hours_end: number;
 }
 
+// ============================================
+// Schengen Family Tracking Types (Phase 8)
+// ============================================
+
+export type SchengenRelationship = 'spouse' | 'child' | 'parent' | 'sibling' | 'other';
+
+export interface SchengenFamilyMember {
+  id: number;
+  name: string;
+  relationship: SchengenRelationship;
+  birthDate: string | null;
+  nationality: string | null;
+  passportNumber: string | null;
+  passportExpiry: string | null;
+  color: string;
+  notes: string | null;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SchengenFamilySummary {
+  daysUsed: number;
+  daysRemaining: number;
+  status: SchengenStatus;
+  tripCount: number;
+  windowStart: string;
+  windowEnd: string;
+  nextExpiration: string | null;
+}
+
+export interface SchengenFamilyMemberWithSummary {
+  member: SchengenFamilyMember;
+  summary: SchengenFamilySummary;
+}
+
+export interface SchengenFamilyOverview {
+  primaryUser: {
+    id: number;
+    name: string;
+    summary: SchengenFamilySummary;
+  };
+  family: SchengenFamilyMemberWithSummary[];
+}
+
+export interface TripTraveler {
+  id: number;
+  tripId: number;
+  familyMemberId: number | null;
+  isPrimaryUser: boolean;
+  name: string;
+  relationship: string;
+  color: string;
+}
+
+// ============================================
+// Analytics Types (Phase 8)
+// ============================================
+
+export interface AnalyticsOverview {
+  period: string;
+  stats: {
+    totalTrips: number;
+    totalDays: number;
+    uniqueCountries: number;
+    avgTripLength: number;
+    longestTrip: {
+      country: string;
+      days: number;
+      startDate: string;
+      endDate: string;
+    } | null;
+    mostVisited: {
+      country: string;
+      visitCount: number;
+      totalDays: number;
+    } | null;
+  };
+  compliance: {
+    daysUsed: number;
+    daysRemaining: number;
+    status: SchengenStatus;
+    tripCount: number;
+    windowStart: string;
+    windowEnd: string;
+  };
+}
+
+export interface TravelPattern {
+  country: string;
+  tripCount: number;
+  totalDays: number;
+  percentage: number;
+  firstVisit: string;
+  lastVisit: string;
+}
+
+export interface MonthlyData {
+  month: string;
+  tripCount: number;
+  totalDays: number;
+}
+
+export interface TravelPatterns {
+  period: string;
+  countries: TravelPattern[];
+  monthly: MonthlyData[];
+}
+
+export interface ComplianceHistoryPoint {
+  date: string;
+  daysUsed: number;
+  daysRemaining: number;
+  status: SchengenStatus;
+  tripCount: number;
+}
+
+export interface MonthlyBreakdown {
+  month: string;
+  label: string;
+  days: number;
+  tripCount: number;
+  countryCount: number;
+  countries: string;
+}
+
 // WordPress global types
 declare global {
   interface Window {

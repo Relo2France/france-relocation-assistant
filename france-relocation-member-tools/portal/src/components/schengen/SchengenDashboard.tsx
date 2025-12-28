@@ -27,6 +27,8 @@ import {
   MapPin,
   HelpCircle,
   Globe,
+  Users,
+  BarChart3,
 } from 'lucide-react';
 import type { SchengenTrip } from '@/types';
 import { useSchengenStore } from './useSchengenStore';
@@ -50,10 +52,12 @@ import JurisdictionOverview from './JurisdictionOverview';
 import NotificationCenter from './NotificationCenter';
 import CSVImportExport from './CSVImportExport';
 import AISuggestions from './AISuggestions';
+import FamilyTracker from './FamilyTracker';
+import AnalyticsDashboard from './AnalyticsDashboard';
 import Modal from '@/components/shared/Modal';
 import ErrorBoundary from '@/components/shared/ErrorBoundary';
 
-type ViewTab = 'trips' | 'jurisdictions' | 'calendar' | 'sync' | 'planning' | 'location' | 'settings';
+type ViewTab = 'trips' | 'family' | 'analytics' | 'jurisdictions' | 'calendar' | 'sync' | 'planning' | 'location' | 'settings';
 
 export default function SchengenDashboard() {
   const { trips, settings, isLoaded, addTrip, updateTrip, deleteTrip, updateSettings } = useSchengenStore();
@@ -380,6 +384,36 @@ export default function SchengenDashboard() {
             </span>
           </button>
           <button
+            onClick={() => setActiveTab('family')}
+            className={clsx(
+              'pb-3 px-1 border-b-2 font-medium text-sm transition-colors',
+              activeTab === 'family'
+                ? 'border-primary-600 text-primary-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            )}
+          >
+            <span className="flex items-center gap-2">
+              <Users className="w-4 h-4" aria-hidden="true" />
+              Family
+              {!isPremium && <Lock className="w-3 h-3 text-gray-400" aria-hidden="true" />}
+            </span>
+          </button>
+          <button
+            onClick={() => setActiveTab('analytics')}
+            className={clsx(
+              'pb-3 px-1 border-b-2 font-medium text-sm transition-colors',
+              activeTab === 'analytics'
+                ? 'border-primary-600 text-primary-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            )}
+          >
+            <span className="flex items-center gap-2">
+              <BarChart3 className="w-4 h-4" aria-hidden="true" />
+              Analytics
+              {!isPremium && <Lock className="w-3 h-3 text-gray-400" aria-hidden="true" />}
+            </span>
+          </button>
+          <button
             onClick={() => setActiveTab('jurisdictions')}
             className={clsx(
               'pb-3 px-1 border-b-2 font-medium text-sm transition-colors',
@@ -482,6 +516,34 @@ export default function SchengenDashboard() {
             onDelete={handleDeleteTrip}
           />
         </div>
+      )}
+
+      {activeTab === 'family' && (
+        isPremium ? (
+          <ErrorBoundary>
+            <FamilyTracker />
+          </ErrorBoundary>
+        ) : (
+          <PremiumFeaturePrompt
+            feature="Family Tracking"
+            description="Track Schengen days for each family member separately. Monitor individual compliance and assign travelers to trips."
+            upgradeUrl={featureStatus?.upgradeUrl}
+          />
+        )
+      )}
+
+      {activeTab === 'analytics' && (
+        isPremium ? (
+          <ErrorBoundary>
+            <AnalyticsDashboard />
+          </ErrorBoundary>
+        ) : (
+          <PremiumFeaturePrompt
+            feature="Analytics Dashboard"
+            description="View detailed travel statistics, patterns by country, and historical compliance data to understand your travel habits."
+            upgradeUrl={featureStatus?.upgradeUrl}
+          />
+        )
       )}
 
       {activeTab === 'jurisdictions' && (

@@ -1,204 +1,350 @@
 # Relo2France Handoff Document
-## Session: December 28, 2025 - Schengen Tracker Plugin Development
+## Session: December 28, 2025 - Schengen Tracker v1.5.0
 
 ---
 
-## CURRENT VERSIONS
+## CURRENT STATUS
 
+### Version Summary
 | Component | Version | Status |
 |-----------|---------|--------|
 | Main Plugin | v2.9.83 | Active |
 | Member Tools Plugin | v1.0.80 | Active |
-| Schengen Tracker Plugin | v1.1.0 | Active |
+| **Schengen Tracker Plugin** | **v1.5.0** | **Active** |
 | Theme | v1.2.3 | Active |
 
+### Feature Status - Schengen Tracker v1.5.0
+
+| Phase | Feature | Status |
+|-------|---------|--------|
+| Phase 1.0 | Core Functionality (trips, calendar, day counter) | ✅ Complete |
+| Phase 1.1 | Browser Geolocation Check-in | ✅ Complete |
+| Phase 1.2 | Smart Location Detection | ✅ Complete |
+| Phase 2 | Database Persistence | ✅ Complete |
+| Phase 3 | Enhanced Features (Calendar View, Planning Tool, Alerts, PDF Export) | ✅ Complete |
+| Phase 4 | Polish (Email, Mobile, Onboarding, Premium Gating) | ✅ Complete |
+| Phase 5 | In-App Notifications & Background Calendar Sync | ✅ Complete |
+| Phase 6 | CSV Import/Export & PWA Support | ✅ Complete |
+| Phase 7 | AI-Powered Trip Suggestions | ✅ Complete |
+| Phase 8 | Family Member Tracking & Analytics Dashboard | ✅ Complete |
+
+### In Progress
+- Nothing pending (all planned features for v1.5.0 completed)
+
+### Next Steps (Future Versions)
+- Multi-user household accounts (shared family dashboard)
+- Travel document management (passport expiry tracking)
+- Integration with visa tracking module
+
 ---
 
-## WHAT WAS BUILT THIS SESSION
+## COMPLETED THIS SESSION
 
-### SCHENGEN TRACKER - COMPLETE FEATURE IMPLEMENTATION
-
-Built a comprehensive Schengen 90/180 day compliance tracker as a premium add-on feature. All phases from the specification are now complete.
-
----
-
-### Phase 1.0: Core Functionality (Previously Built)
-- Trip entry form with Schengen country validation
-- Rolling 180-day window calculation algorithm
-- Dashboard with day counter and status badges
-- Trip list with edit/delete functionality
-
-### Phase 1.1: Browser Geolocation Check-in
-**Location:** `relo2france-schengen-tracker/includes/class-r2f-schengen-location.php`
-
-- Browser-based GPS location check-in
-- Reverse geocoding via OpenStreetMap Nominatim API
-- Location history tracking in `fra_schengen_location_log` table
-- Clear history and delete individual entries
-- **Auto-trip creation**: When checking in from a Schengen country:
-  - Creates new trip for today if none exists
-  - Extends yesterday's trip to today if applicable
-  - Updates location data on existing trip
-
-**API Endpoints:**
-```
-POST /wp-json/r2f-schengen/v1/location/store    - Store location check-in
-GET  /wp-json/r2f-schengen/v1/location/history  - Get location history
-GET  /wp-json/r2f-schengen/v1/location/today    - Check if checked in today
-POST /wp-json/r2f-schengen/v1/location/clear    - Clear all history
-DELETE /wp-json/r2f-schengen/v1/location/{id}   - Delete single entry
-GET  /wp-json/r2f-schengen/v1/location/detect   - IP-based country detection
-```
-
-### Phase 1.2: Smart Location Detection
-**Location:** `france-relocation-member-tools/portal/src/hooks/useLocationDetection.ts`
-
-- Timezone change detection (compares browser timezone to stored)
-- IP-based country detection via ip-api.com
-- Smart check-in prompts when timezone changes
-- Daily reminder system (configurable hour)
-- `LocationDetectionBanner` component shows prompts
-
-### Phase 2: Database Persistence ✅
-**Location:** `relo2france-schengen-tracker/includes/class-r2f-schengen-schema.php`
-
-**Database Tables:**
-- `wp_fra_schengen_trips` - Trip records with location columns
-- `wp_fra_schengen_location_log` - Location check-in history
-
-**API Endpoints (class-r2f-schengen-api.php):**
-```
-GET/POST   /wp-json/r2f-schengen/v1/trips          - List/create trips
-GET/PUT/DELETE /wp-json/r2f-schengen/v1/trips/{id} - Single trip CRUD
-GET        /wp-json/r2f-schengen/v1/summary        - Current day count & status
-GET/PUT    /wp-json/r2f-schengen/v1/settings       - User alert settings
-POST       /wp-json/r2f-schengen/v1/simulate       - "What if" calculation
-GET        /wp-json/r2f-schengen/v1/report         - Generate PDF report
-GET        /wp-json/r2f-schengen/v1/feature-status - Premium status check
-POST       /wp-json/r2f-schengen/v1/test-alert     - Send test email alert
-```
-
-### Phase 3: Enhanced Features ✅
-
-#### Calendar View
-**Location:** `portal/src/components/schengen/CalendarView.tsx`
-- Monthly calendar visualization with navigation
-- Days with Schengen presence highlighted in brand blue
-- Future planned trips shown with dashed blue border
-- Days outside 180-day window shown in gray
-- Legend explaining color coding
-- Mobile responsive with abbreviated labels
-
-#### Planning Tool ("What If" Calculator)
-**Location:** `portal/src/components/schengen/PlanningTool.tsx`
-- Enter hypothetical future trip dates
-- Check if trip would violate 90/180 rule
-- Shows earliest safe start date if violation
-- Shows maximum safe trip length from given date
-- Visual results with green (safe) or red (violation) indicators
-
-#### Alert System
-**Location:** `relo2france-schengen-tracker/includes/class-r2f-schengen-alerts.php`
-- Three threshold levels: 60 (warning), 80 (danger), 85 (urgent)
-- Daily cron job at 8am UTC
-- Prevents duplicate alerts within 7 days
-- HTML emails with brand styling
-- Test alert button in Settings tab
-
-#### PDF Report Generation
-**Location:** `portal/src/components/schengen/ReportExport.tsx`
-- Generate report button in header
-- Preview modal with summary stats
-- HTML report rendered in iframe
-- Download as HTML option
-- Print / Save as PDF using browser print dialog
-
-### Phase 4: Polish ✅
-
-#### Email Notifications
-- Fully functional email system via `class-r2f-schengen-alerts.php`
-- Subject lines vary by severity level
-- Links to tracker and settings in email body
-- Unsubscribe via settings toggle
-
-#### Mobile Responsiveness
-- All components use Tailwind responsive classes
-- Calendar uses abbreviated weekday/month names on mobile
-- Grid layouts adjust for different screen sizes
-- Touch-friendly button sizes
-
-#### Onboarding Flow (NEW)
-**Location:** `portal/src/components/schengen/SchengenOnboarding.tsx`
-
-5-step walkthrough for first-time users:
-1. **Welcome** - Explains the 90/180 day rule
-2. **Track Your Trips** - How to add trips
-3. **Smart Location Check-in** - GPS feature explanation
-4. **Planning Tool** - "What If" calculator benefits
-5. **Email Alerts** - Threshold explanations (60/80/85 days)
+### Phase 5: In-App Notifications & Background Calendar Sync
+**Files:**
+- `portal/src/components/schengen/NotificationCenter.tsx`
+- `relo2france-schengen-tracker/includes/class-r2f-schengen-notifications.php`
+- `relo2france-schengen-tracker/includes/class-r2f-schengen-calendar.php`
 
 **Features:**
-- Auto-shows for first-time users
-- Progress dots with click navigation
-- Skip tour / Back / Next buttons
-- Help button (?) in header to reopen
-- Stores completion in localStorage (`r2f_schengen_onboarding_complete`)
-- Large modal with spacious, professional design
+- Bell icon with unread count badge in header
+- Dropdown panel showing all notifications
+- Mark individual or all notifications as read
+- Delete individual notifications
+- Notification types: threshold_warning, trip_reminder, check_in_reminder, compliance_update
+- Background calendar sync via cron job
+- Automatic trip detection from calendar events
 
-#### Premium Tier Gating
-**Location:** `relo2france-schengen-tracker/includes/class-r2f-schengen-premium.php`
+### Phase 6: CSV Import/Export & PWA Support
+**Files:**
+- `portal/src/components/schengen/CSVImportExport.tsx`
+- `portal/src/hooks/usePWA.ts`
+- `public/manifest.json`
+- `public/sw.js` (service worker)
 
-3-tier priority system:
-1. User meta override (admin can enable/disable per user)
-2. Filter hook for external plugins (Member Tools integration)
-3. Global setting fallback
+**CSV Features:**
+- Export all trips to CSV file
+- Import trips from CSV file or paste
+- Skip duplicates option
+- Validation with error reporting
+- CSV format: start_date, end_date, country, city, notes
 
-**Free tier limitations:**
-- Limited number of trips
-- No calendar view
-- No planning tool
-- No PDF export
+**PWA Features:**
+- Install prompt for mobile/desktop
+- Offline access to cached data
+- Service worker for background sync
+- App manifest for home screen installation
+
+### Phase 7: AI-Powered Trip Suggestions
+**Files:**
+- `portal/src/components/schengen/AISuggestions.tsx`
+- `relo2france-schengen-tracker/includes/class-r2f-schengen-api.php` (suggestions endpoint)
+
+**Features:**
+- AI analysis of travel patterns
+- Priority-based suggestions (high/medium/low/info)
+- Suggestion types:
+  - Upcoming limit warnings
+  - Optimal travel windows
+  - Pattern insights
+  - Compliance recommendations
+- Refresh button to regenerate suggestions
+- Collapsible compact view option
+
+### Phase 8: Family Member Tracking & Analytics Dashboard
+**Files:**
+- `relo2france-schengen-tracker/includes/class-r2f-schengen-family.php` (NEW)
+- `relo2france-schengen-tracker/includes/class-r2f-schengen-analytics.php` (NEW)
+- `relo2france-schengen-tracker/includes/class-r2f-schengen-schema.php` (updated)
+- `portal/src/components/schengen/FamilyTracker.tsx` (NEW)
+- `portal/src/components/schengen/AnalyticsDashboard.tsx` (NEW)
+- `portal/src/components/schengen/SchengenDashboard.tsx` (updated)
+- `portal/src/hooks/useApi.ts` (added hooks)
+- `portal/src/api/client.ts` (added API methods)
+- `portal/src/types/index.ts` (added types)
+
+**Family Tracking Features:**
+- Add/edit/delete family members (spouse, child, parent, sibling, other)
+- Individual Schengen day tracking per family member
+- Compliance summary cards for each member
+- Assign travelers to trips (trip_travelers junction table)
+- View days used/remaining per person
+- Expandable member detail cards
+- Premium feature with upgrade prompt for free users
+
+**Analytics Dashboard Features:**
+- Tabbed interface: Overview, Countries, Compliance History, Monthly
+- Period selector: 30d, 90d, 180d, 1y, all
+- Overview: Total trips, days used, average stay, countries visited
+- Countries: Travel patterns by destination with days and trip counts
+- Compliance History: Historical compliance status chart
+- Monthly breakdown: Trips and days by month
+- Export analytics data as CSV
+- Premium feature with upgrade prompt for free users
+
+**Database Schema (v1.5.0):**
+- `fra_schengen_family_members` - Family member profiles
+- `fra_schengen_trip_travelers` - Junction table linking trips to travelers
+- `fra_schengen_analytics` - Historical compliance snapshots
 
 ---
 
-## KEY FILES - SCHENGEN TRACKER
+## DECISIONS MADE
+
+### CSV Format
+- Columns: `start_date`, `end_date`, `country`, `city`, `notes`
+- Date format: `YYYY-MM-DD`
+- Country must be valid Schengen country name or code
+- Header row required
+
+### PWA Scope
+- Caches: API responses, static assets, images
+- Offline mode: Read-only access to cached trips
+- Background sync: Queue trip additions for when back online
+- Install prompt: Shows after 30 seconds on mobile
+
+### AI Suggestions Architecture
+- Server-side calculation (not external AI API)
+- Based on: current day count, travel patterns, upcoming expirations
+- Refresh rate: cached for 1 hour
+- Priority mapping: days_used > 85 = high, > 70 = medium, else low
+
+### Notification Types
+- `threshold_warning` - Approaching day limit
+- `trip_reminder` - Upcoming trip starts
+- `check_in_reminder` - Daily location check-in prompt
+- `compliance_update` - Status changes (safe → warning, etc.)
+
+---
+
+## ISSUES RESOLVED
+
+### Fixed This Session
+1. **FRAMT_URL undefined constant** (PR #189)
+   - Portal template referenced undefined `FRAMT_URL`
+   - Fixed to use `FRAMT_PLUGIN_URL`
+
+2. **Version constant mismatch** (PR #188)
+   - Plugin header said 1.0.0, constant said different version
+   - Synchronized both to 1.4.0
+
+### Known Non-Critical Issues
+- npm audit shows 7 vulnerabilities (2 moderate, 5 high) in dev dependencies
+- Calendar sync OAuth requires server-side configuration for production
+
+---
+
+## KEY FILES MODIFIED THIS SESSION
 
 ### Backend (PHP)
-| File | Purpose |
+| File | Changes |
 |------|---------|
-| `class-r2f-schengen-core.php` | Main plugin class, initialization |
-| `class-r2f-schengen-api.php` | REST API endpoints (~40+ endpoints) |
-| `class-r2f-schengen-schema.php` | Database schema, migrations |
-| `class-r2f-schengen-location.php` | Location check-in, auto-trip creation |
-| `class-r2f-schengen-alerts.php` | Email notifications, cron jobs |
-| `class-r2f-schengen-premium.php` | Premium feature gating |
+| `relo2france-schengen-tracker.php` | Version bumped to 1.4.0 |
+| `class-r2f-schengen-notifications.php` | New - notification management |
+| `class-r2f-schengen-calendar.php` | Enhanced - background sync cron |
+| `class-r2f-schengen-api.php` | Added suggestions, CSV, notification endpoints |
 
 ### Frontend (React/TypeScript)
-| File | Purpose |
+| File | Changes |
 |------|---------|
-| `SchengenDashboard.tsx` | Main dashboard component |
-| `CalendarView.tsx` | Monthly calendar visualization |
-| `PlanningTool.tsx` | "What if" trip calculator |
-| `ReportExport.tsx` | PDF report generation |
-| `LocationTracker.tsx` | GPS check-in interface |
-| `LocationDetectionBanner.tsx` | Smart prompts for check-in |
-| `SchengenOnboarding.tsx` | First-time user walkthrough |
-| `TripForm.tsx` | Add/edit trip modal |
-| `TripList.tsx` | Trip list with actions |
-| `DayCounter.tsx` | Circular progress display |
-| `StatusBadge.tsx` | Green/yellow/red status indicator |
-| `useSchengenStore.ts` | Zustand store for trips/settings |
-| `useLocationDetection.ts` | Timezone/location detection hook |
-| `schengenUtils.ts` | Calculation utilities |
+| `SchengenDashboard.tsx` | Added NotificationCenter, AISuggestions, CSVImportExport |
+| `NotificationCenter.tsx` | New - in-app notification UI |
+| `CSVImportExport.tsx` | New - CSV import/export UI |
+| `AISuggestions.tsx` | New - AI suggestions panel |
+| `CalendarSync.tsx` | New - calendar integration UI |
+| `usePWA.ts` | New - PWA install/offline hook |
+| `useApi.ts` | Added hooks for new endpoints |
+| `types/index.ts` | Added notification, suggestion types |
 
 ---
 
-## ARCHITECTURE - SCHENGEN TRACKER
+## BUILD & DEPLOYMENT
+
+### Build Commands
+```bash
+# Build React portal (required before deploying)
+cd france-relocation-member-tools/portal && npm run build
+
+# Run dev server
+cd france-relocation-member-tools/portal && npm run dev
+
+# Type check
+cd france-relocation-member-tools/portal && npx tsc --noEmit
+```
+
+### Build Status
+- ✅ Portal builds successfully
+- ✅ No TypeScript errors
+- ✅ All assets compiled to `assets/portal/`
+
+---
+
+## TESTING CHECKLIST
+
+### Phase 5 - Notifications
+- [ ] Bell icon shows in header
+- [ ] Unread count badge updates
+- [ ] Click opens dropdown panel
+- [ ] Mark individual as read works
+- [ ] Mark all as read works
+- [ ] Delete notification works
+- [ ] New notifications appear after threshold changes
+
+### Phase 6 - CSV Import/Export
+- [ ] Export downloads CSV file
+- [ ] CSV contains all trips with correct format
+- [ ] Import from file works
+- [ ] Import from paste works
+- [ ] Skip duplicates option works
+- [ ] Invalid rows show errors
+- [ ] Imported trips appear in list
+
+### Phase 6 - PWA
+- [ ] Install prompt shows on mobile
+- [ ] App installs to home screen
+- [ ] Offline mode shows cached data
+- [ ] Background sync queues changes
+
+### Phase 7 - AI Suggestions
+- [ ] Suggestions panel shows on Planning tab
+- [ ] Refresh button regenerates suggestions
+- [ ] Priority colors match severity
+- [ ] Compact mode works
+- [ ] Empty state shows when no suggestions
+
+### Phase 8 - Family Tracking
+- [ ] Family tab appears in navigation
+- [ ] Add family member form works
+- [ ] Family member cards display correctly
+- [ ] Compliance summary shows for each member
+- [ ] Edit family member works
+- [ ] Delete family member works
+- [ ] Expandable detail cards work
+- [ ] Premium users can access (free users see upgrade prompt)
+
+### Phase 8 - Analytics Dashboard
+- [ ] Analytics tab appears in navigation
+- [ ] Overview tab shows correct stats
+- [ ] Countries tab shows travel patterns
+- [ ] Compliance History tab shows chart
+- [ ] Monthly tab shows breakdown
+- [ ] Period selector (30d, 90d, 180d, 1y, all) works
+- [ ] Export button downloads CSV
+- [ ] Premium users can access (free users see upgrade prompt)
+
+---
+
+## API ENDPOINTS ADDED
+
+```
+# Notifications
+GET    /wp-json/r2f-schengen/v1/notifications          - List notifications
+GET    /wp-json/r2f-schengen/v1/notifications/unread   - Get unread count
+POST   /wp-json/r2f-schengen/v1/notifications/{id}/read - Mark as read
+POST   /wp-json/r2f-schengen/v1/notifications/read-all  - Mark all as read
+DELETE /wp-json/r2f-schengen/v1/notifications/{id}      - Delete notification
+
+# Calendar Sync
+GET    /wp-json/r2f-schengen/v1/calendar/providers      - List available providers
+GET    /wp-json/r2f-schengen/v1/calendar/connections    - List user connections
+POST   /wp-json/r2f-schengen/v1/calendar/connect        - Connect provider
+DELETE /wp-json/r2f-schengen/v1/calendar/disconnect/{id} - Disconnect
+POST   /wp-json/r2f-schengen/v1/calendar/sync/{id}      - Trigger sync
+GET    /wp-json/r2f-schengen/v1/calendar/events         - List detected events
+POST   /wp-json/r2f-schengen/v1/calendar/events/import  - Import selected events
+POST   /wp-json/r2f-schengen/v1/calendar/events/skip    - Skip selected events
+POST   /wp-json/r2f-schengen/v1/calendar/ical           - Import iCal file
+
+# CSV Import/Export
+GET    /wp-json/r2f-schengen/v1/trips/export            - Export CSV
+POST   /wp-json/r2f-schengen/v1/trips/import            - Import CSV
+
+# AI Suggestions
+GET    /wp-json/r2f-schengen/v1/suggestions             - Get AI suggestions
+
+# Family Tracking (v1.5.0)
+GET    /wp-json/r2f-schengen/v1/family                  - List family members
+POST   /wp-json/r2f-schengen/v1/family                  - Create family member
+GET    /wp-json/r2f-schengen/v1/family/{id}             - Get family member
+PUT    /wp-json/r2f-schengen/v1/family/{id}             - Update family member
+DELETE /wp-json/r2f-schengen/v1/family/{id}             - Delete family member
+GET    /wp-json/r2f-schengen/v1/family/{id}/summary     - Get member compliance summary
+GET    /wp-json/r2f-schengen/v1/family/summaries        - Get all member summaries
+GET    /wp-json/r2f-schengen/v1/trips/{id}/travelers    - Get trip travelers
+PUT    /wp-json/r2f-schengen/v1/trips/{id}/travelers    - Update trip travelers
+
+# Analytics Dashboard (v1.5.0)
+GET    /wp-json/r2f-schengen/v1/analytics               - Get analytics overview
+GET    /wp-json/r2f-schengen/v1/analytics/patterns      - Get travel patterns by country
+GET    /wp-json/r2f-schengen/v1/analytics/history       - Get compliance history
+GET    /wp-json/r2f-schengen/v1/analytics/monthly       - Get monthly breakdown
+GET    /wp-json/r2f-schengen/v1/analytics/export        - Export analytics as CSV
+```
+
+---
+
+## CONFIGURATION REQUIRED
+
+### VAPID Keys (for Push Notifications)
+Generate at: https://vapidkeys.com/
+Add to wp-config.php:
+```php
+define('R2F_VAPID_PUBLIC_KEY', 'your-public-key');
+define('R2F_VAPID_PRIVATE_KEY', 'your-private-key');
+```
+
+### Calendar OAuth (for Google/Microsoft sync)
+Configure in WordPress admin under Settings → Schengen Tracker
+
+---
+
+## ARCHITECTURE - SCHENGEN TRACKER v1.4.0
 
 ```
 SchengenDashboard
     │
     ├── Header
+    │   ├── NotificationCenter → Bell icon + dropdown
     │   ├── HelpCircle (?) → Opens onboarding
     │   ├── ReportExport → PDF generation
     │   └── Add Trip → TripForm modal
@@ -216,10 +362,14 @@ SchengenDashboard
     │
     ├── Tab Navigation
     │   ├── Trip List → TripList component
+    │   ├── Family → FamilyTracker (premium) ← NEW in v1.5.0
+    │   ├── Analytics → AnalyticsDashboard (premium) ← NEW in v1.5.0
+    │   ├── Jurisdictions → JurisdictionOverview
     │   ├── Calendar View → CalendarView (premium)
-    │   ├── Planning Tool → PlanningTool (premium)
+    │   ├── Calendar Sync → CalendarSync
+    │   ├── Planning Tool → AISuggestions + PlanningTool (premium)
     │   ├── Location → LocationTracker (full)
-    │   └── Settings → Alert toggles, thresholds
+    │   └── Settings → Alerts + CSVImportExport
     │
     └── Modals
         ├── TripForm (add/edit)
@@ -228,92 +378,11 @@ SchengenDashboard
 
 ---
 
-## TIMEZONE FIX APPLIED
-
-**Issue:** Check-in times displayed incorrectly (e.g., showing 1:52 PM when it was 9:52 AM local)
-
-**Root Cause:** Database stored GMT times, but response returned `current_time('mysql')` which is local time
-
-**Fix:** Return ISO 8601 format with timezone indicator:
-```php
-// In store_location_debug():
-'recordedAt' => gmdate('c'), // Returns "2025-12-28T14:52:00+00:00"
-
-// In format_location_row():
-$recorded_at_iso = gmdate('c', strtotime($row->recorded_at . ' UTC'));
-```
-
-JavaScript correctly parses ISO 8601 and displays in user's local timezone.
-
----
-
-## TESTING CHECKLIST - SCHENGEN TRACKER
-
-### Core Functionality
-- [ ] Add trip with dates and country
-- [ ] Edit existing trip
-- [ ] Delete trip
-- [ ] Day counter updates correctly
-- [ ] Status badge changes at thresholds (60/80/85/90)
-
-### Location Check-in
-- [ ] Browser prompts for location permission
-- [ ] Check-in creates/extends trip for Schengen country
-- [ ] Location history shows in Location tab
-- [ ] Delete individual location entry works
-- [ ] Clear all history works
-- [ ] "Checked in today" status updates
-
-### Smart Detection
-- [ ] Banner appears when timezone changes
-- [ ] IP detection suggests correct country
-- [ ] Dismiss banner hides for today
-- [ ] Check-in from banner works
-
-### Premium Features
-- [ ] Calendar view shows trip days highlighted
-- [ ] Navigate months works
-- [ ] Planning tool calculates violations correctly
-- [ ] PDF report generates and previews
-- [ ] Print to PDF works
-
-### Alerts
-- [ ] Email alerts toggle saves
-- [ ] Test alert sends email
-- [ ] Email contains correct day counts
-- [ ] Settings link in email works
-
-### Onboarding
-- [ ] Shows automatically for first-time users
-- [ ] Progress dots navigate between steps
-- [ ] Skip tour works
-- [ ] Get Started completes and closes
-- [ ] Help button (?) reopens tour
-
----
-
 ## GITHUB REPOSITORY
 
-**Main Plugin:** Relo2France/france-relocation-assistant
-**Member Tools:** Relo2France/france-relocation-member-tools
-**Schengen Tracker:** relo2france-schengen-tracker (within france-relocation-assistant repo)
-
-**Development Branch:** `claude/tracker-plugin-dev-1iVyB`
+**Repository:** Relo2France/france-relocation-assistant
+**Development Branch:** `claude/resume-schengen-tracker-ArZQq`
 
 ---
 
-## PREVIOUS SESSION NOTES (December 14, 2025)
-
-### In-Chat Account System
-- Complete account management within chat panel
-- Custom MemberPress shortcodes for subscriptions/payments
-- Member messaging/support ticket system
-
-See previous handoff document sections below for details on:
-- MemberPress integration
-- Logout cookie redirect system (removed)
-- Member Tools plugin architecture
-
----
-
-*Last Updated: December 28, 2025*
+*Last Updated: December 28, 2025 - Schengen Tracker v1.5.0*
