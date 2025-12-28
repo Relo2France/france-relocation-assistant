@@ -232,12 +232,12 @@ $react_settings = array(
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- PWA Support -->
-    <link rel="manifest" href="<?php echo esc_url( FRAMT_URL . 'assets/portal/manifest.json' ); ?>">
+    <link rel="manifest" href="<?php echo esc_url( FRAMT_PLUGIN_URL . 'assets/portal/manifest.json' ); ?>">
     <meta name="theme-color" content="<?php echo esc_attr( $settings['primary_color'] ); ?>">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Relo2France">
-    <link rel="apple-touch-icon" href="<?php echo esc_url( FRAMT_URL . 'assets/images/pwa-icon-192.png' ); ?>">
+    <link rel="apple-touch-icon" href="<?php echo esc_url( FRAMT_PLUGIN_URL . 'assets/images/pwa-icon-192.png' ); ?>">
 
     <?php
     // Always call wp_head to load required scripts and styles
