@@ -37,14 +37,15 @@ import {
   useSkipCalendarEvents,
   useImportICalFile,
 } from '@/hooks/useApi';
-import { useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 interface CalendarSyncProps {
   compact?: boolean;
 }
 
 export default function CalendarSync({ compact = false }: CalendarSyncProps) {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [selectedEvents, setSelectedEvents] = useState<Set<number>>(new Set());
   const [showAllEvents, setShowAllEvents] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -76,8 +77,9 @@ export default function CalendarSync({ compact = false }: CalendarSyncProps) {
   const skipMutation = useSkipCalendarEvents();
   const importICalMutation = useImportICalFile();
 
-  // Handle OAuth callback messages
+  // Handle OAuth callback messages from URL params
   useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
     const connected = searchParams.get('calendar_connected');
     const error = searchParams.get('calendar_error');
 
@@ -85,7 +87,8 @@ export default function CalendarSync({ compact = false }: CalendarSyncProps) {
       setSuccessMessage(`Successfully connected ${connected === 'google' ? 'Google Calendar' : 'Microsoft Outlook'}!`);
       // Clear the URL parameter
       searchParams.delete('calendar_connected');
-      setSearchParams(searchParams, { replace: true });
+      const newSearch = searchParams.toString();
+      navigate({ pathname: location.pathname, search: newSearch ? `?${newSearch}` : '' }, { replace: true });
       // Refetch events after connection
       refetchEvents();
     }
@@ -93,9 +96,10 @@ export default function CalendarSync({ compact = false }: CalendarSyncProps) {
     if (error) {
       setErrorMessage(decodeURIComponent(error));
       searchParams.delete('calendar_error');
-      setSearchParams(searchParams, { replace: true });
+      const newSearch = searchParams.toString();
+      navigate({ pathname: location.pathname, search: newSearch ? `?${newSearch}` : '' }, { replace: true });
     }
-  }, [searchParams, setSearchParams, refetchEvents]);
+  }, [location.search, location.pathname, navigate, refetchEvents]);
 
   // Auto-clear success/error messages
   useEffect(() => {
