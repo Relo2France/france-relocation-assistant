@@ -52,13 +52,6 @@ class R2F_Schengen_Core {
 	public $alerts;
 
 	/**
-	 * Location handler.
-	 *
-	 * @var R2F_Schengen_Location
-	 */
-	public $location;
-
-	/**
 	 * Get singleton instance.
 	 *
 	 * @return R2F_Schengen_Core
@@ -89,7 +82,8 @@ class R2F_Schengen_Core {
 		require_once $includes_dir . 'class-r2f-schengen-premium.php';
 		require_once $includes_dir . 'class-r2f-schengen-api.php';
 		require_once $includes_dir . 'class-r2f-schengen-alerts.php';
-		require_once $includes_dir . 'class-r2f-schengen-location.php';
+		// Location class temporarily disabled while debugging fatal error.
+		// require_once $includes_dir . 'class-r2f-schengen-location.php';
 	}
 
 	/**
@@ -99,7 +93,8 @@ class R2F_Schengen_Core {
 		$this->premium  = R2F_Schengen_Premium::get_instance();
 		$this->api      = R2F_Schengen_API::get_instance();
 		$this->alerts   = R2F_Schengen_Alerts::get_instance();
-		$this->location = R2F_Schengen_Location::get_instance();
+		// Location temporarily disabled while debugging fatal error.
+		// $this->location = R2F_Schengen_Location::get_instance();
 	}
 
 	/**
