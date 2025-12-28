@@ -1,8 +1,8 @@
 # Session Handoff Document
 
-**Date:** December 27, 2025
-**Branch:** `claude/tracker-plugin-dev-1iVyB`
-**Last Commit:** `f004799` - Phase 1.2 complete
+**Date:** December 28, 2025
+**Branch:** `claude/resume-france-relocation-tWg9t`
+**Last Session:** Phase 2 Calendar Sync implemented
 
 ---
 
@@ -16,13 +16,13 @@
 | Member Tools Plugin | v2.1.0 | Active |
 | React Portal | v2.1.0 | Active |
 | Theme | v1.2.4 | Active |
-| **Schengen Tracker Plugin** | **v1.1.0** | **Installed & Active** |
+| **Schengen Tracker Plugin** | **v1.2.0** | **Installed & Active** |
 
-The React portal is fully functional with 40+ REST API endpoints. All major features are complete including profile management, task tracking, document generation, checklists, AI-powered guides, Schengen day tracking, and profile reset functionality.
+The React portal is fully functional with 40+ REST API endpoints. All major features are complete including profile management, task tracking, document generation, checklists, AI-powered guides, Schengen day tracking, location tracking, and calendar sync.
 
-### Schengen Tracker: Phase 1 Complete
+### Schengen Tracker: Phase 2 Complete
 
-Both Browser Geolocation (1.1) and Smart Location Detection (1.2) have been implemented. Users can check in their location and receive smart prompts when travel is detected.
+Calendar Sync has been implemented. Users can connect Google Calendar or Microsoft Outlook, sync events, detect travel automatically, and import them as Schengen trips. iCal file upload is also supported.
 
 **Plan Document:** `SCHENGEN-MONAEO-PARITY-PLAN.md`
 
@@ -30,44 +30,59 @@ Both Browser Geolocation (1.1) and Smart Location Detection (1.2) have been impl
 
 ## 2. What We Completed This Session
 
-### Phase 1.2: Smart Location Detection
+### Phase 2: Calendar Sync
 
-#### PHP Backend - IP Detection
-Updated `class-r2f-schengen-location.php` with:
-- `GET /schengen/location/detect` - IP-based country detection endpoint
-- Uses ip-api.com (free, no API key) for geolocation
-- 1-hour transient caching to avoid API rate limits
-- Handles local IPs and API errors gracefully
+#### Database Schema (`class-r2f-schengen-schema.php`)
+- Added `wp_fra_calendar_connections` table for OAuth connections
+- Added `wp_fra_calendar_events` table for detected travel events
+- Updated DB version to 1.2.0
 
-#### React Frontend - Types & API
-- Added `IPDetectionResult` type to `types/index.ts`
-- Added `detectFromIP` method to `api/client.ts`
-- Added `useIPDetection` hook to `hooks/useApi.ts`
+#### PHP Calendar Class (`class-r2f-schengen-calendar.php`) - **NEW**
+- Complete OAuth 2.0 flow for Google Calendar and Microsoft Outlook
+- Token encryption/decryption using WordPress salts
+- Event fetching and syncing from calendar APIs
+- Travel keyword detection (countries, cities, transport, accommodation)
+- iCal file parsing and import
+- Confidence scoring for travel detection
 
-#### React Frontend - Timezone Detection Hook
-Created `hooks/useLocationDetection.ts`:
-- Detects timezone changes (compared to stored timezone)
-- Maps timezones to likely Schengen countries
-- Provides daily check-in reminders (configurable hour)
-- Tracks last check-in date in localStorage
-- Auto-updates when timezone changes detected
+#### REST API Endpoints (under `/r2f-schengen/v1/calendar/`)
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/providers` | GET | Available calendar providers |
+| `/connections` | GET | User's connected calendars |
+| `/connect` | POST | Start OAuth connection |
+| `/connections/{id}` | DELETE | Disconnect calendar |
+| `/connections/{id}/sync` | POST | Trigger manual sync |
+| `/events` | GET | Get detected travel events |
+| `/events/import` | POST | Import events as trips |
+| `/events/skip` | POST | Skip events |
+| `/import-ical` | POST | Upload iCal file |
 
-#### React Frontend - Location Detection Banner
-Created `components/schengen/LocationDetectionBanner.tsx`:
-- Smart banner that prompts users based on:
-  1. **Timezone change detected** (amber banner with plane icon)
-  2. **IP country differs from timezone** (purple banner with globe icon)
-  3. **Daily reminder** (blue banner with clock icon)
-- Check-in button triggers geolocation and stores location
-- Dismiss button with "Maybe later" option
-- Shows country flags and Schengen zone indicators
-- Success feedback after check-in
-- Compact version for smaller spaces
+#### TypeScript Types (`types/index.ts`)
+- `CalendarProvider`, `CalendarEventStatus`, `CalendarSyncStatus`
+- `CalendarProviderInfo`, `CalendarConnection`, `CalendarEvent`
+- `CalendarSyncResult`, `CalendarImportResult`, `CalendarICalImportResult`
 
-#### Dashboard Integration
-- Added `LocationDetectionBanner` to `SchengenDashboard.tsx`
-- Banner appears above the compact location widget
-- Enabled when user has alerts enabled
+#### API Client (`api/client.ts`)
+- All calendar sync methods added to `schengenApi`
+
+#### React Query Hooks (`hooks/useApi.ts`)
+- `useCalendarProviders`, `useCalendarConnections`
+- `useConnectCalendar`, `useDisconnectCalendar`, `useSyncCalendar`
+- `useCalendarEvents`, `useImportCalendarEvents`, `useSkipCalendarEvents`
+- `useImportICalFile`
+
+#### React Component (`components/schengen/CalendarSync.tsx`) - **NEW**
+- Full UI for connecting calendars (Google/Microsoft)
+- Connection status cards with sync and disconnect actions
+- iCal file upload with drag-and-drop
+- Detected travel events list with select/import/skip
+- OAuth callback handling via URL parameters
+- Compact mode for dashboard embedding
+
+#### Dashboard Integration (`SchengenDashboard.tsx`)
+- Added "Calendar Sync" tab with CalendarPlus icon
+- Renders CalendarSync component in tab content
 
 ---
 
@@ -76,17 +91,19 @@ Created `components/schengen/LocationDetectionBanner.tsx`:
 ### New Files
 | File | Purpose |
 |------|---------|
-| `france-relocation-member-tools/portal/src/hooks/useLocationDetection.ts` | Timezone change detection hook |
-| `france-relocation-member-tools/portal/src/components/schengen/LocationDetectionBanner.tsx` | Smart check-in prompts |
+| `relo2france-schengen-tracker/includes/class-r2f-schengen-calendar.php` | Calendar sync class |
+| `france-relocation-member-tools/portal/src/components/schengen/CalendarSync.tsx` | Calendar sync UI component |
 
 ### Modified Files
 | File | Changes |
 |------|---------|
-| `relo2france-schengen-tracker/includes/class-r2f-schengen-location.php` | Added IP detection endpoint |
-| `france-relocation-member-tools/portal/src/types/index.ts` | Added `IPDetectionResult` type |
-| `france-relocation-member-tools/portal/src/api/client.ts` | Added `detectFromIP` method |
-| `france-relocation-member-tools/portal/src/hooks/useApi.ts` | Added `useIPDetection` hook |
-| `france-relocation-member-tools/portal/src/components/schengen/SchengenDashboard.tsx` | Added detection banner |
+| `relo2france-schengen-tracker/relo2france-schengen-tracker.php` | Version bump to 1.2.0 |
+| `relo2france-schengen-tracker/includes/class-r2f-schengen-schema.php` | New calendar tables |
+| `relo2france-schengen-tracker/includes/class-r2f-schengen-core.php` | Load calendar class |
+| `france-relocation-member-tools/portal/src/types/index.ts` | Calendar types |
+| `france-relocation-member-tools/portal/src/api/client.ts` | Calendar API methods |
+| `france-relocation-member-tools/portal/src/hooks/useApi.ts` | Calendar hooks |
+| `france-relocation-member-tools/portal/src/components/schengen/SchengenDashboard.tsx` | Calendar Sync tab |
 
 ---
 
@@ -101,12 +118,32 @@ npm run build  # Successful
 **Current Status:**
 - **Type Check:** 0 errors
 - **Build:** Successful
-- **Schengen Tracker:** v1.1.0 with location tracking + smart detection
+- **Schengen Tracker:** v1.2.0 with calendar sync
 - **Portal:** Built and ready
 
 ---
 
-## 5. Schengen Tracker Enhancement Plan - Next Phases
+## 5. Configuration Required
+
+For calendar sync to work, admins need to configure OAuth credentials in WordPress options:
+
+### Google Calendar
+```php
+update_option('r2f_schengen_google_client_id', 'your-client-id');
+update_option('r2f_schengen_google_client_secret', 'your-client-secret');
+```
+
+### Microsoft Outlook
+```php
+update_option('r2f_schengen_microsoft_client_id', 'your-client-id');
+update_option('r2f_schengen_microsoft_client_secret', 'your-client-secret');
+```
+
+**Note:** An admin settings page for these credentials is not yet implemented.
+
+---
+
+## 6. Schengen Tracker Enhancement Plan - Status
 
 **Plan Document:** `SCHENGEN-MONAEO-PARITY-PLAN.md`
 
@@ -115,25 +152,20 @@ npm run build  # Successful
 | **0** | Plugin Extraction & Premium Setup | **Complete** |
 | **1.1** | Browser Geolocation Integration | **Complete** |
 | **1.2** | Smart Location Detection | **Complete** |
-| **2** | Google/Outlook Calendar Sync | **Next** |
+| **2** | Google/Outlook Calendar Sync | **Complete** |
 | **3** | Multi-Jurisdiction (US States, etc.) | Pending |
 | **4** | Professional PDF Reports | Pending |
 | **5** | Push + In-App Notifications | Pending |
-| **6** | CSV/ICS Import + PWA | Pending |
+| **6** | CSV/ICS Import + PWA | Partially done (iCal import complete) |
 | **7** | AI Suggestions + Family + Analytics | Pending |
-
-### Phase 2 Overview: Calendar Sync
-- Google Calendar integration (OAuth)
-- Outlook Calendar integration
-- Automatic trip creation from calendar events
-- Two-way sync option
 
 ---
 
-## 6. API Endpoints Summary
+## 7. API Endpoints Summary
 
 Namespace: `/wp-json/r2f-schengen/v1/`
 
+### Location Endpoints
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/location` | POST | Store location check-in |
@@ -145,66 +177,46 @@ Namespace: `/wp-json/r2f-schengen/v1/`
 | `/location/settings` | GET/PUT | Get/update location settings |
 | `/location/detect` | GET | IP-based country detection |
 
----
-
-## 7. Smart Detection Features
-
-### Timezone Detection
-- Compares current browser timezone to stored timezone
-- Maps 30+ European timezones to Schengen country codes
-- Triggers prompt when timezone changes (potential travel)
-- Checks every 5 minutes while portal is open
-
-### IP-Based Detection
-- Uses ip-api.com for country lookup (free tier: 45 req/min)
-- Results cached for 1 hour per user
-- Handles local IPs (127.0.0.1, 192.168.x.x) gracefully
-- Falls back when API is unavailable
-
-### Daily Reminders
-- Configurable reminder hour (default: 9 AM)
-- Tracks last check-in date in localStorage
-- Shows prompt if not checked in today
-- Can be dismissed ("Maybe later")
+### Calendar Endpoints
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/calendar/providers` | GET | Available providers |
+| `/calendar/connections` | GET | Connected calendars |
+| `/calendar/connect` | POST | Start OAuth flow |
+| `/calendar/connections/{id}` | DELETE | Disconnect |
+| `/calendar/connections/{id}/sync` | POST | Manual sync |
+| `/calendar/events` | GET | Detected events |
+| `/calendar/events/import` | POST | Import as trips |
+| `/calendar/events/skip` | POST | Skip events |
+| `/calendar/import-ical` | POST | Upload iCal file |
 
 ---
 
-## 8. Testing Notes
+## 8. Travel Detection Features
 
-To test the new smart detection features:
+### Keyword Detection
+The calendar sync detects travel events using keywords:
+- **Transport:** flight, fly, train, eurostar, airport, airline
+- **Accommodation:** hotel, airbnb, hostel, booking, reservation
+- **Travel:** trip, vacation, holiday, visit
+- **Countries:** All 30 Schengen countries
+- **Cities:** 30+ major European cities (Paris, Berlin, Rome, etc.)
 
-1. **Timezone Detection:**
-   - Change system timezone to simulate travel
-   - Refresh portal - amber banner should appear
-   - Click "Check In Now" to record location
-
-2. **IP Detection:**
-   - Check browser network tab for `/location/detect` call
-   - Should return country based on IP address
-   - Shows purple banner if IP country differs from timezone
-
-3. **Daily Reminder:**
-   - Clear localStorage key `r2f_schengen_last_checkin_date`
-   - Refresh portal after 9 AM - blue reminder banner appears
-   - "Maybe later" dismisses until next day
+### Confidence Scoring
+- **0.9:** Country name detected in title/location
+- **0.85:** Major city detected
+- **0.5:** Travel keyword only (no specific location)
 
 ---
 
 ## 9. To Resume Next Session
 
-1. **Phase 2:** Google/Outlook Calendar Sync
-   - Set up OAuth for Google Calendar API
-   - Parse calendar events for travel-related entries
-   - Create trips from calendar automatically
-   - Consider Microsoft Graph API for Outlook
-
-2. **Reference:** `SCHENGEN-MONAEO-PARITY-PLAN.md` for detailed specs
-
-3. **Optional Improvements:**
-   - Add geofencing for automatic check-ins
-   - Persist timezone acknowledgment to database
-   - Add notification preferences to settings
+1. **Admin Settings Page:** Create UI for entering OAuth credentials
+2. **Background Sync:** Set up cron job for automatic calendar syncing
+3. **Phase 3:** Multi-Jurisdiction support (US states, UK, etc.)
+4. **Phase 4:** Professional PDF reports
+5. **Reference:** `SCHENGEN-MONAEO-PARITY-PLAN.md` for detailed specs
 
 ---
 
-*Generated: December 27, 2025*
+*Generated: December 28, 2025*

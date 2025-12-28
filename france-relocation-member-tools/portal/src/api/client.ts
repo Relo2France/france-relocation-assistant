@@ -56,6 +56,14 @@ import type {
   GeocodeResult,
   LocationSettings,
   IPDetectionResult,
+  CalendarProviderInfo,
+  CalendarConnection,
+  CalendarEvent,
+  CalendarSyncResult,
+  CalendarImportResult,
+  CalendarICalImportResult,
+  CalendarProvider,
+  CalendarEventStatus,
 } from '@/types';
 
 /**
@@ -859,4 +867,60 @@ export const schengenApi = {
 
   // Detect country from IP (fallback)
   detectFromIP: () => apiFetch<IPDetectionResult>('/schengen/location/detect'),
+
+  // ============================================
+  // Calendar Sync (Phase 2)
+  // ============================================
+
+  // Get available calendar providers
+  getCalendarProviders: () =>
+    apiFetch<CalendarProviderInfo[]>('/schengen/calendar/providers'),
+
+  // Get user's calendar connections
+  getCalendarConnections: () =>
+    apiFetch<CalendarConnection[]>('/schengen/calendar/connections'),
+
+  // Start OAuth connection flow (returns auth URL)
+  connectCalendar: (provider: CalendarProvider) =>
+    apiFetch<{ authUrl: string }>('/schengen/calendar/connect', {
+      method: 'POST',
+      body: JSON.stringify({ provider }),
+    }),
+
+  // Disconnect a calendar provider
+  disconnectCalendar: (connectionId: number) =>
+    apiFetch<{ disconnected: boolean; id: number }>(`/schengen/calendar/connections/${connectionId}`, {
+      method: 'DELETE',
+    }),
+
+  // Trigger manual sync for a connection
+  syncCalendar: (connectionId: number) =>
+    apiFetch<CalendarSyncResult>(`/schengen/calendar/connections/${connectionId}/sync`, {
+      method: 'POST',
+    }),
+
+  // Get detected calendar events
+  getCalendarEvents: (status?: CalendarEventStatus | 'all') =>
+    apiFetch<CalendarEvent[]>(`/schengen/calendar/events${status ? `?status=${status}` : ''}`),
+
+  // Import calendar events as trips
+  importCalendarEvents: (eventIds: number[]) =>
+    apiFetch<CalendarImportResult>('/schengen/calendar/events/import', {
+      method: 'POST',
+      body: JSON.stringify({ event_ids: eventIds }),
+    }),
+
+  // Skip calendar events
+  skipCalendarEvents: (eventIds: number[]) =>
+    apiFetch<{ skipped: number }>('/schengen/calendar/events/skip', {
+      method: 'POST',
+      body: JSON.stringify({ event_ids: eventIds }),
+    }),
+
+  // Import iCal file
+  importICalFile: (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return apiFormDataFetch<CalendarICalImportResult>('/schengen/calendar/import-ical', formData);
+  },
 };

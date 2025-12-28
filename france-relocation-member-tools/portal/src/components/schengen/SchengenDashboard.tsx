@@ -17,6 +17,7 @@ import {
   Crown,
   Calculator,
   CalendarDays,
+  CalendarPlus,
   Lock,
   Settings,
   Bell,
@@ -39,13 +40,14 @@ import TripForm from './TripForm';
 import TripList from './TripList';
 import PlanningTool from './PlanningTool';
 import CalendarView from './CalendarView';
+import CalendarSync from './CalendarSync';
 import ReportExport from './ReportExport';
 import LocationTracker from './LocationTracker';
 import LocationDetectionBanner from './LocationDetectionBanner';
 import SchengenOnboarding, { hasCompletedOnboarding } from './SchengenOnboarding';
 import Modal from '@/components/shared/Modal';
 
-type ViewTab = 'trips' | 'calendar' | 'planning' | 'location' | 'settings';
+type ViewTab = 'trips' | 'calendar' | 'sync' | 'planning' | 'location' | 'settings';
 
 export default function SchengenDashboard() {
   const { trips, settings, isLoaded, addTrip, updateTrip, deleteTrip, updateSettings } = useSchengenStore();
@@ -383,6 +385,20 @@ export default function SchengenDashboard() {
             </span>
           </button>
           <button
+            onClick={() => setActiveTab('sync')}
+            className={clsx(
+              'pb-3 px-1 border-b-2 font-medium text-sm transition-colors',
+              activeTab === 'sync'
+                ? 'border-primary-600 text-primary-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            )}
+          >
+            <span className="flex items-center gap-2">
+              <CalendarPlus className="w-4 h-4" aria-hidden="true" />
+              Calendar Sync
+            </span>
+          </button>
+          <button
             onClick={() => setActiveTab('planning')}
             className={clsx(
               'pb-3 px-1 border-b-2 font-medium text-sm transition-colors',
@@ -458,6 +474,10 @@ export default function SchengenDashboard() {
             upgradeUrl={featureStatus?.upgradeUrl}
           />
         )
+      )}
+
+      {activeTab === 'sync' && (
+        <CalendarSync />
       )}
 
       {activeTab === 'planning' && (
