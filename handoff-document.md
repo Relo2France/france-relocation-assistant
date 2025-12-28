@@ -1,5 +1,5 @@
 # Relo2France Handoff Document
-## Session: December 28, 2025 - Schengen Tracker v1.4.0
+## Session: December 28, 2025 - Schengen Tracker v1.5.0
 
 ---
 
@@ -10,10 +10,10 @@
 |-----------|---------|--------|
 | Main Plugin | v2.9.83 | Active |
 | Member Tools Plugin | v1.0.80 | Active |
-| **Schengen Tracker Plugin** | **v1.4.0** | **Active** |
+| **Schengen Tracker Plugin** | **v1.5.0** | **Active** |
 | Theme | v1.2.3 | Active |
 
-### Feature Status - Schengen Tracker v1.4.0
+### Feature Status - Schengen Tracker v1.5.0
 
 | Phase | Feature | Status |
 |-------|---------|--------|
@@ -26,13 +26,15 @@
 | Phase 5 | In-App Notifications & Background Calendar Sync | ✅ Complete |
 | Phase 6 | CSV Import/Export & PWA Support | ✅ Complete |
 | Phase 7 | AI-Powered Trip Suggestions | ✅ Complete |
+| Phase 8 | Family Member Tracking & Analytics Dashboard | ✅ Complete |
 
 ### In Progress
-- Nothing pending (all planned features for v1.4.0 completed)
+- Nothing pending (all planned features for v1.5.0 completed)
 
 ### Next Steps (Future Versions)
-- Family member tracking (track dependents' Schengen days)
-- Analytics dashboard (travel patterns, historical data)
+- Multi-user household accounts (shared family dashboard)
+- Travel document management (passport expiry tracking)
+- Integration with visa tracking module
 
 ---
 
@@ -88,6 +90,42 @@
   - Compliance recommendations
 - Refresh button to regenerate suggestions
 - Collapsible compact view option
+
+### Phase 8: Family Member Tracking & Analytics Dashboard
+**Files:**
+- `relo2france-schengen-tracker/includes/class-r2f-schengen-family.php` (NEW)
+- `relo2france-schengen-tracker/includes/class-r2f-schengen-analytics.php` (NEW)
+- `relo2france-schengen-tracker/includes/class-r2f-schengen-schema.php` (updated)
+- `portal/src/components/schengen/FamilyTracker.tsx` (NEW)
+- `portal/src/components/schengen/AnalyticsDashboard.tsx` (NEW)
+- `portal/src/components/schengen/SchengenDashboard.tsx` (updated)
+- `portal/src/hooks/useApi.ts` (added hooks)
+- `portal/src/api/client.ts` (added API methods)
+- `portal/src/types/index.ts` (added types)
+
+**Family Tracking Features:**
+- Add/edit/delete family members (spouse, child, parent, sibling, other)
+- Individual Schengen day tracking per family member
+- Compliance summary cards for each member
+- Assign travelers to trips (trip_travelers junction table)
+- View days used/remaining per person
+- Expandable member detail cards
+- Premium feature with upgrade prompt for free users
+
+**Analytics Dashboard Features:**
+- Tabbed interface: Overview, Countries, Compliance History, Monthly
+- Period selector: 30d, 90d, 180d, 1y, all
+- Overview: Total trips, days used, average stay, countries visited
+- Countries: Travel patterns by destination with days and trip counts
+- Compliance History: Historical compliance status chart
+- Monthly breakdown: Trips and days by month
+- Export analytics data as CSV
+- Premium feature with upgrade prompt for free users
+
+**Database Schema (v1.5.0):**
+- `fra_schengen_family_members` - Family member profiles
+- `fra_schengen_trip_travelers` - Junction table linking trips to travelers
+- `fra_schengen_analytics` - Historical compliance snapshots
 
 ---
 
@@ -214,6 +252,26 @@ cd france-relocation-member-tools/portal && npx tsc --noEmit
 - [ ] Compact mode works
 - [ ] Empty state shows when no suggestions
 
+### Phase 8 - Family Tracking
+- [ ] Family tab appears in navigation
+- [ ] Add family member form works
+- [ ] Family member cards display correctly
+- [ ] Compliance summary shows for each member
+- [ ] Edit family member works
+- [ ] Delete family member works
+- [ ] Expandable detail cards work
+- [ ] Premium users can access (free users see upgrade prompt)
+
+### Phase 8 - Analytics Dashboard
+- [ ] Analytics tab appears in navigation
+- [ ] Overview tab shows correct stats
+- [ ] Countries tab shows travel patterns
+- [ ] Compliance History tab shows chart
+- [ ] Monthly tab shows breakdown
+- [ ] Period selector (30d, 90d, 180d, 1y, all) works
+- [ ] Export button downloads CSV
+- [ ] Premium users can access (free users see upgrade prompt)
+
 ---
 
 ## API ENDPOINTS ADDED
@@ -243,6 +301,24 @@ POST   /wp-json/r2f-schengen/v1/trips/import            - Import CSV
 
 # AI Suggestions
 GET    /wp-json/r2f-schengen/v1/suggestions             - Get AI suggestions
+
+# Family Tracking (v1.5.0)
+GET    /wp-json/r2f-schengen/v1/family                  - List family members
+POST   /wp-json/r2f-schengen/v1/family                  - Create family member
+GET    /wp-json/r2f-schengen/v1/family/{id}             - Get family member
+PUT    /wp-json/r2f-schengen/v1/family/{id}             - Update family member
+DELETE /wp-json/r2f-schengen/v1/family/{id}             - Delete family member
+GET    /wp-json/r2f-schengen/v1/family/{id}/summary     - Get member compliance summary
+GET    /wp-json/r2f-schengen/v1/family/summaries        - Get all member summaries
+GET    /wp-json/r2f-schengen/v1/trips/{id}/travelers    - Get trip travelers
+PUT    /wp-json/r2f-schengen/v1/trips/{id}/travelers    - Update trip travelers
+
+# Analytics Dashboard (v1.5.0)
+GET    /wp-json/r2f-schengen/v1/analytics               - Get analytics overview
+GET    /wp-json/r2f-schengen/v1/analytics/patterns      - Get travel patterns by country
+GET    /wp-json/r2f-schengen/v1/analytics/history       - Get compliance history
+GET    /wp-json/r2f-schengen/v1/analytics/monthly       - Get monthly breakdown
+GET    /wp-json/r2f-schengen/v1/analytics/export        - Export analytics as CSV
 ```
 
 ---
@@ -286,6 +362,8 @@ SchengenDashboard
     │
     ├── Tab Navigation
     │   ├── Trip List → TripList component
+    │   ├── Family → FamilyTracker (premium) ← NEW in v1.5.0
+    │   ├── Analytics → AnalyticsDashboard (premium) ← NEW in v1.5.0
     │   ├── Jurisdictions → JurisdictionOverview
     │   ├── Calendar View → CalendarView (premium)
     │   ├── Calendar Sync → CalendarSync
@@ -307,4 +385,4 @@ SchengenDashboard
 
 ---
 
-*Last Updated: December 28, 2025 - Schengen Tracker v1.4.0*
+*Last Updated: December 28, 2025 - Schengen Tracker v1.5.0*
