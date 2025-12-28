@@ -1,14 +1,15 @@
 /**
  * TripForm
  *
- * Form for adding/editing Schengen trips.
+ * Form for adding/editing trips with jurisdiction support.
  */
 
 import { useState, useEffect } from 'react';
 import { clsx } from 'clsx';
-import { Calendar, MapPin, Briefcase, FileText, AlertTriangle } from 'lucide-react';
+import { Calendar, MapPin, Briefcase, FileText, AlertTriangle, Globe } from 'lucide-react';
 import { SCHENGEN_COUNTRIES } from '@/types';
-import type { SchengenTrip, SchengenCountry } from '@/types';
+import type { SchengenTrip } from '@/types';
+import { useTrackedJurisdictions } from '@/hooks/useApi';
 import { wouldTripViolate, getTripDuration } from './schengenUtils';
 
 interface TripFormProps {
@@ -17,7 +18,20 @@ interface TripFormProps {
   onSubmit: (data: Omit<SchengenTrip, 'id' | 'createdAt' | 'updatedAt'>) => void;
   onCancel: () => void;
   className?: string;
+  defaultJurisdiction?: string;
 }
+
+// Country lists for different jurisdiction types
+const US_STATES = [
+  'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut',
+  'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa',
+  'Kansas', 'Kentucky', 'Louisiana', 'Maine', 'Maryland', 'Massachusetts', 'Michigan',
+  'Minnesota', 'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire',
+  'New Jersey', 'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio',
+  'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota',
+  'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington', 'West Virginia',
+  'Wisconsin', 'Wyoming', 'District of Columbia'
+] as const;
 
 export default function TripForm({
   trip,
@@ -25,41 +39,85 @@ export default function TripForm({
   onSubmit,
   onCancel,
   className,
+  defaultJurisdiction = 'schengen',
 }: TripFormProps) {
   const isEditing = !!trip;
 
   const [startDate, setStartDate] = useState(trip?.startDate || '');
   const [endDate, setEndDate] = useState(trip?.endDate || '');
-  const [country, setCountry] = useState<SchengenCountry>(trip?.country || 'France');
+  const [country, setCountry] = useState<string>(trip?.country || 'France');
+  const [jurisdictionCode, setJurisdictionCode] = useState(trip?.jurisdictionCode || defaultJurisdiction);
   const [category, setCategory] = useState<'personal' | 'business'>(trip?.category || 'personal');
   const [notes, setNotes] = useState(trip?.notes || '');
+
+  const { data: trackedJurisdictions } = useTrackedJurisdictions();
 
   const [warning, setWarning] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Validate trip against 90-day rule
+  // Get jurisdiction details
+  const currentJurisdiction = trackedJurisdictions?.find(j => j.code === jurisdictionCode);
+  const isSchengen = jurisdictionCode === 'schengen';
+  const isUSState = jurisdictionCode?.startsWith('us_') && currentJurisdiction?.type === 'state';
+
+  // Get country/location list based on jurisdiction
+  const getLocationOptions = (): string[] => {
+    if (isSchengen) {
+      return [...SCHENGEN_COUNTRIES];
+    }
+    if (isUSState) {
+      return [...US_STATES];
+    }
+    // For other jurisdictions, use the jurisdiction name as the location
+    return currentJurisdiction ? [currentJurisdiction.name] : ['Unknown'];
+  };
+
+  // Update country when jurisdiction changes
+  useEffect(() => {
+    const options = getLocationOptions();
+    if (!options.includes(country)) {
+      setCountry(options[0] || '');
+    }
+  }, [jurisdictionCode]);
+
+  // Validate trip against rule limits
   useEffect(() => {
     if (startDate && endDate) {
-      // Filter out current trip if editing
-      const otherTrips = isEditing
-        ? existingTrips.filter((t) => t.id !== trip.id)
-        : existingTrips;
+      // Only validate Schengen trips with the 90-day rule for now
+      if (isSchengen) {
+        // Filter out current trip if editing
+        const otherTrips = isEditing
+          ? existingTrips.filter((t) => t.id !== trip.id)
+          : existingTrips;
 
-      const result = wouldTripViolate(otherTrips, startDate, endDate);
+        // Only include Schengen trips in validation
+        const schengenTrips = otherTrips.filter(t => !t.jurisdictionCode || t.jurisdictionCode === 'schengen');
+        const result = wouldTripViolate(schengenTrips, startDate, endDate);
 
-      if (result.wouldViolate) {
-        setWarning(result.message);
-      } else if (result.projectedDaysUsed >= 80) {
-        setWarning(`This trip will bring you to ${result.projectedDaysUsed}/90 days - approaching the limit.`);
-      } else if (result.projectedDaysUsed >= 60) {
-        setWarning(`This trip will bring you to ${result.projectedDaysUsed}/90 days.`);
+        if (result.wouldViolate) {
+          setWarning(result.message);
+        } else if (result.projectedDaysUsed >= 80) {
+          setWarning(`This trip will bring you to ${result.projectedDaysUsed}/90 days - approaching the limit.`);
+        } else if (result.projectedDaysUsed >= 60) {
+          setWarning(`This trip will bring you to ${result.projectedDaysUsed}/90 days.`);
+        } else {
+          setWarning(null);
+        }
+      } else if (currentJurisdiction) {
+        // Basic validation for other jurisdictions
+        const duration = getTripDuration({ startDate, endDate });
+        if (duration > currentJurisdiction.daysAllowed) {
+          setWarning(`This trip exceeds the ${currentJurisdiction.daysAllowed}-day limit for ${currentJurisdiction.name}.`);
+        } else {
+          setWarning(null);
+        }
       } else {
         setWarning(null);
       }
     } else {
       setWarning(null);
     }
-  }, [startDate, endDate, existingTrips, isEditing, trip]);
+  }, [startDate, endDate, existingTrips, isEditing, trip, jurisdictionCode, currentJurisdiction, isSchengen]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,11 +135,12 @@ export default function TripForm({
       return;
     }
 
-    // Check for excessively long trips
+    // Check for excessively long trips based on jurisdiction
     const duration = getTripDuration({ startDate, endDate });
+    const maxDays = currentJurisdiction?.daysAllowed || 90;
 
-    if (duration > 90) {
-      setError('A single trip cannot exceed 90 days.');
+    if (duration > maxDays) {
+      setError(`A single trip cannot exceed ${maxDays} days for ${currentJurisdiction?.name || 'this jurisdiction'}.`);
       return;
     }
 
@@ -89,6 +148,7 @@ export default function TripForm({
       startDate,
       endDate,
       country,
+      jurisdictionCode,
       category,
       notes: notes.trim() || undefined,
     });
@@ -98,8 +158,39 @@ export default function TripForm({
     ? getTripDuration({ startDate, endDate })
     : null;
 
+  const locationOptions = getLocationOptions();
+  const showJurisdictionSelector = trackedJurisdictions && trackedJurisdictions.length > 1;
+
   return (
     <form onSubmit={handleSubmit} className={clsx('space-y-4', className)}>
+      {/* Jurisdiction selector - only show if user tracks multiple jurisdictions */}
+      {showJurisdictionSelector && (
+        <div>
+          <label
+            htmlFor="jurisdiction"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
+            <Globe className="w-4 h-4 inline mr-1" aria-hidden="true" />
+            Jurisdiction
+          </label>
+          <select
+            id="jurisdiction"
+            value={jurisdictionCode}
+            onChange={(e) => setJurisdictionCode(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+          >
+            {trackedJurisdictions.map((j) => (
+              <option key={j.code} value={j.code}>
+                {j.name} ({j.daysAllowed}/{j.windowDays} days)
+              </option>
+            ))}
+          </select>
+          {currentJurisdiction?.description && (
+            <p className="mt-1 text-xs text-gray-500">{currentJurisdiction.description}</p>
+          )}
+        </div>
+      )}
+
       {/* Date fields */}
       <div className="grid grid-cols-2 gap-4">
         <div>
@@ -143,25 +234,30 @@ export default function TripForm({
       {duration !== null && (
         <div className="text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded-lg">
           Duration: <span className="font-medium">{duration} day{duration !== 1 ? 's' : ''}</span>
+          {currentJurisdiction && (
+            <span className="text-gray-400 ml-2">
+              (max {currentJurisdiction.daysAllowed} for {currentJurisdiction.name})
+            </span>
+          )}
         </div>
       )}
 
-      {/* Country selector */}
+      {/* Country/Location selector */}
       <div>
         <label
           htmlFor="country"
           className="block text-sm font-medium text-gray-700 mb-1"
         >
           <MapPin className="w-4 h-4 inline mr-1" aria-hidden="true" />
-          Country
+          {isUSState ? 'State' : 'Country'}
         </label>
         <select
           id="country"
           value={country}
-          onChange={(e) => setCountry(e.target.value as SchengenCountry)}
+          onChange={(e) => setCountry(e.target.value)}
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
         >
-          {SCHENGEN_COUNTRIES.map((c) => (
+          {locationOptions.map((c) => (
             <option key={c} value={c}>
               {c}
             </option>

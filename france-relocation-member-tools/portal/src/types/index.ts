@@ -816,7 +816,8 @@ export interface SchengenTrip {
   id: string;                              // UUID
   startDate: string;                       // ISO date (YYYY-MM-DD)
   endDate: string;                         // ISO date (YYYY-MM-DD)
-  country: SchengenCountry;                // Country name
+  country: SchengenCountry | string;       // Country/state name (string for non-Schengen)
+  jurisdictionCode?: string;               // Jurisdiction code (default: 'schengen')
   category: 'personal' | 'business';
   notes?: string;
   createdAt: string;                       // ISO timestamp
