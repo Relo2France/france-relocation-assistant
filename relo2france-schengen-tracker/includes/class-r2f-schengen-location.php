@@ -239,7 +239,7 @@ class R2F_Schengen_Location {
 				'city'        => $city,
 				'isSchengen'  => $is_schengen,
 				'source'      => $source,
-				'recordedAt'  => current_time( 'mysql' ),
+				'recordedAt'  => gmdate( 'c' ), // ISO 8601 with timezone
 			),
 			'trip'     => $trip_info,
 		) );
@@ -403,6 +403,9 @@ class R2F_Schengen_Location {
 	 * Format a location row for API response.
 	 */
 	private function format_location_row( $row ) {
+		// Convert stored GMT time to ISO 8601 format with timezone indicator.
+		$recorded_at_iso = $row->recorded_at ? gmdate( 'c', strtotime( $row->recorded_at . ' UTC' ) ) : null;
+
 		return array(
 			'id'          => (int) $row->id,
 			'lat'         => (float) $row->lat,
@@ -413,7 +416,7 @@ class R2F_Schengen_Location {
 			'city'        => $row->city,
 			'isSchengen'  => (bool) $row->is_schengen,
 			'source'      => $row->source,
-			'recordedAt'  => $row->recorded_at,
+			'recordedAt'  => $recorded_at_iso,
 		);
 	}
 
