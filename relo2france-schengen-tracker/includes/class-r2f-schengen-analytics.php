@@ -33,6 +33,13 @@ class R2F_Schengen_Analytics {
 	private $namespace = 'r2f-schengen/v1';
 
 	/**
+	 * Legacy namespace for backward compatibility with Member Tools portal.
+	 *
+	 * @var string
+	 */
+	const LEGACY_NAMESPACE = 'fra-portal/v1';
+
+	/**
 	 * Get singleton instance.
 	 *
 	 * @return R2F_Schengen_Analytics
@@ -56,10 +63,24 @@ class R2F_Schengen_Analytics {
 	 * Register REST API routes.
 	 */
 	public function register_routes() {
+		// Register primary routes.
+		$this->register_route_group( $this->namespace );
+
+		// Register legacy routes for backward compatibility with Member Tools portal.
+		$this->register_route_group( self::LEGACY_NAMESPACE, '/schengen' );
+	}
+
+	/**
+	 * Register route group under a namespace.
+	 *
+	 * @param string $namespace API namespace.
+	 * @param string $prefix    Route prefix (empty for primary, '/schengen' for legacy).
+	 */
+	private function register_route_group( $namespace, $prefix = '' ) {
 		// Analytics overview.
 		register_rest_route(
-			$this->namespace,
-			'/analytics',
+			$namespace,
+			$prefix . '/analytics',
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array( $this, 'get_analytics_overview' ),
@@ -76,8 +97,8 @@ class R2F_Schengen_Analytics {
 
 		// Travel patterns (countries visited).
 		register_rest_route(
-			$this->namespace,
-			'/analytics/patterns',
+			$namespace,
+			$prefix . '/analytics/patterns',
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array( $this, 'get_travel_patterns' ),
@@ -94,8 +115,8 @@ class R2F_Schengen_Analytics {
 
 		// Historical compliance data.
 		register_rest_route(
-			$this->namespace,
-			'/analytics/history',
+			$namespace,
+			$prefix . '/analytics/history',
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array( $this, 'get_compliance_history' ),
@@ -115,8 +136,8 @@ class R2F_Schengen_Analytics {
 
 		// Monthly breakdown.
 		register_rest_route(
-			$this->namespace,
-			'/analytics/monthly',
+			$namespace,
+			$prefix . '/analytics/monthly',
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array( $this, 'get_monthly_breakdown' ),
@@ -132,8 +153,8 @@ class R2F_Schengen_Analytics {
 
 		// Export analytics data.
 		register_rest_route(
-			$this->namespace,
-			'/analytics/export',
+			$namespace,
+			$prefix . '/analytics/export',
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array( $this, 'export_analytics' ),
