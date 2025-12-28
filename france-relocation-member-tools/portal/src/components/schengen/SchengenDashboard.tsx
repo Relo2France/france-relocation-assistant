@@ -48,6 +48,7 @@ import LocationDetectionBanner from './LocationDetectionBanner';
 import SchengenOnboarding, { hasCompletedOnboarding } from './SchengenOnboarding';
 import JurisdictionOverview from './JurisdictionOverview';
 import NotificationCenter from './NotificationCenter';
+import CSVImportExport from './CSVImportExport';
 import Modal from '@/components/shared/Modal';
 import ErrorBoundary from '@/components/shared/ErrorBoundary';
 
@@ -664,6 +665,14 @@ export default function SchengenDashboard() {
               </div>
             </div>
           </div>
+
+          {/* CSV Import/Export Section */}
+          {featureStatus?.isPremium && (
+            <div className="border-t border-gray-200 pt-6">
+              <h4 className="font-medium text-gray-900 mb-4">Data Import/Export</h4>
+              <CSVImportExport />
+            </div>
+          )}
         </div>
       )}
 

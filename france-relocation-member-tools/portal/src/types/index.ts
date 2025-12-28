@@ -1063,6 +1063,24 @@ export interface CalendarICalImportResult {
 }
 
 // ============================================
+// CSV Import/Export Types (Phase 6)
+// ============================================
+
+export interface CSVImportResult {
+  success: boolean;
+  imported: number;
+  skipped: number;
+  errors: string[];
+  message: string;
+}
+
+export interface CSVExportResult {
+  csv: string;
+  filename: string;
+  count: number;
+}
+
+// ============================================
 // Jurisdiction Types (Phase 3)
 // ============================================
 

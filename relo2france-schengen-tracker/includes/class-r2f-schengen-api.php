@@ -247,6 +247,28 @@ class R2F_Schengen_API {
 				'permission_callback' => array( $this, 'check_permission' ),
 			)
 		);
+
+		// CSV import (premium feature).
+		register_rest_route(
+			$namespace,
+			$prefix . '/trips/import',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( $this, 'import_trips_csv' ),
+				'permission_callback' => array( $this, 'check_premium_permission' ),
+			)
+		);
+
+		// CSV export.
+		register_rest_route(
+			$namespace,
+			$prefix . '/trips/export',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( $this, 'export_trips_csv' ),
+				'permission_callback' => array( $this, 'check_permission' ),
+			)
+		);
 	}
 
 	/**
@@ -905,6 +927,231 @@ class R2F_Schengen_API {
 		$result = $alerts->test_alert( $user_id );
 
 		return rest_ensure_response( $result );
+	}
+
+	// ========================================
+	// CSV Import/Export
+	// ========================================
+
+	/**
+	 * Import trips from CSV data.
+	 *
+	 * Expected CSV format:
+	 * start_date,end_date,country,category,notes
+	 * 2024-01-15,2024-01-20,France,personal,Business trip
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function import_trips_csv( WP_REST_Request $request ) {
+		global $wpdb;
+
+		$params  = $request->get_json_params();
+		$user_id = get_current_user_id();
+
+		if ( empty( $params['csv'] ) ) {
+			return new WP_Error(
+				'missing_csv',
+				__( 'CSV data is required.', 'r2f-schengen' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		$csv_data = sanitize_textarea_field( $params['csv'] );
+		$lines    = explode( "\n", $csv_data );
+
+		if ( count( $lines ) < 2 ) {
+			return new WP_Error(
+				'invalid_csv',
+				__( 'CSV must contain a header row and at least one data row.', 'r2f-schengen' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		// Parse header to determine column mapping.
+		$header_line = str_getcsv( array_shift( $lines ) );
+		$header      = array_map( 'trim', array_map( 'strtolower', $header_line ) );
+
+		// Required columns.
+		$required = array( 'start_date', 'end_date', 'country' );
+		foreach ( $required as $col ) {
+			if ( ! in_array( $col, $header, true ) ) {
+				return new WP_Error(
+					'missing_column',
+					sprintf( __( 'Required column "%s" not found in CSV header.', 'r2f-schengen' ), $col ),
+					array( 'status' => 400 )
+				);
+			}
+		}
+
+		// Column indices.
+		$idx_start    = array_search( 'start_date', $header, true );
+		$idx_end      = array_search( 'end_date', $header, true );
+		$idx_country  = array_search( 'country', $header, true );
+		$idx_category = array_search( 'category', $header, true );
+		$idx_notes    = array_search( 'notes', $header, true );
+
+		$table       = R2F_Schengen_Schema::get_table( 'trips' );
+		$imported    = 0;
+		$skipped     = 0;
+		$errors      = array();
+		$skip_duplicates = isset( $params['skip_duplicates'] ) && $params['skip_duplicates'];
+
+		foreach ( $lines as $line_num => $line ) {
+			$line = trim( $line );
+			if ( empty( $line ) ) {
+				continue;
+			}
+
+			$row        = str_getcsv( $line );
+			$row_number = $line_num + 2; // 1-indexed + header row.
+
+			// Extract values.
+			$start_date = isset( $row[ $idx_start ] ) ? trim( $row[ $idx_start ] ) : '';
+			$end_date   = isset( $row[ $idx_end ] ) ? trim( $row[ $idx_end ] ) : '';
+			$country    = isset( $row[ $idx_country ] ) ? trim( $row[ $idx_country ] ) : '';
+			$category   = ( false !== $idx_category && isset( $row[ $idx_category ] ) )
+				? strtolower( trim( $row[ $idx_category ] ) )
+				: 'personal';
+			$notes      = ( false !== $idx_notes && isset( $row[ $idx_notes ] ) )
+				? trim( $row[ $idx_notes ] )
+				: '';
+
+			// Validate start_date.
+			if ( empty( $start_date ) || ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $start_date ) ) {
+				$errors[] = sprintf( __( 'Row %d: Invalid start_date format (expected YYYY-MM-DD).', 'r2f-schengen' ), $row_number );
+				$skipped++;
+				continue;
+			}
+
+			// Validate end_date.
+			if ( empty( $end_date ) || ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $end_date ) ) {
+				$errors[] = sprintf( __( 'Row %d: Invalid end_date format (expected YYYY-MM-DD).', 'r2f-schengen' ), $row_number );
+				$skipped++;
+				continue;
+			}
+
+			// Validate date logic.
+			$validation = $this->validate_trip_dates( $start_date, $end_date );
+			if ( is_wp_error( $validation ) ) {
+				$errors[] = sprintf( __( 'Row %d: %s', 'r2f-schengen' ), $row_number, $validation->get_error_message() );
+				$skipped++;
+				continue;
+			}
+
+			// Validate country - try to match case-insensitively.
+			$matched_country = null;
+			foreach ( self::SCHENGEN_COUNTRIES as $valid_country ) {
+				if ( strtolower( $valid_country ) === strtolower( $country ) ) {
+					$matched_country = $valid_country;
+					break;
+				}
+			}
+
+			if ( ! $matched_country ) {
+				$errors[] = sprintf( __( 'Row %d: Invalid country "%s".', 'r2f-schengen' ), $row_number, $country );
+				$skipped++;
+				continue;
+			}
+
+			// Validate category.
+			if ( ! in_array( $category, array( 'personal', 'business' ), true ) ) {
+				$category = 'personal';
+			}
+
+			// Check for duplicates if enabled.
+			if ( $skip_duplicates ) {
+				$existing = $wpdb->get_var(
+					$wpdb->prepare(
+						"SELECT id FROM $table WHERE user_id = %d AND start_date = %s AND end_date = %s AND country = %s",
+						$user_id,
+						$start_date,
+						$end_date,
+						$matched_country
+					)
+				);
+
+				if ( $existing ) {
+					$skipped++;
+					continue;
+				}
+			}
+
+			// Insert the trip.
+			$result = $wpdb->insert(
+				$table,
+				array(
+					'user_id'    => $user_id,
+					'start_date' => $start_date,
+					'end_date'   => $end_date,
+					'country'    => $matched_country,
+					'category'   => $category,
+					'notes'      => $notes ?: null,
+				),
+				array( '%d', '%s', '%s', '%s', '%s', '%s' )
+			);
+
+			if ( false === $result ) {
+				$errors[] = sprintf( __( 'Row %d: Database error.', 'r2f-schengen' ), $row_number );
+				$skipped++;
+			} else {
+				$imported++;
+			}
+		}
+
+		return rest_ensure_response( array(
+			'success'  => true,
+			'imported' => $imported,
+			'skipped'  => $skipped,
+			'errors'   => array_slice( $errors, 0, 10 ), // Limit errors to first 10.
+			'message'  => sprintf(
+				__( 'Imported %d trips. %d rows skipped.', 'r2f-schengen' ),
+				$imported,
+				$skipped
+			),
+		) );
+	}
+
+	/**
+	 * Export trips to CSV format.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response
+	 */
+	public function export_trips_csv( WP_REST_Request $request ) {
+		global $wpdb;
+
+		$table   = R2F_Schengen_Schema::get_table( 'trips' );
+		$user_id = get_current_user_id();
+
+		$trips = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT * FROM $table WHERE user_id = %d ORDER BY start_date DESC",
+				$user_id
+			)
+		);
+
+		// Build CSV content.
+		$lines   = array();
+		$lines[] = 'start_date,end_date,country,category,notes';
+
+		foreach ( $trips as $trip ) {
+			$notes = str_replace( '"', '""', $trip->notes ?? '' );
+			$lines[] = sprintf(
+				'%s,%s,%s,%s,"%s"',
+				$trip->start_date,
+				$trip->end_date,
+				$trip->country,
+				$trip->category,
+				$notes
+			);
+		}
+
+		return rest_ensure_response( array(
+			'csv'      => implode( "\n", $lines ),
+			'filename' => 'schengen-trips-' . date( 'Y-m-d' ) . '.csv',
+			'count'    => count( $trips ),
+		) );
 	}
 
 	// ========================================

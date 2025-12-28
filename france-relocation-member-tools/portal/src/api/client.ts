@@ -72,6 +72,8 @@ import type {
   NotificationItem,
   PushStatus,
   NotificationPreferences,
+  CSVImportResult,
+  CSVExportResult,
 } from '@/types';
 
 /**
@@ -931,6 +933,21 @@ export const schengenApi = {
     formData.append('file', file);
     return apiFormDataFetch<CalendarICalImportResult>('/schengen/calendar/import-ical', formData);
   },
+
+  // ============================================
+  // CSV Import/Export API (Phase 6)
+  // ============================================
+
+  // Import trips from CSV
+  importTripsCSV: (csv: string, skipDuplicates = true) =>
+    apiFetch<CSVImportResult>('/schengen/trips/import', {
+      method: 'POST',
+      body: JSON.stringify({ csv, skip_duplicates: skipDuplicates }),
+    }),
+
+  // Export trips to CSV
+  exportTripsCSV: () =>
+    apiFetch<CSVExportResult>('/schengen/trips/export'),
 
   // ============================================
   // Jurisdiction API (Phase 3)

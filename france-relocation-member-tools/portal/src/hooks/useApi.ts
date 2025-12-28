@@ -1466,3 +1466,32 @@ export function useSendTestNotification() {
     },
   });
 }
+
+// ============================================
+// CSV Import/Export Hooks (Phase 6)
+// ============================================
+
+/**
+ * Import trips from CSV data
+ */
+export function useImportTripsCSV() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ csv, skipDuplicates = true }: { csv: string; skipDuplicates?: boolean }) =>
+      schengenApi.importTripsCSV(csv, skipDuplicates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['schengenTrips'] });
+      queryClient.invalidateQueries({ queryKey: ['schengenSummary'] });
+    },
+  });
+}
+
+/**
+ * Export trips to CSV
+ */
+export function useExportTripsCSV() {
+  return useMutation({
+    mutationFn: schengenApi.exportTripsCSV,
+  });
+}
