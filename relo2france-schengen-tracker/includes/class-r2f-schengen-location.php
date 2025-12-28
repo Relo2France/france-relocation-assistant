@@ -78,12 +78,25 @@ class R2F_Schengen_Location {
 	 * Register REST API routes for location.
 	 */
 	public function register_routes(): void {
-		$namespace = R2F_Schengen_API::NAMESPACE;
+		// Register under primary namespace (r2f-schengen/v1/location).
+		$this->register_location_routes( R2F_Schengen_API::NAMESPACE, '/location' );
 
+		// Also register under legacy namespace for Member Tools portal.
+		// Frontend calls: fra-portal/v1/schengen/location
+		$this->register_location_routes( 'fra-portal/v1', '/schengen/location' );
+	}
+
+	/**
+	 * Register location routes under a specific namespace and prefix.
+	 *
+	 * @param string $namespace API namespace.
+	 * @param string $base      Base path for routes.
+	 */
+	private function register_location_routes( $namespace, $base ) {
 		// Store current location (check-in).
 		register_rest_route(
 			$namespace,
-			'/location',
+			$base,
 			array(
 				array(
 					'methods'             => 'POST',
@@ -97,7 +110,7 @@ class R2F_Schengen_Location {
 		// Get location history.
 		register_rest_route(
 			$namespace,
-			'/location/history',
+			$base . '/history',
 			array(
 				'methods'             => 'GET',
 				'callback'            => array( $this, 'get_location_history' ),
@@ -121,7 +134,7 @@ class R2F_Schengen_Location {
 		// Get today's location status.
 		register_rest_route(
 			$namespace,
-			'/location/today',
+			$base . '/today',
 			array(
 				'methods'             => 'GET',
 				'callback'            => array( $this, 'get_today_status' ),
@@ -132,7 +145,7 @@ class R2F_Schengen_Location {
 		// Reverse geocode coordinates.
 		register_rest_route(
 			$namespace,
-			'/location/geocode',
+			$base . '/geocode',
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( $this, 'reverse_geocode' ),
@@ -153,7 +166,7 @@ class R2F_Schengen_Location {
 		// Delete location history entry.
 		register_rest_route(
 			$namespace,
-			'/location/(?P<id>\d+)',
+			$base . '/(?P<id>\d+)',
 			array(
 				'methods'             => 'DELETE',
 				'callback'            => array( $this, 'delete_location' ),
@@ -164,7 +177,7 @@ class R2F_Schengen_Location {
 		// Clear all location history (privacy).
 		register_rest_route(
 			$namespace,
-			'/location/clear',
+			$base . '/clear',
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( $this, 'clear_location_history' ),
@@ -175,7 +188,7 @@ class R2F_Schengen_Location {
 		// Get location settings.
 		register_rest_route(
 			$namespace,
-			'/location/settings',
+			$base . '/settings',
 			array(
 				array(
 					'methods'             => 'GET',
@@ -193,7 +206,7 @@ class R2F_Schengen_Location {
 		// Detect country from IP (fallback when geolocation unavailable).
 		register_rest_route(
 			$namespace,
-			'/location/detect',
+			$base . '/detect',
 			array(
 				'methods'             => 'GET',
 				'callback'            => array( $this, 'detect_from_ip' ),
