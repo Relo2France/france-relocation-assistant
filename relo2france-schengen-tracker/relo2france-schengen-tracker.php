@@ -3,7 +3,7 @@
  * Plugin Name: Relo2France Schengen Tracker
  * Plugin URI: https://relo2france.com/schengen-tracker
  * Description: Track your Schengen 90/180 day compliance with calendar sync, alerts, and professional reports. Works standalone or integrated with Relo2France Member Portal.
- * Version: 1.0.0
+ * Version: 1.5.0
  * Author: Relo2France
  * Author URI: https://relo2france.com
  * License: GPL-2.0+

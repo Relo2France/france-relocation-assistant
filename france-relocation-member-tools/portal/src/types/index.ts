@@ -1277,7 +1277,7 @@ export interface NotificationPreferences {
 }
 
 // ============================================
-// Analytics Types (Phase 7)
+// Analytics Types (Phase 7 - Simple Analytics)
 // ============================================
 
 export interface AnalyticsSummary {
