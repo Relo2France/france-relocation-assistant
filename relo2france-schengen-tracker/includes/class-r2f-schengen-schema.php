@@ -25,7 +25,7 @@ class R2F_Schengen_Schema {
 	 *
 	 * @var string
 	 */
-	const DB_VERSION = '1.2.0';
+	const DB_VERSION = '1.3.0';
 
 	/**
 	 * Table definitions.
@@ -34,10 +34,11 @@ class R2F_Schengen_Schema {
 	 * @var array
 	 */
 	private static $tables = array(
-		'trips'               => 'fra_schengen_trips', // Keep same name for backward compatibility.
-		'location_log'        => 'fra_schengen_location_log',
+		'trips'                => 'fra_schengen_trips', // Keep same name for backward compatibility.
+		'location_log'         => 'fra_schengen_location_log',
 		'calendar_connections' => 'fra_calendar_connections',
 		'calendar_events'      => 'fra_calendar_events',
+		'jurisdiction_rules'   => 'fra_jurisdiction_rules',
 	);
 
 	/**
@@ -166,6 +167,38 @@ class R2F_Schengen_Schema {
 
 		dbDelta( $sql_calendar_events );
 
+		// Jurisdiction rules table (added in v1.3.0 for multi-jurisdiction support).
+		$table_jurisdiction_rules = self::get_table( 'jurisdiction_rules' );
+		$sql_jurisdiction_rules = "CREATE TABLE $table_jurisdiction_rules (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			code varchar(20) NOT NULL,
+			name varchar(100) NOT NULL,
+			type varchar(20) NOT NULL DEFAULT 'zone',
+			parent_code varchar(20) DEFAULT NULL,
+			days_allowed int(11) NOT NULL,
+			window_days int(11) NOT NULL,
+			counting_method varchar(20) DEFAULT 'rolling',
+			reset_month int(11) DEFAULT NULL,
+			reset_day int(11) DEFAULT NULL,
+			description text DEFAULT NULL,
+			notes text DEFAULT NULL,
+			countries text DEFAULT NULL,
+			is_active tinyint(1) DEFAULT 1,
+			is_system tinyint(1) DEFAULT 1,
+			display_order int(11) DEFAULT 0,
+			created_at datetime DEFAULT CURRENT_TIMESTAMP,
+			updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+			PRIMARY KEY (id),
+			UNIQUE KEY idx_code (code),
+			KEY idx_type (type),
+			KEY idx_active (is_active)
+		) $charset_collate;";
+
+		dbDelta( $sql_jurisdiction_rules );
+
+		// Populate default jurisdiction rules if table is empty.
+		self::maybe_populate_default_rules();
+
 		// Run migrations for existing installations.
 		self::maybe_migrate();
 
@@ -213,6 +246,207 @@ class R2F_Schengen_Schema {
 				);
 			}
 		}
+
+		// Migration from 1.2.x to 1.3.0: Add jurisdiction_code column to trips table.
+		if ( version_compare( $current_version, '1.3.0', '<' ) ) {
+			$table_trips = self::get_table( 'trips' );
+
+			// Check if jurisdiction_code column exists.
+			$column_exists = $wpdb->get_results(
+				$wpdb->prepare(
+					"SHOW COLUMNS FROM $table_trips LIKE %s",
+					'jurisdiction_code'
+				)
+			);
+
+			if ( empty( $column_exists ) ) {
+				// Add jurisdiction column - default to 'schengen' for existing trips.
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$wpdb->query(
+					"ALTER TABLE $table_trips
+					ADD COLUMN jurisdiction_code varchar(20) DEFAULT 'schengen' AFTER country"
+				);
+
+				// Add index for jurisdiction queries.
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$wpdb->query(
+					"ALTER TABLE $table_trips
+					ADD KEY idx_jurisdiction (jurisdiction_code)"
+				);
+			}
+		}
+	}
+
+	/**
+	 * Populate default jurisdiction rules if table is empty.
+	 */
+	private static function maybe_populate_default_rules() {
+		global $wpdb;
+
+		$table = self::get_table( 'jurisdiction_rules' );
+
+		// Check if table has any rules.
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$count = $wpdb->get_var( "SELECT COUNT(*) FROM $table" );
+
+		if ( $count > 0 ) {
+			return;
+		}
+
+		// Default jurisdiction rules.
+		$default_rules = array(
+			// Schengen Zone (primary).
+			array(
+				'code'            => 'schengen',
+				'name'            => 'Schengen Zone',
+				'type'            => 'zone',
+				'days_allowed'    => 90,
+				'window_days'     => 180,
+				'counting_method' => 'rolling',
+				'description'     => 'Standard 90/180 rule for visa-free travel in the Schengen area.',
+				'notes'           => 'Non-EU citizens may stay up to 90 days within any 180-day period.',
+				'is_system'       => 1,
+				'display_order'   => 1,
+			),
+			// UK Visitor.
+			array(
+				'code'            => 'uk_visitor',
+				'name'            => 'UK Standard Visitor',
+				'type'            => 'country',
+				'days_allowed'    => 180,
+				'window_days'     => 365,
+				'counting_method' => 'rolling',
+				'description'     => 'UK Standard Visitor visa allows up to 180 days per visit.',
+				'notes'           => 'Maximum 180 days in any 12-month period. Multiple entries allowed.',
+				'is_system'       => 1,
+				'display_order'   => 2,
+			),
+			// US Visa Waiver Program (ESTA).
+			array(
+				'code'            => 'us_vwp',
+				'name'            => 'US Visa Waiver (ESTA)',
+				'type'            => 'country',
+				'days_allowed'    => 90,
+				'window_days'     => 180,
+				'counting_method' => 'rolling',
+				'description'     => 'US Visa Waiver Program allows up to 90 days per visit.',
+				'notes'           => '90 days includes time in Canada, Mexico, and Caribbean. No extensions allowed.',
+				'is_system'       => 1,
+				'display_order'   => 3,
+			),
+			// US B1/B2 Visa.
+			array(
+				'code'            => 'us_b1b2',
+				'name'            => 'US B1/B2 Visa',
+				'type'            => 'country',
+				'days_allowed'    => 180,
+				'window_days'     => 365,
+				'counting_method' => 'rolling',
+				'description'     => 'US B1/B2 visa typically allows up to 180 days per visit.',
+				'notes'           => 'Actual stay determined by CBP officer. Extensions possible.',
+				'is_system'       => 1,
+				'display_order'   => 4,
+			),
+			// US State: New York.
+			array(
+				'code'            => 'us_ny',
+				'name'            => 'New York State',
+				'type'            => 'state',
+				'parent_code'     => 'us',
+				'days_allowed'    => 183,
+				'window_days'     => 365,
+				'counting_method' => 'calendar_year',
+				'reset_month'     => 1,
+				'reset_day'       => 1,
+				'description'     => 'New York statutory residency threshold.',
+				'notes'           => '183+ days AND permanent place of abode triggers statutory residency.',
+				'is_system'       => 1,
+				'display_order'   => 10,
+			),
+			// US State: California.
+			array(
+				'code'            => 'us_ca',
+				'name'            => 'California',
+				'type'            => 'state',
+				'parent_code'     => 'us',
+				'days_allowed'    => 183,
+				'window_days'     => 365,
+				'counting_method' => 'calendar_year',
+				'reset_month'     => 1,
+				'reset_day'       => 1,
+				'description'     => 'California residency presumption threshold.',
+				'notes'           => 'No bright-line test. 183+ days creates presumption of residency.',
+				'is_system'       => 1,
+				'display_order'   => 11,
+			),
+			// US State: Florida.
+			array(
+				'code'            => 'us_fl',
+				'name'            => 'Florida',
+				'type'            => 'state',
+				'parent_code'     => 'us',
+				'days_allowed'    => 183,
+				'window_days'     => 365,
+				'counting_method' => 'calendar_year',
+				'reset_month'     => 1,
+				'reset_day'       => 1,
+				'description'     => 'Florida residency threshold.',
+				'notes'           => 'Domicile + 183 days physical presence for tax residency.',
+				'is_system'       => 1,
+				'display_order'   => 12,
+			),
+			// US State: Texas.
+			array(
+				'code'            => 'us_tx',
+				'name'            => 'Texas',
+				'type'            => 'state',
+				'parent_code'     => 'us',
+				'days_allowed'    => 183,
+				'window_days'     => 365,
+				'counting_method' => 'calendar_year',
+				'reset_month'     => 1,
+				'reset_day'       => 1,
+				'description'     => 'Texas residency threshold.',
+				'notes'           => 'No state income tax, but residency matters for other purposes.',
+				'is_system'       => 1,
+				'display_order'   => 13,
+			),
+			// Canada Visitor.
+			array(
+				'code'            => 'ca_visitor',
+				'name'            => 'Canada Visitor',
+				'type'            => 'country',
+				'days_allowed'    => 180,
+				'window_days'     => 365,
+				'counting_method' => 'rolling',
+				'description'     => 'Canada allows visitors to stay up to 180 days.',
+				'notes'           => '6 months per visit. Extensions available in some cases.',
+				'is_system'       => 1,
+				'display_order'   => 5,
+			),
+		);
+
+		foreach ( $default_rules as $rule ) {
+			$wpdb->insert(
+				$table,
+				array(
+					'code'            => $rule['code'],
+					'name'            => $rule['name'],
+					'type'            => $rule['type'],
+					'parent_code'     => isset( $rule['parent_code'] ) ? $rule['parent_code'] : null,
+					'days_allowed'    => $rule['days_allowed'],
+					'window_days'     => $rule['window_days'],
+					'counting_method' => $rule['counting_method'],
+					'reset_month'     => isset( $rule['reset_month'] ) ? $rule['reset_month'] : null,
+					'reset_day'       => isset( $rule['reset_day'] ) ? $rule['reset_day'] : null,
+					'description'     => $rule['description'],
+					'notes'           => isset( $rule['notes'] ) ? $rule['notes'] : null,
+					'is_system'       => $rule['is_system'],
+					'display_order'   => $rule['display_order'],
+				),
+				array( '%s', '%s', '%s', '%s', '%d', '%d', '%s', '%d', '%d', '%s', '%s', '%d', '%d' )
+			);
+		}
 	}
 
 	/**
@@ -251,11 +485,14 @@ class R2F_Schengen_Schema {
 		$table_location_log         = self::get_table( 'location_log' );
 		$table_calendar_connections = self::get_table( 'calendar_connections' );
 		$table_calendar_events      = self::get_table( 'calendar_events' );
+		$table_jurisdiction_rules   = self::get_table( 'jurisdiction_rules' );
 
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$wpdb->query( "DROP TABLE IF EXISTS $table_calendar_events" );
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$wpdb->query( "DROP TABLE IF EXISTS $table_calendar_connections" );
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$wpdb->query( "DROP TABLE IF EXISTS $table_jurisdiction_rules" );
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$wpdb->query( "DROP TABLE IF EXISTS $table_trips" );
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
