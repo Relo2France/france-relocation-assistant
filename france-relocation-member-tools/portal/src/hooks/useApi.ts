@@ -1511,3 +1511,161 @@ export function useSchengenSuggestions() {
     refetchOnWindowFocus: false,
   });
 }
+
+// ============================================
+// Schengen Family Tracking Hooks (Phase 8)
+// ============================================
+
+/**
+ * Get all Schengen family member summaries (overview)
+ */
+export function useSchengenFamilySummaries() {
+  return useQuery({
+    queryKey: ['schengenFamilySummaries'],
+    queryFn: schengenApi.getFamilySummaries,
+    staleTime: 30000,
+  });
+}
+
+/**
+ * Get all Schengen family members
+ */
+export function useSchengenFamilyMembers() {
+  return useQuery({
+    queryKey: ['schengenFamilyMembers'],
+    queryFn: schengenApi.getFamilyMembers,
+    staleTime: 30000,
+  });
+}
+
+/**
+ * Create a new Schengen family member
+ */
+export function useCreateSchengenFamilyMember() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: schengenApi.createFamilyMember,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['schengenFamilySummaries'] });
+      queryClient.invalidateQueries({ queryKey: ['schengenFamilyMembers'] });
+    },
+  });
+}
+
+/**
+ * Update a Schengen family member
+ */
+export function useUpdateSchengenFamilyMember() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Partial<import('@/types').SchengenFamilyMember> }) =>
+      schengenApi.updateFamilyMember(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['schengenFamilySummaries'] });
+      queryClient.invalidateQueries({ queryKey: ['schengenFamilyMembers'] });
+    },
+  });
+}
+
+/**
+ * Delete a Schengen family member
+ */
+export function useDeleteSchengenFamilyMember() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: schengenApi.deleteFamilyMember,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['schengenFamilySummaries'] });
+      queryClient.invalidateQueries({ queryKey: ['schengenFamilyMembers'] });
+    },
+  });
+}
+
+/**
+ * Get trip travelers
+ */
+export function useSchengenTripTravelers(tripId: number) {
+  return useQuery({
+    queryKey: ['schengenTripTravelers', tripId],
+    queryFn: () => schengenApi.getTripTravelers(tripId),
+    enabled: !!tripId,
+  });
+}
+
+/**
+ * Update trip travelers
+ */
+export function useUpdateSchengenTripTravelers() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      tripId,
+      data,
+    }: {
+      tripId: number;
+      data: { includePrimaryUser: boolean; familyMemberIds: number[] };
+    }) => schengenApi.updateTripTravelers(tripId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['schengenFamilySummaries'] });
+      queryClient.invalidateQueries({ queryKey: ['schengenTripTravelers'] });
+    },
+  });
+}
+
+// ============================================
+// Analytics Hooks (Phase 8)
+// ============================================
+
+/**
+ * Get analytics overview
+ */
+export function useAnalyticsOverview(period = '180d') {
+  return useQuery({
+    queryKey: ['schengenAnalyticsOverview', period],
+    queryFn: () => schengenApi.getAnalyticsOverview(period),
+    staleTime: 60000, // 1 minute
+  });
+}
+
+/**
+ * Get travel patterns
+ */
+export function useTravelPatterns(period = '1y') {
+  return useQuery({
+    queryKey: ['schengenTravelPatterns', period],
+    queryFn: () => schengenApi.getTravelPatterns(period),
+    staleTime: 60000,
+  });
+}
+
+/**
+ * Get compliance history
+ */
+export function useComplianceHistory(period = '180d', familyMemberId?: number) {
+  return useQuery({
+    queryKey: ['schengenComplianceHistory', period, familyMemberId],
+    queryFn: () => schengenApi.getComplianceHistory(period, familyMemberId),
+    staleTime: 60000,
+  });
+}
+
+/**
+ * Get monthly breakdown
+ */
+export function useMonthlyBreakdown(year: number) {
+  return useQuery({
+    queryKey: ['schengenMonthlyBreakdown', year],
+    queryFn: () => schengenApi.getMonthlyBreakdown(year),
+    staleTime: 60000,
+  });
+}
+
+/**
+ * Export analytics data
+ */
+export function useExportAnalytics() {
+  return useMutation({
+    mutationFn: ({ format, period }: { format: 'json' | 'csv'; period: string }) =>
+      schengenApi.exportAnalytics(format, period),
+  });
+}
