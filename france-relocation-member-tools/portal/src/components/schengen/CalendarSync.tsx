@@ -51,9 +51,9 @@ export default function CalendarSync({ compact = false }: CalendarSyncProps) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { data: providers, isLoading: providersLoading } = useCalendarProviders();
-  const { data: connections, isLoading: connectionsLoading } = useCalendarConnections();
-  const { data: pendingEvents, isLoading: eventsLoading, refetch: refetchEvents } = useCalendarEvents('pending');
+  const { data: providers, isLoading: providersLoading, error: providersError } = useCalendarProviders();
+  const { data: connections, isLoading: connectionsLoading, error: connectionsError } = useCalendarConnections();
+  const { data: pendingEvents, isLoading: eventsLoading, refetch: refetchEvents, error: eventsError } = useCalendarEvents('pending');
 
   const connectMutation = useConnectCalendar();
   const disconnectMutation = useDisconnectCalendar();
@@ -197,6 +197,7 @@ export default function CalendarSync({ compact = false }: CalendarSyncProps) {
   };
 
   const isLoading = providersLoading || connectionsLoading || eventsLoading;
+  const hasError = providersError || connectionsError || eventsError;
   const hasConnections = connections && connections.length > 0;
   const hasPendingEvents = pendingEvents && pendingEvents.length > 0;
   const schengenPendingEvents = pendingEvents?.filter(e => e.isSchengen) || [];
@@ -208,6 +209,21 @@ export default function CalendarSync({ compact = false }: CalendarSyncProps) {
         <div className="flex items-center justify-center py-8">
           <Loader2 className="w-6 h-6 animate-spin text-primary-600" aria-hidden="true" />
           <span className="ml-2 text-gray-500">Loading calendar sync...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (hasError) {
+    const errorMsg = providersError?.message || connectionsError?.message || eventsError?.message || 'Failed to load calendar data';
+    return (
+      <div className={clsx('card p-6', compact && 'p-4')}>
+        <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <XCircle className="w-5 h-5 text-red-600 flex-shrink-0" aria-hidden="true" />
+          <div>
+            <p className="text-sm font-medium text-red-800">Unable to load calendar sync</p>
+            <p className="text-sm text-red-600 mt-1">{errorMsg}</p>
+          </div>
         </div>
       </div>
     );
