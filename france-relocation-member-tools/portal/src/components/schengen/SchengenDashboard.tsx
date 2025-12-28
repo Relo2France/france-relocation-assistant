@@ -46,6 +46,7 @@ import LocationTracker from './LocationTracker';
 import LocationDetectionBanner from './LocationDetectionBanner';
 import SchengenOnboarding, { hasCompletedOnboarding } from './SchengenOnboarding';
 import Modal from '@/components/shared/Modal';
+import ErrorBoundary from '@/components/shared/ErrorBoundary';
 
 type ViewTab = 'trips' | 'calendar' | 'sync' | 'planning' | 'location' | 'settings';
 
@@ -477,7 +478,9 @@ export default function SchengenDashboard() {
       )}
 
       {activeTab === 'sync' && (
-        <CalendarSync />
+        <ErrorBoundary>
+          <CalendarSync />
+        </ErrorBoundary>
       )}
 
       {activeTab === 'planning' && (
