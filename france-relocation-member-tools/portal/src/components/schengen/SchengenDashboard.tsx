@@ -47,6 +47,7 @@ import LocationTracker from './LocationTracker';
 import LocationDetectionBanner from './LocationDetectionBanner';
 import SchengenOnboarding, { hasCompletedOnboarding } from './SchengenOnboarding';
 import JurisdictionOverview from './JurisdictionOverview';
+import NotificationCenter from './NotificationCenter';
 import Modal from '@/components/shared/Modal';
 import ErrorBoundary from '@/components/shared/ErrorBoundary';
 
@@ -154,8 +155,12 @@ export default function SchengenDashboard() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          {/* Notification Center */}
+          <NotificationCenter />
+
           {/* Help button to reopen onboarding */}
           <button
+            type="button"
             onClick={() => setShowOnboarding(true)}
             className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
             aria-label="Show help tour"
