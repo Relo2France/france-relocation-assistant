@@ -71,46 +71,28 @@ class R2F_Schengen_Jurisdiction {
 			)
 		);
 
-		// Get single jurisdiction rule.
+		// IMPORTANT: Register specific routes BEFORE parameterized routes
+		// to prevent /tracked and /summary from matching as codes.
+
+		// Get user's tracked jurisdictions (GET and POST).
 		register_rest_route(
 			$namespace,
-			'/jurisdictions/(?P<code>[a-z0-9_]+)',
+			'/jurisdictions/tracked',
 			array(
-				'methods'             => 'GET',
-				'callback'            => array( $this, 'get_jurisdiction' ),
-				'permission_callback' => array( $this, 'check_permission' ),
-				'args'                => array(
-					'code' => array(
-						'required'          => true,
-						'sanitize_callback' => 'sanitize_text_field',
-					),
+				array(
+					'methods'             => 'GET',
+					'callback'            => array( $this, 'get_tracked_jurisdictions' ),
+					'permission_callback' => array( $this, 'check_permission' ),
 				),
-			)
-		);
-
-		// Get user's tracked jurisdictions.
-		register_rest_route(
-			$namespace,
-			'/jurisdictions/tracked',
-			array(
-				'methods'             => 'GET',
-				'callback'            => array( $this, 'get_tracked_jurisdictions' ),
-				'permission_callback' => array( $this, 'check_permission' ),
-			)
-		);
-
-		// Add jurisdiction to tracking.
-		register_rest_route(
-			$namespace,
-			'/jurisdictions/tracked',
-			array(
-				'methods'             => 'POST',
-				'callback'            => array( $this, 'add_tracked_jurisdiction' ),
-				'permission_callback' => array( $this, 'check_permission' ),
-				'args'                => array(
-					'code' => array(
-						'required'          => true,
-						'sanitize_callback' => 'sanitize_text_field',
+				array(
+					'methods'             => 'POST',
+					'callback'            => array( $this, 'add_tracked_jurisdiction' ),
+					'permission_callback' => array( $this, 'check_permission' ),
+					'args'                => array(
+						'code' => array(
+							'required'          => true,
+							'sanitize_callback' => 'sanitize_text_field',
+						),
 					),
 				),
 			)
@@ -133,7 +115,35 @@ class R2F_Schengen_Jurisdiction {
 			)
 		);
 
-		// Get summary for a jurisdiction.
+		// Get multi-jurisdiction summary (must be before parameterized route).
+		register_rest_route(
+			$namespace,
+			'/jurisdictions/summary',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( $this, 'get_multi_jurisdiction_summary' ),
+				'permission_callback' => array( $this, 'check_permission' ),
+			)
+		);
+
+		// Get single jurisdiction rule (parameterized - must be AFTER specific routes).
+		register_rest_route(
+			$namespace,
+			'/jurisdictions/(?P<code>[a-z0-9_]+)',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( $this, 'get_jurisdiction' ),
+				'permission_callback' => array( $this, 'check_permission' ),
+				'args'                => array(
+					'code' => array(
+						'required'          => true,
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+				),
+			)
+		);
+
+		// Get summary for a specific jurisdiction.
 		register_rest_route(
 			$namespace,
 			'/jurisdictions/(?P<code>[a-z0-9_]+)/summary',
@@ -153,20 +163,10 @@ class R2F_Schengen_Jurisdiction {
 			)
 		);
 
-		// Get multi-jurisdiction summary.
-		register_rest_route(
-			$namespace,
-			'/jurisdictions/summary',
-			array(
-				'methods'             => 'GET',
-				'callback'            => array( $this, 'get_multi_jurisdiction_summary' ),
-				'permission_callback' => array( $this, 'check_permission' ),
-			)
-		);
-
-		// Legacy namespace support.
+		// Legacy namespace support (fra-portal/v1/schengen/...).
 		$legacy_namespace = 'fra-portal/v1';
 
+		// Get all jurisdictions.
 		register_rest_route(
 			$legacy_namespace,
 			'/schengen/jurisdictions',
@@ -177,16 +177,9 @@ class R2F_Schengen_Jurisdiction {
 			)
 		);
 
-		register_rest_route(
-			$legacy_namespace,
-			'/schengen/jurisdictions/(?P<code>[a-z0-9_]+)',
-			array(
-				'methods'             => 'GET',
-				'callback'            => array( $this, 'get_jurisdiction' ),
-				'permission_callback' => array( $this, 'check_permission' ),
-			)
-		);
+		// IMPORTANT: Register specific routes BEFORE parameterized routes.
 
+		// Tracked jurisdictions (GET and POST).
 		register_rest_route(
 			$legacy_namespace,
 			'/schengen/jurisdictions/tracked',
@@ -204,6 +197,28 @@ class R2F_Schengen_Jurisdiction {
 			)
 		);
 
+		// Multi-jurisdiction summary.
+		register_rest_route(
+			$legacy_namespace,
+			'/schengen/jurisdictions/summary',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( $this, 'get_multi_jurisdiction_summary' ),
+				'permission_callback' => array( $this, 'check_permission' ),
+			)
+		);
+
+		// Single jurisdiction (parameterized - AFTER specific routes).
+		register_rest_route(
+			$legacy_namespace,
+			'/schengen/jurisdictions/(?P<code>[a-z0-9_]+)',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( $this, 'get_jurisdiction' ),
+				'permission_callback' => array( $this, 'check_permission' ),
+			)
+		);
+
 		register_rest_route(
 			$legacy_namespace,
 			'/schengen/jurisdictions/tracked/(?P<code>[a-z0-9_]+)',
@@ -214,22 +229,13 @@ class R2F_Schengen_Jurisdiction {
 			)
 		);
 
+		// Single jurisdiction summary.
 		register_rest_route(
 			$legacy_namespace,
 			'/schengen/jurisdictions/(?P<code>[a-z0-9_]+)/summary',
 			array(
 				'methods'             => 'GET',
 				'callback'            => array( $this, 'get_jurisdiction_summary' ),
-				'permission_callback' => array( $this, 'check_permission' ),
-			)
-		);
-
-		register_rest_route(
-			$legacy_namespace,
-			'/schengen/jurisdictions/summary',
-			array(
-				'methods'             => 'GET',
-				'callback'            => array( $this, 'get_multi_jurisdiction_summary' ),
 				'permission_callback' => array( $this, 'check_permission' ),
 			)
 		);
