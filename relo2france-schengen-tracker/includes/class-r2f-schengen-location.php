@@ -205,14 +205,56 @@ class R2F_Schengen_Location {
 	}
 
 	/**
-	 * Debug: Simple today status.
+	 * Get today's status - reads from database.
 	 */
 	public function get_today_debug( $request ) {
+		global $wpdb;
+		$user_id = get_current_user_id();
+		$table   = $wpdb->prefix . 'fra_schengen_location_log';
+		$today   = current_time( 'Y-m-d' );
+
+		$today_locations = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT * FROM $table WHERE user_id = %d AND DATE(recorded_at) = %s ORDER BY recorded_at DESC",
+				$user_id, $today
+			)
+		);
+
+		$last_location = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM $table WHERE user_id = %d ORDER BY recorded_at DESC LIMIT 1",
+				$user_id
+			)
+		);
+
+		$formatted_today = array();
+		foreach ( $today_locations as $loc ) {
+			$formatted_today[] = $this->format_location_row( $loc );
+		}
+
 		return rest_ensure_response( array(
-			'hasCheckedInToday' => false,
-			'todayLocations'    => array(),
-			'lastLocation'      => null,
+			'hasCheckedInToday' => ! empty( $today_locations ),
+			'todayLocations'    => $formatted_today,
+			'lastLocation'      => $last_location ? $this->format_location_row( $last_location ) : null,
 		) );
+	}
+
+	/**
+	 * Format a location row for API response.
+	 */
+	private function format_location_row( $row ) {
+		return array(
+			'id'          => (int) $row->id,
+			'lat'         => (float) $row->lat,
+			'lng'         => (float) $row->lng,
+			'accuracy'    => $row->accuracy ? (float) $row->accuracy : null,
+			'countryCode' => $row->country_code,
+			'countryName' => $row->country_name,
+			'city'        => $row->city,
+			'isSchengen'  => (bool) $row->is_schengen,
+			'source'      => $row->source,
+			'recordedAt'  => $row->recorded_at,
+		);
 	}
 
 	/**
@@ -227,14 +269,36 @@ class R2F_Schengen_Location {
 	}
 
 	/**
-	 * Debug: Simple history.
+	 * Get location history - reads from database.
 	 */
 	public function get_history_debug( $request ) {
+		global $wpdb;
+		$user_id = get_current_user_id();
+		$table   = $wpdb->prefix . 'fra_schengen_location_log';
+		$limit   = (int) $request->get_param( 'limit' ) ?: 30;
+		$offset  = (int) $request->get_param( 'offset' ) ?: 0;
+
+		$total = (int) $wpdb->get_var(
+			$wpdb->prepare( "SELECT COUNT(*) FROM $table WHERE user_id = %d", $user_id )
+		);
+
+		$locations = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT * FROM $table WHERE user_id = %d ORDER BY recorded_at DESC LIMIT %d OFFSET %d",
+				$user_id, $limit, $offset
+			)
+		);
+
+		$formatted = array();
+		foreach ( $locations as $loc ) {
+			$formatted[] = $this->format_location_row( $loc );
+		}
+
 		return rest_ensure_response( array(
-			'locations' => array(),
-			'total'     => 0,
-			'limit'     => 30,
-			'offset'    => 0,
+			'locations' => $formatted,
+			'total'     => $total,
+			'limit'     => $limit,
+			'offset'    => $offset,
 		) );
 	}
 
