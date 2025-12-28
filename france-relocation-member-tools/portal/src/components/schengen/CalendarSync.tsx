@@ -37,15 +37,12 @@ import {
   useSkipCalendarEvents,
   useImportICalFile,
 } from '@/hooks/useApi';
-import { useLocation, useNavigate } from 'react-router-dom';
 
 interface CalendarSyncProps {
   compact?: boolean;
 }
 
 export default function CalendarSync({ compact = false }: CalendarSyncProps) {
-  const location = useLocation();
-  const navigate = useNavigate();
   const [selectedEvents, setSelectedEvents] = useState<Set<number>>(new Set());
   const [showAllEvents, setShowAllEvents] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -77,29 +74,35 @@ export default function CalendarSync({ compact = false }: CalendarSyncProps) {
   const skipMutation = useSkipCalendarEvents();
   const importICalMutation = useImportICalFile();
 
-  // Handle OAuth callback messages from URL params
+  // Handle OAuth callback messages from URL params (using window.location)
   useEffect(() => {
-    const searchParams = new URLSearchParams(location.search);
-    const connected = searchParams.get('calendar_connected');
-    const error = searchParams.get('calendar_error');
+    try {
+      const searchParams = new URLSearchParams(window.location.search);
+      const connected = searchParams.get('calendar_connected');
+      const error = searchParams.get('calendar_error');
 
-    if (connected) {
-      setSuccessMessage(`Successfully connected ${connected === 'google' ? 'Google Calendar' : 'Microsoft Outlook'}!`);
-      // Clear the URL parameter
-      searchParams.delete('calendar_connected');
-      const newSearch = searchParams.toString();
-      navigate({ pathname: location.pathname, search: newSearch ? `?${newSearch}` : '' }, { replace: true });
-      // Refetch events after connection
-      refetchEvents();
-    }
+      if (connected) {
+        setSuccessMessage(`Successfully connected ${connected === 'google' ? 'Google Calendar' : 'Microsoft Outlook'}!`);
+        // Clear the URL parameter using history API
+        searchParams.delete('calendar_connected');
+        const newSearch = searchParams.toString();
+        const newUrl = window.location.pathname + (newSearch ? `?${newSearch}` : '');
+        window.history.replaceState({}, '', newUrl);
+        // Refetch events after connection
+        refetchEvents();
+      }
 
-    if (error) {
-      setErrorMessage(decodeURIComponent(error));
-      searchParams.delete('calendar_error');
-      const newSearch = searchParams.toString();
-      navigate({ pathname: location.pathname, search: newSearch ? `?${newSearch}` : '' }, { replace: true });
+      if (error) {
+        setErrorMessage(decodeURIComponent(error));
+        searchParams.delete('calendar_error');
+        const newSearch = searchParams.toString();
+        const newUrl = window.location.pathname + (newSearch ? `?${newSearch}` : '');
+        window.history.replaceState({}, '', newUrl);
+      }
+    } catch (e) {
+      console.error('Error handling URL params:', e);
     }
-  }, [location.search, location.pathname, navigate, refetchEvents]);
+  }, [refetchEvents]);
 
   // Auto-clear success/error messages
   useEffect(() => {
