@@ -33,7 +33,7 @@
 | Phase 6 | CSV import/export | **Complete** |
 | Phase 6 | PWA manifest + service worker | **Complete** |
 | Phase 7 | AI-powered trip suggestions | **Complete** |
-| Phase 7 | Family member tracking | **Pending** |
+| Phase 7 | Family member tracking | **Complete** |
 | Phase 7 | Analytics dashboard | **Pending** |
 
 ---
@@ -90,6 +90,26 @@
 - Added WordPress cron job for automatic calendar syncing
 - Cron hook: `r2f_schengen_calendar_sync`
 - Runs every 6 hours via `wp_schedule_event`
+
+### Phase 7: Family Member Tracking
+- **PHP Class:** `class-r2f-schengen-family.php`
+- **Database Table:** `fra_family_members` with columns for name, relationship, nationality, passport_country, date_of_birth, notes, color, is_active, display_order
+- **Database Migration:** Added `family_member_id` column to trips table (v1.5.0)
+- **REST API Endpoints:**
+  - `GET /family` - List family members
+  - `GET /family/{id}` - Get single member
+  - `POST /family` - Create member
+  - `PUT /family/{id}` - Update member
+  - `DELETE /family/{id}` - Delete member
+  - `GET /family/summary` - Per-member Schengen status
+  - `GET /family/relationships` - Available relationship options
+- **React Component:** `FamilyManager.tsx` with add/edit/delete forms, status bars, color coding
+- **Features:**
+  - Separate Schengen day tracking per family member
+  - Primary account holder status display
+  - Color-coded members for visual distinction
+  - Status level indicators (ok/warning/danger)
+  - Assign trips to specific family members
 
 ---
 
@@ -163,12 +183,13 @@ OAuth flow successfully tested. Required configuration in Google Cloud Console:
 ### PHP (Schengen Tracker Plugin)
 | File | Changes |
 |------|---------|
-| `relo2france-schengen-tracker.php` | Version bump to 1.4.0 |
-| `includes/class-r2f-schengen-api.php` | Added CSV import/export + AI suggestions endpoints |
+| `relo2france-schengen-tracker.php` | Version bump to 1.5.0 |
+| `includes/class-r2f-schengen-api.php` | Added CSV import/export + AI suggestions endpoints, family_member_id support |
 | `includes/class-r2f-schengen-notifications.php` | **NEW** - Notification center API |
-| `includes/class-r2f-schengen-schema.php` | Added notifications and push_subscriptions tables |
-| `includes/class-r2f-schengen-core.php` | Added notifications component initialization |
-| `includes/class-r2f-schengen-calendar.php` | Added background sync cron job |
+| `includes/class-r2f-schengen-schema.php` | Added notifications, push_subscriptions, family_members tables (v1.5.0) |
+| `includes/class-r2f-schengen-core.php` | Added notifications + family component initialization |
+| `includes/class-r2f-schengen-calendar.php` | Added background sync cron job, fixed portal path |
+| `includes/class-r2f-schengen-family.php` | **NEW** - Family member CRUD API |
 
 ### PHP (Member Tools Plugin)
 | File | Changes |
@@ -181,6 +202,7 @@ OAuth flow successfully tested. Required configuration in Google Cloud Console:
 | `components/schengen/CSVImportExport.tsx` | CSV import/export UI |
 | `components/schengen/AISuggestions.tsx` | AI suggestions display |
 | `components/schengen/NotificationCenter.tsx` | Notification bell + dropdown |
+| `components/schengen/FamilyManager.tsx` | Family member management |
 | `components/shared/PWAPrompt.tsx` | PWA install prompt |
 | `hooks/usePWA.ts` | PWA install/update detection |
 | `portal/public/manifest.json` | PWA manifest |
@@ -271,6 +293,8 @@ SchengenDashboard
 
 | Commit | Message |
 |--------|---------|
+| `b794a23` | Add Phase 7: Family member tracking for Schengen days |
+| `44cde56` | Fix portal path redirect and add family members table |
 | `6f12426` | Fix undefined constant FRAMT_URL in portal template |
 | `4f9da42` | Fix version constant mismatch in Schengen Tracker plugin |
 | `9923ab9` | Add Phase 7: AI-powered trip planning suggestions |
