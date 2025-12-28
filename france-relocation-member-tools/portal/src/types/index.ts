@@ -1276,6 +1276,67 @@ export interface NotificationPreferences {
   quiet_hours_end: number;
 }
 
+// ============================================
+// Analytics Types (Phase 7)
+// ============================================
+
+export interface AnalyticsSummary {
+  totalTrips: number;
+  totalDays: number;
+  uniqueCountries: number;
+  firstTrip: string | null;
+  lastTrip: string | null;
+  longestTrip: number;
+  shortestTrip: number;
+  avgTripLength: number;
+}
+
+export interface CountryBreakdown {
+  country: string;
+  trips: number;
+  days: number;
+}
+
+export interface MonthlyTrend {
+  month: string;
+  days: number;
+  trips: number;
+}
+
+export interface YearlyTotal {
+  year: string;
+  trips: number;
+  days: number;
+}
+
+export interface ComplianceHistoryPoint {
+  date: string;
+  daysUsed: number;
+  daysRemaining: number;
+  percentage: number;
+}
+
+export interface TripDurationBucket {
+  label: string;
+  count: number;
+}
+
+export interface CategoryBreakdown {
+  category: string;
+  trips: number;
+  days: number;
+}
+
+export interface AnalyticsData {
+  summary: AnalyticsSummary;
+  countryBreakdown: CountryBreakdown[];
+  monthlyTrends: MonthlyTrend[];
+  yearlyTotals: YearlyTotal[];
+  complianceHistory: ComplianceHistoryPoint[];
+  tripDurations: TripDurationBucket[];
+  categoryBreakdown: CategoryBreakdown[];
+}
+
 // WordPress global types
 declare global {
   interface Window {

@@ -1581,3 +1581,19 @@ export function useDeleteSchengenFamilyMember() {
     },
   });
 }
+
+// ============================================
+// Schengen Analytics Hooks (Phase 7)
+// ============================================
+
+/**
+ * Get analytics data for the Schengen dashboard
+ */
+export function useSchengenAnalytics() {
+  return useQuery({
+    queryKey: ['schengenAnalytics'],
+    queryFn: schengenApi.getAnalytics,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false,
+  });
+}

@@ -80,6 +80,7 @@ import type {
   CSVImportResult,
   CSVExportResult,
   SuggestionsResponse,
+  AnalyticsData,
 } from '@/types';
 
 /**
@@ -1123,4 +1124,12 @@ export const schengenApi = {
         method: 'POST',
       }
     ),
+
+  // ============================================
+  // Analytics API (Phase 7)
+  // ============================================
+
+  // Get analytics data for dashboard
+  getAnalytics: () =>
+    apiFetch<AnalyticsData>('/schengen/analytics'),
 };
