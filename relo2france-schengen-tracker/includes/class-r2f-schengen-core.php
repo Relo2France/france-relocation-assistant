@@ -150,6 +150,10 @@ class R2F_Schengen_Core {
 		register_setting( 'r2f_schengen_settings', 'r2f_schengen_global_enabled' );
 		register_setting( 'r2f_schengen_settings', 'r2f_schengen_upgrade_url' );
 		register_setting( 'r2f_schengen_settings', 'r2f_schengen_alert_email' );
+		register_setting( 'r2f_schengen_settings', 'r2f_schengen_google_client_id' );
+		register_setting( 'r2f_schengen_settings', 'r2f_schengen_google_client_secret' );
+		register_setting( 'r2f_schengen_settings', 'r2f_schengen_microsoft_client_id' );
+		register_setting( 'r2f_schengen_settings', 'r2f_schengen_microsoft_client_secret' );
 
 		add_settings_section(
 			'r2f_schengen_general',
@@ -172,6 +176,46 @@ class R2F_Schengen_Core {
 			array( $this, 'render_upgrade_url_field' ),
 			'r2f-schengen-settings',
 			'r2f_schengen_general'
+		);
+
+		// Calendar Sync settings section.
+		add_settings_section(
+			'r2f_schengen_calendar',
+			__( 'Calendar Sync (OAuth)', 'r2f-schengen' ),
+			array( $this, 'render_calendar_section' ),
+			'r2f-schengen-settings'
+		);
+
+		add_settings_field(
+			'r2f_schengen_google_client_id',
+			__( 'Google Client ID', 'r2f-schengen' ),
+			array( $this, 'render_google_client_id_field' ),
+			'r2f-schengen-settings',
+			'r2f_schengen_calendar'
+		);
+
+		add_settings_field(
+			'r2f_schengen_google_client_secret',
+			__( 'Google Client Secret', 'r2f-schengen' ),
+			array( $this, 'render_google_client_secret_field' ),
+			'r2f-schengen-settings',
+			'r2f_schengen_calendar'
+		);
+
+		add_settings_field(
+			'r2f_schengen_microsoft_client_id',
+			__( 'Microsoft Client ID', 'r2f-schengen' ),
+			array( $this, 'render_microsoft_client_id_field' ),
+			'r2f-schengen-settings',
+			'r2f_schengen_calendar'
+		);
+
+		add_settings_field(
+			'r2f_schengen_microsoft_client_secret',
+			__( 'Microsoft Client Secret', 'r2f-schengen' ),
+			array( $this, 'render_microsoft_client_secret_field' ),
+			'r2f-schengen-settings',
+			'r2f_schengen_calendar'
 		);
 	}
 
@@ -243,6 +287,82 @@ class R2F_Schengen_Core {
 		<input type="url" name="r2f_schengen_upgrade_url" value="<?php echo esc_url( $value ); ?>" class="regular-text">
 		<p class="description">
 			<?php esc_html_e( 'URL where non-premium users can upgrade. Leave empty to use the default.', 'r2f-schengen' ); ?>
+		</p>
+		<?php
+	}
+
+	/**
+	 * Render calendar section description.
+	 */
+	public function render_calendar_section() {
+		$callback_url = home_url( '/wp-json/fra-portal/v1/schengen/calendar/oauth/callback' );
+		?>
+		<p><?php esc_html_e( 'Configure OAuth credentials for calendar integrations. Users can sync their Google Calendar or Microsoft Outlook to automatically detect travel events.', 'r2f-schengen' ); ?></p>
+		<p><strong><?php esc_html_e( 'OAuth Callback URL:', 'r2f-schengen' ); ?></strong> <code><?php echo esc_html( $callback_url ); ?></code></p>
+		<p class="description"><?php esc_html_e( 'Use this URL as the redirect URI when setting up OAuth applications.', 'r2f-schengen' ); ?></p>
+		<?php
+	}
+
+	/**
+	 * Render Google Client ID field.
+	 */
+	public function render_google_client_id_field() {
+		$value = get_option( 'r2f_schengen_google_client_id', '' );
+		?>
+		<input type="text" name="r2f_schengen_google_client_id" value="<?php echo esc_attr( $value ); ?>" class="regular-text">
+		<p class="description">
+			<?php
+			printf(
+				/* translators: %s: Google Cloud Console URL */
+				esc_html__( 'Get this from the %s. Enable the Google Calendar API and create OAuth 2.0 credentials.', 'r2f-schengen' ),
+				'<a href="https://console.cloud.google.com/apis/credentials" target="_blank">Google Cloud Console</a>'
+			);
+			?>
+		</p>
+		<?php
+	}
+
+	/**
+	 * Render Google Client Secret field.
+	 */
+	public function render_google_client_secret_field() {
+		$value = get_option( 'r2f_schengen_google_client_secret', '' );
+		?>
+		<input type="password" name="r2f_schengen_google_client_secret" value="<?php echo esc_attr( $value ); ?>" class="regular-text">
+		<p class="description">
+			<?php esc_html_e( 'Keep this secret secure. It will be stored encrypted in the database.', 'r2f-schengen' ); ?>
+		</p>
+		<?php
+	}
+
+	/**
+	 * Render Microsoft Client ID field.
+	 */
+	public function render_microsoft_client_id_field() {
+		$value = get_option( 'r2f_schengen_microsoft_client_id', '' );
+		?>
+		<input type="text" name="r2f_schengen_microsoft_client_id" value="<?php echo esc_attr( $value ); ?>" class="regular-text">
+		<p class="description">
+			<?php
+			printf(
+				/* translators: %s: Azure Portal URL */
+				esc_html__( 'Get this from the %s. Register an app and add Microsoft Graph Calendar.Read permission.', 'r2f-schengen' ),
+				'<a href="https://portal.azure.com/#blade/Microsoft_AAD_RegisteredApps/ApplicationsListBlade" target="_blank">Azure Portal</a>'
+			);
+			?>
+		</p>
+		<?php
+	}
+
+	/**
+	 * Render Microsoft Client Secret field.
+	 */
+	public function render_microsoft_client_secret_field() {
+		$value = get_option( 'r2f_schengen_microsoft_client_secret', '' );
+		?>
+		<input type="password" name="r2f_schengen_microsoft_client_secret" value="<?php echo esc_attr( $value ); ?>" class="regular-text">
+		<p class="description">
+			<?php esc_html_e( 'Keep this secret secure. It will be stored encrypted in the database.', 'r2f-schengen' ); ?>
 		</p>
 		<?php
 	}
