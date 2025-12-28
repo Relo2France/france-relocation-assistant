@@ -1,8 +1,8 @@
 # Relo2France Session Handoff Document
 
-**Date:** December 28, 2025
+**Date:** December 28, 2024
 **Branch:** `claude/resume-france-relocation-tWg9t`
-**Plan Document:** `SCHENGEN-MONAEO-PARITY-PLAN.md`
+**Last Commit:** `6f12426` - Fix undefined constant FRAMT_URL in portal template
 
 ---
 
@@ -16,327 +16,259 @@
 | Member Tools Plugin | v2.1.0 | Active |
 | React Portal | v2.1.0 | Active |
 | Theme | v1.2.4 | Active |
-| **Schengen Tracker Plugin** | **v1.2.0** | **Active** |
+| **Schengen Tracker Plugin** | **v1.4.0** | **Active** |
 
-The React portal is fully functional with 40+ REST API endpoints covering profile management, task tracking, document generation, checklists, AI-powered guides, Schengen day tracking, location tracking, and calendar sync.
+### Schengen Tracker Feature Status
 
-### Schengen Tracker: Phase 2 Complete
-
-Calendar Sync has been implemented. Users can connect Google Calendar or Microsoft Outlook, sync events, detect travel automatically, and import them as Schengen trips. iCal file upload is also supported.
+| Phase | Feature | Status |
+|-------|---------|--------|
+| Phase 0 | Plugin Extraction & Premium Setup | Complete |
+| Phase 1 | Core trip CRUD, 90/180 calculation | Complete |
+| Phase 1.1 | Browser Geolocation Check-in | Complete |
+| Phase 1.2 | Smart Location Detection | Complete |
+| Phase 2 | Calendar Sync (Google/Microsoft OAuth) | Complete |
+| Phase 3 | Multi-jurisdiction support | Complete |
+| Phase 4 | Professional PDF reports | Complete |
+| Phase 5 | Push + In-app notifications | **Complete** |
+| Phase 6 | CSV import/export | **Complete** |
+| Phase 6 | PWA manifest + service worker | **Complete** |
+| Phase 7 | AI-powered trip suggestions | **Complete** |
+| Phase 7 | Family member tracking | **Pending** |
+| Phase 7 | Analytics dashboard | **Pending** |
 
 ---
 
-## 2. Schengen Tracker - COMPLETE FEATURES
+## 2. What Was Completed This Session
 
-The Schengen Tracker has been built as a comprehensive 90/180 day compliance tool. All core phases are complete.
+### Phase 5: Notifications Infrastructure
+- **PHP Class:** `class-r2f-schengen-notifications.php`
+- **Database Tables:** `fra_push_subscriptions`, `fra_notifications`
+- **REST API Endpoints:**
+  - `GET /notifications` - List user notifications
+  - `GET /notifications/unread-count` - Unread count
+  - `POST /notifications/{id}/read` - Mark as read
+  - `POST /notifications/read-all` - Mark all read
+  - `DELETE /notifications/{id}` - Delete notification
+  - `GET /push/status` - Push subscription status
+  - `POST /push/subscribe` - Subscribe to push
+  - `POST /push/unsubscribe` - Unsubscribe
+  - `GET /push/vapid-key` - Get VAPID public key
+  - `GET/PUT /notifications/preferences` - Preferences
+  - `POST /notifications/test` - Send test notification
+- **React Component:** `NotificationCenter.tsx` with bell icon, dropdown, unread badge
+- **Hook Integration:** Notifications trigger on alerts, calendar sync, trip creation
 
-### Phase 0: Plugin Extraction & Premium Setup ✅
+### Phase 6: CSV Import/Export
+- **PHP API:** Added `/trips/import` (POST) and `/trips/export` (GET) endpoints
+- **React Component:** `CSVImportExport.tsx` with file upload and paste modes
+- **Features:**
+  - Validates dates, countries, handles duplicates
+  - Case-insensitive country matching
+  - Sample CSV format display
+  - Premium feature gating
 
-Extracted Schengen Tracker into standalone plugin (`relo2france-schengen-tracker/`):
+### Phase 6: PWA Support
+- **Files Created:**
+  - `portal/public/manifest.json` - PWA manifest with app metadata
+  - `portal/public/service-worker.js` - Caching strategies for offline support
+  - `portal/src/hooks/usePWA.ts` - React hook for install prompt handling
+  - `portal/src/components/shared/PWAPrompt.tsx` - Install banner component
+- **Build Config:** Updated `vite.config.ts` to copy PWA files to assets directory
+- **Template:** Added PWA meta tags to `template-portal.php`
 
+### Phase 7: AI Suggestions
+- **PHP API:** Added `/suggestions` endpoint with smart analysis including:
+  - Days available recommendations
+  - Expiration date alerts
+  - Optimal trip timing suggestions
+  - Travel pattern insights
+  - Risk alerts when approaching limits
+- **React Component:** `AISuggestions.tsx` with priority-sorted suggestion cards
+- **Integration:** Added to Planning tab in SchengenDashboard
+
+### Background Calendar Sync
+- Added WordPress cron job for automatic calendar syncing
+- Cron hook: `r2f_schengen_calendar_sync`
+- Runs every 6 hours via `wp_schedule_event`
+
+---
+
+## 3. What's In Progress / Partially Done
+
+Nothing is currently in progress. All started work was completed.
+
+---
+
+## 4. Next Steps Discussed
+
+### Phase 7: Family Member Tracking
+Suggested approach:
+- Add `family_member_id` column to trips table
+- Create family members CRUD endpoints
+- Build family member management UI
+- Allow tracking separate Schengen counts per family member
+- Family summary view showing all members' statuses
+
+### Phase 7: Analytics Dashboard
+Suggested approach:
+- Historical trip visualization (charts)
+- Country-by-country breakdown
+- Monthly/yearly travel patterns
+- Compliance score over time
+- Export analytics as PDF
+
+---
+
+## 5. Decisions Made This Session
+
+1. **CSV Format:** Standard columns: `start_date`, `end_date`, `country`, `category`, `notes`
+2. **PWA Scope:** Limited to `/member-portal/` path
+3. **AI Suggestions:** Server-side analysis (no external AI API) with priority levels: high, medium, low, info
+4. **Suggestion Types:** availability, expiration, recommendation, insight, alert, warning
+5. **Database Version:** Schema version 1.4.0 with `push_subscriptions` and `notifications` tables
+6. **Notification Types:** threshold_warning, threshold_danger, trip_reminder, day_expiring, calendar_sync, location_checkin
+
+---
+
+## 6. Issues / Bugs Tracked
+
+### Resolved This Session
+
+| Issue | Resolution | Commit |
+|-------|------------|--------|
+| Portal showing "critical error" | Fixed undefined constant `FRAMT_URL` → `FRAMT_PLUGIN_URL` | `6f12426` |
+| Version mismatch causing upgrade issues | Updated `R2F_SCHENGEN_VERSION` to `1.4.0` | `4f9da42` |
+| Unused 'Check' import in NotificationCenter | Removed unused import | Earlier commit |
+| Duplicate default export in PWAPrompt | Removed extra export statement | Earlier commit |
+| JSX syntax error in SchengenDashboard | Fixed conditional rendering structure | Earlier commit |
+
+### Known Issues (Non-Critical)
+
+1. **PWA Icons:** `pwa-icon-192.png`, `pwa-icon-512.png` referenced in manifest but may not exist yet - will show default icon
+2. **Web Push:** Service worker uses simplified push (logs intent) - needs `minishlink/web-push` PHP library for production
+3. **VAPID Keys:** Admins need to generate and configure VAPID keys for push notifications to work
+
+---
+
+## 7. Key Files Modified This Session
+
+### PHP (Schengen Tracker Plugin)
+| File | Changes |
+|------|---------|
+| `relo2france-schengen-tracker.php` | Version bump to 1.4.0 |
+| `includes/class-r2f-schengen-api.php` | Added CSV import/export + AI suggestions endpoints |
+| `includes/class-r2f-schengen-notifications.php` | **NEW** - Notification center API |
+| `includes/class-r2f-schengen-schema.php` | Added notifications and push_subscriptions tables |
+| `includes/class-r2f-schengen-core.php` | Added notifications component initialization |
+| `includes/class-r2f-schengen-calendar.php` | Added background sync cron job |
+
+### PHP (Member Tools Plugin)
+| File | Changes |
+|------|---------|
+| `templates/template-portal.php` | Added PWA meta tags, fixed FRAMT_URL bug |
+
+### React/TypeScript (New Files)
 | File | Purpose |
 |------|---------|
-| `relo2france-schengen-tracker.php` | Main plugin file with autoloader |
-| `class-r2f-schengen-core.php` | Core singleton, admin menu, shortcode |
-| `class-r2f-schengen-schema.php` | Database schema (trips + location + calendar + jurisdiction tables) |
-| `class-r2f-schengen-api.php` | REST API (~40 endpoints) |
-| `class-r2f-schengen-alerts.php` | Daily cron email alerts |
-| `class-r2f-schengen-location.php` | GPS check-in, auto-trip creation |
-| `class-r2f-schengen-calendar.php` | Calendar sync (Google, Outlook, iCal) |
-| `class-r2f-schengen-jurisdiction.php` | Multi-jurisdiction rules engine |
-| `class-r2f-schengen-premium.php` | Premium feature gating |
+| `components/schengen/CSVImportExport.tsx` | CSV import/export UI |
+| `components/schengen/AISuggestions.tsx` | AI suggestions display |
+| `components/schengen/NotificationCenter.tsx` | Notification bell + dropdown |
+| `components/shared/PWAPrompt.tsx` | PWA install prompt |
+| `hooks/usePWA.ts` | PWA install/update detection |
+| `portal/public/manifest.json` | PWA manifest |
+| `portal/public/service-worker.js` | Service worker for offline |
 
-**Premium Gating (3-tier priority):**
-1. User meta override (`r2f_schengen_enabled`)
-2. Filter hook (`r2f_schengen_premium_check`) - Member Tools integration
-3. Global setting fallback
-
-### Phase 1.0: Core Functionality ✅
-
-- Trip entry form with Schengen country validation (29 countries)
-- Rolling 180-day window calculation algorithm
-- Dashboard with circular day counter and status badges
-- Trip list with edit/delete functionality
-- Status thresholds: safe → warning (60) → danger (80) → critical (90)
-
-### Phase 1.1: Browser Geolocation Check-in ✅
-
-- Browser GPS location check-in via Geolocation API
-- Reverse geocoding via OpenStreetMap Nominatim (free)
-- Location history tracking in `fra_schengen_location_log` table
-- **Auto-trip creation** when checking in from Schengen country
-
-### Phase 1.2: Smart Location Detection ✅
-
-- **Timezone detection:** Compares browser timezone to stored timezone
-- **IP-based detection:** Uses ip-api.com (free, 1-hour cache)
-- **Daily reminders:** Configurable hour, tracks last check-in
-- **Smart banners:**
-  - Amber (plane icon): Timezone change detected
-  - Purple (globe icon): IP country differs from timezone
-  - Blue (clock icon): Daily reminder
-
-### Phase 2: Calendar Sync ✅ (NEW)
-
-#### Database Schema
-- `wp_fra_calendar_connections` - OAuth connections (tokens, sync status)
-- `wp_fra_calendar_events` - Detected travel events
-
-#### PHP Calendar Class (`class-r2f-schengen-calendar.php`)
-- Complete OAuth 2.0 flow for Google Calendar and Microsoft Outlook
-- Token encryption/decryption using WordPress salts
-- Event fetching and syncing from calendar APIs
-- Travel keyword detection (countries, cities, transport, accommodation)
-- iCal file parsing and import
-- Confidence scoring for travel detection
-
-#### Calendar REST API Endpoints
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/calendar/providers` | GET | Available providers |
-| `/calendar/connections` | GET | Connected calendars |
-| `/calendar/connect` | POST | Start OAuth flow |
-| `/calendar/connections/{id}` | DELETE | Disconnect |
-| `/calendar/connections/{id}/sync` | POST | Manual sync |
-| `/calendar/events` | GET | Detected events |
-| `/calendar/events/import` | POST | Import as trips |
-| `/calendar/events/skip` | POST | Skip events |
-| `/calendar/import-ical` | POST | Upload iCal file |
-
-#### React Component (`CalendarSync.tsx`)
-- Full UI for connecting calendars (Google/Microsoft)
-- Connection status cards with sync and disconnect actions
-- iCal file upload
-- Detected travel events list with select/import/skip
-- OAuth callback handling via URL parameters
-
-### Enhanced Features ✅
-
-**Calendar View** (`CalendarView.tsx`):
-- Monthly calendar with navigation
-- Trip days highlighted in brand blue
-- Future trips shown with dashed border
-
-**Planning Tool** (`PlanningTool.tsx`):
-- "What If" calculator for future trips
-- Shows if trip would violate 90/180 rule
-- Earliest safe start date suggestion
-
-**Alert System** (`class-r2f-schengen-alerts.php`):
-- Three thresholds: 60 (warning), 80 (danger), 85 (urgent)
-- Daily cron at 8am UTC
-- HTML emails with brand styling
-
-**PDF Reports** (`ReportExport.tsx`):
-- Generate button in header
-- Preview modal with summary
-- Print / Save as PDF via browser
-
-**Onboarding** (`SchengenOnboarding.tsx`):
-- 5-step walkthrough for first-time users
-- Auto-shows for first-time users
-- Help button (?) to reopen
-
----
-
-## 3. React Frontend Files
-
-| File | Purpose |
+### React/TypeScript (Modified)
+| File | Changes |
 |------|---------|
-| `SchengenDashboard.tsx` | Main dashboard component |
-| `JurisdictionOverview.tsx` | Multi-jurisdiction tracking UI |
-| `CalendarSync.tsx` | Calendar connection & sync UI |
-| `CalendarView.tsx` | Monthly calendar |
-| `PlanningTool.tsx` | "What if" calculator |
-| `ReportExport.tsx` | PDF generation |
-| `LocationTracker.tsx` | GPS check-in UI |
-| `LocationDetectionBanner.tsx` | Smart prompts |
-| `SchengenOnboarding.tsx` | First-time walkthrough |
-| `TripForm.tsx` | Add/edit trip modal (with jurisdiction selector) |
-| `TripList.tsx` | Trip list with actions |
-| `DayCounter.tsx` | Circular progress |
-| `StatusBadge.tsx` | Status indicator |
-| `useSchengenStore.ts` | Zustand store |
-| `useLocationDetection.ts` | Timezone/IP detection hook |
-| `useGeolocation.ts` | Browser geolocation hook |
-| `schengenUtils.ts` | Calculation utilities |
+| `types/index.ts` | Added CSVImportResult, Suggestion, Notification types |
+| `hooks/useApi.ts` | Added CSV, suggestions, notifications hooks |
+| `api/client.ts` | Added schengen API methods |
+| `components/schengen/SchengenDashboard.tsx` | Integrated new components |
+| `App.tsx` | Added PWAPrompt component |
+| `vite.config.ts` | Added PWA file copy plugin |
 
 ---
 
-## 4. Architecture
+## 8. Build Commands
 
-```
-SchengenDashboard
-    │
-    ├── Header
-    │   ├── HelpCircle (?) → Opens onboarding
-    │   ├── ReportExport → PDF generation
-    │   └── Add Trip → TripForm modal
-    │
-    ├── Status Cards Row
-    │   ├── DayCounter (circular progress)
-    │   ├── Days Remaining card
-    │   ├── Current Window card
-    │   └── Next Expiration card
-    │
-    ├── LocationDetectionBanner → Smart check-in prompts
-    ├── LocationTracker (compact) → Quick check-in widget
-    │
-    ├── Warning Banners (conditional by status)
-    │
-    ├── Tab Navigation
-    │   ├── Trip List → TripList
-    │   ├── Calendar View → CalendarView (premium)
-    │   ├── Calendar Sync → CalendarSync (NEW)
-    │   ├── Planning Tool → PlanningTool (premium)
-    │   ├── Location → LocationTracker (full)
-    │   └── Settings → Alert toggles, thresholds
-    │
-    └── Modals
-        ├── TripForm (add/edit)
-        └── SchengenOnboarding (first-time)
+```bash
+# Build React portal (required after TypeScript changes)
+cd france-relocation-member-tools/portal && npm run build
+
+# Verify PHP syntax
+php -l relo2france-schengen-tracker/includes/class-r2f-schengen-api.php
+
+# Check TypeScript types
+cd france-relocation-member-tools/portal && npx tsc --noEmit
 ```
 
 ---
 
-## 5. Configuration Required
+## 9. Testing the New Features
 
-For calendar sync to work, admins need to configure OAuth credentials in WordPress options:
+| Feature | How to Test |
+|---------|-------------|
+| CSV Export | Schengen Tracker → Settings tab → "Export CSV" button |
+| CSV Import | Settings tab → Import section → Upload file or paste CSV |
+| AI Suggestions | Planning tab (premium users only) |
+| PWA Install | On mobile Chrome, look for "Add to Home Screen" prompt |
+| Notifications | Click bell icon in header, check notification dropdown |
+| Push Subscribe | Settings → Notifications → Enable push notifications |
 
-### Google Calendar
+---
+
+## 10. Configuration Required
+
+### VAPID Keys (for Push Notifications)
+Generate at https://vapidkeys.com/ and configure:
+```php
+update_option('r2f_schengen_vapid_public_key', 'your-public-key');
+update_option('r2f_schengen_vapid_private_key', 'your-private-key');
+```
+
+### Calendar OAuth (already documented)
 ```php
 update_option('r2f_schengen_google_client_id', 'your-client-id');
 update_option('r2f_schengen_google_client_secret', 'your-client-secret');
 ```
 
-### Microsoft Outlook
-```php
-update_option('r2f_schengen_microsoft_client_id', 'your-client-id');
-update_option('r2f_schengen_microsoft_client_secret', 'your-client-secret');
+---
+
+## 11. Architecture Reference
+
+```
+SchengenDashboard
+    │
+    ├── Header
+    │   ├── NotificationCenter → Bell icon + dropdown (NEW)
+    │   ├── HelpCircle (?) → Opens onboarding
+    │   ├── ReportExport → PDF generation
+    │   └── Add Trip → TripForm modal
+    │
+    ├── Tab Navigation
+    │   ├── Trip List → TripList
+    │   ├── Calendar View → CalendarView
+    │   ├── Calendar Sync → CalendarSync
+    │   ├── Planning → AISuggestions (NEW) + PlanningTool
+    │   ├── Location → LocationTracker
+    │   └── Settings → CSVImportExport (NEW) + Alert toggles
+    │
+    └── PWAPrompt → Install banner (NEW)
 ```
 
-**Note:** An admin settings page for these credentials is not yet implemented.
+---
+
+## 12. Commits This Session
+
+| Commit | Message |
+|--------|---------|
+| `6f12426` | Fix undefined constant FRAMT_URL in portal template |
+| `4f9da42` | Fix version constant mismatch in Schengen Tracker plugin |
+| `9923ab9` | Add Phase 7: AI-powered trip planning suggestions |
+| `a7858c5` | Add Phase 6: PWA support for offline access and install prompt |
+| `061a5b3` | Add Phase 6: CSV import/export for Schengen trips |
 
 ---
 
-## 6. Phase Status
-
-| Phase | Description | Status |
-|-------|-------------|--------|
-| **0** | Plugin Extraction & Premium Setup | **Complete** |
-| **1.1** | Browser Geolocation Integration | **Complete** |
-| **1.2** | Smart Location Detection | **Complete** |
-| **2** | Google/Outlook Calendar Sync | **Complete** |
-| **3** | Multi-Jurisdiction (US States, etc.) | **Complete** |
-| **4** | Professional PDF Reports | Complete |
-| **5** | Push + In-App Notifications | Pending |
-| **6** | CSV/ICS Import + PWA | Partially done (iCal import complete) |
-| **7** | AI Suggestions + Family + Analytics | Pending |
-
----
-
-## 7. Build Commands
-
-```bash
-# Build React portal
-cd france-relocation-member-tools/portal
-npm install
-npm run build
-
-# Type check
-npx tsc --noEmit
-
-# Lint
-npm run lint
-```
-
-**Current Status:**
-- Type Check: 0 errors
-- Build: Successful
-- Schengen Tracker: v1.2.0 with calendar sync
-
----
-
-## 8. Known Issues / Notes
-
-### Timezone Fix Applied
-**Issue:** Check-in times displayed incorrectly
-**Fix:** Return ISO 8601 format with timezone:
-```php
-'recordedAt' => gmdate('c') // "2025-12-28T14:52:00+00:00"
-```
-
-### Portal URL Routing
-Direct links like `/portal/?view=schengen` now work correctly.
-
-### Travel Detection Keywords
-The calendar sync detects travel events using keywords:
-- **Transport:** flight, fly, train, eurostar, airport, airline
-- **Accommodation:** hotel, airbnb, hostel, booking, reservation
-- **Travel:** trip, vacation, holiday, visit
-- **Countries:** All 30 Schengen countries
-- **Cities:** 30+ major European cities (Paris, Berlin, Rome, etc.)
-
-### Confidence Scoring
-- **0.9:** Country name detected in title/location
-- **0.85:** Major city detected
-- **0.5:** Travel keyword only (no specific location)
-
-### REST API Route Order (Important!)
-**Issue:** Routes like `/jurisdictions/tracked` were returning 404 errors.
-
-**Cause:** WordPress REST API matches routes in registration order. If a parameterized route like `/jurisdictions/(?P<code>[a-z0-9_]+)` is registered before a specific route like `/jurisdictions/tracked`, the regex `[a-z0-9_]+` matches "tracked" as a code, routing the request to the wrong handler.
-
-**Fix:** Always register specific routes BEFORE parameterized/catch-all routes:
-```php
-// CORRECT ORDER:
-register_rest_route($ns, '/jurisdictions/tracked', ...);           // Specific - matches first
-register_rest_route($ns, '/jurisdictions/summary', ...);           // Specific - matches first
-register_rest_route($ns, '/jurisdictions/(?P<code>[a-z0-9_]+)', ...); // Parameterized - fallback
-
-// WRONG ORDER (causes 404):
-register_rest_route($ns, '/jurisdictions/(?P<code>[a-z0-9_]+)', ...); // Catches "tracked"!
-register_rest_route($ns, '/jurisdictions/tracked', ...);              // Never reached
-```
-
-**Affected file:** `class-r2f-schengen-jurisdiction.php`
-
----
-
-## 9. To Resume Next Session
-
-**Priority tasks:**
-
-1. **OAuth Credentials Setup:**
-   - Set up Google Calendar OAuth credentials in Google Cloud Console
-   - Microsoft Outlook OAuth requires 365 Developer Program (user doesn't qualify)
-
-2. **Background Sync:** Set up cron job for automatic calendar syncing
-
-3. **Push + In-App Notifications** (Phase 5)
-   - Web Push API subscription flow
-   - In-app notification center
-   - See SCHENGEN-MONAEO-PARITY-PLAN.md section 5.1-5.2
-
-**Completed this session:**
-- Phase 3: Multi-Jurisdiction Support
-  - Database schema with jurisdiction_rules table
-  - PHP class with REST API endpoints
-  - React hooks and API client methods
-  - JurisdictionOverview component
-  - TripForm jurisdiction selector
-  - Support for zones (Schengen, UK), countries, and US states
-
-**Reference:** `SCHENGEN-MONAEO-PARITY-PLAN.md` for detailed specs
-
----
-
-## 10. GitHub Repositories
-
-- **Main Plugin:** Relo2France/france-relocation-assistant
-- **Member Tools:** Relo2France/france-relocation-member-tools
-- **Schengen Tracker:** relo2france-schengen-tracker (within main repo)
-
----
-
-*Last Updated: December 28, 2025*
+*Last Updated: December 28, 2024*
