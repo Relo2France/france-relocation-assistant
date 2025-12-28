@@ -109,6 +109,7 @@ export default function JurisdictionOverview({ className }: JurisdictionOverview
           </div>
         </div>
         <button
+          type="button"
           onClick={() => setShowAddModal(true)}
           className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition-colors"
         >
@@ -141,6 +142,7 @@ export default function JurisdictionOverview({ className }: JurisdictionOverview
             Add jurisdictions to track your visa and residency compliance across multiple countries.
           </p>
           <button
+            type="button"
             onClick={() => setShowAddModal(true)}
             className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition-colors"
           >
@@ -157,6 +159,7 @@ export default function JurisdictionOverview({ className }: JurisdictionOverview
             <div className="flex items-center justify-between p-4 border-b border-gray-200">
               <h3 className="text-lg font-semibold text-gray-900">Add Jurisdiction</h3>
               <button
+                type="button"
                 onClick={() => setShowAddModal(false)}
                 className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                 aria-label="Close"
@@ -170,6 +173,7 @@ export default function JurisdictionOverview({ className }: JurisdictionOverview
               <div className="flex gap-2 flex-wrap">
                 {(['all', 'zone', 'country', 'state'] as const).map((type) => (
                   <button
+                    type="button"
                     key={type}
                     onClick={() => setFilterType(type)}
                     className={clsx(
@@ -201,8 +205,10 @@ export default function JurisdictionOverview({ className }: JurisdictionOverview
                       <div className="space-y-2">
                         {jurisdictions.map((j) => (
                           <button
+                            type="button"
                             key={j.code}
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.preventDefault();
                               handleAddJurisdiction(j.code);
                               setShowAddModal(false);
                             }}
@@ -289,6 +295,7 @@ function JurisdictionCard({
           </p>
         </div>
         <button
+          type="button"
           onClick={onRemove}
           disabled={isRemoving}
           className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
@@ -333,6 +340,7 @@ function JurisdictionCard({
 
       {/* Expandable details */}
       <button
+        type="button"
         onClick={() => setShowDetails(!showDetails)}
         className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
       >
