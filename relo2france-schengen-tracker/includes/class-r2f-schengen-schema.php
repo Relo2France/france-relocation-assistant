@@ -342,6 +342,35 @@ class R2F_Schengen_Schema {
 				);
 			}
 		}
+
+		// Migration from 1.4.x to 1.5.0: Add family_member_id column to trips table.
+		if ( version_compare( $current_version, '1.5.0', '<' ) ) {
+			$table_trips = self::get_table( 'trips' );
+
+			// Check if family_member_id column exists.
+			$column_exists = $wpdb->get_results(
+				$wpdb->prepare(
+					"SHOW COLUMNS FROM $table_trips LIKE %s",
+					'family_member_id'
+				)
+			);
+
+			if ( empty( $column_exists ) ) {
+				// Add family_member_id column - NULL means the primary account holder.
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$wpdb->query(
+					"ALTER TABLE $table_trips
+					ADD COLUMN family_member_id bigint(20) unsigned DEFAULT NULL AFTER user_id"
+				);
+
+				// Add index for family member queries.
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$wpdb->query(
+					"ALTER TABLE $table_trips
+					ADD KEY idx_family_member (family_member_id)"
+				);
+			}
+		}
 	}
 
 	/**

@@ -1511,3 +1511,73 @@ export function useSchengenSuggestions() {
     refetchOnWindowFocus: false,
   });
 }
+
+// ============================================
+// Schengen Family Member Hooks (Phase 7)
+// ============================================
+
+/**
+ * Get all Schengen family members for the current user
+ */
+export function useSchengenFamilyMembers() {
+  return useQuery({
+    queryKey: ['schengenFamilyMembers'],
+    queryFn: schengenApi.getSchengenFamilyMembers,
+    staleTime: 30 * 1000, // 30 seconds
+  });
+}
+
+/**
+ * Get Schengen family summary with status for all members
+ */
+export function useSchengenFamilySummary() {
+  return useQuery({
+    queryKey: ['schengenFamilySummary'],
+    queryFn: schengenApi.getSchengenFamilySummary,
+    staleTime: 30 * 1000, // 30 seconds
+  });
+}
+
+/**
+ * Create a new Schengen family member
+ */
+export function useCreateSchengenFamilyMember() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: schengenApi.createSchengenFamilyMember,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['schengenFamilyMembers'] });
+      queryClient.invalidateQueries({ queryKey: ['schengenFamilySummary'] });
+    },
+  });
+}
+
+/**
+ * Update a Schengen family member
+ */
+export function useUpdateSchengenFamilyMember() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Parameters<typeof schengenApi.updateSchengenFamilyMember>[1] }) =>
+      schengenApi.updateSchengenFamilyMember(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['schengenFamilyMembers'] });
+      queryClient.invalidateQueries({ queryKey: ['schengenFamilySummary'] });
+    },
+  });
+}
+
+/**
+ * Delete a Schengen family member
+ */
+export function useDeleteSchengenFamilyMember() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: schengenApi.deleteSchengenFamilyMember,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['schengenFamilyMembers'] });
+      queryClient.invalidateQueries({ queryKey: ['schengenFamilySummary'] });
+      queryClient.invalidateQueries({ queryKey: ['schengenTrips'] });
+    },
+  });
+}

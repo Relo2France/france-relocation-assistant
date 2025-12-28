@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Plugin constants.
-define( 'R2F_SCHENGEN_VERSION', '1.4.0' );
+define( 'R2F_SCHENGEN_VERSION', '1.5.0' );
 define( 'R2F_SCHENGEN_PLUGIN_FILE', __FILE__ );
 define( 'R2F_SCHENGEN_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'R2F_SCHENGEN_PLUGIN_URL', plugin_dir_url( __FILE__ ) );

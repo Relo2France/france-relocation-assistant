@@ -49,6 +49,11 @@ import type {
   FamilyMember,
   FamilyMembersResponse,
   FamilyFeatureStatus,
+  SchengenFamilyMember,
+  SchengenFamilyMemberCreate,
+  SchengenFamilyMemberUpdate,
+  SchengenFamilyMembersResponse,
+  SchengenFamilySummary,
   LocationSource,
   LocationStoreResponse,
   LocationHistoryResponse,
@@ -957,6 +962,42 @@ export const schengenApi = {
   // Get AI-powered trip planning suggestions
   getSuggestions: () =>
     apiFetch<SuggestionsResponse>('/schengen/suggestions'),
+
+  // ============================================
+  // Schengen Family Members API (Phase 7)
+  // ============================================
+
+  // Get all Schengen family members
+  getSchengenFamilyMembers: () =>
+    apiFetch<SchengenFamilyMembersResponse>('/schengen/family'),
+
+  // Get a single Schengen family member
+  getSchengenFamilyMember: (id: number) =>
+    apiFetch<SchengenFamilyMember>(`/schengen/family/${id}`),
+
+  // Create a new Schengen family member
+  createSchengenFamilyMember: (data: SchengenFamilyMemberCreate) =>
+    apiFetch<SchengenFamilyMember>('/schengen/family', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // Update a Schengen family member
+  updateSchengenFamilyMember: (id: number, data: SchengenFamilyMemberUpdate) =>
+    apiFetch<SchengenFamilyMember>(`/schengen/family/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  // Delete a Schengen family member
+  deleteSchengenFamilyMember: (id: number) =>
+    apiFetch<{ deleted: boolean; id: number }>(`/schengen/family/${id}`, {
+      method: 'DELETE',
+    }),
+
+  // Get Schengen family summary with status for all members
+  getSchengenFamilySummary: () =>
+    apiFetch<SchengenFamilySummary>('/schengen/family/summary'),
 
   // ============================================
   // Jurisdiction API (Phase 3)

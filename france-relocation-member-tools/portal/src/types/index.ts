@@ -820,6 +820,7 @@ export interface SchengenTrip {
   jurisdictionCode?: string;               // Jurisdiction code (default: 'schengen')
   category: 'personal' | 'business';
   notes?: string;
+  familyMemberId?: string | null;          // Family member ID (null = primary account holder)
   createdAt: string;                       // ISO timestamp
   updatedAt: string;                       // ISO timestamp
 }
@@ -1103,6 +1104,72 @@ export interface SuggestionsResponse {
     totalTrips: number;
   };
   generatedAt: string;
+}
+
+// ============================================
+// Schengen Family Member Types (Phase 7)
+// ============================================
+
+export type SchengenFamilyRelationship = 'spouse' | 'partner' | 'child' | 'parent' | 'sibling' | 'other';
+
+export interface SchengenFamilyMember {
+  id: number;
+  name: string;
+  relationship: SchengenFamilyRelationship | null;
+  nationality: string | null;
+  passportCountry: string | null;
+  dateOfBirth: string | null;
+  notes: string | null;
+  color: string;
+  isActive: boolean;
+  displayOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SchengenFamilyMemberCreate {
+  name: string;
+  relationship?: SchengenFamilyRelationship;
+  nationality?: string;
+  passportCountry?: string;
+  dateOfBirth?: string;
+  notes?: string;
+  color?: string;
+}
+
+export interface SchengenFamilyMemberUpdate extends Partial<SchengenFamilyMemberCreate> {
+  isActive?: boolean;
+  displayOrder?: number;
+}
+
+export interface SchengenFamilyMemberStatus {
+  daysUsed: number;
+  daysRemaining: number;
+  daysAllowed: number;
+  percentage: number;
+  level: 'ok' | 'warning' | 'danger';
+}
+
+export interface SchengenFamilyMemberSummary {
+  id: number;
+  name: string;
+  relationship: SchengenFamilyRelationship | null;
+  color: string;
+  status: SchengenFamilyMemberStatus;
+}
+
+export interface SchengenFamilySummary {
+  primary: {
+    name: string;
+    color: string;
+    status: SchengenFamilyMemberStatus;
+  };
+  members: SchengenFamilyMemberSummary[];
+}
+
+export interface SchengenFamilyMembersResponse {
+  members: SchengenFamilyMember[];
+  total: number;
 }
 
 // ============================================

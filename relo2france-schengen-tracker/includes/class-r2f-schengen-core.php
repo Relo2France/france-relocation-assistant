@@ -21,7 +21,7 @@ class R2F_Schengen_Core {
 	 *
 	 * @var string
 	 */
-	const VERSION = '1.4.0';
+	const VERSION = '1.5.0';
 
 	/**
 	 * Singleton instance.
@@ -80,6 +80,13 @@ class R2F_Schengen_Core {
 	public $notifications;
 
 	/**
+	 * Family members handler.
+	 *
+	 * @var R2F_Schengen_Family
+	 */
+	public $family;
+
+	/**
 	 * Get singleton instance.
 	 *
 	 * @return R2F_Schengen_Core
@@ -114,6 +121,7 @@ class R2F_Schengen_Core {
 		require_once $includes_dir . 'class-r2f-schengen-calendar.php';
 		require_once $includes_dir . 'class-r2f-schengen-jurisdiction.php';
 		require_once $includes_dir . 'class-r2f-schengen-notifications.php';
+		require_once $includes_dir . 'class-r2f-schengen-family.php';
 	}
 
 	/**
@@ -127,6 +135,7 @@ class R2F_Schengen_Core {
 		$this->calendar      = R2F_Schengen_Calendar::get_instance();
 		$this->jurisdiction  = R2F_Schengen_Jurisdiction::get_instance();
 		$this->notifications = R2F_Schengen_Notifications::get_instance();
+		$this->family        = R2F_Schengen_Family::get_instance();
 	}
 
 	/**

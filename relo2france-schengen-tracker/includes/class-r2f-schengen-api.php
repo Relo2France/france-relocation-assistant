@@ -488,18 +488,23 @@ class R2F_Schengen_API {
 		}
 
 		$table  = R2F_Schengen_Schema::get_table( 'trips' );
-		$result = $wpdb->insert(
-			$table,
-			array(
-				'user_id'    => $user_id,
-				'start_date' => sanitize_text_field( $params['start_date'] ),
-				'end_date'   => sanitize_text_field( $params['end_date'] ),
-				'country'    => sanitize_text_field( $params['country'] ),
-				'category'   => isset( $params['category'] ) ? sanitize_text_field( $params['category'] ) : 'personal',
-				'notes'      => isset( $params['notes'] ) ? sanitize_textarea_field( $params['notes'] ) : null,
-			),
-			array( '%d', '%s', '%s', '%s', '%s', '%s' )
+		$data   = array(
+			'user_id'    => $user_id,
+			'start_date' => sanitize_text_field( $params['start_date'] ),
+			'end_date'   => sanitize_text_field( $params['end_date'] ),
+			'country'    => sanitize_text_field( $params['country'] ),
+			'category'   => isset( $params['category'] ) ? sanitize_text_field( $params['category'] ) : 'personal',
+			'notes'      => isset( $params['notes'] ) ? sanitize_textarea_field( $params['notes'] ) : null,
 		);
+		$format = array( '%d', '%s', '%s', '%s', '%s', '%s' );
+
+		// Support family member assignment.
+		if ( isset( $params['family_member_id'] ) ) {
+			$data['family_member_id'] = $params['family_member_id'] ? (int) $params['family_member_id'] : null;
+			$format[] = '%d';
+		}
+
+		$result = $wpdb->insert( $table, $data, $format );
 
 		if ( false === $result ) {
 			return new WP_Error(
@@ -565,6 +570,10 @@ class R2F_Schengen_API {
 		if ( array_key_exists( 'notes', $params ) ) {
 			$data['notes'] = $params['notes'] ? sanitize_textarea_field( $params['notes'] ) : null;
 			$format[]      = '%s';
+		}
+		if ( array_key_exists( 'family_member_id', $params ) ) {
+			$data['family_member_id'] = $params['family_member_id'] ? (int) $params['family_member_id'] : null;
+			$format[]                 = '%d';
 		}
 
 		if ( empty( $data ) ) {
@@ -1610,14 +1619,15 @@ class R2F_Schengen_API {
 	 */
 	private function format_trip( $trip ): array {
 		return array(
-			'id'        => (string) $trip->id,
-			'startDate' => $trip->start_date,
-			'endDate'   => $trip->end_date,
-			'country'   => $trip->country,
-			'category'  => $trip->category,
-			'notes'     => $trip->notes,
-			'createdAt' => $trip->created_at,
-			'updatedAt' => $trip->updated_at,
+			'id'             => (string) $trip->id,
+			'startDate'      => $trip->start_date,
+			'endDate'        => $trip->end_date,
+			'country'        => $trip->country,
+			'category'       => $trip->category,
+			'notes'          => $trip->notes,
+			'familyMemberId' => isset( $trip->family_member_id ) ? ( $trip->family_member_id ? (string) $trip->family_member_id : null ) : null,
+			'createdAt'      => $trip->created_at,
+			'updatedAt'      => $trip->updated_at,
 		);
 	}
 
