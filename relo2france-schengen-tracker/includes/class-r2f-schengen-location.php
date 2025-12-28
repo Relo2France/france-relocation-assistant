@@ -81,6 +81,92 @@ class R2F_Schengen_Location {
 		// Register under the namespace that Member Tools portal uses.
 		$namespace = 'fra-portal/v1';
 		$base      = '/schengen/location';
+
+		// Store current location - simplified for debugging.
+		register_rest_route(
+			$namespace,
+			$base,
+			array(
+				array(
+					'methods'             => 'POST',
+					'callback'            => array( $this, 'store_location_debug' ),
+					'permission_callback' => array( $this, 'check_permission' ),
+				),
+			)
+		);
+
+		// Today status - simplified.
+		register_rest_route(
+			$namespace,
+			$base . '/today',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( $this, 'get_today_debug' ),
+				'permission_callback' => array( $this, 'check_permission' ),
+			)
+		);
+
+		// Detect - simplified.
+		register_rest_route(
+			$namespace,
+			$base . '/detect',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( $this, 'detect_debug' ),
+				'permission_callback' => array( $this, 'check_permission' ),
+			)
+		);
+	}
+
+	/**
+	 * Debug: Simple store location.
+	 */
+	public function store_location_debug( $request ) {
+		return rest_ensure_response( array(
+			'success'  => true,
+			'message'  => 'Location recorded (debug mode).',
+			'location' => array(
+				'id'          => 1,
+				'lat'         => 48.8566,
+				'lng'         => 2.3522,
+				'countryCode' => 'FR',
+				'countryName' => 'France',
+				'city'        => 'Paris',
+				'isSchengen'  => true,
+				'source'      => 'browser',
+				'recordedAt'  => current_time( 'mysql' ),
+			),
+		) );
+	}
+
+	/**
+	 * Debug: Simple today status.
+	 */
+	public function get_today_debug( $request ) {
+		return rest_ensure_response( array(
+			'hasCheckedInToday' => false,
+			'todayLocations'    => array(),
+			'lastLocation'      => null,
+		) );
+	}
+
+	/**
+	 * Debug: Simple IP detect.
+	 */
+	public function detect_debug( $request ) {
+		return rest_ensure_response( array(
+			'detected'    => false,
+			'reason'      => 'debug',
+			'countryCode' => null,
+		) );
+	}
+
+	/**
+	 * DISABLED - Original routes.
+	 */
+	private function register_routes_disabled(): void {
+		$namespace = 'fra-portal/v1';
+		$base      = '/schengen/location';
 		// Store current location (check-in).
 		register_rest_route(
 			$namespace,
