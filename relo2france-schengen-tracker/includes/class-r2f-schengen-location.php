@@ -418,14 +418,89 @@ class R2F_Schengen_Location {
 	}
 
 	/**
-	 * Debug: Simple IP detect.
+	 * Detect country from user's IP address.
+	 * Uses ip-api.com (free, no API key, 45 req/min limit).
 	 */
 	public function detect_debug( $request ) {
-		return rest_ensure_response( array(
-			'detected'    => false,
-			'reason'      => 'debug',
-			'countryCode' => null,
-		) );
+		// Get user's IP address.
+		$ip = $this->get_client_ip();
+
+		if ( ! $ip || $ip === '127.0.0.1' || strpos( $ip, '192.168.' ) === 0 || strpos( $ip, '10.' ) === 0 ) {
+			return rest_ensure_response( array(
+				'detected'    => false,
+				'reason'      => 'local_ip',
+				'message'     => 'Cannot detect location from local IP address.',
+				'countryCode' => null,
+				'countryName' => null,
+				'city'        => null,
+				'isSchengen'  => false,
+			) );
+		}
+
+		// Check cache first.
+		$cache_key = 'r2f_ip_geo_' . md5( $ip );
+		$cached    = get_transient( $cache_key );
+
+		if ( false !== $cached ) {
+			return rest_ensure_response( $cached );
+		}
+
+		// Use ip-api.com (free, no key required).
+		$url = 'http://ip-api.com/json/' . $ip . '?fields=status,message,country,countryCode,city,query';
+
+		$response = wp_remote_get(
+			$url,
+			array(
+				'timeout' => 5,
+				'headers' => array( 'Accept' => 'application/json' ),
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			return rest_ensure_response( array(
+				'detected'    => false,
+				'reason'      => 'api_error',
+				'message'     => 'Failed to detect location from IP.',
+				'countryCode' => null,
+				'countryName' => null,
+				'city'        => null,
+				'isSchengen'  => false,
+			) );
+		}
+
+		$body = wp_remote_retrieve_body( $response );
+		$data = json_decode( $body, true );
+
+		if ( empty( $data ) || ( isset( $data['status'] ) && 'fail' === $data['status'] ) ) {
+			return rest_ensure_response( array(
+				'detected'    => false,
+				'reason'      => 'lookup_failed',
+				'message'     => $data['message'] ?? 'IP lookup failed.',
+				'countryCode' => null,
+				'countryName' => null,
+				'city'        => null,
+				'isSchengen'  => false,
+			) );
+		}
+
+		$country_code = $data['countryCode'] ?? null;
+		$is_schengen  = $country_code ? $this->is_schengen_country_code( $country_code ) : false;
+
+		$result = array(
+			'detected'    => true,
+			'reason'      => 'ip_lookup',
+			'message'     => sprintf( 'Detected location: %s', $data['country'] ?? 'Unknown' ),
+			'countryCode' => $country_code,
+			'countryName' => $data['country'] ?? null,
+			'city'        => $data['city'] ?? null,
+			'isSchengen'  => $is_schengen,
+			'ip'          => $data['query'] ?? null,
+		);
+
+		// Cache for 1 hour.
+		set_transient( $cache_key, $result, HOUR_IN_SECONDS );
+
+		return rest_ensure_response( $result );
 	}
 
 	/**
