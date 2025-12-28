@@ -29,6 +29,13 @@ class R2F_Schengen_Calendar {
 	const NAMESPACE = 'r2f-schengen/v1';
 
 	/**
+	 * Legacy namespace for backward compatibility.
+	 *
+	 * @var string
+	 */
+	const LEGACY_NAMESPACE = 'fra-portal/v1';
+
+	/**
 	 * Supported calendar providers.
 	 *
 	 * @var array
@@ -243,10 +250,24 @@ class R2F_Schengen_Calendar {
 	 * Register REST API routes for calendar sync.
 	 */
 	public function register_routes(): void {
+		// Register primary routes.
+		$this->register_route_group( self::NAMESPACE );
+
+		// Register legacy routes for backward compatibility with Member Tools.
+		$this->register_route_group( self::LEGACY_NAMESPACE, '/schengen' );
+	}
+
+	/**
+	 * Register route group under a namespace.
+	 *
+	 * @param string $namespace API namespace.
+	 * @param string $prefix    Route prefix (empty for primary, '/schengen' for legacy).
+	 */
+	private function register_route_group( string $namespace, string $prefix = '' ): void {
 		// Get available providers.
 		register_rest_route(
-			self::NAMESPACE,
-			'/calendar/providers',
+			$namespace,
+			$prefix . '/calendar/providers',
 			array(
 				'methods'             => 'GET',
 				'callback'            => array( $this, 'get_providers' ),
@@ -256,8 +277,8 @@ class R2F_Schengen_Calendar {
 
 		// Get user's connections.
 		register_rest_route(
-			self::NAMESPACE,
-			'/calendar/connections',
+			$namespace,
+			$prefix . '/calendar/connections',
 			array(
 				'methods'             => 'GET',
 				'callback'            => array( $this, 'get_connections' ),
@@ -267,8 +288,8 @@ class R2F_Schengen_Calendar {
 
 		// Start OAuth flow (returns auth URL).
 		register_rest_route(
-			self::NAMESPACE,
-			'/calendar/connect',
+			$namespace,
+			$prefix . '/calendar/connect',
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( $this, 'start_connection' ),
@@ -285,8 +306,8 @@ class R2F_Schengen_Calendar {
 
 		// Disconnect a provider.
 		register_rest_route(
-			self::NAMESPACE,
-			'/calendar/connections/(?P<id>\d+)',
+			$namespace,
+			$prefix . '/calendar/connections/(?P<id>\d+)',
 			array(
 				'methods'             => 'DELETE',
 				'callback'            => array( $this, 'disconnect' ),
@@ -296,8 +317,8 @@ class R2F_Schengen_Calendar {
 
 		// Trigger sync for a connection.
 		register_rest_route(
-			self::NAMESPACE,
-			'/calendar/connections/(?P<id>\d+)/sync',
+			$namespace,
+			$prefix . '/calendar/connections/(?P<id>\d+)/sync',
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( $this, 'sync_connection' ),
@@ -307,8 +328,8 @@ class R2F_Schengen_Calendar {
 
 		// Get detected events.
 		register_rest_route(
-			self::NAMESPACE,
-			'/calendar/events',
+			$namespace,
+			$prefix . '/calendar/events',
 			array(
 				'methods'             => 'GET',
 				'callback'            => array( $this, 'get_events' ),
@@ -325,8 +346,8 @@ class R2F_Schengen_Calendar {
 
 		// Import events as trips.
 		register_rest_route(
-			self::NAMESPACE,
-			'/calendar/events/import',
+			$namespace,
+			$prefix . '/calendar/events/import',
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( $this, 'import_events' ),
@@ -343,8 +364,8 @@ class R2F_Schengen_Calendar {
 
 		// Skip events.
 		register_rest_route(
-			self::NAMESPACE,
-			'/calendar/events/skip',
+			$namespace,
+			$prefix . '/calendar/events/skip',
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( $this, 'skip_events' ),
@@ -361,8 +382,8 @@ class R2F_Schengen_Calendar {
 
 		// Upload iCal file.
 		register_rest_route(
-			self::NAMESPACE,
-			'/calendar/import-ical',
+			$namespace,
+			$prefix . '/calendar/import-ical',
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( $this, 'import_ical' ),
