@@ -64,6 +64,11 @@ import type {
   CalendarICalImportResult,
   CalendarProvider,
   CalendarEventStatus,
+  JurisdictionRule,
+  JurisdictionSummary,
+  MultiJurisdictionSummary,
+  TrackedJurisdictionsResponse,
+  JurisdictionType,
 } from '@/types';
 
 /**
@@ -923,4 +928,47 @@ export const schengenApi = {
     formData.append('file', file);
     return apiFormDataFetch<CalendarICalImportResult>('/schengen/calendar/import-ical', formData);
   },
+
+  // ============================================
+  // Jurisdiction API (Phase 3)
+  // ============================================
+
+  // Get all available jurisdiction rules
+  getJurisdictions: (type?: JurisdictionType) =>
+    apiFetch<JurisdictionRule[]>(
+      type ? `/schengen/jurisdictions?type=${type}` : '/schengen/jurisdictions'
+    ),
+
+  // Get a single jurisdiction rule by code
+  getJurisdiction: (code: string) =>
+    apiFetch<JurisdictionRule>(`/schengen/jurisdictions/${code}`),
+
+  // Get user's tracked jurisdictions
+  getTrackedJurisdictions: () =>
+    apiFetch<JurisdictionRule[]>('/schengen/jurisdictions/tracked'),
+
+  // Add a jurisdiction to tracking
+  addTrackedJurisdiction: (code: string) =>
+    apiFetch<TrackedJurisdictionsResponse>('/schengen/jurisdictions/tracked', {
+      method: 'POST',
+      body: JSON.stringify({ code }),
+    }),
+
+  // Remove a jurisdiction from tracking
+  removeTrackedJurisdiction: (code: string) =>
+    apiFetch<TrackedJurisdictionsResponse>(`/schengen/jurisdictions/tracked/${code}`, {
+      method: 'DELETE',
+    }),
+
+  // Get summary for a specific jurisdiction
+  getJurisdictionSummary: (code: string, date?: string) =>
+    apiFetch<JurisdictionSummary>(
+      date
+        ? `/schengen/jurisdictions/${code}/summary?date=${date}`
+        : `/schengen/jurisdictions/${code}/summary`
+    ),
+
+  // Get summary for all tracked jurisdictions
+  getMultiJurisdictionSummary: () =>
+    apiFetch<MultiJurisdictionSummary>('/schengen/jurisdictions/summary'),
 };
