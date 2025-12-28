@@ -66,6 +66,13 @@ class R2F_Schengen_Core {
 	public $calendar;
 
 	/**
+	 * Jurisdiction rules handler.
+	 *
+	 * @var R2F_Schengen_Jurisdiction
+	 */
+	public $jurisdiction;
+
+	/**
 	 * Get singleton instance.
 	 *
 	 * @return R2F_Schengen_Core
@@ -98,17 +105,19 @@ class R2F_Schengen_Core {
 		require_once $includes_dir . 'class-r2f-schengen-alerts.php';
 		require_once $includes_dir . 'class-r2f-schengen-location.php';
 		require_once $includes_dir . 'class-r2f-schengen-calendar.php';
+		require_once $includes_dir . 'class-r2f-schengen-jurisdiction.php';
 	}
 
 	/**
 	 * Initialize plugin components.
 	 */
 	private function init_components() {
-		$this->premium  = R2F_Schengen_Premium::get_instance();
-		$this->api      = R2F_Schengen_API::get_instance();
-		$this->alerts   = R2F_Schengen_Alerts::get_instance();
-		$this->location = R2F_Schengen_Location::get_instance();
-		$this->calendar = R2F_Schengen_Calendar::get_instance();
+		$this->premium      = R2F_Schengen_Premium::get_instance();
+		$this->api          = R2F_Schengen_API::get_instance();
+		$this->alerts       = R2F_Schengen_Alerts::get_instance();
+		$this->location     = R2F_Schengen_Location::get_instance();
+		$this->calendar     = R2F_Schengen_Calendar::get_instance();
+		$this->jurisdiction = R2F_Schengen_Jurisdiction::get_instance();
 	}
 
 	/**

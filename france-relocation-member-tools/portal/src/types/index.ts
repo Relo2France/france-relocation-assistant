@@ -1061,6 +1061,56 @@ export interface CalendarICalImportResult {
   detected: number;
 }
 
+// ============================================
+// Jurisdiction Types (Phase 3)
+// ============================================
+
+export type JurisdictionType = 'zone' | 'country' | 'state';
+export type CountingMethod = 'rolling' | 'calendar_year' | 'fiscal_year';
+export type JurisdictionStatus = 'safe' | 'warning' | 'danger' | 'critical' | 'exceeded';
+
+export interface JurisdictionRule {
+  id: number;
+  code: string;
+  name: string;
+  type: JurisdictionType;
+  parentCode: string | null;
+  daysAllowed: number;
+  windowDays: number;
+  countingMethod: CountingMethod;
+  resetMonth: number | null;
+  resetDay: number | null;
+  description: string | null;
+  notes: string | null;
+  isSystem: boolean;
+}
+
+export interface JurisdictionSummary {
+  jurisdictionCode: string;
+  daysUsed: number;
+  daysAllowed: number;
+  daysRemaining: number;
+  percentage: number;
+  status: JurisdictionStatus;
+  windowStart: string;
+  windowEnd: string;
+  referenceDate: string;
+  countingMethod: CountingMethod;
+  nextExpiringDate: string | null;
+  nextExpiringDays: number;
+  tripCount: number;
+  rule?: JurisdictionRule;
+}
+
+export interface MultiJurisdictionSummary {
+  [jurisdictionCode: string]: JurisdictionSummary;
+}
+
+export interface TrackedJurisdictionsResponse {
+  success: boolean;
+  tracked: string[];
+}
+
 // WordPress global types
 declare global {
   interface Window {

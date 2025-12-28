@@ -40,6 +40,7 @@ import type {
   TaskFilters,
   FileFilters,
   NoteFilters,
+  JurisdictionType,
 } from '@/types';
 
 // Query keys
@@ -1257,5 +1258,80 @@ export function useImportICalFile() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['calendarEvents'] });
     },
+  });
+}
+
+// ============================================
+// Jurisdiction Hooks (Phase 3)
+// ============================================
+
+export function useJurisdictions(type?: JurisdictionType) {
+  return useQuery({
+    queryKey: ['jurisdictions', type] as const,
+    queryFn: () => schengenApi.getJurisdictions(type),
+    staleTime: STALE_TIME.LONG, // Rules don't change often
+    throwOnError: false,
+  });
+}
+
+export function useJurisdiction(code: string) {
+  return useQuery({
+    queryKey: ['jurisdiction', code] as const,
+    queryFn: () => schengenApi.getJurisdiction(code),
+    staleTime: STALE_TIME.LONG,
+    throwOnError: false,
+    enabled: !!code,
+  });
+}
+
+export function useTrackedJurisdictions() {
+  return useQuery({
+    queryKey: ['trackedJurisdictions'] as const,
+    queryFn: schengenApi.getTrackedJurisdictions,
+    staleTime: STALE_TIME.DEFAULT,
+    throwOnError: false,
+  });
+}
+
+export function useAddTrackedJurisdiction() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: schengenApi.addTrackedJurisdiction,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['trackedJurisdictions'] });
+      queryClient.invalidateQueries({ queryKey: ['multiJurisdictionSummary'] });
+    },
+  });
+}
+
+export function useRemoveTrackedJurisdiction() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: schengenApi.removeTrackedJurisdiction,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['trackedJurisdictions'] });
+      queryClient.invalidateQueries({ queryKey: ['multiJurisdictionSummary'] });
+    },
+  });
+}
+
+export function useJurisdictionSummary(code: string, date?: string) {
+  return useQuery({
+    queryKey: ['jurisdictionSummary', code, date] as const,
+    queryFn: () => schengenApi.getJurisdictionSummary(code, date),
+    staleTime: STALE_TIME.DEFAULT,
+    throwOnError: false,
+    enabled: !!code,
+  });
+}
+
+export function useMultiJurisdictionSummary() {
+  return useQuery({
+    queryKey: ['multiJurisdictionSummary'] as const,
+    queryFn: schengenApi.getMultiJurisdictionSummary,
+    staleTime: STALE_TIME.DEFAULT,
+    throwOnError: false,
   });
 }
