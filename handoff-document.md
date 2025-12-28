@@ -1,5 +1,5 @@
 # Relo2France Handoff Document
-## Session: December 14, 2025 - In-Chat Account System & MemberPress Integration
+## Session: December 28, 2025 - Schengen Tracker Plugin Development
 
 ---
 
@@ -9,286 +9,311 @@
 |-----------|---------|--------|
 | Main Plugin | v2.9.83 | Active |
 | Member Tools Plugin | v1.0.80 | Active |
+| Schengen Tracker Plugin | v1.1.0 | Active |
 | Theme | v1.2.3 | Active |
 
 ---
 
 ## WHAT WAS BUILT THIS SESSION
 
-### 1. COMPLETE IN-CHAT ACCOUNT SYSTEM
-All account management stays within the chat panel - no page navigation needed.
+### SCHENGEN TRACKER - COMPLETE FEATURE IMPLEMENTATION
 
-**Dropdown Structure:**
+Built a comprehensive Schengen 90/180 day compliance tracker as a premium add-on feature. All phases from the specification are now complete.
+
+---
+
+### Phase 1.0: Core Functionality (Previously Built)
+- Trip entry form with Schengen country validation
+- Rolling 180-day window calculation algorithm
+- Dashboard with day counter and status badges
+- Trip list with edit/delete functionality
+
+### Phase 1.1: Browser Geolocation Check-in
+**Location:** `relo2france-schengen-tracker/includes/class-r2f-schengen-location.php`
+
+- Browser-based GPS location check-in
+- Reverse geocoding via OpenStreetMap Nominatim API
+- Location history tracking in `fra_schengen_location_log` table
+- Clear history and delete individual entries
+- **Auto-trip creation**: When checking in from a Schengen country:
+  - Creates new trip for today if none exists
+  - Extends yesterday's trip to today if applicable
+  - Updates location data on existing trip
+
+**API Endpoints:**
 ```
-Kevin ▼
-├── My Visa Profile          → Member Tools visa/relocation profile
-├── My Visa Documents        → Member Tools documents section
-├── My Membership Account    → In-chat billing profile form
-│   ├── Subscriptions        → In-chat subscriptions table
-│   └── Payments             → In-chat payment history
-└── Log Out
+POST /wp-json/r2f-schengen/v1/location/store    - Store location check-in
+GET  /wp-json/r2f-schengen/v1/location/history  - Get location history
+GET  /wp-json/r2f-schengen/v1/location/today    - Check if checked in today
+POST /wp-json/r2f-schengen/v1/location/clear    - Clear all history
+DELETE /wp-json/r2f-schengen/v1/location/{id}   - Delete single entry
+GET  /wp-json/r2f-schengen/v1/location/detect   - IP-based country detection
 ```
 
-### 2. CUSTOM MEMBERPRESS SHORTCODES
-MemberPress doesn't provide shortcodes for displaying just subscriptions or payments tables. Created custom shortcodes that use MemberPress's internal `MeprAccountCtrl` class:
+### Phase 1.2: Smart Location Detection
+**Location:** `france-relocation-member-tools/portal/src/hooks/useLocationDetection.ts`
 
-- `[fra_mepr_subscriptions]` - Displays subscriptions table with cancel/suspend/resume/update/upgrade actions
-- `[fra_mepr_payments]` - Displays payment history table
+- Timezone change detection (compares browser timezone to stored)
+- IP-based country detection via ip-api.com
+- Smart check-in prompts when timezone changes
+- Daily reminder system (configurable hour)
+- `LocationDetectionBanner` component shows prompts
 
-**Implementation in `france-relocation-assistant.php`:**
+### Phase 2: Database Persistence ✅
+**Location:** `relo2france-schengen-tracker/includes/class-r2f-schengen-schema.php`
+
+**Database Tables:**
+- `wp_fra_schengen_trips` - Trip records with location columns
+- `wp_fra_schengen_location_log` - Location check-in history
+
+**API Endpoints (class-r2f-schengen-api.php):**
+```
+GET/POST   /wp-json/r2f-schengen/v1/trips          - List/create trips
+GET/PUT/DELETE /wp-json/r2f-schengen/v1/trips/{id} - Single trip CRUD
+GET        /wp-json/r2f-schengen/v1/summary        - Current day count & status
+GET/PUT    /wp-json/r2f-schengen/v1/settings       - User alert settings
+POST       /wp-json/r2f-schengen/v1/simulate       - "What if" calculation
+GET        /wp-json/r2f-schengen/v1/report         - Generate PDF report
+GET        /wp-json/r2f-schengen/v1/feature-status - Premium status check
+POST       /wp-json/r2f-schengen/v1/test-alert     - Send test email alert
+```
+
+### Phase 3: Enhanced Features ✅
+
+#### Calendar View
+**Location:** `portal/src/components/schengen/CalendarView.tsx`
+- Monthly calendar visualization with navigation
+- Days with Schengen presence highlighted in brand blue
+- Future planned trips shown with dashed blue border
+- Days outside 180-day window shown in gray
+- Legend explaining color coding
+- Mobile responsive with abbreviated labels
+
+#### Planning Tool ("What If" Calculator)
+**Location:** `portal/src/components/schengen/PlanningTool.tsx`
+- Enter hypothetical future trip dates
+- Check if trip would violate 90/180 rule
+- Shows earliest safe start date if violation
+- Shows maximum safe trip length from given date
+- Visual results with green (safe) or red (violation) indicators
+
+#### Alert System
+**Location:** `relo2france-schengen-tracker/includes/class-r2f-schengen-alerts.php`
+- Three threshold levels: 60 (warning), 80 (danger), 85 (urgent)
+- Daily cron job at 8am UTC
+- Prevents duplicate alerts within 7 days
+- HTML emails with brand styling
+- Test alert button in Settings tab
+
+#### PDF Report Generation
+**Location:** `portal/src/components/schengen/ReportExport.tsx`
+- Generate report button in header
+- Preview modal with summary stats
+- HTML report rendered in iframe
+- Download as HTML option
+- Print / Save as PDF using browser print dialog
+
+### Phase 4: Polish ✅
+
+#### Email Notifications
+- Fully functional email system via `class-r2f-schengen-alerts.php`
+- Subject lines vary by severity level
+- Links to tracker and settings in email body
+- Unsubscribe via settings toggle
+
+#### Mobile Responsiveness
+- All components use Tailwind responsive classes
+- Calendar uses abbreviated weekday/month names on mobile
+- Grid layouts adjust for different screen sizes
+- Touch-friendly button sizes
+
+#### Onboarding Flow (NEW)
+**Location:** `portal/src/components/schengen/SchengenOnboarding.tsx`
+
+5-step walkthrough for first-time users:
+1. **Welcome** - Explains the 90/180 day rule
+2. **Track Your Trips** - How to add trips
+3. **Smart Location Check-in** - GPS feature explanation
+4. **Planning Tool** - "What If" calculator benefits
+5. **Email Alerts** - Threshold explanations (60/80/85 days)
+
+**Features:**
+- Auto-shows for first-time users
+- Progress dots with click navigation
+- Skip tour / Back / Next buttons
+- Help button (?) in header to reopen
+- Stores completion in localStorage (`r2f_schengen_onboarding_complete`)
+- Large modal with spacious, professional design
+
+#### Premium Tier Gating
+**Location:** `relo2france-schengen-tracker/includes/class-r2f-schengen-premium.php`
+
+3-tier priority system:
+1. User meta override (admin can enable/disable per user)
+2. Filter hook for external plugins (Member Tools integration)
+3. Global setting fallback
+
+**Free tier limitations:**
+- Limited number of trips
+- No calendar view
+- No planning tool
+- No PDF export
+
+---
+
+## KEY FILES - SCHENGEN TRACKER
+
+### Backend (PHP)
+| File | Purpose |
+|------|---------|
+| `class-r2f-schengen-core.php` | Main plugin class, initialization |
+| `class-r2f-schengen-api.php` | REST API endpoints (~40+ endpoints) |
+| `class-r2f-schengen-schema.php` | Database schema, migrations |
+| `class-r2f-schengen-location.php` | Location check-in, auto-trip creation |
+| `class-r2f-schengen-alerts.php` | Email notifications, cron jobs |
+| `class-r2f-schengen-premium.php` | Premium feature gating |
+
+### Frontend (React/TypeScript)
+| File | Purpose |
+|------|---------|
+| `SchengenDashboard.tsx` | Main dashboard component |
+| `CalendarView.tsx` | Monthly calendar visualization |
+| `PlanningTool.tsx` | "What if" trip calculator |
+| `ReportExport.tsx` | PDF report generation |
+| `LocationTracker.tsx` | GPS check-in interface |
+| `LocationDetectionBanner.tsx` | Smart prompts for check-in |
+| `SchengenOnboarding.tsx` | First-time user walkthrough |
+| `TripForm.tsx` | Add/edit trip modal |
+| `TripList.tsx` | Trip list with actions |
+| `DayCounter.tsx` | Circular progress display |
+| `StatusBadge.tsx` | Green/yellow/red status indicator |
+| `useSchengenStore.ts` | Zustand store for trips/settings |
+| `useLocationDetection.ts` | Timezone/location detection hook |
+| `schengenUtils.ts` | Calculation utilities |
+
+---
+
+## ARCHITECTURE - SCHENGEN TRACKER
+
+```
+SchengenDashboard
+    │
+    ├── Header
+    │   ├── HelpCircle (?) → Opens onboarding
+    │   ├── ReportExport → PDF generation
+    │   └── Add Trip → TripForm modal
+    │
+    ├── Status Cards Row
+    │   ├── DayCounter (circular progress)
+    │   ├── Days Remaining card
+    │   ├── Current Window card
+    │   └── Next Expiration card
+    │
+    ├── LocationDetectionBanner → Smart check-in prompts
+    ├── LocationTracker (compact) → Quick check-in widget
+    │
+    ├── Warning Banners (conditional)
+    │
+    ├── Tab Navigation
+    │   ├── Trip List → TripList component
+    │   ├── Calendar View → CalendarView (premium)
+    │   ├── Planning Tool → PlanningTool (premium)
+    │   ├── Location → LocationTracker (full)
+    │   └── Settings → Alert toggles, thresholds
+    │
+    └── Modals
+        ├── TripForm (add/edit)
+        └── SchengenOnboarding (first-time)
+```
+
+---
+
+## TIMEZONE FIX APPLIED
+
+**Issue:** Check-in times displayed incorrectly (e.g., showing 1:52 PM when it was 9:52 AM local)
+
+**Root Cause:** Database stored GMT times, but response returned `current_time('mysql')` which is local time
+
+**Fix:** Return ISO 8601 format with timezone indicator:
 ```php
-public function render_mepr_subscriptions() {
-    $acct_ctrl = new MeprAccountCtrl();
-    $acct_ctrl->subscriptions();
-}
+// In store_location_debug():
+'recordedAt' => gmdate('c'), // Returns "2025-12-28T14:52:00+00:00"
 
-public function render_mepr_payments() {
-    $acct_ctrl = new MeprAccountCtrl();
-    $acct_ctrl->payments();
-}
+// In format_location_row():
+$recorded_at_iso = gmdate('c', strtotime($row->recorded_at . ' UTC'));
 ```
 
-### 3. NAMING CONSISTENCY
-- **My Visa Profile** - Passport info, visa type, move dates (for documents)
-- **My Visa Documents** - Generated documents for relocation
-- **My Membership Account** - Billing profile, subscriptions, payments
-
-### 4. MEMBER MESSAGING/SUPPORT TICKET SYSTEM (v2.9.77/v1.0.65)
-
-**New Feature:** Complete messaging system for priority member support.
-
-**Frontend (Member Side):**
-- "My Messages" link in member dropdown (with unread badge)
-- Inbox view showing all conversations
-- Compose new message form
-- Conversation view with reply thread
-- Reply to messages
-- Delete conversations
-
-**Backend (Admin Side):**
-- Admin page at: WP Admin → Relo2France → Member Messages
-- List all tickets with status filters (All/Open/Closed)
-- Split-view interface with message list and detail panel
-- Reply to tickets
-- Close/Reopen tickets
-- Unread count badge in admin menu
-
-**Database Tables (created on plugin activation):**
-- `wp_framt_messages` - Message/ticket records
-- `wp_framt_message_replies` - Reply thread
-
-**Email Notifications:**
-- Admin notified on new message and member reply
-- Member notified when admin replies
-
-**Files Added/Modified:**
-- `class-framt-messages.php` (new) - All messaging logic
-- `france-relocation-member-tools.php` - Added class include and table creation
-- `shortcode-template.php` - Added "My Messages" to dropdown
-- `frontend.css` (main) - Unread badge styling
-- `frontend.css` (member tools) - Messages section styling  
-- `frontend.js` (member tools) - Messages UI handling
-
-### 5. CODE CLEANUP & OPTIMIZATION
-- Consolidated duplicate MemberPress hide rules
-- Removed outdated account footer CSS
-- Cleaned up responsive media queries
+JavaScript correctly parses ISO 8601 and displays in user's local timezone.
 
 ---
 
-## KEY FILES CHANGED
+## TESTING CHECKLIST - SCHENGEN TRACKER
 
-### Main Plugin (france-relocation-assistant) v2.9.45
+### Core Functionality
+- [ ] Add trip with dates and country
+- [ ] Edit existing trip
+- [ ] Delete trip
+- [ ] Day counter updates correctly
+- [ ] Status badge changes at thresholds (60/80/85/90)
 
-**france-relocation-assistant.php**
-- Added `[fra_mepr_subscriptions]` shortcode registration
-- Added `[fra_mepr_payments]` shortcode registration
-- Added `render_mepr_subscriptions()` method using `MeprAccountCtrl`
-- Added `render_mepr_payments()` method using `MeprAccountCtrl`
+### Location Check-in
+- [ ] Browser prompts for location permission
+- [ ] Check-in creates/extends trip for Schengen country
+- [ ] Location history shows in Location tab
+- [ ] Delete individual location entry works
+- [ ] Clear all history works
+- [ ] "Checked in today" status updates
 
-**includes/shortcode-template.php**
-- Dropdown with nested My Membership Account group
-- Subscriptions view using `[fra_mepr_subscriptions]`
-- Payments view using `[fra_mepr_payments]`
+### Smart Detection
+- [ ] Banner appears when timezone changes
+- [ ] IP detection suggests correct country
+- [ ] Dismiss banner hides for today
+- [ ] Check-in from banner works
 
-**assets/js/frontend.js**
-- Updated section titles for "My Visa Documents"
-- Handler for `[data-account-section]` child links
-- Views array includes subscriptions and payments
+### Premium Features
+- [ ] Calendar view shows trip days highlighted
+- [ ] Navigate months works
+- [ ] Planning tool calculates violations correctly
+- [ ] PDF report generates and previews
+- [ ] Print to PDF works
 
-**assets/css/frontend.css**
-- Consolidated MemberPress hide rules
-- Dropdown group/children styling
-- Table styling for subscriptions/payments
+### Alerts
+- [ ] Email alerts toggle saves
+- [ ] Test alert sends email
+- [ ] Email contains correct day counts
+- [ ] Settings link in email works
 
-### Member Tools Plugin (france-relocation-member-tools) v1.0.62
-
-**includes/class-framt-documents.php**
-- Page header: "My Visa Documents"
-
-**assets/js/frontend.js**
-- Document ready note: "saved to My Visa Documents"
-
----
-
-## ARCHITECTURE
-
-```
-User Dropdown
-    │
-    ├── My Visa Profile ──────────→ navigateToSection('profile')
-    │                                    ↓
-    │                               Member Tools AJAX
-    │
-    ├── My Visa Documents ────────→ navigateToSection('my-documents')
-    │                                    ↓
-    │                               Member Tools AJAX
-    │
-    ├── My Membership Account ────→ FRAInChatAuth.showView('account')
-    │       │                            ↓
-    │       │                       [mepr-account-form]
-    │       │
-    │       ├── Subscriptions ────→ FRAInChatAuth.showView('subscriptions')
-    │       │                            ↓
-    │       │                       [fra_mepr_subscriptions]
-    │       │                            ↓
-    │       │                       MeprAccountCtrl->subscriptions()
-    │       │
-    │       └── Payments ─────────→ FRAInChatAuth.showView('payments')
-    │                                    ↓
-    │                               [fra_mepr_payments]
-    │                                    ↓
-    │                               MeprAccountCtrl->payments()
-    │
-    └── Log Out ──────────────────→ wp_logout_url redirect
-```
-
----
-
-## MEMBERPRESS INTEGRATION DETAILS
-
-### Why Custom Shortcodes Were Needed
-MemberPress provides `[mepr-account-form]` which shows the full account page with tabs, but doesn't provide shortcodes to display individual sections like subscriptions or payments.
-
-The solution uses MemberPress's internal `MeprAccountCtrl` controller class which has methods for each section:
-- `->subscriptions()` - Renders subscriptions table
-- `->payments()` - Renders payments table
-- Also handles actions: cancel, suspend, resume, update, upgrade
-
-### Shortcode Output
-The shortcodes output the exact same HTML that MemberPress generates for the account page tabs, ensuring full compatibility with MemberPress's styling and functionality.
-
----
-
-## TESTING CHECKLIST
-
-- [ ] Click "Kevin ▼" dropdown - all items visible
-- [ ] "My Visa Profile" - loads visa profile in chat
-- [ ] "My Visa Documents" - loads documents in chat
-- [ ] "My Membership Account" - loads billing form in chat
-- [ ] "Subscriptions" - shows subscriptions table with data
-- [ ] "Payments" - shows payment history with data
-- [ ] Subscription actions (Update/Cancel) work
-- [ ] Back buttons work on all views
+### Onboarding
+- [ ] Shows automatically for first-time users
+- [ ] Progress dots navigate between steps
+- [ ] Skip tour works
+- [ ] Get Started completes and closes
+- [ ] Help button (?) reopens tour
 
 ---
 
 ## GITHUB REPOSITORY
 
-**Main Plugin:** Relo2France/france-relocation-assistant  
+**Main Plugin:** Relo2France/france-relocation-assistant
 **Member Tools:** Relo2France/france-relocation-member-tools
+**Schengen Tracker:** relo2france-schengen-tracker (within france-relocation-assistant repo)
+
+**Development Branch:** `claude/tracker-plugin-dev-1iVyB`
 
 ---
 
-## REMOVED CODE - ARCHIVED FOR REFERENCE
+## PREVIOUS SESSION NOTES (December 14, 2025)
 
-### Logout Cookie Redirect System (Removed in v2.9.76)
+### In-Chat Account System
+- Complete account management within chat panel
+- Custom MemberPress shortcodes for subscriptions/payments
+- Member messaging/support ticket system
 
-**Why it was removed:** The thank-you page now handles all auth redirects via JavaScript added directly to the page. This is simpler and more reliable than the plugin-based approach.
-
-**What was removed from `france-relocation-assistant.php`:**
-
-1. **`logout_redirect()` method** - WordPress filter to redirect after logout
-2. **`force_logout_redirect()` method** - Set cookie on logout as backup
-3. **`clear_logout_cookie_on_login()` method** - Clear stale cookies on login
-4. **`check_logout_cookie_redirect()` method** - Intercept thank-you page and redirect
-
-**If you need to restore this functionality:**
-
-Add these hooks to the constructor:
-```php
-add_filter('logout_redirect', array($this, 'logout_redirect'), 999, 3);
-add_action('wp_logout', array($this, 'force_logout_redirect'), 999);
-add_action('wp_login', array($this, 'clear_logout_cookie_on_login'), 10);
-add_action('template_redirect', array($this, 'check_logout_cookie_redirect'), 1);
-```
-
-And restore these methods:
-```php
-public function logout_redirect($redirect_to, $requested_redirect_to, $user) {
-    return home_url('/?logged_out=1');
-}
-
-public function force_logout_redirect() {
-    setcookie('fra_just_logged_out', '1', time() + 60, COOKIEPATH, COOKIE_DOMAIN);
-}
-
-public function clear_logout_cookie_on_login() {
-    if (isset($_COOKIE['fra_just_logged_out'])) {
-        setcookie('fra_just_logged_out', '', time() - 3600, COOKIEPATH, COOKIE_DOMAIN);
-    }
-}
-
-public function check_logout_cookie_redirect() {
-    if (!is_user_logged_in()) {
-        if (isset($_COOKIE['fra_just_logged_out']) && $_COOKIE['fra_just_logged_out'] === '1') {
-            setcookie('fra_just_logged_out', '', time() - 3600, COOKIEPATH, COOKIE_DOMAIN);
-            wp_safe_redirect(home_url('/?logged_out=1'));
-            exit;
-        }
-        if (is_page('thank-you') && !isset($_GET['membership']) && !isset($_GET['trans_num'])) {
-            wp_safe_redirect(home_url('/?logged_out=1'));
-            exit;
-        }
-    } else {
-        if (isset($_COOKIE['fra_just_logged_out'])) {
-            setcookie('fra_just_logged_out', '', time() - 3600, COOKIEPATH, COOKIE_DOMAIN);
-        }
-    }
-}
-```
-
-**Current approach (thank-you page JavaScript):**
-```html
-<script>
-(function() {
-    var isLoggedIn = document.body.classList.contains('logged-in');
-    var urlParams = new URLSearchParams(window.location.search);
-    var isNewSignup = urlParams.has('membership') && urlParams.has('trans_num');
-    
-    if (isNewSignup && isLoggedIn) {
-        window.location.replace('/?new_signup=1');
-    } else if (!isLoggedIn) {
-        window.location.replace('/?logged_out=1');
-    } else {
-        window.location.replace('/');
-    }
-})();
-</script>
-<style>
-.entry-content, .page-content, article { visibility: hidden; }
-</style>
-```
+See previous handoff document sections below for details on:
+- MemberPress integration
+- Logout cookie redirect system (removed)
+- Member Tools plugin architecture
 
 ---
 
-## FILES INCLUDED IN HANDOFF
-
-1. `france-relocation-assistant-v2.9.83.zip` - Main plugin
-2. `france-relocation-member-tools-v1.0.80.zip` - Member tools plugin
-3. `relo2france-theme-v1.2.3.zip` - Theme with scroll-snap behavior
-4. `handoff-document.md` - This document
-
----
-
-*Last Updated: December 14, 2025*
+*Last Updated: December 28, 2025*
