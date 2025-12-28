@@ -147,11 +147,12 @@ class R2F_Schengen_Location {
 		$accuracy = isset( $params['accuracy'] ) ? (float) $params['accuracy'] : null;
 		$source   = isset( $params['source'] ) ? sanitize_text_field( $params['source'] ) : 'browser';
 
-		// Simple geocode - just determine if in France for now.
-		$country_code = 'FR';
-		$country_name = 'France';
-		$city         = 'Unknown';
-		$is_schengen  = true;
+		// Real reverse geocoding using OpenStreetMap Nominatim.
+		$geocode = $this->perform_reverse_geocode( $lat, $lng );
+		$country_code = $geocode['country_code'] ?? null;
+		$country_name = $geocode['country_name'] ?? null;
+		$city         = $geocode['city'] ?? null;
+		$is_schengen  = $country_code ? $this->is_schengen_country_code( $country_code ) : false;
 
 		// Try to get table name.
 		$table = $wpdb->prefix . 'fra_schengen_location_log';
