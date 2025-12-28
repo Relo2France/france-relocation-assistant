@@ -1,210 +1,342 @@
-# Session Handoff Document
+# Relo2France Session Handoff Document
 
-**Date:** December 27, 2025
-**Branch:** `claude/tracker-plugin-dev-1iVyB`
-**Last Commit:** `f004799` - Phase 1.2 complete
+**Date:** December 28, 2025
+**Branch:** `claude/review-handoff-docs-QtcLj`
+**Plan Document:** `SCHENGEN-MONAEO-PARITY-PLAN.md`
 
 ---
 
 ## 1. Current Project Status
 
-**Relo2France** is a WordPress-based platform helping Americans relocate to France. The project is stable and in active use:
+**Relo2France** is a WordPress-based platform helping Americans relocate to France. The project is stable and in active production use.
 
 | Component | Version | Status |
 |-----------|---------|--------|
-| Main Plugin | v3.6.4 | Active |
-| Member Tools Plugin | v2.1.0 | Active |
-| React Portal | v2.1.0 | Active |
-| Theme | v1.2.4 | Active |
-| **Schengen Tracker Plugin** | **v1.1.0** | **Installed & Active** |
+| Main Plugin | v2.9.83 | Active |
+| Member Tools Plugin | v1.0.80 | Active |
+| **Schengen Tracker Plugin** | **v1.1.0** | **Active** |
+| Theme | v1.2.3 | Active |
 
-The React portal is fully functional with 40+ REST API endpoints. All major features are complete including profile management, task tracking, document generation, checklists, AI-powered guides, Schengen day tracking, and profile reset functionality.
-
-### Schengen Tracker: Phase 1 Complete
-
-Both Browser Geolocation (1.1) and Smart Location Detection (1.2) have been implemented. Users can check in their location and receive smart prompts when travel is detected.
-
-**Plan Document:** `SCHENGEN-MONAEO-PARITY-PLAN.md`
+The React portal is fully functional with 40+ REST API endpoints covering profile management, task tracking, document generation, checklists, AI-powered guides, and Schengen day tracking.
 
 ---
 
-## 2. What We Completed This Session
+## 2. Schengen Tracker - COMPLETE FEATURES
 
-### Phase 1.2: Smart Location Detection
+The Schengen Tracker has been built as a comprehensive 90/180 day compliance tool. All core phases are complete.
 
-#### PHP Backend - IP Detection
-Updated `class-r2f-schengen-location.php` with:
-- `GET /schengen/location/detect` - IP-based country detection endpoint
-- Uses ip-api.com (free, no API key) for geolocation
-- 1-hour transient caching to avoid API rate limits
-- Handles local IPs and API errors gracefully
+### Phase 0: Plugin Extraction & Premium Setup ✅
 
-#### React Frontend - Types & API
-- Added `IPDetectionResult` type to `types/index.ts`
-- Added `detectFromIP` method to `api/client.ts`
-- Added `useIPDetection` hook to `hooks/useApi.ts`
+Extracted Schengen Tracker into standalone plugin (`relo2france-schengen-tracker/`):
 
-#### React Frontend - Timezone Detection Hook
-Created `hooks/useLocationDetection.ts`:
-- Detects timezone changes (compared to stored timezone)
-- Maps timezones to likely Schengen countries
-- Provides daily check-in reminders (configurable hour)
-- Tracks last check-in date in localStorage
-- Auto-updates when timezone changes detected
-
-#### React Frontend - Location Detection Banner
-Created `components/schengen/LocationDetectionBanner.tsx`:
-- Smart banner that prompts users based on:
-  1. **Timezone change detected** (amber banner with plane icon)
-  2. **IP country differs from timezone** (purple banner with globe icon)
-  3. **Daily reminder** (blue banner with clock icon)
-- Check-in button triggers geolocation and stores location
-- Dismiss button with "Maybe later" option
-- Shows country flags and Schengen zone indicators
-- Success feedback after check-in
-- Compact version for smaller spaces
-
-#### Dashboard Integration
-- Added `LocationDetectionBanner` to `SchengenDashboard.tsx`
-- Banner appears above the compact location widget
-- Enabled when user has alerts enabled
-
----
-
-## 3. Files Modified This Session
-
-### New Files
 | File | Purpose |
 |------|---------|
-| `france-relocation-member-tools/portal/src/hooks/useLocationDetection.ts` | Timezone change detection hook |
-| `france-relocation-member-tools/portal/src/components/schengen/LocationDetectionBanner.tsx` | Smart check-in prompts |
+| `relo2france-schengen-tracker.php` | Main plugin file with autoloader |
+| `class-r2f-schengen-core.php` | Core singleton, admin menu, shortcode |
+| `class-r2f-schengen-schema.php` | Database schema (trips + location tables) |
+| `class-r2f-schengen-api.php` | REST API (~40 endpoints) |
+| `class-r2f-schengen-alerts.php` | Daily cron email alerts |
+| `class-r2f-schengen-location.php` | GPS check-in, auto-trip creation |
+| `class-r2f-schengen-premium.php` | Premium feature gating |
 
-### Modified Files
-| File | Changes |
-|------|---------|
-| `relo2france-schengen-tracker/includes/class-r2f-schengen-location.php` | Added IP detection endpoint |
-| `france-relocation-member-tools/portal/src/types/index.ts` | Added `IPDetectionResult` type |
-| `france-relocation-member-tools/portal/src/api/client.ts` | Added `detectFromIP` method |
-| `france-relocation-member-tools/portal/src/hooks/useApi.ts` | Added `useIPDetection` hook |
-| `france-relocation-member-tools/portal/src/components/schengen/SchengenDashboard.tsx` | Added detection banner |
+**Premium Gating (3-tier priority):**
+1. User meta override (`r2f_schengen_enabled`)
+2. Filter hook (`r2f_schengen_premium_check`) - Member Tools integration
+3. Global setting fallback
+
+### Phase 1.0: Core Functionality ✅
+
+- Trip entry form with Schengen country validation (29 countries)
+- Rolling 180-day window calculation algorithm
+- Dashboard with circular day counter and status badges
+- Trip list with edit/delete functionality
+- Status thresholds: safe → warning (60) → danger (80) → critical (90)
+
+### Phase 1.1: Browser Geolocation Check-in ✅
+
+**Location:** `class-r2f-schengen-location.php`
+
+- Browser GPS location check-in via Geolocation API
+- Reverse geocoding via OpenStreetMap Nominatim (free)
+- Location history tracking in `fra_schengen_location_log` table
+- **Auto-trip creation** when checking in from Schengen country:
+  - Creates new trip for today if none exists
+  - Extends yesterday's trip if applicable
+  - Updates location data on existing trip
+
+**API Endpoints:**
+```
+POST /r2f-schengen/v1/location/store    - Store location check-in
+GET  /r2f-schengen/v1/location/history  - Get location history
+GET  /r2f-schengen/v1/location/today    - Check if checked in today
+POST /r2f-schengen/v1/location/clear    - Clear all history
+DELETE /r2f-schengen/v1/location/{id}   - Delete single entry
+GET  /r2f-schengen/v1/location/detect   - IP-based country detection
+```
+
+### Phase 1.2: Smart Location Detection ✅
+
+**Location:** `useLocationDetection.ts`, `LocationDetectionBanner.tsx`
+
+- **Timezone detection:** Compares browser timezone to stored timezone
+- **IP-based detection:** Uses ip-api.com (free, 1-hour cache)
+- **Daily reminders:** Configurable hour, tracks last check-in
+- **Smart banners:**
+  - Amber (plane icon): Timezone change detected
+  - Purple (globe icon): IP country differs from timezone
+  - Blue (clock icon): Daily reminder
+
+### Phase 2: Database & API ✅
+
+**Database Tables:**
+- `wp_fra_schengen_trips` - Trip records with location columns
+- `wp_fra_schengen_location_log` - Location check-in history
+
+**Full API Endpoints:**
+```
+GET/POST   /r2f-schengen/v1/trips           - List/create trips
+GET/PUT/DELETE /r2f-schengen/v1/trips/{id}  - Single trip CRUD
+GET        /r2f-schengen/v1/summary         - Day count & status
+GET/PUT    /r2f-schengen/v1/settings        - User alert settings
+POST       /r2f-schengen/v1/simulate        - "What if" calculation
+GET        /r2f-schengen/v1/report          - Generate PDF report
+GET        /r2f-schengen/v1/feature-status  - Premium status check
+POST       /r2f-schengen/v1/test-alert      - Send test email
+```
+
+### Phase 3: Enhanced Features ✅
+
+**Calendar View** (`CalendarView.tsx`):
+- Monthly calendar with navigation
+- Trip days highlighted in brand blue
+- Future trips shown with dashed border
+- Days outside window shown in gray
+- Legend and mobile responsive
+
+**Planning Tool** (`PlanningTool.tsx`):
+- "What If" calculator for future trips
+- Shows if trip would violate 90/180 rule
+- Earliest safe start date suggestion
+- Maximum safe trip length calculation
+
+**Alert System** (`class-r2f-schengen-alerts.php`):
+- Three thresholds: 60 (warning), 80 (danger), 85 (urgent)
+- Daily cron at 8am UTC
+- Prevents duplicate alerts within 7 days
+- HTML emails with brand styling
+- Test alert button in Settings
+
+**PDF Reports** (`ReportExport.tsx`):
+- Generate button in header
+- Preview modal with summary
+- HTML report in iframe
+- Print / Save as PDF via browser
+
+### Phase 4: Polish ✅
+
+**Onboarding** (`SchengenOnboarding.tsx`):
+5-step walkthrough for first-time users:
+1. Welcome - 90/180 rule explanation
+2. Track Your Trips - How to add trips
+3. Smart Location - GPS feature
+4. Planning Tool - "What If" calculator
+5. Email Alerts - Threshold explanations
+
+Features:
+- Auto-shows for first-time users
+- Progress dots with navigation
+- Help button (?) to reopen
+- Stored in localStorage
+
+**Email Notifications:**
+- Subject lines vary by severity
+- Links to tracker and settings
+- Unsubscribe via toggle
+
+**Mobile Responsive:**
+- Tailwind responsive classes throughout
+- Abbreviated labels on mobile
+- Touch-friendly button sizes
 
 ---
 
-## 4. Build & Test Status
+## 3. React Frontend Files
+
+| File | Purpose |
+|------|---------|
+| `SchengenDashboard.tsx` | Main dashboard component |
+| `CalendarView.tsx` | Monthly calendar |
+| `PlanningTool.tsx` | "What if" calculator |
+| `ReportExport.tsx` | PDF generation |
+| `LocationTracker.tsx` | GPS check-in UI |
+| `LocationDetectionBanner.tsx` | Smart prompts |
+| `SchengenOnboarding.tsx` | First-time walkthrough |
+| `TripForm.tsx` | Add/edit trip modal |
+| `TripList.tsx` | Trip list with actions |
+| `DayCounter.tsx` | Circular progress |
+| `StatusBadge.tsx` | Status indicator |
+| `useSchengenStore.ts` | Zustand store |
+| `useLocationDetection.ts` | Timezone/IP detection hook |
+| `useGeolocation.ts` | Browser geolocation hook |
+| `schengenUtils.ts` | Calculation utilities |
+
+---
+
+## 4. Architecture
+
+```
+SchengenDashboard
+    │
+    ├── Header
+    │   ├── HelpCircle (?) → Opens onboarding
+    │   ├── ReportExport → PDF generation
+    │   └── Add Trip → TripForm modal
+    │
+    ├── Status Cards Row
+    │   ├── DayCounter (circular progress)
+    │   ├── Days Remaining card
+    │   ├── Current Window card
+    │   └── Next Expiration card
+    │
+    ├── LocationDetectionBanner → Smart check-in prompts
+    ├── LocationTracker (compact) → Quick check-in widget
+    │
+    ├── Warning Banners (conditional by status)
+    │
+    ├── Tab Navigation
+    │   ├── Trip List → TripList
+    │   ├── Calendar View → CalendarView (premium)
+    │   ├── Planning Tool → PlanningTool (premium)
+    │   ├── Location → LocationTracker (full)
+    │   └── Settings → Alert toggles, thresholds
+    │
+    └── Modals
+        ├── TripForm (add/edit)
+        └── SchengenOnboarding (first-time)
+```
+
+---
+
+## 5. What's Still Pending
+
+From `SCHENGEN-MONAEO-PARITY-PLAN.md`, these features are NOT yet implemented:
+
+| Feature | Description | Priority |
+|---------|-------------|----------|
+| **Calendar Sync** | Google/Outlook OAuth integration | P1 |
+| **Multi-Jurisdiction** | US state residency rules, UK, etc. | P1 |
+| **CSV/ICS Import** | Import trips from files | P2 |
+| **PWA + Offline** | Progressive Web App, offline mode | P3 |
+| **AI Suggestions** | Smart trip recommendations | P3 |
+| **Family Tracking** | Group/family trip sharing | P4 |
+| **Analytics Dashboard** | Travel patterns visualization | P3 |
+
+### What We Can't Build (Limitations)
+- True background GPS (requires native mobile app)
+- Credit card import (requires Plaid + PCI compliance)
+- "Audit-certified" claims (requires legal partnership)
+
+---
+
+## 6. Testing Checklist
+
+### Core Functionality
+- [ ] Add trip with dates and country
+- [ ] Edit existing trip
+- [ ] Delete trip
+- [ ] Day counter updates correctly
+- [ ] Status badge changes at thresholds
+
+### Location Check-in
+- [ ] Browser prompts for location permission
+- [ ] Check-in creates/extends trip for Schengen country
+- [ ] Location history shows in Location tab
+- [ ] Delete individual entry works
+- [ ] Clear all history works
+
+### Smart Detection
+- [ ] Banner appears when timezone changes
+- [ ] IP detection suggests correct country
+- [ ] Dismiss banner hides for today
+- [ ] Check-in from banner works
+
+### Premium Features
+- [ ] Calendar view shows trip days
+- [ ] Navigate months works
+- [ ] Planning tool calculates violations
+- [ ] PDF report generates and previews
+
+### Alerts & Onboarding
+- [ ] Email alerts toggle saves
+- [ ] Test alert sends email
+- [ ] Onboarding shows for first-time users
+- [ ] Help button (?) reopens tour
+
+---
+
+## 7. Build Commands
 
 ```bash
+# Build React portal
 cd france-relocation-member-tools/portal
 npm install
-npm run build  # Successful
+npm run build
+
+# Type check
+npx tsc --noEmit
+
+# Lint
+npm run lint
 ```
 
 **Current Status:**
-- **Type Check:** 0 errors
-- **Build:** Successful
-- **Schengen Tracker:** v1.1.0 with location tracking + smart detection
-- **Portal:** Built and ready
+- Type Check: 0 errors
+- Lint: 0 warnings
+- Build: Successful
 
 ---
 
-## 5. Schengen Tracker Enhancement Plan - Next Phases
+## 8. Known Issues / Notes
 
-**Plan Document:** `SCHENGEN-MONAEO-PARITY-PLAN.md`
+### Timezone Fix Applied
+**Issue:** Check-in times displayed incorrectly
+**Fix:** Return ISO 8601 format with timezone:
+```php
+'recordedAt' => gmdate('c') // "2025-12-28T14:52:00+00:00"
+```
 
-| Phase | Description | Status |
-|-------|-------------|--------|
-| **0** | Plugin Extraction & Premium Setup | **Complete** |
-| **1.1** | Browser Geolocation Integration | **Complete** |
-| **1.2** | Smart Location Detection | **Complete** |
-| **2** | Google/Outlook Calendar Sync | **Next** |
-| **3** | Multi-Jurisdiction (US States, etc.) | Pending |
-| **4** | Professional PDF Reports | Pending |
-| **5** | Push + In-App Notifications | Pending |
-| **6** | CSV/ICS Import + PWA | Pending |
-| **7** | AI Suggestions + Family + Analytics | Pending |
+### Portal URL Routing
+Direct links like `/portal/?view=schengen` now work correctly. The store reads `?view=` parameter on initial load.
 
-### Phase 2 Overview: Calendar Sync
-- Google Calendar integration (OAuth)
-- Outlook Calendar integration
-- Automatic trip creation from calendar events
-- Two-way sync option
-
----
-
-## 6. API Endpoints Summary
-
-Namespace: `/wp-json/r2f-schengen/v1/`
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/location` | POST | Store location check-in |
-| `/location/history` | GET | Get location history |
-| `/location/today` | GET | Get today's check-in status |
-| `/location/geocode` | POST | Reverse geocode coordinates |
-| `/location/{id}` | DELETE | Delete location entry |
-| `/location/clear` | POST | Clear all location history |
-| `/location/settings` | GET/PUT | Get/update location settings |
-| `/location/detect` | GET | IP-based country detection |
-
----
-
-## 7. Smart Detection Features
-
-### Timezone Detection
-- Compares current browser timezone to stored timezone
-- Maps 30+ European timezones to Schengen country codes
-- Triggers prompt when timezone changes (potential travel)
-- Checks every 5 minutes while portal is open
-
-### IP-Based Detection
-- Uses ip-api.com for country lookup (free tier: 45 req/min)
-- Results cached for 1 hour per user
-- Handles local IPs (127.0.0.1, 192.168.x.x) gracefully
-- Falls back when API is unavailable
-
-### Daily Reminders
-- Configurable reminder hour (default: 9 AM)
-- Tracks last check-in date in localStorage
-- Shows prompt if not checked in today
-- Can be dismissed ("Maybe later")
-
----
-
-## 8. Testing Notes
-
-To test the new smart detection features:
-
-1. **Timezone Detection:**
-   - Change system timezone to simulate travel
-   - Refresh portal - amber banner should appear
-   - Click "Check In Now" to record location
-
-2. **IP Detection:**
-   - Check browser network tab for `/location/detect` call
-   - Should return country based on IP address
-   - Shows purple banner if IP country differs from timezone
-
-3. **Daily Reminder:**
-   - Clear localStorage key `r2f_schengen_last_checkin_date`
-   - Refresh portal after 9 AM - blue reminder banner appears
-   - "Maybe later" dismisses until next day
+### GitHub Sync
+Added `relo2france-schengen-tracker` and `france-relocation-github-sync` (self-update) to managed plugins list.
 
 ---
 
 ## 9. To Resume Next Session
 
-1. **Phase 2:** Google/Outlook Calendar Sync
-   - Set up OAuth for Google Calendar API
-   - Parse calendar events for travel-related entries
-   - Create trips from calendar automatically
-   - Consider Microsoft Graph API for Outlook
+**Priority tasks:**
 
-2. **Reference:** `SCHENGEN-MONAEO-PARITY-PLAN.md` for detailed specs
+1. **Calendar Sync (Phase 2 from original plan)**
+   - Google Calendar OAuth integration
+   - Parse travel events automatically
+   - Create trips from calendar
 
-3. **Optional Improvements:**
-   - Add geofencing for automatic check-ins
-   - Persist timezone acknowledgment to database
-   - Add notification preferences to settings
+2. **Multi-Jurisdiction Support**
+   - US state residency rules
+   - UK visitor rules
+   - Configurable day/window limits
+
+3. **Reference:** `SCHENGEN-MONAEO-PARITY-PLAN.md` for detailed specs
 
 ---
 
-*Generated: December 27, 2025*
+## 10. GitHub Repositories
+
+- **Main Plugin:** Relo2France/france-relocation-assistant
+- **Member Tools:** Relo2France/france-relocation-member-tools
+- **Schengen Tracker:** relo2france-schengen-tracker (within main repo)
+
+---
+
+*Last Updated: December 28, 2025*
