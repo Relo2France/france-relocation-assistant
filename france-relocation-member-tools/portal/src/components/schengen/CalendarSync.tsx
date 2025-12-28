@@ -51,9 +51,23 @@ export default function CalendarSync({ compact = false }: CalendarSyncProps) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { data: providers, isLoading: providersLoading, error: providersError } = useCalendarProviders();
-  const { data: connections, isLoading: connectionsLoading, error: connectionsError } = useCalendarConnections();
-  const { data: pendingEvents, isLoading: eventsLoading, refetch: refetchEvents, error: eventsError } = useCalendarEvents('pending');
+  // Wrap hooks in try-catch pattern with safe defaults
+  const providersQuery = useCalendarProviders();
+  const connectionsQuery = useCalendarConnections();
+  const eventsQuery = useCalendarEvents('pending');
+
+  const providers = providersQuery.data ?? [];
+  const connections = connectionsQuery.data ?? [];
+  const pendingEvents = eventsQuery.data ?? [];
+  const refetchEvents = eventsQuery.refetch;
+
+  const providersLoading = providersQuery.isLoading;
+  const connectionsLoading = connectionsQuery.isLoading;
+  const eventsLoading = eventsQuery.isLoading;
+
+  const providersError = providersQuery.error;
+  const connectionsError = connectionsQuery.error;
+  const eventsError = eventsQuery.error;
 
   const connectMutation = useConnectCalendar();
   const disconnectMutation = useDisconnectCalendar();
@@ -197,11 +211,18 @@ export default function CalendarSync({ compact = false }: CalendarSyncProps) {
   };
 
   const isLoading = providersLoading || connectionsLoading || eventsLoading;
-  const hasError = providersError || connectionsError || eventsError;
-  const hasConnections = connections && connections.length > 0;
-  const hasPendingEvents = pendingEvents && pendingEvents.length > 0;
-  const schengenPendingEvents = pendingEvents?.filter(e => e.isSchengen) || [];
-  const nonSchengenEvents = pendingEvents?.filter(e => !e.isSchengen) || [];
+  const hasError = !!(providersError || connectionsError || eventsError);
+  const hasConnections = connections.length > 0;
+  const hasPendingEvents = pendingEvents.length > 0;
+  const schengenPendingEvents = pendingEvents.filter(e => e.isSchengen);
+  const nonSchengenEvents = pendingEvents.filter(e => !e.isSchengen);
+
+  // Get error message safely
+  const getErrorMessage = (err: unknown): string => {
+    if (err instanceof Error) return err.message;
+    if (typeof err === 'string') return err;
+    return 'Unknown error';
+  };
 
   if (isLoading) {
     return (
@@ -215,7 +236,10 @@ export default function CalendarSync({ compact = false }: CalendarSyncProps) {
   }
 
   if (hasError) {
-    const errorMsg = providersError?.message || connectionsError?.message || eventsError?.message || 'Failed to load calendar data';
+    const errorMsg = providersError ? getErrorMessage(providersError) :
+                     connectionsError ? getErrorMessage(connectionsError) :
+                     eventsError ? getErrorMessage(eventsError) :
+                     'Failed to load calendar data';
     return (
       <div className={clsx('card p-6', compact && 'p-4')}>
         <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -328,8 +352,8 @@ export default function CalendarSync({ compact = false }: CalendarSyncProps) {
           <div className="mt-6 pt-6 border-t border-gray-200">
             <h4 className="text-sm font-medium text-gray-700 mb-3">Add Calendar</h4>
             <div className="flex flex-wrap gap-3">
-              {providers?.map(provider => {
-                const isConnected = connections?.some(c => c.provider === provider.id);
+              {providers.map(provider => {
+                const isConnected = connections.some(c => c.provider === provider.id);
                 const canConnect = provider.isConfigured && !isConnected;
 
                 return (
