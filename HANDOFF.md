@@ -308,6 +308,7 @@ SchengenDashboard
 
 | Commit | Message |
 |--------|---------|
+| `252f32d` | Merge origin/main - resolve conflicts for analytics dashboard |
 | `b5a710a` | Add Phase 7: Analytics dashboard for Schengen Tracker |
 | `49a411f` | Update HANDOFF.md with session summary |
 | `b794a23` | Add Phase 7: Family member tracking for Schengen days |
@@ -317,6 +318,22 @@ SchengenDashboard
 | `9923ab9` | Add Phase 7: AI-powered trip planning suggestions |
 | `a7858c5` | Add Phase 6: PWA support for offline access and install prompt |
 | `061a5b3` | Add Phase 6: CSV import/export for Schengen trips |
+
+---
+
+## 13. Merge Conflict Resolution (This Session)
+
+Resolved merge conflicts between `claude/resume-france-relocation-tWg9t` and `origin/main`:
+
+### Conflicts Resolved:
+- **TypeScript source files**: `types/index.ts`, `client.ts`, `useApi.ts`, `SchengenDashboard.tsx`, `AnalyticsDashboard.tsx`
+- **PHP files**: `class-r2f-schengen-core.php`, `class-r2f-schengen-family.php`, `class-r2f-schengen-schema.php`
+- **Build artifacts**: Removed conflicting hashed JS files and rebuilt portal
+
+### Approach Taken:
+- Kept HEAD's simpler analytics implementation (uses recharts for visualizations)
+- Replaced incompatible `FamilyTracker.tsx` (origin/main) with `FamilyManager.tsx` (HEAD)
+- Rebuilt React portal to regenerate build artifacts with new hashes
 
 ---
 
