@@ -1112,6 +1112,60 @@ export interface TrackedJurisdictionsResponse {
   tracked: string[];
 }
 
+// ============================================
+// Notification Types (Phase 5)
+// ============================================
+
+export type NotificationType =
+  | 'threshold_warning'
+  | 'threshold_danger'
+  | 'trip_reminder'
+  | 'day_expiring'
+  | 'calendar_sync'
+  | 'location_checkin'
+  | 'test';
+
+export type NotificationPriority = 'low' | 'normal' | 'high';
+
+export interface NotificationItem {
+  id: number;
+  type: NotificationType;
+  title: string;
+  body: string | null;
+  actionUrl: string | null;
+  icon: string | null;
+  priority: NotificationPriority;
+  isRead: boolean;
+  readAt: string | null;
+  createdAt: string;
+  data: Record<string, unknown> | null;
+}
+
+export interface PushStatus {
+  vapidConfigured: boolean;
+  subscriptions: PushSubscription[];
+}
+
+export interface PushSubscription {
+  id: number;
+  userAgent: string | null;
+  createdAt: string;
+  lastUsedAt: string | null;
+}
+
+export interface NotificationPreferences {
+  email_enabled: boolean;
+  push_enabled: boolean;
+  threshold_warning: boolean;
+  threshold_danger: boolean;
+  trip_reminder: boolean;
+  calendar_sync: boolean;
+  location_checkin: boolean;
+  quiet_hours_enabled: boolean;
+  quiet_hours_start: number;
+  quiet_hours_end: number;
+}
+
 // WordPress global types
 declare global {
   interface Window {

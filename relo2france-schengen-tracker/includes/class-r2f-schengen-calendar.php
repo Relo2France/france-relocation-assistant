@@ -29,6 +29,13 @@ class R2F_Schengen_Calendar {
 	const NAMESPACE = 'r2f-schengen/v1';
 
 	/**
+	 * Cron hook name for background sync.
+	 *
+	 * @var string
+	 */
+	const CRON_HOOK = 'r2f_schengen_calendar_sync';
+
+	/**
 	 * Legacy namespace for backward compatibility.
 	 *
 	 * @var string
@@ -244,6 +251,117 @@ class R2F_Schengen_Calendar {
 	private function __construct() {
 		add_action( 'rest_api_init', array( $this, 'register_routes' ) );
 		add_action( 'init', array( $this, 'handle_oauth_callback' ) );
+
+		// Register cron action for background sync.
+		add_action( self::CRON_HOOK, array( $this, 'process_background_sync' ) );
+
+		// Ensure cron is scheduled.
+		if ( ! wp_next_scheduled( self::CRON_HOOK ) ) {
+			$this->schedule_cron();
+		}
+	}
+
+	/**
+	 * Schedule the background sync cron job.
+	 *
+	 * Runs every 6 hours to sync all active calendar connections.
+	 */
+	public function schedule_cron(): void {
+		if ( ! wp_next_scheduled( self::CRON_HOOK ) ) {
+			wp_schedule_event( time() + HOUR_IN_SECONDS, 'twicedaily', self::CRON_HOOK );
+		}
+	}
+
+	/**
+	 * Unschedule the cron job.
+	 */
+	public function unschedule_cron(): void {
+		$timestamp = wp_next_scheduled( self::CRON_HOOK );
+		if ( $timestamp ) {
+			wp_unschedule_event( $timestamp, self::CRON_HOOK );
+		}
+	}
+
+	/**
+	 * Process background sync for all active connections.
+	 *
+	 * Called by WordPress cron.
+	 */
+	public function process_background_sync(): void {
+		global $wpdb;
+
+		$table = R2F_Schengen_Schema::get_table( 'calendar_connections' );
+
+		// Get all active connections that haven't synced in the last 4 hours.
+		$connections = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT id, user_id, provider FROM $table
+				WHERE sync_status = %s
+				AND (last_sync_at IS NULL OR last_sync_at < %s)
+				ORDER BY last_sync_at ASC
+				LIMIT 50",
+				'active',
+				gmdate( 'Y-m-d H:i:s', time() - 4 * HOUR_IN_SECONDS )
+			)
+		);
+
+		if ( empty( $connections ) ) {
+			return;
+		}
+
+		$synced = 0;
+		$errors = 0;
+
+		foreach ( $connections as $connection ) {
+			$result = $this->sync_calendar( (int) $connection->id );
+
+			if ( is_wp_error( $result ) ) {
+				$errors++;
+
+				// Log error for debugging.
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					error_log( sprintf(
+						'[Schengen Calendar Sync] Failed to sync connection %d for user %d: %s',
+						$connection->id,
+						$connection->user_id,
+						$result->get_error_message()
+					) );
+				}
+			} else {
+				$synced++;
+
+				// If new travel events detected, trigger action for notifications.
+				if ( ! empty( $result['newEvents'] ) && $result['newEvents'] > 0 ) {
+					/**
+					 * Fires when new travel events are detected during background sync.
+					 *
+					 * @param int   $user_id    User ID.
+					 * @param int   $new_events Number of new events detected.
+					 * @param array $result     Full sync result.
+					 */
+					do_action( 'r2f_schengen_new_calendar_events', $connection->user_id, $result['newEvents'], $result );
+				}
+			}
+
+			// Small delay between syncs to avoid rate limiting.
+			usleep( 500000 ); // 0.5 seconds.
+		}
+
+		/**
+		 * Fires after background calendar sync has completed.
+		 *
+		 * @param int $synced Number of connections synced successfully.
+		 * @param int $errors Number of connections that failed.
+		 */
+		do_action( 'r2f_schengen_calendar_sync_completed', $synced, $errors );
+
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			error_log( sprintf(
+				'[Schengen Calendar Sync] Background sync completed: %d synced, %d errors',
+				$synced,
+				$errors
+			) );
+		}
 	}
 
 	/**

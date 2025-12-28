@@ -25,7 +25,7 @@ class R2F_Schengen_Schema {
 	 *
 	 * @var string
 	 */
-	const DB_VERSION = '1.3.0';
+	const DB_VERSION = '1.4.0';
 
 	/**
 	 * Table definitions.
@@ -39,6 +39,8 @@ class R2F_Schengen_Schema {
 		'calendar_connections' => 'fra_calendar_connections',
 		'calendar_events'      => 'fra_calendar_events',
 		'jurisdiction_rules'   => 'fra_jurisdiction_rules',
+		'push_subscriptions'   => 'fra_push_subscriptions',
+		'notifications'        => 'fra_notifications',
 	);
 
 	/**
@@ -195,6 +197,47 @@ class R2F_Schengen_Schema {
 		) $charset_collate;";
 
 		dbDelta( $sql_jurisdiction_rules );
+
+		// Push subscriptions table (added in v1.4.0 for Web Push notifications).
+		$table_push_subscriptions = self::get_table( 'push_subscriptions' );
+		$sql_push_subscriptions = "CREATE TABLE $table_push_subscriptions (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			user_id bigint(20) unsigned NOT NULL,
+			endpoint text NOT NULL,
+			p256dh_key varchar(255) DEFAULT NULL,
+			auth_key varchar(255) DEFAULT NULL,
+			user_agent varchar(255) DEFAULT NULL,
+			created_at datetime DEFAULT CURRENT_TIMESTAMP,
+			last_used_at datetime DEFAULT NULL,
+			PRIMARY KEY (id),
+			KEY idx_user (user_id)
+		) $charset_collate;";
+
+		dbDelta( $sql_push_subscriptions );
+
+		// Notifications table (added in v1.4.0 for in-app notification center).
+		$table_notifications = self::get_table( 'notifications' );
+		$sql_notifications = "CREATE TABLE $table_notifications (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			user_id bigint(20) unsigned NOT NULL,
+			type varchar(50) NOT NULL,
+			title varchar(255) NOT NULL,
+			body text DEFAULT NULL,
+			data longtext DEFAULT NULL,
+			action_url varchar(500) DEFAULT NULL,
+			icon varchar(50) DEFAULT NULL,
+			priority varchar(20) DEFAULT 'normal',
+			read_at datetime DEFAULT NULL,
+			sent_push_at datetime DEFAULT NULL,
+			sent_email_at datetime DEFAULT NULL,
+			created_at datetime DEFAULT CURRENT_TIMESTAMP,
+			PRIMARY KEY (id),
+			KEY idx_user_read (user_id, read_at),
+			KEY idx_user_type (user_id, type),
+			KEY idx_created (created_at)
+		) $charset_collate;";
+
+		dbDelta( $sql_notifications );
 
 		// Populate default jurisdiction rules if table is empty.
 		self::maybe_populate_default_rules();
@@ -486,7 +529,13 @@ class R2F_Schengen_Schema {
 		$table_calendar_connections = self::get_table( 'calendar_connections' );
 		$table_calendar_events      = self::get_table( 'calendar_events' );
 		$table_jurisdiction_rules   = self::get_table( 'jurisdiction_rules' );
+		$table_push_subscriptions   = self::get_table( 'push_subscriptions' );
+		$table_notifications        = self::get_table( 'notifications' );
 
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$wpdb->query( "DROP TABLE IF EXISTS $table_notifications" );
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$wpdb->query( "DROP TABLE IF EXISTS $table_push_subscriptions" );
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$wpdb->query( "DROP TABLE IF EXISTS $table_calendar_events" );
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared

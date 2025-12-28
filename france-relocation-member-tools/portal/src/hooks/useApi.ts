@@ -1335,3 +1335,134 @@ export function useMultiJurisdictionSummary() {
     throwOnError: false,
   });
 }
+
+// ============================================
+// Notification Hooks (Phase 5)
+// ============================================
+
+export function useNotifications(unreadOnly = false) {
+  return useQuery({
+    queryKey: ['notifications', unreadOnly] as const,
+    queryFn: () => schengenApi.getNotifications(unreadOnly),
+    staleTime: STALE_TIME.DYNAMIC, // 10 seconds - notifications are dynamic
+    throwOnError: false,
+    refetchInterval: REFETCH_INTERVAL.SUPPORT_UNREAD, // 1 minute
+  });
+}
+
+export function useNotificationUnreadCount() {
+  return useQuery({
+    queryKey: ['notificationUnreadCount'] as const,
+    queryFn: schengenApi.getNotificationUnreadCount,
+    staleTime: STALE_TIME.DYNAMIC, // 10 seconds
+    refetchInterval: REFETCH_INTERVAL.SUPPORT_UNREAD, // 1 minute
+  });
+}
+
+export function useMarkNotificationRead() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: schengenApi.markNotificationRead,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['notificationUnreadCount'] });
+    },
+  });
+}
+
+export function useMarkAllNotificationsRead() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: schengenApi.markAllNotificationsRead,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['notificationUnreadCount'] });
+    },
+  });
+}
+
+export function useDeleteNotification() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: schengenApi.deleteNotification,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['notificationUnreadCount'] });
+    },
+  });
+}
+
+export function usePushStatus() {
+  return useQuery({
+    queryKey: ['pushStatus'] as const,
+    queryFn: schengenApi.getPushStatus,
+    staleTime: STALE_TIME.MEDIUM, // 5 minutes
+    throwOnError: false,
+  });
+}
+
+export function useSubscribePush() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: schengenApi.subscribePush,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pushStatus'] });
+    },
+  });
+}
+
+export function useUnsubscribePush() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: schengenApi.unsubscribePush,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pushStatus'] });
+    },
+  });
+}
+
+export function useVapidKey() {
+  return useQuery({
+    queryKey: ['vapidKey'] as const,
+    queryFn: schengenApi.getVapidKey,
+    staleTime: STALE_TIME.LONG, // 1 hour - key doesn't change
+    throwOnError: false,
+  });
+}
+
+export function useNotificationPreferences() {
+  return useQuery({
+    queryKey: ['notificationPreferences'] as const,
+    queryFn: schengenApi.getNotificationPreferences,
+    staleTime: STALE_TIME.MEDIUM, // 5 minutes
+    throwOnError: false,
+  });
+}
+
+export function useUpdateNotificationPreferences() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: schengenApi.updateNotificationPreferences,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notificationPreferences'] });
+    },
+  });
+}
+
+export function useSendTestNotification() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: schengenApi.sendTestNotification,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['notificationUnreadCount'] });
+    },
+  });
+}
