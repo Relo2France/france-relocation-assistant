@@ -1005,6 +1005,62 @@ export interface FamilyFeatureStatus {
   message: string | null;
 }
 
+// ============================================
+// Calendar Sync Types (Phase 2)
+// ============================================
+
+export type CalendarProvider = 'google' | 'microsoft';
+export type CalendarEventStatus = 'pending' | 'imported' | 'skipped';
+export type CalendarSyncStatus = 'active' | 'error' | 'expired';
+
+export interface CalendarProviderInfo {
+  id: CalendarProvider;
+  name: string;
+  isConfigured: boolean;
+}
+
+export interface CalendarConnection {
+  id: number;
+  provider: CalendarProvider;
+  providerName: string;
+  calendarName: string | null;
+  syncStatus: CalendarSyncStatus;
+  lastSyncAt: string | null;
+  createdAt: string;
+}
+
+export interface CalendarEvent {
+  id: number;
+  title: string;
+  startDate: string;
+  endDate: string;
+  location: string | null;
+  detectedCountry: string | null;
+  countryCode: string | null;
+  isSchengen: boolean;
+  status: CalendarEventStatus;
+  confidence: number;
+  importedAsTripId: number | null;
+  createdAt: string;
+}
+
+export interface CalendarSyncResult {
+  synced: boolean;
+  eventsFound: number;
+  travelDetected: number;
+  newEvents: number;
+}
+
+export interface CalendarImportResult {
+  imported: number;
+  skipped: number;
+}
+
+export interface CalendarICalImportResult {
+  parsed: number;
+  detected: number;
+}
+
 // WordPress global types
 declare global {
   interface Window {

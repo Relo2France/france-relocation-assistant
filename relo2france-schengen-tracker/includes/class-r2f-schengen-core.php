@@ -21,7 +21,7 @@ class R2F_Schengen_Core {
 	 *
 	 * @var string
 	 */
-	const VERSION = '1.1.0';
+	const VERSION = '1.2.0';
 
 	/**
 	 * Singleton instance.
@@ -59,6 +59,13 @@ class R2F_Schengen_Core {
 	public $location;
 
 	/**
+	 * Calendar sync handler.
+	 *
+	 * @var R2F_Schengen_Calendar
+	 */
+	public $calendar;
+
+	/**
 	 * Get singleton instance.
 	 *
 	 * @return R2F_Schengen_Core
@@ -90,6 +97,7 @@ class R2F_Schengen_Core {
 		require_once $includes_dir . 'class-r2f-schengen-api.php';
 		require_once $includes_dir . 'class-r2f-schengen-alerts.php';
 		require_once $includes_dir . 'class-r2f-schengen-location.php';
+		require_once $includes_dir . 'class-r2f-schengen-calendar.php';
 	}
 
 	/**
@@ -100,6 +108,7 @@ class R2F_Schengen_Core {
 		$this->api      = R2F_Schengen_API::get_instance();
 		$this->alerts   = R2F_Schengen_Alerts::get_instance();
 		$this->location = R2F_Schengen_Location::get_instance();
+		$this->calendar = R2F_Schengen_Calendar::get_instance();
 	}
 
 	/**

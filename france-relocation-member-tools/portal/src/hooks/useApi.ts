@@ -1157,3 +1157,102 @@ export function useIPDetection() {
     retry: 1, // Only retry once for IP detection
   });
 }
+
+// ============================================
+// Calendar Sync Hooks (Phase 2)
+// ============================================
+
+export function useCalendarProviders() {
+  return useQuery({
+    queryKey: ['calendarProviders'] as const,
+    queryFn: schengenApi.getCalendarProviders,
+    staleTime: STALE_TIME.LONG, // 1 hour - providers don't change
+  });
+}
+
+export function useCalendarConnections() {
+  return useQuery({
+    queryKey: ['calendarConnections'] as const,
+    queryFn: schengenApi.getCalendarConnections,
+    staleTime: STALE_TIME.DEFAULT, // 30 seconds
+  });
+}
+
+export function useConnectCalendar() {
+  return useMutation({
+    mutationFn: schengenApi.connectCalendar,
+    onSuccess: (data) => {
+      // Redirect to OAuth URL
+      if (data.authUrl) {
+        window.location.href = data.authUrl;
+      }
+    },
+  });
+}
+
+export function useDisconnectCalendar() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: schengenApi.disconnectCalendar,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['calendarConnections'] });
+      queryClient.invalidateQueries({ queryKey: ['calendarEvents'] });
+    },
+  });
+}
+
+export function useSyncCalendar() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: schengenApi.syncCalendar,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['calendarConnections'] });
+      queryClient.invalidateQueries({ queryKey: ['calendarEvents'] });
+    },
+  });
+}
+
+export function useCalendarEvents(status?: 'pending' | 'imported' | 'skipped' | 'all') {
+  return useQuery({
+    queryKey: ['calendarEvents', status] as const,
+    queryFn: () => schengenApi.getCalendarEvents(status),
+    staleTime: STALE_TIME.DEFAULT, // 30 seconds
+  });
+}
+
+export function useImportCalendarEvents() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: schengenApi.importCalendarEvents,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['calendarEvents'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.schengenTrips });
+      queryClient.invalidateQueries({ queryKey: queryKeys.schengenSummary });
+    },
+  });
+}
+
+export function useSkipCalendarEvents() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: schengenApi.skipCalendarEvents,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['calendarEvents'] });
+    },
+  });
+}
+
+export function useImportICalFile() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: schengenApi.importICalFile,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['calendarEvents'] });
+    },
+  });
+}

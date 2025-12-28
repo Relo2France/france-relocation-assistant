@@ -25,7 +25,7 @@ class R2F_Schengen_Schema {
 	 *
 	 * @var string
 	 */
-	const DB_VERSION = '1.1.0';
+	const DB_VERSION = '1.2.0';
 
 	/**
 	 * Table definitions.
@@ -34,8 +34,10 @@ class R2F_Schengen_Schema {
 	 * @var array
 	 */
 	private static $tables = array(
-		'trips'        => 'fra_schengen_trips', // Keep same name for backward compatibility.
-		'location_log' => 'fra_schengen_location_log',
+		'trips'               => 'fra_schengen_trips', // Keep same name for backward compatibility.
+		'location_log'        => 'fra_schengen_location_log',
+		'calendar_connections' => 'fra_calendar_connections',
+		'calendar_events'      => 'fra_calendar_events',
 	);
 
 	/**
@@ -111,6 +113,58 @@ class R2F_Schengen_Schema {
 		) $charset_collate;";
 
 		dbDelta( $sql_location_log );
+
+		// Calendar connections table (added in v1.2.0 for calendar sync).
+		$table_calendar_connections = self::get_table( 'calendar_connections' );
+		$sql_calendar_connections = "CREATE TABLE $table_calendar_connections (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			user_id bigint(20) unsigned NOT NULL,
+			provider varchar(20) NOT NULL,
+			access_token text DEFAULT NULL,
+			refresh_token text DEFAULT NULL,
+			token_expires_at datetime DEFAULT NULL,
+			calendar_id varchar(255) DEFAULT NULL,
+			calendar_name varchar(255) DEFAULT NULL,
+			last_sync_at datetime DEFAULT NULL,
+			sync_status varchar(20) DEFAULT 'active',
+			settings longtext DEFAULT NULL,
+			created_at datetime DEFAULT CURRENT_TIMESTAMP,
+			updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+			PRIMARY KEY (id),
+			UNIQUE KEY idx_user_provider (user_id, provider),
+			KEY idx_sync_status (sync_status)
+		) $charset_collate;";
+
+		dbDelta( $sql_calendar_connections );
+
+		// Calendar events table (added in v1.2.0 for detected travel events).
+		$table_calendar_events = self::get_table( 'calendar_events' );
+		$sql_calendar_events = "CREATE TABLE $table_calendar_events (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			user_id bigint(20) unsigned NOT NULL,
+			connection_id bigint(20) unsigned NOT NULL,
+			external_event_id varchar(255) DEFAULT NULL,
+			title varchar(500) DEFAULT NULL,
+			start_date date NOT NULL,
+			end_date date NOT NULL,
+			location varchar(500) DEFAULT NULL,
+			detected_country varchar(100) DEFAULT NULL,
+			detected_country_code varchar(2) DEFAULT NULL,
+			is_schengen tinyint(1) DEFAULT 0,
+			imported_as_trip_id bigint(20) unsigned DEFAULT NULL,
+			status varchar(20) DEFAULT 'pending',
+			confidence_score float DEFAULT NULL,
+			raw_data longtext DEFAULT NULL,
+			created_at datetime DEFAULT CURRENT_TIMESTAMP,
+			updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+			PRIMARY KEY (id),
+			KEY idx_user_status (user_id, status),
+			KEY idx_connection (connection_id),
+			KEY idx_external_id (external_event_id),
+			KEY idx_dates (start_date, end_date)
+		) $charset_collate;";
+
+		dbDelta( $sql_calendar_events );
 
 		// Run migrations for existing installations.
 		self::maybe_migrate();
@@ -193,9 +247,15 @@ class R2F_Schengen_Schema {
 			return;
 		}
 
-		$table_trips        = self::get_table( 'trips' );
-		$table_location_log = self::get_table( 'location_log' );
+		$table_trips                = self::get_table( 'trips' );
+		$table_location_log         = self::get_table( 'location_log' );
+		$table_calendar_connections = self::get_table( 'calendar_connections' );
+		$table_calendar_events      = self::get_table( 'calendar_events' );
 
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$wpdb->query( "DROP TABLE IF EXISTS $table_calendar_events" );
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$wpdb->query( "DROP TABLE IF EXISTS $table_calendar_connections" );
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$wpdb->query( "DROP TABLE IF EXISTS $table_trips" );
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
