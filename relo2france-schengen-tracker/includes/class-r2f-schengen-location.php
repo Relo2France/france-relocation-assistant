@@ -116,24 +116,89 @@ class R2F_Schengen_Location {
 				'permission_callback' => array( $this, 'check_permission' ),
 			)
 		);
+
+		// History - simplified.
+		register_rest_route(
+			$namespace,
+			$base . '/history',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( $this, 'get_history_debug' ),
+				'permission_callback' => array( $this, 'check_permission' ),
+			)
+		);
 	}
 
 	/**
-	 * Debug: Simple store location.
+	 * Debug: Store location with error handling.
 	 */
 	public function store_location_debug( $request ) {
+		global $wpdb;
+
+		// Get params.
+		$params = $request->get_json_params();
+		if ( empty( $params ) ) {
+			$params = $request->get_params();
+		}
+
+		$user_id  = get_current_user_id();
+		$lat      = isset( $params['lat'] ) ? (float) $params['lat'] : 0;
+		$lng      = isset( $params['lng'] ) ? (float) $params['lng'] : 0;
+		$accuracy = isset( $params['accuracy'] ) ? (float) $params['accuracy'] : null;
+		$source   = isset( $params['source'] ) ? sanitize_text_field( $params['source'] ) : 'browser';
+
+		// Simple geocode - just determine if in France for now.
+		$country_code = 'FR';
+		$country_name = 'France';
+		$city         = 'Unknown';
+		$is_schengen  = true;
+
+		// Try to get table name.
+		$table = $wpdb->prefix . 'fra_schengen_location_log';
+
+		// Try insert.
+		$result = $wpdb->insert(
+			$table,
+			array(
+				'user_id'      => $user_id,
+				'lat'          => $lat,
+				'lng'          => $lng,
+				'accuracy'     => $accuracy,
+				'country_code' => $country_code,
+				'country_name' => $country_name,
+				'city'         => $city,
+				'is_schengen'  => $is_schengen ? 1 : 0,
+				'source'       => $source,
+				'recorded_at'  => current_time( 'mysql', true ),
+			),
+			array( '%d', '%f', '%f', '%f', '%s', '%s', '%s', '%d', '%s', '%s' )
+		);
+
+		if ( false === $result ) {
+			return rest_ensure_response( array(
+				'success' => false,
+				'message' => 'Database error: ' . $wpdb->last_error,
+				'debug'   => array(
+					'table'  => $table,
+					'query'  => $wpdb->last_query,
+				),
+			) );
+		}
+
+		$insert_id = $wpdb->insert_id;
+
 		return rest_ensure_response( array(
 			'success'  => true,
-			'message'  => 'Location recorded (debug mode).',
+			'message'  => 'Location recorded successfully.',
 			'location' => array(
-				'id'          => 1,
-				'lat'         => 48.8566,
-				'lng'         => 2.3522,
-				'countryCode' => 'FR',
-				'countryName' => 'France',
-				'city'        => 'Paris',
-				'isSchengen'  => true,
-				'source'      => 'browser',
+				'id'          => $insert_id,
+				'lat'         => $lat,
+				'lng'         => $lng,
+				'countryCode' => $country_code,
+				'countryName' => $country_name,
+				'city'        => $city,
+				'isSchengen'  => $is_schengen,
+				'source'      => $source,
 				'recordedAt'  => current_time( 'mysql' ),
 			),
 		) );
@@ -158,6 +223,18 @@ class R2F_Schengen_Location {
 			'detected'    => false,
 			'reason'      => 'debug',
 			'countryCode' => null,
+		) );
+	}
+
+	/**
+	 * Debug: Simple history.
+	 */
+	public function get_history_debug( $request ) {
+		return rest_ensure_response( array(
+			'locations' => array(),
+			'total'     => 0,
+			'limit'     => 30,
+			'offset'    => 0,
 		) );
 	}
 
