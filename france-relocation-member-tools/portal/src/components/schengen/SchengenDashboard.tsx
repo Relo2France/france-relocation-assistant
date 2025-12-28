@@ -6,7 +6,7 @@
  * Includes premium features: calendar view, planning tool, PDF export.
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { clsx } from 'clsx';
 import {
   Plus,
@@ -24,6 +24,7 @@ import {
   Loader2,
   CheckCircle,
   MapPin,
+  HelpCircle,
 } from 'lucide-react';
 import type { SchengenTrip } from '@/types';
 import { useSchengenStore } from './useSchengenStore';
@@ -41,6 +42,7 @@ import CalendarView from './CalendarView';
 import ReportExport from './ReportExport';
 import LocationTracker from './LocationTracker';
 import LocationDetectionBanner from './LocationDetectionBanner';
+import SchengenOnboarding, { hasCompletedOnboarding } from './SchengenOnboarding';
 import Modal from '@/components/shared/Modal';
 
 type ViewTab = 'trips' | 'calendar' | 'planning' | 'location' | 'settings';
@@ -55,6 +57,14 @@ export default function SchengenDashboard() {
   const [activeTab, setActiveTab] = useState<ViewTab>('trips');
   const [testAlertMessage, setTestAlertMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  // Check if first-time user on mount
+  useEffect(() => {
+    if (isLoaded && !hasCompletedOnboarding()) {
+      setShowOnboarding(true);
+    }
+  }, [isLoaded]);
 
   // Calculate summary from trips
   const summary = useMemo(() => {
@@ -139,6 +149,16 @@ export default function SchengenDashboard() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          {/* Help button to reopen onboarding */}
+          <button
+            onClick={() => setShowOnboarding(true)}
+            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            aria-label="Show help tour"
+            title="Show help tour"
+          >
+            <HelpCircle className="w-5 h-5" aria-hidden="true" />
+          </button>
+
           {/* PDF Export (premium) */}
           {isPremium && <ReportExport />}
 
@@ -627,6 +647,13 @@ export default function SchengenDashboard() {
           />
         )}
       </Modal>
+
+      {/* Onboarding modal for first-time users */}
+      <SchengenOnboarding
+        isOpen={showOnboarding}
+        onComplete={() => setShowOnboarding(false)}
+        isPremium={isPremium}
+      />
     </div>
   );
 }
