@@ -74,6 +74,10 @@ function r2f_schengen_activate() {
 	require_once R2F_SCHENGEN_PLUGIN_DIR . 'includes/class-r2f-schengen-alerts.php';
 	R2F_Schengen_Alerts::get_instance()->schedule_cron();
 
+	// Schedule calendar sync cron.
+	require_once R2F_SCHENGEN_PLUGIN_DIR . 'includes/class-r2f-schengen-calendar.php';
+	R2F_Schengen_Calendar::get_instance()->schedule_cron();
+
 	// Set default options.
 	add_option( 'r2f_schengen_version', R2F_SCHENGEN_VERSION );
 	add_option( 'r2f_schengen_global_enabled', '0' ); // Default OFF for standalone.
@@ -95,6 +99,10 @@ function r2f_schengen_deactivate() {
 	// Unschedule cron jobs.
 	require_once R2F_SCHENGEN_PLUGIN_DIR . 'includes/class-r2f-schengen-alerts.php';
 	R2F_Schengen_Alerts::get_instance()->unschedule_cron();
+
+	// Unschedule calendar sync cron.
+	require_once R2F_SCHENGEN_PLUGIN_DIR . 'includes/class-r2f-schengen-calendar.php';
+	R2F_Schengen_Calendar::get_instance()->unschedule_cron();
 
 	// Flush rewrite rules.
 	flush_rewrite_rules();

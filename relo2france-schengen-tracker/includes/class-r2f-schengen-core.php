@@ -21,7 +21,7 @@ class R2F_Schengen_Core {
 	 *
 	 * @var string
 	 */
-	const VERSION = '1.2.0';
+	const VERSION = '1.4.0';
 
 	/**
 	 * Singleton instance.
@@ -73,6 +73,13 @@ class R2F_Schengen_Core {
 	public $jurisdiction;
 
 	/**
+	 * Notifications handler.
+	 *
+	 * @var R2F_Schengen_Notifications
+	 */
+	public $notifications;
+
+	/**
 	 * Get singleton instance.
 	 *
 	 * @return R2F_Schengen_Core
@@ -106,6 +113,7 @@ class R2F_Schengen_Core {
 		require_once $includes_dir . 'class-r2f-schengen-location.php';
 		require_once $includes_dir . 'class-r2f-schengen-calendar.php';
 		require_once $includes_dir . 'class-r2f-schengen-jurisdiction.php';
+		require_once $includes_dir . 'class-r2f-schengen-notifications.php';
 	}
 
 	/**
@@ -116,8 +124,9 @@ class R2F_Schengen_Core {
 		$this->api          = R2F_Schengen_API::get_instance();
 		$this->alerts       = R2F_Schengen_Alerts::get_instance();
 		$this->location     = R2F_Schengen_Location::get_instance();
-		$this->calendar     = R2F_Schengen_Calendar::get_instance();
-		$this->jurisdiction = R2F_Schengen_Jurisdiction::get_instance();
+		$this->calendar      = R2F_Schengen_Calendar::get_instance();
+		$this->jurisdiction  = R2F_Schengen_Jurisdiction::get_instance();
+		$this->notifications = R2F_Schengen_Notifications::get_instance();
 	}
 
 	/**
@@ -163,6 +172,8 @@ class R2F_Schengen_Core {
 		register_setting( 'r2f_schengen_settings', 'r2f_schengen_google_client_secret' );
 		register_setting( 'r2f_schengen_settings', 'r2f_schengen_microsoft_client_id' );
 		register_setting( 'r2f_schengen_settings', 'r2f_schengen_microsoft_client_secret' );
+		register_setting( 'r2f_schengen_settings', 'r2f_schengen_vapid_public_key' );
+		register_setting( 'r2f_schengen_settings', 'r2f_schengen_vapid_private_key' );
 
 		add_settings_section(
 			'r2f_schengen_general',
@@ -225,6 +236,30 @@ class R2F_Schengen_Core {
 			array( $this, 'render_microsoft_client_secret_field' ),
 			'r2f-schengen-settings',
 			'r2f_schengen_calendar'
+		);
+
+		// Push Notifications settings section.
+		add_settings_section(
+			'r2f_schengen_push',
+			__( 'Push Notifications (VAPID)', 'r2f-schengen' ),
+			array( $this, 'render_push_section' ),
+			'r2f-schengen-settings'
+		);
+
+		add_settings_field(
+			'r2f_schengen_vapid_public_key',
+			__( 'VAPID Public Key', 'r2f-schengen' ),
+			array( $this, 'render_vapid_public_key_field' ),
+			'r2f-schengen-settings',
+			'r2f_schengen_push'
+		);
+
+		add_settings_field(
+			'r2f_schengen_vapid_private_key',
+			__( 'VAPID Private Key', 'r2f-schengen' ),
+			array( $this, 'render_vapid_private_key_field' ),
+			'r2f-schengen-settings',
+			'r2f_schengen_push'
 		);
 	}
 
@@ -372,6 +407,50 @@ class R2F_Schengen_Core {
 		<input type="password" name="r2f_schengen_microsoft_client_secret" value="<?php echo esc_attr( $value ); ?>" class="regular-text">
 		<p class="description">
 			<?php esc_html_e( 'Keep this secret secure. It will be stored encrypted in the database.', 'r2f-schengen' ); ?>
+		</p>
+		<?php
+	}
+
+	/**
+	 * Render push notifications section description.
+	 */
+	public function render_push_section() {
+		?>
+		<p><?php esc_html_e( 'Configure VAPID keys for Web Push notifications. VAPID keys are used to authenticate your server with push services.', 'r2f-schengen' ); ?></p>
+		<p class="description">
+			<?php
+			printf(
+				/* translators: %s: Link to VAPID key generator */
+				esc_html__( 'Generate VAPID keys using %s or a similar tool.', 'r2f-schengen' ),
+				'<a href="https://vapidkeys.com/" target="_blank">vapidkeys.com</a>'
+			);
+			?>
+		</p>
+		<?php
+	}
+
+	/**
+	 * Render VAPID Public Key field.
+	 */
+	public function render_vapid_public_key_field() {
+		$value = get_option( 'r2f_schengen_vapid_public_key', '' );
+		?>
+		<input type="text" name="r2f_schengen_vapid_public_key" value="<?php echo esc_attr( $value ); ?>" class="large-text">
+		<p class="description">
+			<?php esc_html_e( 'The public key is shared with browsers to subscribe to push notifications.', 'r2f-schengen' ); ?>
+		</p>
+		<?php
+	}
+
+	/**
+	 * Render VAPID Private Key field.
+	 */
+	public function render_vapid_private_key_field() {
+		$value = get_option( 'r2f_schengen_vapid_private_key', '' );
+		?>
+		<input type="password" name="r2f_schengen_vapid_private_key" value="<?php echo esc_attr( $value ); ?>" class="large-text">
+		<p class="description">
+			<?php esc_html_e( 'Keep this secret secure. It is used to sign push notification requests.', 'r2f-schengen' ); ?>
 		</p>
 		<?php
 	}

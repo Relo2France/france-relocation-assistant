@@ -69,6 +69,12 @@ import type {
   MultiJurisdictionSummary,
   TrackedJurisdictionsResponse,
   JurisdictionType,
+  NotificationItem,
+  PushStatus,
+  NotificationPreferences,
+  CSVImportResult,
+  CSVExportResult,
+  SuggestionsResponse,
 } from '@/types';
 
 /**
@@ -930,6 +936,29 @@ export const schengenApi = {
   },
 
   // ============================================
+  // CSV Import/Export API (Phase 6)
+  // ============================================
+
+  // Import trips from CSV
+  importTripsCSV: (csv: string, skipDuplicates = true) =>
+    apiFetch<CSVImportResult>('/schengen/trips/import', {
+      method: 'POST',
+      body: JSON.stringify({ csv, skip_duplicates: skipDuplicates }),
+    }),
+
+  // Export trips to CSV
+  exportTripsCSV: () =>
+    apiFetch<CSVExportResult>('/schengen/trips/export'),
+
+  // ============================================
+  // AI Suggestions API (Phase 7)
+  // ============================================
+
+  // Get AI-powered trip planning suggestions
+  getSuggestions: () =>
+    apiFetch<SuggestionsResponse>('/schengen/suggestions'),
+
+  // ============================================
   // Jurisdiction API (Phase 3)
   // ============================================
 
@@ -971,4 +1000,86 @@ export const schengenApi = {
   // Get summary for all tracked jurisdictions
   getMultiJurisdictionSummary: () =>
     apiFetch<MultiJurisdictionSummary>('/schengen/jurisdictions/summary'),
+
+  // ============================================
+  // Notifications API (Phase 5)
+  // ============================================
+
+  // Get user's notifications
+  getNotifications: (unreadOnly = false) =>
+    apiFetch<NotificationItem[]>(
+      unreadOnly ? '/schengen/notifications?unread_only=true' : '/schengen/notifications'
+    ),
+
+  // Get unread notification count
+  getNotificationUnreadCount: () =>
+    apiFetch<{ count: number }>('/schengen/notifications/unread-count'),
+
+  // Mark a notification as read
+  markNotificationRead: (id: number) =>
+    apiFetch<{ success: boolean }>(`/schengen/notifications/${id}/read`, {
+      method: 'POST',
+    }),
+
+  // Mark all notifications as read
+  markAllNotificationsRead: () =>
+    apiFetch<{ success: boolean }>('/schengen/notifications/read-all', {
+      method: 'POST',
+    }),
+
+  // Delete a notification
+  deleteNotification: (id: number) =>
+    apiFetch<{ deleted: boolean }>(`/schengen/notifications/${id}`, {
+      method: 'DELETE',
+    }),
+
+  // Get push subscription status
+  getPushStatus: () =>
+    apiFetch<PushStatus>('/schengen/push/status'),
+
+  // Subscribe to push notifications
+  subscribePush: (subscription: {
+    endpoint: string;
+    p256dh: string;
+    auth: string;
+    userAgent?: string;
+  }) =>
+    apiFetch<{ subscribed: boolean; id: number }>('/schengen/push/subscribe', {
+      method: 'POST',
+      body: JSON.stringify(subscription),
+    }),
+
+  // Unsubscribe from push notifications
+  unsubscribePush: (endpoint: string) =>
+    apiFetch<{ unsubscribed: boolean }>('/schengen/push/unsubscribe', {
+      method: 'POST',
+      body: JSON.stringify({ endpoint }),
+    }),
+
+  // Get VAPID public key
+  getVapidKey: () =>
+    apiFetch<{ publicKey: string }>('/schengen/push/vapid-key'),
+
+  // Get notification preferences
+  getNotificationPreferences: () =>
+    apiFetch<NotificationPreferences>('/schengen/notifications/preferences'),
+
+  // Update notification preferences
+  updateNotificationPreferences: (prefs: Partial<NotificationPreferences>) =>
+    apiFetch<{ success: boolean; preferences: NotificationPreferences }>(
+      '/schengen/notifications/preferences',
+      {
+        method: 'PUT',
+        body: JSON.stringify(prefs),
+      }
+    ),
+
+  // Send test notification
+  sendTestNotification: () =>
+    apiFetch<{ success: boolean; notificationId: number; pushSent: boolean }>(
+      '/schengen/notifications/test',
+      {
+        method: 'POST',
+      }
+    ),
 };

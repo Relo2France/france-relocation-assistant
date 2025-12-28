@@ -1063,6 +1063,49 @@ export interface CalendarICalImportResult {
 }
 
 // ============================================
+// CSV Import/Export Types (Phase 6)
+// ============================================
+
+export interface CSVImportResult {
+  success: boolean;
+  imported: number;
+  skipped: number;
+  errors: string[];
+  message: string;
+}
+
+export interface CSVExportResult {
+  csv: string;
+  filename: string;
+  count: number;
+}
+
+// ============================================
+// AI Suggestions Types (Phase 7)
+// ============================================
+
+export type SuggestionType = 'availability' | 'expiration' | 'recommendation' | 'insight' | 'alert' | 'warning';
+export type SuggestionPriority = 'low' | 'medium' | 'high' | 'info';
+
+export interface Suggestion {
+  type: SuggestionType;
+  priority: SuggestionPriority;
+  icon: string;
+  title: string;
+  message: string;
+}
+
+export interface SuggestionsResponse {
+  suggestions: Suggestion[];
+  summary: {
+    daysUsed: number;
+    daysRemaining: number;
+    totalTrips: number;
+  };
+  generatedAt: string;
+}
+
+// ============================================
 // Jurisdiction Types (Phase 3)
 // ============================================
 
@@ -1110,6 +1153,60 @@ export interface MultiJurisdictionSummary {
 export interface TrackedJurisdictionsResponse {
   success: boolean;
   tracked: string[];
+}
+
+// ============================================
+// Notification Types (Phase 5)
+// ============================================
+
+export type NotificationType =
+  | 'threshold_warning'
+  | 'threshold_danger'
+  | 'trip_reminder'
+  | 'day_expiring'
+  | 'calendar_sync'
+  | 'location_checkin'
+  | 'test';
+
+export type NotificationPriority = 'low' | 'normal' | 'high';
+
+export interface NotificationItem {
+  id: number;
+  type: NotificationType;
+  title: string;
+  body: string | null;
+  actionUrl: string | null;
+  icon: string | null;
+  priority: NotificationPriority;
+  isRead: boolean;
+  readAt: string | null;
+  createdAt: string;
+  data: Record<string, unknown> | null;
+}
+
+export interface PushStatus {
+  vapidConfigured: boolean;
+  subscriptions: PushSubscription[];
+}
+
+export interface PushSubscription {
+  id: number;
+  userAgent: string | null;
+  createdAt: string;
+  lastUsedAt: string | null;
+}
+
+export interface NotificationPreferences {
+  email_enabled: boolean;
+  push_enabled: boolean;
+  threshold_warning: boolean;
+  threshold_danger: boolean;
+  trip_reminder: boolean;
+  calendar_sync: boolean;
+  location_checkin: boolean;
+  quiet_hours_enabled: boolean;
+  quiet_hours_start: number;
+  quiet_hours_end: number;
 }
 
 // WordPress global types

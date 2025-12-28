@@ -47,6 +47,9 @@ import LocationTracker from './LocationTracker';
 import LocationDetectionBanner from './LocationDetectionBanner';
 import SchengenOnboarding, { hasCompletedOnboarding } from './SchengenOnboarding';
 import JurisdictionOverview from './JurisdictionOverview';
+import NotificationCenter from './NotificationCenter';
+import CSVImportExport from './CSVImportExport';
+import AISuggestions from './AISuggestions';
 import Modal from '@/components/shared/Modal';
 import ErrorBoundary from '@/components/shared/ErrorBoundary';
 
@@ -154,8 +157,12 @@ export default function SchengenDashboard() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          {/* Notification Center */}
+          <NotificationCenter />
+
           {/* Help button to reopen onboarding */}
           <button
+            type="button"
             onClick={() => setShowOnboarding(true)}
             className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
             aria-label="Show help tour"
@@ -507,8 +514,14 @@ export default function SchengenDashboard() {
 
       {activeTab === 'planning' && (
         isPremium ? (
-          <div className="card p-6">
-            <PlanningTool />
+          <div className="space-y-6">
+            {/* AI Suggestions Panel */}
+            <AISuggestions />
+
+            {/* Planning Tool */}
+            <div className="card p-6">
+              <PlanningTool />
+            </div>
           </div>
         ) : (
           <PremiumFeaturePrompt
@@ -659,6 +672,14 @@ export default function SchengenDashboard() {
               </div>
             </div>
           </div>
+
+          {/* CSV Import/Export Section */}
+          {featureStatus?.isPremium && (
+            <div className="border-t border-gray-200 pt-6">
+              <h4 className="font-medium text-gray-900 mb-4">Data Import/Export</h4>
+              <CSVImportExport />
+            </div>
+          )}
         </div>
       )}
 

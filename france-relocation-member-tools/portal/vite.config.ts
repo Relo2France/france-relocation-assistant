@@ -2,10 +2,38 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
+import fs from 'fs';
+
+// Plugin to copy PWA files after build
+function copyPWAFiles() {
+  return {
+    name: 'copy-pwa-files',
+    closeBundle() {
+      const publicDir = path.resolve(__dirname, 'public');
+      const outDir = path.resolve(__dirname, '../assets/portal');
+
+      // Copy manifest.json
+      if (fs.existsSync(path.join(publicDir, 'manifest.json'))) {
+        fs.copyFileSync(
+          path.join(publicDir, 'manifest.json'),
+          path.join(outDir, 'manifest.json')
+        );
+      }
+
+      // Copy service-worker.js
+      if (fs.existsSync(path.join(publicDir, 'service-worker.js'))) {
+        fs.copyFileSync(
+          path.join(publicDir, 'service-worker.js'),
+          path.join(outDir, 'service-worker.js')
+        );
+      }
+    },
+  };
+}
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), copyPWAFiles()],
   test: {
     globals: true,
     environment: 'jsdom',

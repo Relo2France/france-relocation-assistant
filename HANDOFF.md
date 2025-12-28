@@ -282,6 +282,25 @@ The calendar sync detects travel events using keywords:
 - **0.85:** Major city detected
 - **0.5:** Travel keyword only (no specific location)
 
+### REST API Route Order (Important!)
+**Issue:** Routes like `/jurisdictions/tracked` were returning 404 errors.
+
+**Cause:** WordPress REST API matches routes in registration order. If a parameterized route like `/jurisdictions/(?P<code>[a-z0-9_]+)` is registered before a specific route like `/jurisdictions/tracked`, the regex `[a-z0-9_]+` matches "tracked" as a code, routing the request to the wrong handler.
+
+**Fix:** Always register specific routes BEFORE parameterized/catch-all routes:
+```php
+// CORRECT ORDER:
+register_rest_route($ns, '/jurisdictions/tracked', ...);           // Specific - matches first
+register_rest_route($ns, '/jurisdictions/summary', ...);           // Specific - matches first
+register_rest_route($ns, '/jurisdictions/(?P<code>[a-z0-9_]+)', ...); // Parameterized - fallback
+
+// WRONG ORDER (causes 404):
+register_rest_route($ns, '/jurisdictions/(?P<code>[a-z0-9_]+)', ...); // Catches "tracked"!
+register_rest_route($ns, '/jurisdictions/tracked', ...);              // Never reached
+```
+
+**Affected file:** `class-r2f-schengen-jurisdiction.php`
+
 ---
 
 ## 9. To Resume Next Session
