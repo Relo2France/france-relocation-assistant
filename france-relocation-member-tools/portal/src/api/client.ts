@@ -74,6 +74,7 @@ import type {
   NotificationPreferences,
   CSVImportResult,
   CSVExportResult,
+  SuggestionsResponse,
 } from '@/types';
 
 /**
@@ -948,6 +949,14 @@ export const schengenApi = {
   // Export trips to CSV
   exportTripsCSV: () =>
     apiFetch<CSVExportResult>('/schengen/trips/export'),
+
+  // ============================================
+  // AI Suggestions API (Phase 7)
+  // ============================================
+
+  // Get AI-powered trip planning suggestions
+  getSuggestions: () =>
+    apiFetch<SuggestionsResponse>('/schengen/suggestions'),
 
   // ============================================
   // Jurisdiction API (Phase 3)

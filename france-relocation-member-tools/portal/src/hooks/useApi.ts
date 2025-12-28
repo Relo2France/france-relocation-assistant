@@ -1495,3 +1495,19 @@ export function useExportTripsCSV() {
     mutationFn: schengenApi.exportTripsCSV,
   });
 }
+
+// ============================================
+// AI Suggestions Hooks (Phase 7)
+// ============================================
+
+/**
+ * Get AI-powered trip planning suggestions
+ */
+export function useSchengenSuggestions() {
+  return useQuery({
+    queryKey: ['schengenSuggestions'],
+    queryFn: schengenApi.getSuggestions,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false,
+  });
+}

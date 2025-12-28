@@ -49,6 +49,7 @@ import SchengenOnboarding, { hasCompletedOnboarding } from './SchengenOnboarding
 import JurisdictionOverview from './JurisdictionOverview';
 import NotificationCenter from './NotificationCenter';
 import CSVImportExport from './CSVImportExport';
+import AISuggestions from './AISuggestions';
 import Modal from '@/components/shared/Modal';
 import ErrorBoundary from '@/components/shared/ErrorBoundary';
 
@@ -513,8 +514,14 @@ export default function SchengenDashboard() {
 
       {activeTab === 'planning' && (
         isPremium ? (
-          <div className="card p-6">
-            <PlanningTool />
+          <div className="space-y-6">
+            {/* AI Suggestions Panel */}
+            <AISuggestions />
+
+            {/* Planning Tool */}
+            <div className="card p-6">
+              <PlanningTool />
+            </div>
           </div>
         ) : (
           <PremiumFeaturePrompt

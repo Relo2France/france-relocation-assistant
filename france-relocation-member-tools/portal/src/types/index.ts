@@ -1081,6 +1081,31 @@ export interface CSVExportResult {
 }
 
 // ============================================
+// AI Suggestions Types (Phase 7)
+// ============================================
+
+export type SuggestionType = 'availability' | 'expiration' | 'recommendation' | 'insight' | 'alert' | 'warning';
+export type SuggestionPriority = 'low' | 'medium' | 'high' | 'info';
+
+export interface Suggestion {
+  type: SuggestionType;
+  priority: SuggestionPriority;
+  icon: string;
+  title: string;
+  message: string;
+}
+
+export interface SuggestionsResponse {
+  suggestions: Suggestion[];
+  summary: {
+    daysUsed: number;
+    daysRemaining: number;
+    totalTrips: number;
+  };
+  generatedAt: string;
+}
+
+// ============================================
 // Jurisdiction Types (Phase 3)
 // ============================================
 
