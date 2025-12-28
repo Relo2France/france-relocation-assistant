@@ -3,6 +3,7 @@ import { clsx } from 'clsx';
 import { useCurrentUser } from '@/hooks/useApi';
 import { usePortalStore } from '@/store';
 import ErrorBoundary from '@/components/shared/ErrorBoundary';
+import PWAPrompt from '@/components/shared/PWAPrompt';
 import Sidebar from '@/components/layout/Sidebar';
 import Header from '@/components/layout/Header';
 
@@ -128,6 +129,9 @@ export default function App() {
           </ErrorBoundary>
         </main>
       </div>
+
+      {/* PWA Install Prompt & Update Banner */}
+      <PWAPrompt />
     </div>
   );
 }
