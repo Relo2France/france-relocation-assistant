@@ -25,7 +25,7 @@ class R2F_Schengen_Schema {
 	 *
 	 * @var string
 	 */
-	const DB_VERSION = '1.4.0';
+	const DB_VERSION = '1.5.0';
 
 	/**
 	 * Table definitions.
@@ -41,6 +41,7 @@ class R2F_Schengen_Schema {
 		'jurisdiction_rules'   => 'fra_jurisdiction_rules',
 		'push_subscriptions'   => 'fra_push_subscriptions',
 		'notifications'        => 'fra_notifications',
+		'family_members'       => 'fra_family_members',
 	);
 
 	/**
@@ -238,6 +239,29 @@ class R2F_Schengen_Schema {
 		) $charset_collate;";
 
 		dbDelta( $sql_notifications );
+
+		// Family members table (added in v1.5.0 for family tracking).
+		$table_family_members = self::get_table( 'family_members' );
+		$sql_family_members = "CREATE TABLE $table_family_members (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			user_id bigint(20) unsigned NOT NULL,
+			name varchar(100) NOT NULL,
+			relationship varchar(50) DEFAULT NULL,
+			nationality varchar(100) DEFAULT NULL,
+			passport_country varchar(100) DEFAULT NULL,
+			date_of_birth date DEFAULT NULL,
+			notes text DEFAULT NULL,
+			color varchar(20) DEFAULT '#3B82F6',
+			is_active tinyint(1) DEFAULT 1,
+			display_order int(11) DEFAULT 0,
+			created_at datetime DEFAULT CURRENT_TIMESTAMP,
+			updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+			PRIMARY KEY (id),
+			KEY idx_user (user_id),
+			KEY idx_active (user_id, is_active)
+		) $charset_collate;";
+
+		dbDelta( $sql_family_members );
 
 		// Populate default jurisdiction rules if table is empty.
 		self::maybe_populate_default_rules();

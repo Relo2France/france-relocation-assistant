@@ -148,6 +148,14 @@ Suggested approach:
 2. **Web Push:** Service worker uses simplified push (logs intent) - needs `minishlink/web-push` PHP library for production
 3. **VAPID Keys:** Admins need to generate and configure VAPID keys for push notifications to work
 
+### Google Calendar OAuth - Now Configured ✓
+
+OAuth flow successfully tested. Required configuration in Google Cloud Console:
+- **Authorized redirect URIs:** Must include BOTH:
+  - `https://relo2france.com/wp-json/r2f-schengen/v1/calendar/callback`
+  - `https://www.relo2france.com/wp-json/r2f-schengen/v1/calendar/callback`
+- Credentials stored via WordPress admin: Settings → Schengen Tracker
+
 ---
 
 ## 7. Key Files Modified This Session

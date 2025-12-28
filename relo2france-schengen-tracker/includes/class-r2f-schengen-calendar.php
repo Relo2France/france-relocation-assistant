@@ -773,7 +773,8 @@ class R2F_Schengen_Calendar {
 		$this->sync_calendar( $connection_id );
 
 		// Redirect to success page.
-		$redirect_url = home_url( '/member-portal/schengen?calendar_connected=' . $provider );
+		$portal_path  = apply_filters( 'r2f_schengen_portal_path', '/portal/' );
+		$redirect_url = home_url( trailingslashit( $portal_path ) . 'schengen?calendar_connected=' . $provider );
 		wp_safe_redirect( $redirect_url );
 		exit;
 	}
@@ -784,10 +785,11 @@ class R2F_Schengen_Calendar {
 	 * @param string $error_message Error message.
 	 */
 	private function redirect_with_error( string $error_message ): void {
+		$portal_path  = apply_filters( 'r2f_schengen_portal_path', '/portal/' );
 		$redirect_url = add_query_arg(
 			'calendar_error',
 			urlencode( $error_message ),
-			home_url( '/member-portal/schengen' )
+			home_url( trailingslashit( $portal_path ) . 'schengen' )
 		);
 		wp_safe_redirect( $redirect_url );
 		exit;
