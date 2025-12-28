@@ -38,11 +38,12 @@ Extracted Schengen Tracker into standalone plugin (`relo2france-schengen-tracker
 |------|---------|
 | `relo2france-schengen-tracker.php` | Main plugin file with autoloader |
 | `class-r2f-schengen-core.php` | Core singleton, admin menu, shortcode |
-| `class-r2f-schengen-schema.php` | Database schema (trips + location + calendar tables) |
+| `class-r2f-schengen-schema.php` | Database schema (trips + location + calendar + jurisdiction tables) |
 | `class-r2f-schengen-api.php` | REST API (~40 endpoints) |
 | `class-r2f-schengen-alerts.php` | Daily cron email alerts |
 | `class-r2f-schengen-location.php` | GPS check-in, auto-trip creation |
 | `class-r2f-schengen-calendar.php` | Calendar sync (Google, Outlook, iCal) |
+| `class-r2f-schengen-jurisdiction.php` | Multi-jurisdiction rules engine |
 | `class-r2f-schengen-premium.php` | Premium feature gating |
 
 **Premium Gating (3-tier priority):**
@@ -143,6 +144,7 @@ Extracted Schengen Tracker into standalone plugin (`relo2france-schengen-tracker
 | File | Purpose |
 |------|---------|
 | `SchengenDashboard.tsx` | Main dashboard component |
+| `JurisdictionOverview.tsx` | Multi-jurisdiction tracking UI |
 | `CalendarSync.tsx` | Calendar connection & sync UI |
 | `CalendarView.tsx` | Monthly calendar |
 | `PlanningTool.tsx` | "What if" calculator |
@@ -150,7 +152,7 @@ Extracted Schengen Tracker into standalone plugin (`relo2france-schengen-tracker
 | `LocationTracker.tsx` | GPS check-in UI |
 | `LocationDetectionBanner.tsx` | Smart prompts |
 | `SchengenOnboarding.tsx` | First-time walkthrough |
-| `TripForm.tsx` | Add/edit trip modal |
+| `TripForm.tsx` | Add/edit trip modal (with jurisdiction selector) |
 | `TripList.tsx` | Trip list with actions |
 | `DayCounter.tsx` | Circular progress |
 | `StatusBadge.tsx` | Status indicator |
@@ -225,7 +227,7 @@ update_option('r2f_schengen_microsoft_client_secret', 'your-client-secret');
 | **1.1** | Browser Geolocation Integration | **Complete** |
 | **1.2** | Smart Location Detection | **Complete** |
 | **2** | Google/Outlook Calendar Sync | **Complete** |
-| **3** | Multi-Jurisdiction (US States, etc.) | Pending |
+| **3** | Multi-Jurisdiction (US States, etc.) | **Complete** |
 | **4** | Professional PDF Reports | Complete |
 | **5** | Push + In-App Notifications | Pending |
 | **6** | CSV/ICS Import + PWA | Partially done (iCal import complete) |
@@ -286,12 +288,25 @@ The calendar sync detects travel events using keywords:
 
 **Priority tasks:**
 
-1. **Admin Settings Page:** Create UI for entering OAuth credentials
+1. **OAuth Credentials Setup:**
+   - Set up Google Calendar OAuth credentials in Google Cloud Console
+   - Microsoft Outlook OAuth requires 365 Developer Program (user doesn't qualify)
+
 2. **Background Sync:** Set up cron job for automatic calendar syncing
-3. **Multi-Jurisdiction Support** (Phase 3)
-   - US state residency rules
-   - UK visitor rules
-   - Configurable day/window limits
+
+3. **Push + In-App Notifications** (Phase 5)
+   - Web Push API subscription flow
+   - In-app notification center
+   - See SCHENGEN-MONAEO-PARITY-PLAN.md section 5.1-5.2
+
+**Completed this session:**
+- Phase 3: Multi-Jurisdiction Support
+  - Database schema with jurisdiction_rules table
+  - PHP class with REST API endpoints
+  - React hooks and API client methods
+  - JurisdictionOverview component
+  - TripForm jurisdiction selector
+  - Support for zones (Schengen, UK), countries, and US states
 
 **Reference:** `SCHENGEN-MONAEO-PARITY-PLAN.md` for detailed specs
 
