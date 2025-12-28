@@ -269,7 +269,25 @@ export default function SchengenOnboarding({
       title=""
       size="md"
     >
-      <div className="text-center pb-2">
+      <div className="text-center py-2">
+        {/* Step icon */}
+        <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-5">
+          {currentStepData.icon}
+        </div>
+
+        {/* Step content */}
+        <h2 className="text-xl font-bold text-gray-900 mb-2">
+          {currentStepData.title}
+        </h2>
+        <p className="text-gray-600 mb-6">
+          {currentStepData.description}
+        </p>
+
+        {/* Step details */}
+        <div className="mb-8">
+          {currentStepData.details}
+        </div>
+
         {/* Progress dots */}
         <div className="flex justify-center gap-2 mb-6">
           {steps.map((_, index) => (
@@ -287,24 +305,6 @@ export default function SchengenOnboarding({
               aria-label={`Go to step ${index + 1}`}
             />
           ))}
-        </div>
-
-        {/* Step icon */}
-        <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          {currentStepData.icon}
-        </div>
-
-        {/* Step content */}
-        <h2 className="text-xl font-bold text-gray-900 mb-2">
-          {currentStepData.title}
-        </h2>
-        <p className="text-gray-600 mb-6">
-          {currentStepData.description}
-        </p>
-
-        {/* Step details */}
-        <div className="mb-6">
-          {currentStepData.details}
         </div>
 
         {/* Navigation */}
