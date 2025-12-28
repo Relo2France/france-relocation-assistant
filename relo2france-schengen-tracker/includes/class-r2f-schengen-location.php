@@ -78,21 +78,9 @@ class R2F_Schengen_Location {
 	 * Register REST API routes for location.
 	 */
 	public function register_routes(): void {
-		// Register under primary namespace (r2f-schengen/v1/location).
-		$this->register_location_routes( R2F_Schengen_API::NAMESPACE, '/location' );
-
-		// Also register under legacy namespace for Member Tools portal.
-		// Frontend calls: fra-portal/v1/schengen/location
-		$this->register_location_routes( 'fra-portal/v1', '/schengen/location' );
-	}
-
-	/**
-	 * Register location routes under a specific namespace and prefix.
-	 *
-	 * @param string $namespace API namespace.
-	 * @param string $base      Base path for routes.
-	 */
-	private function register_location_routes( $namespace, $base ) {
+		// Register under the namespace that Member Tools portal uses.
+		$namespace = 'fra-portal/v1';
+		$base      = '/schengen/location';
 		// Store current location (check-in).
 		register_rest_route(
 			$namespace,
