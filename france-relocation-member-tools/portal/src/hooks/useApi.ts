@@ -1167,6 +1167,7 @@ export function useCalendarProviders() {
     queryKey: ['calendarProviders'] as const,
     queryFn: schengenApi.getCalendarProviders,
     staleTime: STALE_TIME.LONG, // 1 hour - providers don't change
+    throwOnError: false, // Handle errors in component, not error boundary
   });
 }
 
@@ -1175,6 +1176,7 @@ export function useCalendarConnections() {
     queryKey: ['calendarConnections'] as const,
     queryFn: schengenApi.getCalendarConnections,
     staleTime: STALE_TIME.DEFAULT, // 30 seconds
+    throwOnError: false, // Handle errors in component, not error boundary
   });
 }
 
@@ -1219,6 +1221,7 @@ export function useCalendarEvents(status?: 'pending' | 'imported' | 'skipped' | 
     queryKey: ['calendarEvents', status] as const,
     queryFn: () => schengenApi.getCalendarEvents(status),
     staleTime: STALE_TIME.DEFAULT, // 30 seconds
+    throwOnError: false, // Handle errors in component, not error boundary
   });
 }
 
