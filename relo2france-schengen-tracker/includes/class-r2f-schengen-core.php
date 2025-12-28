@@ -126,8 +126,8 @@ class R2F_Schengen_Core {
 		// Shortcode for standalone dashboard.
 		add_shortcode( 'schengen_tracker', array( $this, 'render_shortcode' ) );
 
-		// Check for database updates.
-		add_action( 'admin_init', array( $this, 'maybe_upgrade' ) );
+		// Check for database updates (must run on all requests, not just admin).
+		add_action( 'init', array( $this, 'maybe_upgrade' ) );
 	}
 
 	/**
