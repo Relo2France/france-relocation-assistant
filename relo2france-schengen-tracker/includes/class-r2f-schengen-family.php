@@ -34,6 +34,13 @@ class R2F_Schengen_Family {
 	private $namespace = 'r2f-schengen/v1';
 
 	/**
+	 * Legacy namespace for backward compatibility with Member Tools portal.
+	 *
+	 * @var string
+	 */
+	const LEGACY_NAMESPACE = 'fra-portal/v1';
+
+	/**
 	 * Get singleton instance.
 	 *
 	 * @return R2F_Schengen_Family
@@ -56,10 +63,24 @@ class R2F_Schengen_Family {
 	 * Register REST API routes.
 	 */
 	public function register_routes() {
+		// Register primary routes.
+		$this->register_route_group( $this->namespace );
+
+		// Register legacy routes for backward compatibility with Member Tools portal.
+		$this->register_route_group( self::LEGACY_NAMESPACE, '/schengen' );
+	}
+
+	/**
+	 * Register route group under a namespace.
+	 *
+	 * @param string $namespace API namespace.
+	 * @param string $prefix    Route prefix (empty for primary, '/schengen' for legacy).
+	 */
+	private function register_route_group( $namespace, $prefix = '' ) {
 		// Family members CRUD.
 		register_rest_route(
-			$this->namespace,
-			'/family',
+			$namespace,
+			$prefix . '/family',
 			array(
 				array(
 					'methods'             => WP_REST_Server::READABLE,
@@ -77,8 +98,8 @@ class R2F_Schengen_Family {
 
 		// Single family member.
 		register_rest_route(
-			$this->namespace,
-			'/family/(?P<id>\d+)',
+			$namespace,
+			$prefix . '/family/(?P<id>\d+)',
 			array(
 				array(
 					'methods'             => WP_REST_Server::READABLE,
@@ -101,8 +122,8 @@ class R2F_Schengen_Family {
 
 		// Family member summary (Schengen days).
 		register_rest_route(
-			$this->namespace,
-			'/family/(?P<id>\d+)/summary',
+			$namespace,
+			$prefix . '/family/(?P<id>\d+)/summary',
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array( $this, 'get_family_member_summary' ),
@@ -112,8 +133,8 @@ class R2F_Schengen_Family {
 
 		// Family member trips.
 		register_rest_route(
-			$this->namespace,
-			'/family/(?P<id>\d+)/trips',
+			$namespace,
+			$prefix . '/family/(?P<id>\d+)/trips',
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array( $this, 'get_family_member_trips' ),
@@ -123,8 +144,8 @@ class R2F_Schengen_Family {
 
 		// All family summaries (overview).
 		register_rest_route(
-			$this->namespace,
-			'/family/summaries',
+			$namespace,
+			$prefix . '/family/summaries',
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array( $this, 'get_all_family_summaries' ),
@@ -134,8 +155,8 @@ class R2F_Schengen_Family {
 
 		// Trip travelers management.
 		register_rest_route(
-			$this->namespace,
-			'/trips/(?P<trip_id>\d+)/travelers',
+			$namespace,
+			$prefix . '/trips/(?P<trip_id>\d+)/travelers',
 			array(
 				array(
 					'methods'             => WP_REST_Server::READABLE,
