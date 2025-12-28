@@ -210,9 +210,26 @@ class R2F_Schengen_Location {
 
 		$insert_id = $wpdb->insert_id;
 
+		// Auto-create or extend trip for Schengen countries.
+		$trip_info = null;
+		if ( $is_schengen && $country_name ) {
+			$trip_info = $this->create_or_extend_trip( $user_id, $country_name, $lat, $lng, $accuracy );
+		}
+
+		$message = 'Location recorded successfully.';
+		if ( $trip_info ) {
+			if ( $trip_info['action'] === 'created' ) {
+				$message = sprintf( 'Location recorded in %s. Trip created for today.', $country_name );
+			} elseif ( $trip_info['action'] === 'extended' ) {
+				$message = sprintf( 'Location recorded in %s. Trip extended to today.', $country_name );
+			} elseif ( $trip_info['action'] === 'exists' ) {
+				$message = sprintf( 'Location recorded in %s. Trip already exists for today.', $country_name );
+			}
+		}
+
 		return rest_ensure_response( array(
 			'success'  => true,
-			'message'  => 'Location recorded successfully.',
+			'message'  => $message,
 			'location' => array(
 				'id'          => $insert_id,
 				'lat'         => $lat,
@@ -224,7 +241,127 @@ class R2F_Schengen_Location {
 				'source'      => $source,
 				'recordedAt'  => current_time( 'mysql' ),
 			),
+			'trip'     => $trip_info,
 		) );
+	}
+
+	/**
+	 * Create or extend a trip based on location check-in.
+	 *
+	 * @param int    $user_id  User ID.
+	 * @param string $country  Country name.
+	 * @param float  $lat      Latitude.
+	 * @param float  $lng      Longitude.
+	 * @param float  $accuracy Accuracy in meters.
+	 * @return array Trip action info.
+	 */
+	private function create_or_extend_trip( $user_id, $country, $lat, $lng, $accuracy ) {
+		global $wpdb;
+
+		$trips_table = $wpdb->prefix . 'fra_schengen_trips';
+		$today       = current_time( 'Y-m-d', true ); // GMT date.
+		$yesterday   = gmdate( 'Y-m-d', strtotime( $today . ' -1 day' ) );
+
+		// Check if a trip already covers today for this country.
+		$existing_trip = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM $trips_table
+				WHERE user_id = %d
+				AND country = %s
+				AND start_date <= %s
+				AND end_date >= %s
+				ORDER BY end_date DESC
+				LIMIT 1",
+				$user_id,
+				$country,
+				$today,
+				$today
+			)
+		);
+
+		if ( $existing_trip ) {
+			// Trip already exists for today - just update location data.
+			$wpdb->update(
+				$trips_table,
+				array(
+					'location_lat'       => $lat,
+					'location_lng'       => $lng,
+					'location_accuracy'  => $accuracy,
+					'location_timestamp' => current_time( 'mysql', true ),
+					'location_source'    => 'checkin',
+				),
+				array( 'id' => $existing_trip->id ),
+				array( '%f', '%f', '%f', '%s', '%s' ),
+				array( '%d' )
+			);
+
+			return array(
+				'action'  => 'exists',
+				'trip_id' => (int) $existing_trip->id,
+			);
+		}
+
+		// Check if there's a trip that ended yesterday (can be extended).
+		$extendable_trip = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM $trips_table
+				WHERE user_id = %d
+				AND country = %s
+				AND end_date = %s
+				ORDER BY end_date DESC
+				LIMIT 1",
+				$user_id,
+				$country,
+				$yesterday
+			)
+		);
+
+		if ( $extendable_trip ) {
+			// Extend the trip to today.
+			$wpdb->update(
+				$trips_table,
+				array(
+					'end_date'           => $today,
+					'location_lat'       => $lat,
+					'location_lng'       => $lng,
+					'location_accuracy'  => $accuracy,
+					'location_timestamp' => current_time( 'mysql', true ),
+					'location_source'    => 'checkin',
+				),
+				array( 'id' => $extendable_trip->id ),
+				array( '%s', '%f', '%f', '%f', '%s', '%s' ),
+				array( '%d' )
+			);
+
+			return array(
+				'action'  => 'extended',
+				'trip_id' => (int) $extendable_trip->id,
+			);
+		}
+
+		// Create a new trip for today.
+		$wpdb->insert(
+			$trips_table,
+			array(
+				'user_id'            => $user_id,
+				'start_date'         => $today,
+				'end_date'           => $today,
+				'country'            => $country,
+				'category'           => 'personal',
+				'notes'              => 'Auto-created from location check-in',
+				'location_source'    => 'checkin',
+				'location_lat'       => $lat,
+				'location_lng'       => $lng,
+				'location_accuracy'  => $accuracy,
+				'location_timestamp' => current_time( 'mysql', true ),
+			),
+			array( '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%f', '%f', '%f', '%s' )
+		);
+
+		return array(
+			'action'  => 'created',
+			'trip_id' => (int) $wpdb->insert_id,
+		);
 	}
 
 	/**
@@ -234,7 +371,7 @@ class R2F_Schengen_Location {
 		global $wpdb;
 		$user_id = get_current_user_id();
 		$table   = $wpdb->prefix . 'fra_schengen_location_log';
-		$today   = current_time( 'Y-m-d' );
+		$today   = current_time( 'Y-m-d', true ); // Use GMT to match stored time
 
 		$today_locations = $wpdb->get_results(
 			$wpdb->prepare(
