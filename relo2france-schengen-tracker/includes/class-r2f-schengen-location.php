@@ -234,7 +234,7 @@ class R2F_Schengen_Location {
 		global $wpdb;
 		$user_id = get_current_user_id();
 		$table   = $wpdb->prefix . 'fra_schengen_location_log';
-		$today   = current_time( 'Y-m-d' );
+		$today   = current_time( 'Y-m-d', true ); // Use GMT to match stored time
 
 		$today_locations = $wpdb->get_results(
 			$wpdb->prepare(
