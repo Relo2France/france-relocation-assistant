@@ -127,6 +127,28 @@ class R2F_Schengen_Location {
 				'permission_callback' => array( $this, 'check_permission' ),
 			)
 		);
+
+		// Clear all location history.
+		register_rest_route(
+			$namespace,
+			$base . '/clear',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( $this, 'clear_location_debug' ),
+				'permission_callback' => array( $this, 'check_permission' ),
+			)
+		);
+
+		// Delete individual location entry.
+		register_rest_route(
+			$namespace,
+			$base . '/(?P<id>\d+)',
+			array(
+				'methods'             => 'DELETE',
+				'callback'            => array( $this, 'delete_location_debug' ),
+				'permission_callback' => array( $this, 'check_permission' ),
+			)
+		);
 	}
 
 	/**
@@ -300,6 +322,86 @@ class R2F_Schengen_Location {
 			'total'     => $total,
 			'limit'     => $limit,
 			'offset'    => $offset,
+		) );
+	}
+
+	/**
+	 * Debug: Clear all location history for current user.
+	 */
+	public function clear_location_debug( $request ) {
+		global $wpdb;
+		$user_id = get_current_user_id();
+		$table   = $wpdb->prefix . 'fra_schengen_location_log';
+
+		$result = $wpdb->delete(
+			$table,
+			array( 'user_id' => $user_id ),
+			array( '%d' )
+		);
+
+		if ( false === $result ) {
+			return rest_ensure_response( array(
+				'success' => false,
+				'message' => 'Database error: ' . $wpdb->last_error,
+			) );
+		}
+
+		return rest_ensure_response( array(
+			'success' => true,
+			'cleared' => true,
+			'message' => 'Location history has been cleared.',
+		) );
+	}
+
+	/**
+	 * Debug: Delete individual location entry.
+	 */
+	public function delete_location_debug( $request ) {
+		global $wpdb;
+		$user_id     = get_current_user_id();
+		$location_id = (int) $request->get_param( 'id' );
+		$table       = $wpdb->prefix . 'fra_schengen_location_log';
+
+		// Verify ownership first.
+		$location = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM $table WHERE id = %d",
+				$location_id
+			)
+		);
+
+		if ( ! $location ) {
+			return rest_ensure_response( array(
+				'success' => false,
+				'message' => 'Location entry not found.',
+			) );
+		}
+
+		if ( (int) $location->user_id !== $user_id ) {
+			return rest_ensure_response( array(
+				'success' => false,
+				'message' => 'You do not have permission to delete this location.',
+			) );
+		}
+
+		$result = $wpdb->delete(
+			$table,
+			array( 'id' => $location_id ),
+			array( '%d' )
+		);
+
+		if ( false === $result ) {
+			return rest_ensure_response( array(
+				'success' => false,
+				'message' => 'Database error: ' . $wpdb->last_error,
+			) );
+		}
+
+		return rest_ensure_response( array(
+			'success' => true,
+			'deleted' => true,
+			'id'      => $location_id,
+			'message' => 'Location entry deleted.',
 		) );
 	}
 
