@@ -1,9 +1,8 @@
 <?php
 /**
- * Family Member management for Schengen Tracker.
+ * Family Members API for Schengen Tracker.
  *
- * Handles CRUD operations for family members and their trip associations.
- * Allows tracking Schengen days for each family member independently.
+ * Handles family member CRUD and per-member Schengen tracking.
  *
  * @package R2F_Schengen_Tracker
  * @since   1.5.0
@@ -15,9 +14,55 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Family member management class.
+ * Class R2F_Schengen_Family
+ *
+ * Manages family member profiles and tracking.
  */
 class R2F_Schengen_Family {
+
+	/**
+	 * API namespace.
+	 *
+	 * @var string
+	 */
+	const NAMESPACE = 'r2f-schengen/v1';
+
+	/**
+	 * Legacy namespace for backward compatibility.
+	 *
+	 * @var string
+	 */
+	const LEGACY_NAMESPACE = 'fra-portal/v1';
+
+	/**
+	 * Relationship options.
+	 *
+	 * @var array
+	 */
+	const RELATIONSHIPS = array(
+		'spouse',
+		'partner',
+		'child',
+		'parent',
+		'sibling',
+		'other',
+	);
+
+	/**
+	 * Default colors for family members.
+	 *
+	 * @var array
+	 */
+	const COLORS = array(
+		'#3B82F6', // Blue
+		'#10B981', // Green
+		'#F59E0B', // Amber
+		'#EF4444', // Red
+		'#8B5CF6', // Purple
+		'#EC4899', // Pink
+		'#06B6D4', // Cyan
+		'#F97316', // Orange
+	);
 
 	/**
 	 * Singleton instance.
@@ -27,25 +72,11 @@ class R2F_Schengen_Family {
 	private static $instance = null;
 
 	/**
-	 * REST namespace.
-	 *
-	 * @var string
-	 */
-	private $namespace = 'r2f-schengen/v1';
-
-	/**
-	 * Legacy namespace for backward compatibility with Member Tools portal.
-	 *
-	 * @var string
-	 */
-	const LEGACY_NAMESPACE = 'fra-portal/v1';
-
-	/**
 	 * Get singleton instance.
 	 *
 	 * @return R2F_Schengen_Family
 	 */
-	public static function get_instance() {
+	public static function get_instance(): R2F_Schengen_Family {
 		if ( null === self::$instance ) {
 			self::$instance = new self();
 		}
@@ -62,11 +93,11 @@ class R2F_Schengen_Family {
 	/**
 	 * Register REST API routes.
 	 */
-	public function register_routes() {
+	public function register_routes(): void {
 		// Register primary routes.
-		$this->register_route_group( $this->namespace );
+		$this->register_route_group( self::NAMESPACE );
 
-		// Register legacy routes for backward compatibility with Member Tools portal.
+		// Register legacy routes for backward compatibility.
 		$this->register_route_group( self::LEGACY_NAMESPACE, '/schengen' );
 	}
 
@@ -74,100 +105,85 @@ class R2F_Schengen_Family {
 	 * Register route group under a namespace.
 	 *
 	 * @param string $namespace API namespace.
-	 * @param string $prefix    Route prefix (empty for primary, '/schengen' for legacy).
+	 * @param string $prefix    Route prefix.
 	 */
-	private function register_route_group( $namespace, $prefix = '' ) {
-		// Family members CRUD.
+	private function register_route_group( string $namespace, string $prefix = '' ): void {
+		// List family members.
 		register_rest_route(
 			$namespace,
 			$prefix . '/family',
 			array(
-				array(
-					'methods'             => WP_REST_Server::READABLE,
-					'callback'            => array( $this, 'get_family_members' ),
-					'permission_callback' => array( $this, 'check_permission' ),
-				),
-				array(
-					'methods'             => WP_REST_Server::CREATABLE,
-					'callback'            => array( $this, 'create_family_member' ),
-					'permission_callback' => array( $this, 'check_permission' ),
-					'args'                => $this->get_family_member_args(),
-				),
+				'methods'             => 'GET',
+				'callback'            => array( $this, 'get_family_members' ),
+				'permission_callback' => array( $this, 'check_permission' ),
 			)
 		);
 
-		// Single family member.
+		// Create family member.
+		register_rest_route(
+			$namespace,
+			$prefix . '/family',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( $this, 'create_family_member' ),
+				'permission_callback' => array( $this, 'check_permission' ),
+				'args'                => $this->get_create_args(),
+			)
+		);
+
+		// Get single family member.
 		register_rest_route(
 			$namespace,
 			$prefix . '/family/(?P<id>\d+)',
 			array(
-				array(
-					'methods'             => WP_REST_Server::READABLE,
-					'callback'            => array( $this, 'get_family_member' ),
-					'permission_callback' => array( $this, 'check_permission' ),
-				),
-				array(
-					'methods'             => WP_REST_Server::EDITABLE,
-					'callback'            => array( $this, 'update_family_member' ),
-					'permission_callback' => array( $this, 'check_permission' ),
-					'args'                => $this->get_family_member_args(),
-				),
-				array(
-					'methods'             => WP_REST_Server::DELETABLE,
-					'callback'            => array( $this, 'delete_family_member' ),
-					'permission_callback' => array( $this, 'check_permission' ),
-				),
-			)
-		);
-
-		// Family member summary (Schengen days).
-		register_rest_route(
-			$namespace,
-			$prefix . '/family/(?P<id>\d+)/summary',
-			array(
-				'methods'             => WP_REST_Server::READABLE,
-				'callback'            => array( $this, 'get_family_member_summary' ),
+				'methods'             => 'GET',
+				'callback'            => array( $this, 'get_family_member' ),
 				'permission_callback' => array( $this, 'check_permission' ),
 			)
 		);
 
-		// Family member trips.
+		// Update family member.
 		register_rest_route(
 			$namespace,
-			$prefix . '/family/(?P<id>\d+)/trips',
+			$prefix . '/family/(?P<id>\d+)',
 			array(
-				'methods'             => WP_REST_Server::READABLE,
-				'callback'            => array( $this, 'get_family_member_trips' ),
+				'methods'             => 'PUT',
+				'callback'            => array( $this, 'update_family_member' ),
+				'permission_callback' => array( $this, 'check_permission' ),
+				'args'                => $this->get_update_args(),
+			)
+		);
+
+		// Delete family member.
+		register_rest_route(
+			$namespace,
+			$prefix . '/family/(?P<id>\d+)',
+			array(
+				'methods'             => 'DELETE',
+				'callback'            => array( $this, 'delete_family_member' ),
 				'permission_callback' => array( $this, 'check_permission' ),
 			)
 		);
 
-		// All family summaries (overview).
+		// Get family summary (all members' Schengen status).
 		register_rest_route(
 			$namespace,
-			$prefix . '/family/summaries',
+			$prefix . '/family/summary',
 			array(
-				'methods'             => WP_REST_Server::READABLE,
-				'callback'            => array( $this, 'get_all_family_summaries' ),
+				'methods'             => 'GET',
+				'callback'            => array( $this, 'get_family_summary' ),
 				'permission_callback' => array( $this, 'check_permission' ),
 			)
 		);
 
-		// Trip travelers management.
+		// Get relationship options.
 		register_rest_route(
 			$namespace,
-			$prefix . '/trips/(?P<trip_id>\d+)/travelers',
+			$prefix . '/family/relationships',
 			array(
-				array(
-					'methods'             => WP_REST_Server::READABLE,
-					'callback'            => array( $this, 'get_trip_travelers' ),
-					'permission_callback' => array( $this, 'check_permission' ),
-				),
-				array(
-					'methods'             => WP_REST_Server::EDITABLE,
-					'callback'            => array( $this, 'update_trip_travelers' ),
-					'permission_callback' => array( $this, 'check_permission' ),
-				),
+				'methods'             => 'GET',
+				'callback'            => array( $this, 'get_relationships' ),
+				'permission_callback' => '__return_true',
 			)
 		);
 	}
@@ -180,8 +196,8 @@ class R2F_Schengen_Family {
 	public function check_permission() {
 		if ( ! is_user_logged_in() ) {
 			return new WP_Error(
-				'rest_forbidden',
-				__( 'You must be logged in.', 'r2f-schengen' ),
+				'unauthorized',
+				__( 'You must be logged in to access this resource.', 'r2f-schengen' ),
 				array( 'status' => 401 )
 			);
 		}
@@ -189,58 +205,82 @@ class R2F_Schengen_Family {
 	}
 
 	/**
-	 * Get family member REST args.
+	 * Get create endpoint arguments.
 	 *
 	 * @return array
 	 */
-	private function get_family_member_args() {
+	private function get_create_args(): array {
 		return array(
-			'name'            => array(
-				'type'              => 'string',
+			'name'             => array(
 				'required'          => true,
-				'sanitize_callback' => 'sanitize_text_field',
-			),
-			'relationship'    => array(
-				'type'              => 'string',
-				'enum'              => array( 'spouse', 'child', 'parent', 'sibling', 'other' ),
-				'default'           => 'spouse',
-				'sanitize_callback' => 'sanitize_text_field',
-			),
-			'birthDate'       => array(
 				'type'              => 'string',
 				'sanitize_callback' => 'sanitize_text_field',
 			),
-			'nationality'     => array(
+			'relationship'     => array(
 				'type'              => 'string',
 				'sanitize_callback' => 'sanitize_text_field',
 			),
-			'passportNumber'  => array(
+			'nationality'      => array(
 				'type'              => 'string',
 				'sanitize_callback' => 'sanitize_text_field',
 			),
-			'passportExpiry'  => array(
+			'passport_country' => array(
 				'type'              => 'string',
 				'sanitize_callback' => 'sanitize_text_field',
 			),
-			'color'           => array(
+			'date_of_birth'    => array(
 				'type'              => 'string',
-				'sanitize_callback' => 'sanitize_hex_color',
-				'default'           => '#3B82F6',
+				'validate_callback' => array( $this, 'validate_date' ),
 			),
-			'notes'           => array(
+			'notes'            => array(
 				'type'              => 'string',
 				'sanitize_callback' => 'sanitize_textarea_field',
 			),
+			'color'            => array(
+				'type'              => 'string',
+				'sanitize_callback' => 'sanitize_hex_color',
+			),
 		);
+	}
+
+	/**
+	 * Get update endpoint arguments.
+	 *
+	 * @return array
+	 */
+	private function get_update_args(): array {
+		$args             = $this->get_create_args();
+		$args['name']['required'] = false;
+		$args['is_active'] = array(
+			'type' => 'boolean',
+		);
+		$args['display_order'] = array(
+			'type' => 'integer',
+		);
+		return $args;
+	}
+
+	/**
+	 * Validate date format.
+	 *
+	 * @param string $value Date string.
+	 * @return bool
+	 */
+	public function validate_date( $value ): bool {
+		if ( empty( $value ) ) {
+			return true;
+		}
+		$date = DateTime::createFromFormat( 'Y-m-d', $value );
+		return $date && $date->format( 'Y-m-d' ) === $value;
 	}
 
 	/**
 	 * Get all family members for current user.
 	 *
 	 * @param WP_REST_Request $request Request object.
-	 * @return WP_REST_Response|WP_Error
+	 * @return WP_REST_Response
 	 */
-	public function get_family_members( $request ) {
+	public function get_family_members( WP_REST_Request $request ): WP_REST_Response {
 		global $wpdb;
 
 		$user_id = get_current_user_id();
@@ -249,19 +289,18 @@ class R2F_Schengen_Family {
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$members = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT * FROM $table WHERE user_id = %d AND is_active = 1 ORDER BY sort_order ASC, name ASC",
+				"SELECT * FROM $table WHERE user_id = %d ORDER BY display_order ASC, name ASC",
 				$user_id
-			)
+			),
+			ARRAY_A
 		);
 
-		$formatted = array_map( array( $this, 'format_family_member' ), $members );
+		$formatted = array_map( array( $this, 'format_member' ), $members );
 
-		return rest_ensure_response(
-			array(
-				'success' => true,
-				'members' => $formatted,
-			)
-		);
+		return rest_ensure_response( array(
+			'members' => $formatted,
+			'total'   => count( $formatted ),
+		) );
 	}
 
 	/**
@@ -270,43 +309,59 @@ class R2F_Schengen_Family {
 	 * @param WP_REST_Request $request Request object.
 	 * @return WP_REST_Response|WP_Error
 	 */
-	public function get_family_member( $request ) {
-		$member = $this->get_member_by_id( $request['id'] );
+	public function get_family_member( WP_REST_Request $request ) {
+		$member = $this->get_member_if_owner( (int) $request['id'] );
 
 		if ( is_wp_error( $member ) ) {
 			return $member;
 		}
 
-		return rest_ensure_response(
-			array(
-				'success' => true,
-				'member'  => $this->format_family_member( $member ),
-			)
-		);
+		return rest_ensure_response( $this->format_member( $member ) );
 	}
 
 	/**
-	 * Create family member.
+	 * Create a new family member.
 	 *
 	 * @param WP_REST_Request $request Request object.
 	 * @return WP_REST_Response|WP_Error
 	 */
-	public function create_family_member( $request ) {
+	public function create_family_member( WP_REST_Request $request ) {
 		global $wpdb;
 
 		$user_id = get_current_user_id();
 		$table   = R2F_Schengen_Schema::get_table( 'family_members' );
+		$params  = $request->get_params();
+
+		// Get next display order.
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$max_order = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT MAX(display_order) FROM $table WHERE user_id = %d",
+				$user_id
+			)
+		);
+		$next_order = ( (int) $max_order ) + 1;
+
+		// Get a default color based on count.
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$count = (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM $table WHERE user_id = %d",
+				$user_id
+			)
+		);
+		$default_color = self::COLORS[ $count % count( self::COLORS ) ];
 
 		$data = array(
-			'user_id'         => $user_id,
-			'name'            => $request['name'],
-			'relationship'    => $request['relationship'] ?? 'spouse',
-			'birth_date'      => $request['birthDate'] ? $request['birthDate'] : null,
-			'nationality'     => $request['nationality'] ?? null,
-			'passport_number' => $request['passportNumber'] ?? null,
-			'passport_expiry' => $request['passportExpiry'] ? $request['passportExpiry'] : null,
-			'color'           => $request['color'] ?? '#3B82F6',
-			'notes'           => $request['notes'] ?? null,
+			'user_id'          => $user_id,
+			'name'             => $params['name'],
+			'relationship'     => isset( $params['relationship'] ) ? $params['relationship'] : null,
+			'nationality'      => isset( $params['nationality'] ) ? $params['nationality'] : null,
+			'passport_country' => isset( $params['passport_country'] ) ? $params['passport_country'] : null,
+			'date_of_birth'    => isset( $params['date_of_birth'] ) ? $params['date_of_birth'] : null,
+			'notes'            => isset( $params['notes'] ) ? $params['notes'] : null,
+			'color'            => isset( $params['color'] ) ? $params['color'] : $default_color,
+			'display_order'    => $next_order,
 		);
 
 		$result = $wpdb->insert( $table, $data );
@@ -320,63 +375,46 @@ class R2F_Schengen_Family {
 		}
 
 		$member_id = $wpdb->insert_id;
+		$member    = $this->get_member_by_id( $member_id );
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$member = $wpdb->get_row(
-			$wpdb->prepare( "SELECT * FROM $table WHERE id = %d", $member_id )
-		);
-
-		return rest_ensure_response(
-			array(
-				'success' => true,
-				'member'  => $this->format_family_member( $member ),
-				'message' => __( 'Family member added.', 'r2f-schengen' ),
-			)
-		);
+		return rest_ensure_response( $this->format_member( $member ) );
 	}
 
 	/**
-	 * Update family member.
+	 * Update a family member.
 	 *
 	 * @param WP_REST_Request $request Request object.
 	 * @return WP_REST_Response|WP_Error
 	 */
-	public function update_family_member( $request ) {
+	public function update_family_member( WP_REST_Request $request ) {
 		global $wpdb;
 
-		$member = $this->get_member_by_id( $request['id'] );
+		$member = $this->get_member_if_owner( (int) $request['id'] );
 
 		if ( is_wp_error( $member ) ) {
 			return $member;
 		}
 
-		$table = R2F_Schengen_Schema::get_table( 'family_members' );
+		$table  = R2F_Schengen_Schema::get_table( 'family_members' );
+		$params = $request->get_params();
+
+		$allowed_fields = array(
+			'name',
+			'relationship',
+			'nationality',
+			'passport_country',
+			'date_of_birth',
+			'notes',
+			'color',
+			'is_active',
+			'display_order',
+		);
 
 		$data = array();
-
-		if ( isset( $request['name'] ) ) {
-			$data['name'] = $request['name'];
-		}
-		if ( isset( $request['relationship'] ) ) {
-			$data['relationship'] = $request['relationship'];
-		}
-		if ( isset( $request['birthDate'] ) ) {
-			$data['birth_date'] = $request['birthDate'] ? $request['birthDate'] : null;
-		}
-		if ( isset( $request['nationality'] ) ) {
-			$data['nationality'] = $request['nationality'];
-		}
-		if ( isset( $request['passportNumber'] ) ) {
-			$data['passport_number'] = $request['passportNumber'];
-		}
-		if ( isset( $request['passportExpiry'] ) ) {
-			$data['passport_expiry'] = $request['passportExpiry'] ? $request['passportExpiry'] : null;
-		}
-		if ( isset( $request['color'] ) ) {
-			$data['color'] = $request['color'];
-		}
-		if ( isset( $request['notes'] ) ) {
-			$data['notes'] = $request['notes'];
+		foreach ( $allowed_fields as $field ) {
+			if ( isset( $params[ $field ] ) ) {
+				$data[ $field ] = $params[ $field ];
+			}
 		}
 
 		if ( empty( $data ) ) {
@@ -387,33 +425,35 @@ class R2F_Schengen_Family {
 			);
 		}
 
-		$wpdb->update( $table, $data, array( 'id' => $member->id ) );
-
-		// Fetch updated member.
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$updated = $wpdb->get_row(
-			$wpdb->prepare( "SELECT * FROM $table WHERE id = %d", $member->id )
+		$result = $wpdb->update(
+			$table,
+			$data,
+			array( 'id' => $member['id'] )
 		);
 
-		return rest_ensure_response(
-			array(
-				'success' => true,
-				'member'  => $this->format_family_member( $updated ),
-				'message' => __( 'Family member updated.', 'r2f-schengen' ),
-			)
-		);
+		if ( false === $result ) {
+			return new WP_Error(
+				'db_error',
+				__( 'Failed to update family member.', 'r2f-schengen' ),
+				array( 'status' => 500 )
+			);
+		}
+
+		$updated = $this->get_member_by_id( $member['id'] );
+
+		return rest_ensure_response( $this->format_member( $updated ) );
 	}
 
 	/**
-	 * Delete (soft) family member.
+	 * Delete a family member.
 	 *
 	 * @param WP_REST_Request $request Request object.
 	 * @return WP_REST_Response|WP_Error
 	 */
-	public function delete_family_member( $request ) {
+	public function delete_family_member( WP_REST_Request $request ) {
 		global $wpdb;
 
-		$member = $this->get_member_by_id( $request['id'] );
+		$member = $this->get_member_if_owner( (int) $request['id'] );
 
 		if ( is_wp_error( $member ) ) {
 			return $member;
@@ -421,77 +461,39 @@ class R2F_Schengen_Family {
 
 		$table = R2F_Schengen_Schema::get_table( 'family_members' );
 
-		// Soft delete by setting is_active = 0.
+		// First, unassign any trips from this family member.
+		$trips_table = R2F_Schengen_Schema::get_table( 'trips' );
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$wpdb->update(
-			$table,
-			array( 'is_active' => 0 ),
-			array( 'id' => $member->id )
+			$trips_table,
+			array( 'family_member_id' => null ),
+			array( 'family_member_id' => $member['id'] )
 		);
 
-		return rest_ensure_response(
-			array(
-				'success' => true,
-				'message' => __( 'Family member removed.', 'r2f-schengen' ),
-			)
-		);
-	}
+		// Delete the family member.
+		$result = $wpdb->delete( $table, array( 'id' => $member['id'] ) );
 
-	/**
-	 * Get family member summary (Schengen day counts).
-	 *
-	 * @param WP_REST_Request $request Request object.
-	 * @return WP_REST_Response|WP_Error
-	 */
-	public function get_family_member_summary( $request ) {
-		$member = $this->get_member_by_id( $request['id'] );
-
-		if ( is_wp_error( $member ) ) {
-			return $member;
+		if ( false === $result ) {
+			return new WP_Error(
+				'db_error',
+				__( 'Failed to delete family member.', 'r2f-schengen' ),
+				array( 'status' => 500 )
+			);
 		}
 
-		$trips   = $this->get_member_trips( $member->id );
-		$summary = $this->calculate_summary( $trips );
-
-		return rest_ensure_response(
-			array(
-				'success' => true,
-				'member'  => $this->format_family_member( $member ),
-				'summary' => $summary,
-			)
-		);
+		return rest_ensure_response( array(
+			'deleted' => true,
+			'id'      => $member['id'],
+		) );
 	}
 
 	/**
-	 * Get family member trips.
+	 * Get family summary with Schengen status for each member.
 	 *
 	 * @param WP_REST_Request $request Request object.
-	 * @return WP_REST_Response|WP_Error
+	 * @return WP_REST_Response
 	 */
-	public function get_family_member_trips( $request ) {
-		$member = $this->get_member_by_id( $request['id'] );
-
-		if ( is_wp_error( $member ) ) {
-			return $member;
-		}
-
-		$trips = $this->get_member_trips( $member->id );
-
-		return rest_ensure_response(
-			array(
-				'success' => true,
-				'member'  => $this->format_family_member( $member ),
-				'trips'   => $trips,
-			)
-		);
-	}
-
-	/**
-	 * Get all family member summaries for overview.
-	 *
-	 * @param WP_REST_Request $request Request object.
-	 * @return WP_REST_Response|WP_Error
-	 */
-	public function get_all_family_summaries( $request ) {
+	public function get_family_summary( WP_REST_Request $request ): WP_REST_Response {
 		global $wpdb;
 
 		$user_id = get_current_user_id();
@@ -500,195 +502,161 @@ class R2F_Schengen_Family {
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$members = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT * FROM $table WHERE user_id = %d AND is_active = 1 ORDER BY sort_order ASC, name ASC",
+				"SELECT * FROM $table WHERE user_id = %d AND is_active = 1 ORDER BY display_order ASC, name ASC",
 				$user_id
-			)
+			),
+			ARRAY_A
 		);
 
-		$summaries = array();
+		// Get Schengen status for the primary account holder (family_member_id = NULL).
+		$primary_status = $this->calculate_schengen_status( $user_id, null );
 
+		$summary = array(
+			'primary' => array(
+				'name'   => __( 'Me (Primary)', 'r2f-schengen' ),
+				'color'  => '#6B7280', // Gray for primary.
+				'status' => $primary_status,
+			),
+			'members' => array(),
+		);
+
+		// Calculate status for each family member.
 		foreach ( $members as $member ) {
-			$trips = $this->get_member_trips( $member->id );
-			$summaries[] = array(
-				'member'  => $this->format_family_member( $member ),
-				'summary' => $this->calculate_summary( $trips ),
+			$status              = $this->calculate_schengen_status( $user_id, (int) $member['id'] );
+			$summary['members'][] = array(
+				'id'           => (int) $member['id'],
+				'name'         => $member['name'],
+				'relationship' => $member['relationship'],
+				'color'        => $member['color'],
+				'status'       => $status,
 			);
 		}
 
-		// Also include primary user summary.
-		$user_trips   = $this->get_primary_user_trips();
-		$user_summary = $this->calculate_summary( $user_trips );
+		return rest_ensure_response( $summary );
+	}
 
-		$current_user = wp_get_current_user();
+	/**
+	 * Get relationship options.
+	 *
+	 * @return WP_REST_Response
+	 */
+	public function get_relationships(): WP_REST_Response {
+		$relationships = array();
+		foreach ( self::RELATIONSHIPS as $rel ) {
+			$relationships[] = array(
+				'value' => $rel,
+				'label' => ucfirst( $rel ),
+			);
+		}
+		return rest_ensure_response( $relationships );
+	}
 
-		return rest_ensure_response(
-			array(
-				'success'     => true,
-				'primaryUser' => array(
-					'id'      => $current_user->ID,
-					'name'    => $current_user->display_name,
-					'summary' => $user_summary,
+	/**
+	 * Calculate Schengen status for a specific family member.
+	 *
+	 * @param int      $user_id          User ID.
+	 * @param int|null $family_member_id Family member ID (null for primary).
+	 * @return array Status summary.
+	 */
+	private function calculate_schengen_status( int $user_id, ?int $family_member_id ): array {
+		global $wpdb;
+
+		$table = R2F_Schengen_Schema::get_table( 'trips' );
+		$today = gmdate( 'Y-m-d' );
+
+		// Calculate the 180-day window.
+		$window_start = gmdate( 'Y-m-d', strtotime( '-180 days' ) );
+
+		// Build query based on family member.
+		if ( null === $family_member_id ) {
+			// Primary account holder: trips with NULL family_member_id.
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$trips = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT start_date, end_date FROM $table
+					WHERE user_id = %d
+					AND family_member_id IS NULL
+					AND jurisdiction_code = 'schengen'
+					AND end_date >= %s
+					ORDER BY start_date ASC",
+					$user_id,
+					$window_start
 				),
-				'family'      => $summaries,
-			)
-		);
-	}
-
-	/**
-	 * Get trip travelers.
-	 *
-	 * @param WP_REST_Request $request Request object.
-	 * @return WP_REST_Response|WP_Error
-	 */
-	public function get_trip_travelers( $request ) {
-		global $wpdb;
-
-		$trip_id = (int) $request['trip_id'];
-		$user_id = get_current_user_id();
-
-		// Verify trip belongs to user.
-		$trips_table = R2F_Schengen_Schema::get_table( 'trips' );
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$trip = $wpdb->get_row(
-			$wpdb->prepare( "SELECT * FROM $trips_table WHERE id = %d AND user_id = %d", $trip_id, $user_id )
-		);
-
-		if ( ! $trip ) {
-			return new WP_Error(
-				'not_found',
-				__( 'Trip not found.', 'r2f-schengen' ),
-				array( 'status' => 404 )
+				ARRAY_A
+			);
+		} else {
+			// Specific family member.
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$trips = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT start_date, end_date FROM $table
+					WHERE user_id = %d
+					AND family_member_id = %d
+					AND jurisdiction_code = 'schengen'
+					AND end_date >= %s
+					ORDER BY start_date ASC",
+					$user_id,
+					$family_member_id,
+					$window_start
+				),
+				ARRAY_A
 			);
 		}
 
-		$travelers_table = R2F_Schengen_Schema::get_table( 'trip_travelers' );
-		$family_table    = R2F_Schengen_Schema::get_table( 'family_members' );
+		// Calculate days used in the rolling 180-day window.
+		$days_used = 0;
+		$window_end = new DateTime( $today );
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$travelers = $wpdb->get_results(
-			$wpdb->prepare(
-				"SELECT tt.*, fm.name, fm.relationship, fm.color
-				 FROM $travelers_table tt
-				 LEFT JOIN $family_table fm ON tt.family_member_id = fm.id
-				 WHERE tt.trip_id = %d",
-				$trip_id
-			)
-		);
+		foreach ( $trips as $trip ) {
+			$trip_start = new DateTime( $trip['start_date'] );
+			$trip_end   = new DateTime( $trip['end_date'] );
 
-		$formatted = array();
-		foreach ( $travelers as $t ) {
-			$formatted[] = array(
-				'id'             => (int) $t->id,
-				'tripId'         => (int) $t->trip_id,
-				'familyMemberId' => $t->family_member_id ? (int) $t->family_member_id : null,
-				'isPrimaryUser'  => (bool) $t->is_primary_user,
-				'name'           => $t->is_primary_user ? wp_get_current_user()->display_name : $t->name,
-				'relationship'   => $t->is_primary_user ? 'self' : $t->relationship,
-				'color'          => $t->is_primary_user ? '#6366F1' : $t->color,
-			);
-		}
+			// Clip to window.
+			$window_start_date = new DateTime( $window_start );
+			if ( $trip_start < $window_start_date ) {
+				$trip_start = $window_start_date;
+			}
+			if ( $trip_end > $window_end ) {
+				$trip_end = $window_end;
+			}
 
-		return rest_ensure_response(
-			array(
-				'success'   => true,
-				'tripId'    => $trip_id,
-				'travelers' => $formatted,
-			)
-		);
-	}
-
-	/**
-	 * Update trip travelers.
-	 *
-	 * @param WP_REST_Request $request Request object.
-	 * @return WP_REST_Response|WP_Error
-	 */
-	public function update_trip_travelers( $request ) {
-		global $wpdb;
-
-		$trip_id = (int) $request['trip_id'];
-		$user_id = get_current_user_id();
-
-		// Verify trip belongs to user.
-		$trips_table = R2F_Schengen_Schema::get_table( 'trips' );
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$trip = $wpdb->get_row(
-			$wpdb->prepare( "SELECT * FROM $trips_table WHERE id = %d AND user_id = %d", $trip_id, $user_id )
-		);
-
-		if ( ! $trip ) {
-			return new WP_Error(
-				'not_found',
-				__( 'Trip not found.', 'r2f-schengen' ),
-				array( 'status' => 404 )
-			);
-		}
-
-		$travelers_table = R2F_Schengen_Schema::get_table( 'trip_travelers' );
-
-		// Get requested travelers.
-		$include_primary   = $request['includePrimaryUser'] ?? true;
-		$family_member_ids = $request['familyMemberIds'] ?? array();
-
-		// Clear existing travelers.
-		$wpdb->delete( $travelers_table, array( 'trip_id' => $trip_id ) );
-
-		// Add primary user if included.
-		if ( $include_primary ) {
-			$wpdb->insert(
-				$travelers_table,
-				array(
-					'trip_id'          => $trip_id,
-					'family_member_id' => null,
-					'is_primary_user'  => 1,
-				)
-			);
-		}
-
-		// Add family members.
-		foreach ( $family_member_ids as $member_id ) {
-			// Verify member belongs to user.
-			$member = $this->get_member_by_id( $member_id );
-			if ( ! is_wp_error( $member ) ) {
-				$wpdb->insert(
-					$travelers_table,
-					array(
-						'trip_id'          => $trip_id,
-						'family_member_id' => (int) $member_id,
-						'is_primary_user'  => 0,
-					)
-				);
+			if ( $trip_start <= $trip_end ) {
+				$diff = $trip_start->diff( $trip_end );
+				$days_used += $diff->days + 1;
 			}
 		}
 
-		return rest_ensure_response(
-			array(
-				'success' => true,
-				'message' => __( 'Trip travelers updated.', 'r2f-schengen' ),
-			)
+		$days_remaining = max( 0, 90 - $days_used );
+		$days_allowed   = 90;
+
+		// Determine status level.
+		$percentage = ( $days_used / $days_allowed ) * 100;
+		if ( $percentage >= 90 ) {
+			$level = 'danger';
+		} elseif ( $percentage >= 75 ) {
+			$level = 'warning';
+		} else {
+			$level = 'ok';
+		}
+
+		return array(
+			'days_used'      => $days_used,
+			'days_remaining' => $days_remaining,
+			'days_allowed'   => $days_allowed,
+			'percentage'     => round( $percentage, 1 ),
+			'level'          => $level,
 		);
 	}
 
 	/**
-	 * Get member by ID with ownership check.
+	 * Get member if current user is owner.
 	 *
 	 * @param int $member_id Member ID.
-	 * @return object|WP_Error
+	 * @return array|WP_Error
 	 */
-	private function get_member_by_id( $member_id ) {
-		global $wpdb;
-
+	private function get_member_if_owner( int $member_id ) {
+		$member  = $this->get_member_by_id( $member_id );
 		$user_id = get_current_user_id();
-		$table   = R2F_Schengen_Schema::get_table( 'family_members' );
-
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$member = $wpdb->get_row(
-			$wpdb->prepare(
-				"SELECT * FROM $table WHERE id = %d AND user_id = %d AND is_active = 1",
-				$member_id,
-				$user_id
-			)
-		);
 
 		if ( ! $member ) {
 			return new WP_Error(
@@ -698,159 +666,60 @@ class R2F_Schengen_Family {
 			);
 		}
 
+		if ( (int) $member['user_id'] !== $user_id ) {
+			return new WP_Error(
+				'forbidden',
+				__( 'You do not have permission to access this family member.', 'r2f-schengen' ),
+				array( 'status' => 403 )
+			);
+		}
+
 		return $member;
 	}
 
 	/**
-	 * Get trips for a family member.
+	 * Get member by ID.
 	 *
-	 * @param int $member_id Family member ID.
-	 * @return array
+	 * @param int $member_id Member ID.
+	 * @return array|null
 	 */
-	private function get_member_trips( $member_id ) {
+	private function get_member_by_id( int $member_id ): ?array {
 		global $wpdb;
 
-		$trips_table     = R2F_Schengen_Schema::get_table( 'trips' );
-		$travelers_table = R2F_Schengen_Schema::get_table( 'trip_travelers' );
+		$table = R2F_Schengen_Schema::get_table( 'family_members' );
 
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$trips = $wpdb->get_results(
+		$member = $wpdb->get_row(
 			$wpdb->prepare(
-				"SELECT t.* FROM $trips_table t
-				 INNER JOIN $travelers_table tt ON t.id = tt.trip_id
-				 WHERE tt.family_member_id = %d
-				 ORDER BY t.start_date DESC",
+				"SELECT * FROM $table WHERE id = %d",
 				$member_id
-			)
+			),
+			ARRAY_A
 		);
 
-		return $trips;
+		return $member ?: null;
 	}
 
 	/**
-	 * Get trips for primary user (where is_primary_user = 1 or no travelers set).
+	 * Format member for API response.
 	 *
-	 * @return array
-	 */
-	private function get_primary_user_trips() {
-		global $wpdb;
-
-		$user_id         = get_current_user_id();
-		$trips_table     = R2F_Schengen_Schema::get_table( 'trips' );
-		$travelers_table = R2F_Schengen_Schema::get_table( 'trip_travelers' );
-
-		// Get trips where primary user is included OR no travelers are set (legacy trips).
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$trips = $wpdb->get_results(
-			$wpdb->prepare(
-				"SELECT t.* FROM $trips_table t
-				 LEFT JOIN $travelers_table tt ON t.id = tt.trip_id AND tt.is_primary_user = 1
-				 WHERE t.user_id = %d
-				   AND (tt.id IS NOT NULL OR NOT EXISTS (
-				       SELECT 1 FROM $travelers_table tt2 WHERE tt2.trip_id = t.id
-				   ))
-				 ORDER BY t.start_date DESC",
-				$user_id
-			)
-		);
-
-		return $trips;
-	}
-
-	/**
-	 * Calculate Schengen summary from trips.
-	 *
-	 * @param array $trips Array of trip objects.
-	 * @return array Summary data.
-	 */
-	private function calculate_summary( $trips ) {
-		$today        = new DateTime( 'now', new DateTimeZone( 'UTC' ) );
-		$window_start = clone $today;
-		$window_start->modify( '-179 days' );
-
-		$days_used   = 0;
-		$trip_count  = 0;
-		$next_expire = null;
-
-		foreach ( $trips as $trip ) {
-			$start = new DateTime( $trip->start_date );
-			$end   = new DateTime( $trip->end_date );
-
-			// Only count days within the 180-day window.
-			if ( $end < $window_start ) {
-				continue;
-			}
-
-			// Adjust start if before window.
-			if ( $start < $window_start ) {
-				$start = clone $window_start;
-			}
-
-			// Adjust end if after today (for future trips).
-			if ( $end > $today ) {
-				$end = clone $today;
-			}
-
-			// Skip if adjusted dates result in no days.
-			if ( $start > $end ) {
-				continue;
-			}
-
-			$interval    = $start->diff( $end );
-			$trip_days   = $interval->days + 1; // Include both start and end date.
-			$days_used  += $trip_days;
-			$trip_count++;
-
-			// Track earliest expiring date.
-			if ( null === $next_expire || $start < $next_expire ) {
-				$next_expire = clone $start;
-			}
-		}
-
-		$days_remaining = max( 0, 90 - $days_used );
-
-		// Determine status.
-		if ( $days_used >= 90 ) {
-			$status = 'critical';
-		} elseif ( $days_used >= 80 ) {
-			$status = 'danger';
-		} elseif ( $days_used >= 60 ) {
-			$status = 'warning';
-		} else {
-			$status = 'safe';
-		}
-
-		return array(
-			'daysUsed'       => $days_used,
-			'daysRemaining'  => $days_remaining,
-			'status'         => $status,
-			'tripCount'      => $trip_count,
-			'windowStart'    => $window_start->format( 'Y-m-d' ),
-			'windowEnd'      => $today->format( 'Y-m-d' ),
-			'nextExpiration' => $next_expire ? $next_expire->modify( '+180 days' )->format( 'Y-m-d' ) : null,
-		);
-	}
-
-	/**
-	 * Format family member for API response.
-	 *
-	 * @param object $member Database row.
+	 * @param array $member Raw member data.
 	 * @return array Formatted member.
 	 */
-	private function format_family_member( $member ) {
+	private function format_member( array $member ): array {
 		return array(
-			'id'             => (int) $member->id,
-			'name'           => $member->name,
-			'relationship'   => $member->relationship,
-			'birthDate'      => $member->birth_date,
-			'nationality'    => $member->nationality,
-			'passportNumber' => $member->passport_number,
-			'passportExpiry' => $member->passport_expiry,
-			'color'          => $member->color ?? '#3B82F6',
-			'notes'          => $member->notes,
-			'sortOrder'      => (int) $member->sort_order,
-			'createdAt'      => $member->created_at,
-			'updatedAt'      => $member->updated_at,
+			'id'              => (int) $member['id'],
+			'name'            => $member['name'],
+			'relationship'    => $member['relationship'],
+			'nationality'     => $member['nationality'],
+			'passportCountry' => $member['passport_country'],
+			'dateOfBirth'     => $member['date_of_birth'],
+			'notes'           => $member['notes'],
+			'color'           => $member['color'],
+			'isActive'        => (bool) $member['is_active'],
+			'displayOrder'    => (int) $member['display_order'],
+			'createdAt'       => $member['created_at'],
+			'updatedAt'       => $member['updated_at'],
 		);
 	}
 }

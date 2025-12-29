@@ -41,9 +41,7 @@ class R2F_Schengen_Schema {
 		'jurisdiction_rules'   => 'fra_jurisdiction_rules',
 		'push_subscriptions'   => 'fra_push_subscriptions',
 		'notifications'        => 'fra_notifications',
-		'family_members'       => 'fra_schengen_family_members',
-		'trip_travelers'       => 'fra_schengen_trip_travelers',
-		'analytics_snapshots'  => 'fra_schengen_analytics',
+		'family_members'       => 'fra_family_members',
 	);
 
 	/**
@@ -248,63 +246,22 @@ class R2F_Schengen_Schema {
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 			user_id bigint(20) unsigned NOT NULL,
 			name varchar(100) NOT NULL,
-			relationship varchar(20) NOT NULL DEFAULT 'spouse',
-			birth_date date DEFAULT NULL,
+			relationship varchar(50) DEFAULT NULL,
 			nationality varchar(100) DEFAULT NULL,
-			passport_number varchar(50) DEFAULT NULL,
-			passport_expiry date DEFAULT NULL,
-			color varchar(7) DEFAULT '#3B82F6',
-			avatar_url varchar(500) DEFAULT NULL,
+			passport_country varchar(100) DEFAULT NULL,
+			date_of_birth date DEFAULT NULL,
 			notes text DEFAULT NULL,
+			color varchar(20) DEFAULT '#3B82F6',
 			is_active tinyint(1) DEFAULT 1,
-			sort_order int(11) DEFAULT 0,
+			display_order int(11) DEFAULT 0,
 			created_at datetime DEFAULT CURRENT_TIMESTAMP,
 			updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 			PRIMARY KEY (id),
 			KEY idx_user (user_id),
-			KEY idx_user_active (user_id, is_active)
+			KEY idx_active (user_id, is_active)
 		) $charset_collate;";
 
 		dbDelta( $sql_family_members );
-
-		// Trip travelers linking table (added in v1.5.0 for shared trips).
-		$table_trip_travelers = self::get_table( 'trip_travelers' );
-		$sql_trip_travelers = "CREATE TABLE $table_trip_travelers (
-			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-			trip_id bigint(20) unsigned NOT NULL,
-			family_member_id bigint(20) unsigned DEFAULT NULL,
-			is_primary_user tinyint(1) DEFAULT 0,
-			created_at datetime DEFAULT CURRENT_TIMESTAMP,
-			PRIMARY KEY (id),
-			UNIQUE KEY idx_trip_member (trip_id, family_member_id),
-			KEY idx_family_member (family_member_id),
-			KEY idx_trip (trip_id)
-		) $charset_collate;";
-
-		dbDelta( $sql_trip_travelers );
-
-		// Analytics snapshots table (added in v1.5.0 for historical tracking).
-		$table_analytics = self::get_table( 'analytics_snapshots' );
-		$sql_analytics = "CREATE TABLE $table_analytics (
-			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-			user_id bigint(20) unsigned NOT NULL,
-			family_member_id bigint(20) unsigned DEFAULT NULL,
-			jurisdiction_code varchar(20) NOT NULL DEFAULT 'schengen',
-			snapshot_date date NOT NULL,
-			days_used int(11) NOT NULL DEFAULT 0,
-			days_remaining int(11) NOT NULL DEFAULT 90,
-			status varchar(20) NOT NULL DEFAULT 'safe',
-			trip_count int(11) NOT NULL DEFAULT 0,
-			window_start date NOT NULL,
-			window_end date NOT NULL,
-			created_at datetime DEFAULT CURRENT_TIMESTAMP,
-			PRIMARY KEY (id),
-			UNIQUE KEY idx_user_date_jurisdiction (user_id, family_member_id, jurisdiction_code, snapshot_date),
-			KEY idx_user_date (user_id, snapshot_date),
-			KEY idx_family_member (family_member_id)
-		) $charset_collate;";
-
-		dbDelta( $sql_analytics );
 
 		// Populate default jurisdiction rules if table is empty.
 		self::maybe_populate_default_rules();
@@ -382,6 +339,35 @@ class R2F_Schengen_Schema {
 				$wpdb->query(
 					"ALTER TABLE $table_trips
 					ADD KEY idx_jurisdiction (jurisdiction_code)"
+				);
+			}
+		}
+
+		// Migration from 1.4.x to 1.5.0: Add family_member_id column to trips table.
+		if ( version_compare( $current_version, '1.5.0', '<' ) ) {
+			$table_trips = self::get_table( 'trips' );
+
+			// Check if family_member_id column exists.
+			$column_exists = $wpdb->get_results(
+				$wpdb->prepare(
+					"SHOW COLUMNS FROM $table_trips LIKE %s",
+					'family_member_id'
+				)
+			);
+
+			if ( empty( $column_exists ) ) {
+				// Add family_member_id column - NULL means the primary account holder.
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$wpdb->query(
+					"ALTER TABLE $table_trips
+					ADD COLUMN family_member_id bigint(20) unsigned DEFAULT NULL AFTER user_id"
+				);
+
+				// Add index for family member queries.
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$wpdb->query(
+					"ALTER TABLE $table_trips
+					ADD KEY idx_family_member (family_member_id)"
 				);
 			}
 		}
@@ -598,17 +584,7 @@ class R2F_Schengen_Schema {
 		$table_jurisdiction_rules   = self::get_table( 'jurisdiction_rules' );
 		$table_push_subscriptions   = self::get_table( 'push_subscriptions' );
 		$table_notifications        = self::get_table( 'notifications' );
-		$table_family_members       = self::get_table( 'family_members' );
-		$table_trip_travelers       = self::get_table( 'trip_travelers' );
-		$table_analytics            = self::get_table( 'analytics_snapshots' );
 
-		// Drop in order (child tables first due to foreign key relationships).
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$wpdb->query( "DROP TABLE IF EXISTS $table_analytics" );
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$wpdb->query( "DROP TABLE IF EXISTS $table_trip_travelers" );
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$wpdb->query( "DROP TABLE IF EXISTS $table_family_members" );
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$wpdb->query( "DROP TABLE IF EXISTS $table_notifications" );
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared

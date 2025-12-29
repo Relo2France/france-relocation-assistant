@@ -2,7 +2,7 @@
 
 **Date:** December 28, 2024
 **Branch:** `claude/resume-france-relocation-tWg9t`
-**Last Commit:** `6f12426` - Fix undefined constant FRAMT_URL in portal template
+**Last Commit:** `b5a710a` - Add Phase 7: Analytics dashboard for Schengen Tracker
 
 ---
 
@@ -33,8 +33,8 @@
 | Phase 6 | CSV import/export | **Complete** |
 | Phase 6 | PWA manifest + service worker | **Complete** |
 | Phase 7 | AI-powered trip suggestions | **Complete** |
-| Phase 7 | Family member tracking | **Pending** |
-| Phase 7 | Analytics dashboard | **Pending** |
+| Phase 7 | Family member tracking | **Complete** |
+| Phase 7 | Analytics dashboard | **Complete** |
 
 ---
 
@@ -91,6 +91,47 @@
 - Cron hook: `r2f_schengen_calendar_sync`
 - Runs every 6 hours via `wp_schedule_event`
 
+### Phase 7: Family Member Tracking
+- **PHP Class:** `class-r2f-schengen-family.php`
+- **Database Table:** `fra_family_members` with columns for name, relationship, nationality, passport_country, date_of_birth, notes, color, is_active, display_order
+- **Database Migration:** Added `family_member_id` column to trips table (v1.5.0)
+- **REST API Endpoints:**
+  - `GET /family` - List family members
+  - `GET /family/{id}` - Get single member
+  - `POST /family` - Create member
+  - `PUT /family/{id}` - Update member
+  - `DELETE /family/{id}` - Delete member
+  - `GET /family/summary` - Per-member Schengen status
+  - `GET /family/relationships` - Available relationship options
+- **React Component:** `FamilyManager.tsx` with add/edit/delete forms, status bars, color coding
+- **Features:**
+  - Separate Schengen day tracking per family member
+  - Primary account holder status display
+  - Color-coded members for visual distinction
+  - Status level indicators (ok/warning/danger)
+  - Assign trips to specific family members
+
+### Phase 7: Analytics Dashboard
+- **PHP API:** Added `/analytics` endpoint with comprehensive data:
+  - Summary statistics (total trips, days, countries, avg trip length)
+  - Country-by-country breakdown sorted by days
+  - Monthly trends (last 12 months with day overlap calculations)
+  - Yearly totals
+  - 90-day compliance history (weekly samples over 6 months)
+  - Trip duration distribution (buckets: 1-3 days, 4-7 days, 1-2 weeks, etc.)
+  - Category breakdown (personal vs business)
+- **React Component:** `AnalyticsDashboard.tsx` with interactive charts:
+  - Summary stat cards (total trips, days, countries, longest trip)
+  - Monthly area chart for travel trends
+  - Pie chart for country breakdown (top 8)
+  - Line chart for 90-day compliance with limit/warning lines
+  - Bar charts for yearly totals and trip durations
+  - Category icons for personal vs business travel
+  - Top countries table with percentage breakdown
+- **Library:** Added `recharts` for charting
+- **Integration:** New "Analytics" tab in SchengenDashboard (premium feature)
+- **TypeScript:** Added types: AnalyticsSummary, CountryBreakdown, MonthlyTrend, YearlyTotal, ComplianceHistoryPoint, TripDurationBucket, CategoryBreakdown, AnalyticsData
+
 ---
 
 ## 3. What's In Progress / Partially Done
@@ -101,21 +142,11 @@ Nothing is currently in progress. All started work was completed.
 
 ## 4. Next Steps Discussed
 
-### Phase 7: Family Member Tracking
-Suggested approach:
-- Add `family_member_id` column to trips table
-- Create family members CRUD endpoints
-- Build family member management UI
-- Allow tracking separate Schengen counts per family member
-- Family summary view showing all members' statuses
-
-### Phase 7: Analytics Dashboard
-Suggested approach:
-- Historical trip visualization (charts)
-- Country-by-country breakdown
-- Monthly/yearly travel patterns
-- Compliance score over time
-- Export analytics as PDF
+All Phase 7 features have been completed. Potential future enhancements:
+- Export analytics as PDF report
+- Email weekly/monthly analytics summaries
+- Compare travel patterns across family members
+- Predictive analytics for trip planning
 
 ---
 
@@ -148,6 +179,14 @@ Suggested approach:
 2. **Web Push:** Service worker uses simplified push (logs intent) - needs `minishlink/web-push` PHP library for production
 3. **VAPID Keys:** Admins need to generate and configure VAPID keys for push notifications to work
 
+### Google Calendar OAuth - Now Configured ✓
+
+OAuth flow successfully tested. Required configuration in Google Cloud Console:
+- **Authorized redirect URIs:** Must include BOTH:
+  - `https://relo2france.com/wp-json/r2f-schengen/v1/calendar/callback`
+  - `https://www.relo2france.com/wp-json/r2f-schengen/v1/calendar/callback`
+- Credentials stored via WordPress admin: Settings → Schengen Tracker
+
 ---
 
 ## 7. Key Files Modified This Session
@@ -155,12 +194,13 @@ Suggested approach:
 ### PHP (Schengen Tracker Plugin)
 | File | Changes |
 |------|---------|
-| `relo2france-schengen-tracker.php` | Version bump to 1.4.0 |
-| `includes/class-r2f-schengen-api.php` | Added CSV import/export + AI suggestions endpoints |
+| `relo2france-schengen-tracker.php` | Version bump to 1.5.0 |
+| `includes/class-r2f-schengen-api.php` | Added CSV import/export, AI suggestions, analytics endpoints, family_member_id support |
 | `includes/class-r2f-schengen-notifications.php` | **NEW** - Notification center API |
-| `includes/class-r2f-schengen-schema.php` | Added notifications and push_subscriptions tables |
-| `includes/class-r2f-schengen-core.php` | Added notifications component initialization |
-| `includes/class-r2f-schengen-calendar.php` | Added background sync cron job |
+| `includes/class-r2f-schengen-schema.php` | Added notifications, push_subscriptions, family_members tables (v1.5.0) |
+| `includes/class-r2f-schengen-core.php` | Added notifications + family component initialization |
+| `includes/class-r2f-schengen-calendar.php` | Added background sync cron job, fixed portal path |
+| `includes/class-r2f-schengen-family.php` | **NEW** - Family member CRUD API |
 
 ### PHP (Member Tools Plugin)
 | File | Changes |
@@ -173,6 +213,8 @@ Suggested approach:
 | `components/schengen/CSVImportExport.tsx` | CSV import/export UI |
 | `components/schengen/AISuggestions.tsx` | AI suggestions display |
 | `components/schengen/NotificationCenter.tsx` | Notification bell + dropdown |
+| `components/schengen/FamilyManager.tsx` | Family member management |
+| `components/schengen/AnalyticsDashboard.tsx` | **NEW** - Interactive analytics with recharts |
 | `components/shared/PWAPrompt.tsx` | PWA install prompt |
 | `hooks/usePWA.ts` | PWA install/update detection |
 | `portal/public/manifest.json` | PWA manifest |
@@ -181,12 +223,13 @@ Suggested approach:
 ### React/TypeScript (Modified)
 | File | Changes |
 |------|---------|
-| `types/index.ts` | Added CSVImportResult, Suggestion, Notification types |
-| `hooks/useApi.ts` | Added CSV, suggestions, notifications hooks |
-| `api/client.ts` | Added schengen API methods |
-| `components/schengen/SchengenDashboard.tsx` | Integrated new components |
+| `types/index.ts` | Added CSVImportResult, Suggestion, Notification, Analytics types |
+| `hooks/useApi.ts` | Added CSV, suggestions, notifications, analytics hooks |
+| `api/client.ts` | Added schengen API methods including getAnalytics |
+| `components/schengen/SchengenDashboard.tsx` | Integrated new components including Analytics tab |
 | `App.tsx` | Added PWAPrompt component |
 | `vite.config.ts` | Added PWA file copy plugin |
+| `package.json` | Added recharts dependency |
 
 ---
 
@@ -211,6 +254,7 @@ cd france-relocation-member-tools/portal && npx tsc --noEmit
 |---------|-------------|
 | CSV Export | Schengen Tracker → Settings tab → "Export CSV" button |
 | CSV Import | Settings tab → Import section → Upload file or paste CSV |
+| Analytics | Schengen Tracker → Analytics tab (premium users only) |
 | AI Suggestions | Planning tab (premium users only) |
 | PWA Install | On mobile Chrome, look for "Add to Home Screen" prompt |
 | Notifications | Click bell icon in header, check notification dropdown |
@@ -250,11 +294,12 @@ SchengenDashboard
     │   ├── Trip List → TripList
     │   ├── Calendar View → CalendarView
     │   ├── Calendar Sync → CalendarSync
-    │   ├── Planning → AISuggestions (NEW) + PlanningTool
+    │   ├── Planning → AISuggestions + PlanningTool
     │   ├── Location → LocationTracker
-    │   └── Settings → CSVImportExport (NEW) + Alert toggles
+    │   ├── Analytics → AnalyticsDashboard (NEW) + recharts
+    │   └── Settings → CSVImportExport + Alert toggles
     │
-    └── PWAPrompt → Install banner (NEW)
+    └── PWAPrompt → Install banner
 ```
 
 ---
@@ -263,11 +308,32 @@ SchengenDashboard
 
 | Commit | Message |
 |--------|---------|
+| `252f32d` | Merge origin/main - resolve conflicts for analytics dashboard |
+| `b5a710a` | Add Phase 7: Analytics dashboard for Schengen Tracker |
+| `49a411f` | Update HANDOFF.md with session summary |
+| `b794a23` | Add Phase 7: Family member tracking for Schengen days |
+| `44cde56` | Fix portal path redirect and add family members table |
 | `6f12426` | Fix undefined constant FRAMT_URL in portal template |
 | `4f9da42` | Fix version constant mismatch in Schengen Tracker plugin |
 | `9923ab9` | Add Phase 7: AI-powered trip planning suggestions |
 | `a7858c5` | Add Phase 6: PWA support for offline access and install prompt |
 | `061a5b3` | Add Phase 6: CSV import/export for Schengen trips |
+
+---
+
+## 13. Merge Conflict Resolution (This Session)
+
+Resolved merge conflicts between `claude/resume-france-relocation-tWg9t` and `origin/main`:
+
+### Conflicts Resolved:
+- **TypeScript source files**: `types/index.ts`, `client.ts`, `useApi.ts`, `SchengenDashboard.tsx`, `AnalyticsDashboard.tsx`
+- **PHP files**: `class-r2f-schengen-core.php`, `class-r2f-schengen-family.php`, `class-r2f-schengen-schema.php`
+- **Build artifacts**: Removed conflicting hashed JS files and rebuilt portal
+
+### Approach Taken:
+- Kept HEAD's simpler analytics implementation (uses recharts for visualizations)
+- Replaced incompatible `FamilyTracker.tsx` (origin/main) with `FamilyManager.tsx` (HEAD)
+- Rebuilt React portal to regenerate build artifacts with new hashes
 
 ---
 

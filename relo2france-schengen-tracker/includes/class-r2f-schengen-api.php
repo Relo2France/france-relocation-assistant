@@ -280,6 +280,17 @@ class R2F_Schengen_API {
 				'permission_callback' => array( $this, 'check_premium_permission' ),
 			)
 		);
+
+		// Analytics dashboard (premium feature).
+		register_rest_route(
+			$namespace,
+			$prefix . '/analytics',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( $this, 'get_analytics' ),
+				'permission_callback' => array( $this, 'check_premium_permission' ),
+			)
+		);
 	}
 
 	/**
@@ -488,18 +499,23 @@ class R2F_Schengen_API {
 		}
 
 		$table  = R2F_Schengen_Schema::get_table( 'trips' );
-		$result = $wpdb->insert(
-			$table,
-			array(
-				'user_id'    => $user_id,
-				'start_date' => sanitize_text_field( $params['start_date'] ),
-				'end_date'   => sanitize_text_field( $params['end_date'] ),
-				'country'    => sanitize_text_field( $params['country'] ),
-				'category'   => isset( $params['category'] ) ? sanitize_text_field( $params['category'] ) : 'personal',
-				'notes'      => isset( $params['notes'] ) ? sanitize_textarea_field( $params['notes'] ) : null,
-			),
-			array( '%d', '%s', '%s', '%s', '%s', '%s' )
+		$data   = array(
+			'user_id'    => $user_id,
+			'start_date' => sanitize_text_field( $params['start_date'] ),
+			'end_date'   => sanitize_text_field( $params['end_date'] ),
+			'country'    => sanitize_text_field( $params['country'] ),
+			'category'   => isset( $params['category'] ) ? sanitize_text_field( $params['category'] ) : 'personal',
+			'notes'      => isset( $params['notes'] ) ? sanitize_textarea_field( $params['notes'] ) : null,
 		);
+		$format = array( '%d', '%s', '%s', '%s', '%s', '%s' );
+
+		// Support family member assignment.
+		if ( isset( $params['family_member_id'] ) ) {
+			$data['family_member_id'] = $params['family_member_id'] ? (int) $params['family_member_id'] : null;
+			$format[] = '%d';
+		}
+
+		$result = $wpdb->insert( $table, $data, $format );
 
 		if ( false === $result ) {
 			return new WP_Error(
@@ -565,6 +581,10 @@ class R2F_Schengen_API {
 		if ( array_key_exists( 'notes', $params ) ) {
 			$data['notes'] = $params['notes'] ? sanitize_textarea_field( $params['notes'] ) : null;
 			$format[]      = '%s';
+		}
+		if ( array_key_exists( 'family_member_id', $params ) ) {
+			$data['family_member_id'] = $params['family_member_id'] ? (int) $params['family_member_id'] : null;
+			$format[]                 = '%d';
 		}
 
 		if ( empty( $data ) ) {
@@ -1610,14 +1630,15 @@ class R2F_Schengen_API {
 	 */
 	private function format_trip( $trip ): array {
 		return array(
-			'id'        => (string) $trip->id,
-			'startDate' => $trip->start_date,
-			'endDate'   => $trip->end_date,
-			'country'   => $trip->country,
-			'category'  => $trip->category,
-			'notes'     => $trip->notes,
-			'createdAt' => $trip->created_at,
-			'updatedAt' => $trip->updated_at,
+			'id'             => (string) $trip->id,
+			'startDate'      => $trip->start_date,
+			'endDate'        => $trip->end_date,
+			'country'        => $trip->country,
+			'category'       => $trip->category,
+			'notes'          => $trip->notes,
+			'familyMemberId' => isset( $trip->family_member_id ) ? ( $trip->family_member_id ? (string) $trip->family_member_id : null ) : null,
+			'createdAt'      => $trip->created_at,
+			'updatedAt'      => $trip->updated_at,
 		);
 	}
 
@@ -1867,5 +1888,320 @@ class R2F_Schengen_API {
 </html>';
 
 		return $html;
+	}
+
+	/**
+	 * Get analytics data for dashboard.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function get_analytics( WP_REST_Request $request ) {
+		global $wpdb;
+
+		$user_id = get_current_user_id();
+		$table   = R2F_Schengen_Schema::get_table( 'trips' );
+
+		// Get all trips for the user ordered by date.
+		$trips = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT * FROM $table WHERE user_id = %d ORDER BY start_date ASC",
+				$user_id
+			)
+		);
+
+		// Build analytics data.
+		$analytics = array(
+			'summary'            => $this->build_analytics_summary( $trips ),
+			'countryBreakdown'   => $this->build_country_breakdown( $trips ),
+			'monthlyTrends'      => $this->build_monthly_trends( $trips ),
+			'yearlyTotals'       => $this->build_yearly_totals( $trips ),
+			'complianceHistory'  => $this->build_compliance_history( $trips ),
+			'tripDurations'      => $this->build_trip_duration_stats( $trips ),
+			'categoryBreakdown'  => $this->build_category_breakdown( $trips ),
+		);
+
+		return rest_ensure_response( $analytics );
+	}
+
+	/**
+	 * Build analytics summary.
+	 *
+	 * @param array $trips User trips.
+	 * @return array
+	 */
+	private function build_analytics_summary( array $trips ): array {
+		$total_trips      = count( $trips );
+		$total_days       = 0;
+		$countries        = array();
+		$first_trip       = null;
+		$last_trip        = null;
+		$longest_trip     = 0;
+		$shortest_trip    = PHP_INT_MAX;
+
+		foreach ( $trips as $trip ) {
+			$start    = new DateTime( $trip->start_date );
+			$end      = new DateTime( $trip->end_date );
+			$duration = $start->diff( $end )->days + 1;
+
+			$total_days += $duration;
+			$countries[ $trip->country ] = true;
+
+			if ( null === $first_trip || $start < new DateTime( $first_trip ) ) {
+				$first_trip = $trip->start_date;
+			}
+			if ( null === $last_trip || $end > new DateTime( $last_trip ) ) {
+				$last_trip = $trip->end_date;
+			}
+			if ( $duration > $longest_trip ) {
+				$longest_trip = $duration;
+			}
+			if ( $duration < $shortest_trip ) {
+				$shortest_trip = $duration;
+			}
+		}
+
+		return array(
+			'totalTrips'     => $total_trips,
+			'totalDays'      => $total_days,
+			'uniqueCountries'=> count( $countries ),
+			'firstTrip'      => $first_trip,
+			'lastTrip'       => $last_trip,
+			'longestTrip'    => $total_trips > 0 ? $longest_trip : 0,
+			'shortestTrip'   => $total_trips > 0 ? $shortest_trip : 0,
+			'avgTripLength'  => $total_trips > 0 ? round( $total_days / $total_trips, 1 ) : 0,
+		);
+	}
+
+	/**
+	 * Build country-by-country breakdown.
+	 *
+	 * @param array $trips User trips.
+	 * @return array
+	 */
+	private function build_country_breakdown( array $trips ): array {
+		$breakdown = array();
+
+		foreach ( $trips as $trip ) {
+			$country = $trip->country;
+			$start   = new DateTime( $trip->start_date );
+			$end     = new DateTime( $trip->end_date );
+			$days    = $start->diff( $end )->days + 1;
+
+			if ( ! isset( $breakdown[ $country ] ) ) {
+				$breakdown[ $country ] = array(
+					'country' => $country,
+					'trips'   => 0,
+					'days'    => 0,
+				);
+			}
+
+			$breakdown[ $country ]['trips']++;
+			$breakdown[ $country ]['days'] += $days;
+		}
+
+		// Sort by days descending.
+		usort( $breakdown, function( $a, $b ) {
+			return $b['days'] - $a['days'];
+		} );
+
+		return array_values( $breakdown );
+	}
+
+	/**
+	 * Build monthly travel trends.
+	 *
+	 * @param array $trips User trips.
+	 * @return array
+	 */
+	private function build_monthly_trends( array $trips ): array {
+		$trends = array();
+
+		// Get the last 12 months.
+		$now = new DateTime();
+		for ( $i = 11; $i >= 0; $i-- ) {
+			$month_start = ( clone $now )->modify( "-$i months" )->modify( 'first day of this month' )->setTime( 0, 0, 0 );
+			$month_end   = ( clone $month_start )->modify( 'last day of this month' )->setTime( 23, 59, 59 );
+			$month_key   = $month_start->format( 'Y-m' );
+
+			$trends[ $month_key ] = array(
+				'month' => $month_start->format( 'M Y' ),
+				'days'  => 0,
+				'trips' => 0,
+			);
+
+			foreach ( $trips as $trip ) {
+				$trip_start = new DateTime( $trip->start_date );
+				$trip_end   = new DateTime( $trip->end_date );
+
+				// Calculate overlap with this month.
+				if ( $trip_end >= $month_start && $trip_start <= $month_end ) {
+					$overlap_start = max( $trip_start, $month_start );
+					$overlap_end   = min( $trip_end, $month_end );
+					$overlap_days  = $overlap_start->diff( $overlap_end )->days + 1;
+
+					$trends[ $month_key ]['days'] += $overlap_days;
+
+					// Count trip if it started in this month.
+					if ( $trip_start >= $month_start && $trip_start <= $month_end ) {
+						$trends[ $month_key ]['trips']++;
+					}
+				}
+			}
+		}
+
+		return array_values( $trends );
+	}
+
+	/**
+	 * Build yearly totals.
+	 *
+	 * @param array $trips User trips.
+	 * @return array
+	 */
+	private function build_yearly_totals( array $trips ): array {
+		$totals = array();
+
+		foreach ( $trips as $trip ) {
+			$start = new DateTime( $trip->start_date );
+			$end   = new DateTime( $trip->end_date );
+			$year  = $start->format( 'Y' );
+			$days  = $start->diff( $end )->days + 1;
+
+			if ( ! isset( $totals[ $year ] ) ) {
+				$totals[ $year ] = array(
+					'year'  => $year,
+					'trips' => 0,
+					'days'  => 0,
+				);
+			}
+
+			$totals[ $year ]['trips']++;
+			$totals[ $year ]['days'] += $days;
+		}
+
+		// Sort by year.
+		ksort( $totals );
+
+		return array_values( $totals );
+	}
+
+	/**
+	 * Build compliance history - track 90-day usage over time.
+	 *
+	 * @param array $trips User trips.
+	 * @return array
+	 */
+	private function build_compliance_history( array $trips ): array {
+		if ( empty( $trips ) ) {
+			return array();
+		}
+
+		$history = array();
+
+		// Sample at weekly intervals over the last 6 months.
+		$now      = new DateTime();
+		$start    = ( clone $now )->modify( '-6 months' );
+		$interval = new DateInterval( 'P7D' );
+		$period   = new DatePeriod( $start, $interval, $now );
+
+		foreach ( $period as $sample_date ) {
+			$window_start = ( clone $sample_date )->modify( '-179 days' );
+			$days_used    = 0;
+
+			foreach ( $trips as $trip ) {
+				$trip_start = new DateTime( $trip->start_date );
+				$trip_end   = new DateTime( $trip->end_date );
+
+				// Only count if trip ends within or after window start and starts before or on sample date.
+				if ( $trip_end >= $window_start && $trip_start <= $sample_date ) {
+					$overlap_start = max( $trip_start, $window_start );
+					$overlap_end   = min( $trip_end, $sample_date );
+					$days_used    += max( 0, $overlap_start->diff( $overlap_end )->days + 1 );
+				}
+			}
+
+			$history[] = array(
+				'date'        => $sample_date->format( 'Y-m-d' ),
+				'daysUsed'    => $days_used,
+				'daysRemaining' => max( 0, 90 - $days_used ),
+				'percentage'  => round( ( $days_used / 90 ) * 100, 1 ),
+			);
+		}
+
+		return $history;
+	}
+
+	/**
+	 * Build trip duration statistics.
+	 *
+	 * @param array $trips User trips.
+	 * @return array
+	 */
+	private function build_trip_duration_stats( array $trips ): array {
+		$buckets = array(
+			'1-3 days'    => 0,
+			'4-7 days'    => 0,
+			'1-2 weeks'   => 0,
+			'2-4 weeks'   => 0,
+			'1+ months'   => 0,
+		);
+
+		foreach ( $trips as $trip ) {
+			$start    = new DateTime( $trip->start_date );
+			$end      = new DateTime( $trip->end_date );
+			$duration = $start->diff( $end )->days + 1;
+
+			if ( $duration <= 3 ) {
+				$buckets['1-3 days']++;
+			} elseif ( $duration <= 7 ) {
+				$buckets['4-7 days']++;
+			} elseif ( $duration <= 14 ) {
+				$buckets['1-2 weeks']++;
+			} elseif ( $duration <= 28 ) {
+				$buckets['2-4 weeks']++;
+			} else {
+				$buckets['1+ months']++;
+			}
+		}
+
+		$result = array();
+		foreach ( $buckets as $label => $count ) {
+			$result[] = array(
+				'label' => $label,
+				'count' => $count,
+			);
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Build category breakdown (personal vs business).
+	 *
+	 * @param array $trips User trips.
+	 * @return array
+	 */
+	private function build_category_breakdown( array $trips ): array {
+		$breakdown = array(
+			'personal' => array( 'category' => 'personal', 'trips' => 0, 'days' => 0 ),
+			'business' => array( 'category' => 'business', 'trips' => 0, 'days' => 0 ),
+		);
+
+		foreach ( $trips as $trip ) {
+			$category = $trip->category ?: 'personal';
+			$start    = new DateTime( $trip->start_date );
+			$end      = new DateTime( $trip->end_date );
+			$days     = $start->diff( $end )->days + 1;
+
+			if ( ! isset( $breakdown[ $category ] ) ) {
+				$breakdown[ $category ] = array( 'category' => $category, 'trips' => 0, 'days' => 0 );
+			}
+
+			$breakdown[ $category ]['trips']++;
+			$breakdown[ $category ]['days'] += $days;
+		}
+
+		return array_values( $breakdown );
 	}
 }

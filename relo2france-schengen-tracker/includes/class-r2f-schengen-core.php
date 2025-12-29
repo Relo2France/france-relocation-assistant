@@ -80,18 +80,11 @@ class R2F_Schengen_Core {
 	public $notifications;
 
 	/**
-	 * Family member handler.
+	 * Family members handler.
 	 *
 	 * @var R2F_Schengen_Family
 	 */
 	public $family;
-
-	/**
-	 * Analytics handler.
-	 *
-	 * @var R2F_Schengen_Analytics
-	 */
-	public $analytics;
 
 	/**
 	 * Get singleton instance.
@@ -129,7 +122,6 @@ class R2F_Schengen_Core {
 		require_once $includes_dir . 'class-r2f-schengen-jurisdiction.php';
 		require_once $includes_dir . 'class-r2f-schengen-notifications.php';
 		require_once $includes_dir . 'class-r2f-schengen-family.php';
-		require_once $includes_dir . 'class-r2f-schengen-analytics.php';
 	}
 
 	/**
@@ -144,7 +136,6 @@ class R2F_Schengen_Core {
 		$this->jurisdiction  = R2F_Schengen_Jurisdiction::get_instance();
 		$this->notifications = R2F_Schengen_Notifications::get_instance();
 		$this->family        = R2F_Schengen_Family::get_instance();
-		$this->analytics     = R2F_Schengen_Analytics::get_instance();
 	}
 
 	/**
