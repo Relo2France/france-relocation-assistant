@@ -1,9 +1,9 @@
 # Schengen Tracker Native App - Development Handoff
 
 **Project**: Relo2France Schengen Tracker Mobile App
-**Version**: 1.0.0 (Planned)
+**Version**: 1.0.0 (In Development)
 **Last Updated**: December 29, 2025
-**Status**: Planning Phase
+**Status**: Phase 1 - Backend API Complete, Native App Development Ready
 
 ---
 
@@ -1550,10 +1550,24 @@ Tab Bar
 
 ### Phase 1: Core Native App
 
+#### 1.0 Backend API (WordPress) ✅ COMPLETE
+- [x] Create mobile API class (`class-r2f-schengen-mobile-api.php`)
+- [x] Add `/app/status` endpoint (version check, maintenance mode)
+- [x] Add `/sync` endpoint (batch sync for mobile)
+- [x] Add `/changes` endpoint (pull sync)
+- [x] Add `/passport-control` endpoint (optimized border display)
+- [x] Add `/device/register` endpoint (push notifications)
+- [x] Add `/device/unregister` endpoint
+- [x] Add `/locations/batch` endpoint (bulk location upload)
+- [x] Add devices table to database schema
+- [x] Update plugin version to 1.6.0
+- [x] Create shared TypeScript types (`mobile/shared/types.ts`)
+- [x] Create API reference documentation (`mobile/shared/api-reference.md`)
+
 #### 1.1 Project Setup
 - [ ] Create iOS project (Xcode)
 - [ ] Create Android project (Android Studio)
-- [ ] Set up shared data models
+- [x] Set up shared data models (TypeScript reference complete)
 - [ ] Configure CI/CD pipeline
 - [ ] Set up TestFlight / Play Store internal testing
 
@@ -1579,14 +1593,17 @@ Tab Bar
 - [ ] Battery usage optimization
 
 #### 1.5 Passport Control Mode
-- [ ] Design UI (large status, recent entries)
+- [x] Design UI (large status, recent entries) - see Section 4.2
+- [x] Backend API ready (`/passport-control` endpoint)
 - [ ] Implement iOS view
 - [ ] Implement Android view
 - [ ] Offline data display
 - [ ] Timestamp/verification display
 
 #### 1.6 API Integration
-- [ ] Implement API client
+- [x] Backend sync endpoints ready
+- [ ] Implement API client (iOS)
+- [ ] Implement API client (Android)
 - [ ] Trip CRUD operations
 - [ ] Location submission
 - [ ] Sync manager (push/pull)

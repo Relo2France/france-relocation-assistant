@@ -21,7 +21,7 @@ class R2F_Schengen_Core {
 	 *
 	 * @var string
 	 */
-	const VERSION = '1.5.0';
+	const VERSION = '1.6.0';
 
 	/**
 	 * Singleton instance.
@@ -87,6 +87,13 @@ class R2F_Schengen_Core {
 	public $family;
 
 	/**
+	 * Mobile API handler.
+	 *
+	 * @var R2F_Schengen_Mobile_API
+	 */
+	public $mobile_api;
+
+	/**
 	 * Get singleton instance.
 	 *
 	 * @return R2F_Schengen_Core
@@ -122,6 +129,7 @@ class R2F_Schengen_Core {
 		require_once $includes_dir . 'class-r2f-schengen-jurisdiction.php';
 		require_once $includes_dir . 'class-r2f-schengen-notifications.php';
 		require_once $includes_dir . 'class-r2f-schengen-family.php';
+		require_once $includes_dir . 'class-r2f-schengen-mobile-api.php';
 	}
 
 	/**
@@ -136,6 +144,7 @@ class R2F_Schengen_Core {
 		$this->jurisdiction  = R2F_Schengen_Jurisdiction::get_instance();
 		$this->notifications = R2F_Schengen_Notifications::get_instance();
 		$this->family        = R2F_Schengen_Family::get_instance();
+		$this->mobile_api    = R2F_Schengen_Mobile_API::get_instance();
 	}
 
 	/**
