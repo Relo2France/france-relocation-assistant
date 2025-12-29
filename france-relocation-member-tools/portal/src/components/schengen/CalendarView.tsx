@@ -31,10 +31,6 @@ const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December'
 ];
-const MONTHS_SHORT = [
-  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-];
 
 export default function CalendarView({ trips, windowStart, windowEnd }: CalendarViewProps) {
   // Memoize today's date string to avoid unnecessary re-renders
@@ -147,44 +143,55 @@ export default function CalendarView({ trips, windowStart, windowEnd }: Calendar
   };
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200">
+    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
       {/* Calendar header */}
-      <div className="flex items-center justify-between p-2 sm:p-4 border-b border-gray-200">
-        <div className="flex items-center gap-1 sm:gap-2">
-          <button
-            onClick={goToPreviousMonth}
-            className="p-1 sm:p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-            aria-label="Previous month"
-          >
-            <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" aria-hidden="true" />
-          </button>
-          <button
-            onClick={goToNextMonth}
-            className="p-1 sm:p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-            aria-label="Next month"
-          >
-            <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" aria-hidden="true" />
-          </button>
-          <h3 className="text-sm sm:text-lg font-semibold text-gray-900 ml-1 sm:ml-2">
-            <span className="hidden sm:inline">{MONTHS[currentMonth]}</span>
-            <span className="sm:hidden">{MONTHS_SHORT[currentMonth]}</span>
-            {' '}{currentYear}
-          </h3>
+      <div className="bg-gradient-to-r from-gray-50 to-white px-3 sm:px-5 py-3 sm:py-4 border-b border-gray-200">
+        <div className="flex items-center justify-between">
+          {/* Month and Year - prominent display */}
+          <div className="flex-1">
+            <h3 className="text-lg sm:text-2xl font-bold text-gray-900 tracking-tight">
+              {MONTHS[currentMonth]}
+            </h3>
+            <p className="text-xs sm:text-sm text-gray-500 font-medium">{currentYear}</p>
+          </div>
+
+          {/* Navigation controls */}
+          <div className="flex items-center gap-1 sm:gap-2">
+            <button
+              onClick={goToToday}
+              className="px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              Today
+            </button>
+            <div className="flex items-center bg-gray-100 rounded-lg p-0.5">
+              <button
+                onClick={goToPreviousMonth}
+                className="p-1.5 sm:p-2 rounded-md hover:bg-white hover:shadow-sm transition-all"
+                aria-label="Previous month"
+              >
+                <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" aria-hidden="true" />
+              </button>
+              <button
+                onClick={goToNextMonth}
+                className="p-1.5 sm:p-2 rounded-md hover:bg-white hover:shadow-sm transition-all"
+                aria-label="Next month"
+              >
+                <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" aria-hidden="true" />
+              </button>
+            </div>
+          </div>
         </div>
-        <button
-          onClick={goToToday}
-          className="px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-medium text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
-        >
-          Today
-        </button>
       </div>
 
       {/* Weekday headers */}
-      <div className="grid grid-cols-7 border-b border-gray-200">
+      <div className="grid grid-cols-7 bg-gray-50 border-b border-gray-200">
         {WEEKDAYS_FULL.map((day, index) => (
           <div
             key={day}
-            className="py-1.5 sm:py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
+            className={clsx(
+              'py-2 sm:py-3 text-center text-[10px] sm:text-xs font-semibold uppercase tracking-wide',
+              index === 0 || index === 6 ? 'text-gray-400' : 'text-gray-600'
+            )}
           >
             <span className="hidden sm:inline">{day}</span>
             <span className="sm:hidden">{WEEKDAYS_SHORT[index]}</span>
@@ -196,21 +203,23 @@ export default function CalendarView({ trips, windowStart, windowEnd }: Calendar
       <div className="grid grid-cols-7">
         {calendarDays.map((dayInfo, index) => {
           const { date, isCurrentMonth, isToday, isInWindow, trip, isFuture } = dayInfo;
+          const isWeekend = date.getDay() === 0 || date.getDay() === 6;
 
           return (
             <div
               key={index}
               className={clsx(
-                'relative min-h-[44px] sm:min-h-[60px] p-0.5 sm:p-1 border-b border-r border-gray-100',
-                !isCurrentMonth && 'bg-gray-50',
-                isToday && 'bg-primary-50'
+                'relative min-h-[48px] sm:min-h-[72px] p-1 sm:p-1.5 border-b border-r border-gray-100 transition-colors',
+                !isCurrentMonth && 'bg-gray-50/50',
+                isCurrentMonth && isWeekend && 'bg-gray-50/30',
+                isToday && 'bg-primary-50/70 ring-1 ring-inset ring-primary-200'
               )}
             >
               {/* Date number */}
               <span
                 className={clsx(
-                  'inline-flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 text-xs sm:text-sm rounded-full',
-                  isToday && 'bg-primary-600 text-white font-medium',
+                  'inline-flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 text-xs sm:text-sm rounded-full font-medium',
+                  isToday && 'bg-primary-600 text-white shadow-sm',
                   !isToday && isCurrentMonth && 'text-gray-900',
                   !isToday && !isCurrentMonth && 'text-gray-400'
                 )}
@@ -222,16 +231,16 @@ export default function CalendarView({ trips, windowStart, windowEnd }: Calendar
               {trip && (
                 <div
                   className={clsx(
-                    'mt-0.5 sm:mt-1 px-0.5 sm:px-1 py-0.5 rounded text-[10px] sm:text-xs truncate',
+                    'mt-1 sm:mt-1.5 px-1 sm:px-1.5 py-0.5 sm:py-1 rounded-md text-[10px] sm:text-xs truncate font-medium',
                     isFuture
-                      ? 'bg-blue-100 text-blue-700 border border-dashed border-blue-300'
+                      ? 'bg-blue-50 text-blue-700 border border-dashed border-blue-200'
                       : isInWindow
-                        ? 'bg-primary-100 text-primary-700'
+                        ? 'bg-primary-100 text-primary-700 shadow-sm'
                         : 'bg-gray-100 text-gray-600'
                   )}
                   title={`${trip.country}${isFuture ? ' (planned)' : ''}`}
                 >
-                  <Plane className="w-2.5 h-2.5 sm:w-3 sm:h-3 inline-block sm:mr-0.5" aria-hidden="true" />
+                  <Plane className="w-3 h-3 sm:w-3.5 sm:h-3.5 inline-block mr-0.5" aria-hidden="true" />
                   <span className="sr-only">Trip to </span>
                   <span className="hidden sm:inline">{trip.country.slice(0, 3)}</span>
                 </div>
@@ -240,7 +249,7 @@ export default function CalendarView({ trips, windowStart, windowEnd }: Calendar
               {/* Window indicator (small dot) */}
               {isInWindow && !trip && isCurrentMonth && (
                 <div
-                  className="absolute bottom-0.5 sm:bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-green-400"
+                  className="absolute bottom-1 sm:bottom-1.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-green-400 shadow-sm"
                   title="In current 180-day window"
                 />
               )}
@@ -249,22 +258,28 @@ export default function CalendarView({ trips, windowStart, windowEnd }: Calendar
         })}
       </div>
 
-      {/* Legend - responsive with wrap on mobile */}
-      <div className="flex flex-wrap items-center gap-2 sm:gap-4 p-2 sm:p-3 border-t border-gray-200 text-[10px] sm:text-xs text-gray-500">
-        <div className="flex items-center gap-1 sm:gap-1.5">
-          <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded bg-primary-100 border border-primary-200" />
-          <span className="hidden sm:inline">Past trip (in window)</span>
-          <span className="sm:hidden">In window</span>
+      {/* Legend */}
+      <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50 border-t border-gray-200">
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <div className="w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-md bg-primary-100 shadow-sm" />
+          <span className="text-[10px] sm:text-xs text-gray-600 font-medium">
+            <span className="hidden sm:inline">Past trip (in window)</span>
+            <span className="sm:hidden">In window</span>
+          </span>
         </div>
-        <div className="flex items-center gap-1 sm:gap-1.5">
-          <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded bg-blue-100 border border-dashed border-blue-300" />
-          <span className="hidden sm:inline">Future trip</span>
-          <span className="sm:hidden">Future</span>
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <div className="w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-md bg-blue-50 border border-dashed border-blue-200" />
+          <span className="text-[10px] sm:text-xs text-gray-600 font-medium">
+            <span className="hidden sm:inline">Future trip</span>
+            <span className="sm:hidden">Future</span>
+          </span>
         </div>
-        <div className="flex items-center gap-1 sm:gap-1.5">
-          <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded bg-gray-100 border border-gray-200" />
-          <span className="hidden sm:inline">Past trip (outside window)</span>
-          <span className="sm:hidden">Outside</span>
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <div className="w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-md bg-gray-100" />
+          <span className="text-[10px] sm:text-xs text-gray-600 font-medium">
+            <span className="hidden sm:inline">Past trip (outside window)</span>
+            <span className="sm:hidden">Outside</span>
+          </span>
         </div>
       </div>
     </div>
