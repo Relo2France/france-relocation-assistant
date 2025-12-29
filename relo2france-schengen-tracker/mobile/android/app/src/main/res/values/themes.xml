@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ * themes.xml
+ *
+ * Theme resources for MyTravelStatus.
+ *
+ * @package MyTravelStatus
+ * @since   1.0.0
+-->
+<resources>
+    <style name="Theme.MyTravelStatus" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
+
+    <!-- Legacy alias for compatibility -->
+    <style name="Theme.SchengenTracker" parent="Theme.MyTravelStatus" />
+</resources>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ * backup_rules.xml
+ *
+ * Backup rules for Android 11 and below.
+ *
+ * @package R2F_Schengen_Tracker
+ * @since   1.0.0
+-->
+<full-backup-content>
+    <include domain="sharedpref" path="." />
+    <exclude domain="sharedpref" path="schengen_secure_prefs.xml" />
+</full-backup-content>

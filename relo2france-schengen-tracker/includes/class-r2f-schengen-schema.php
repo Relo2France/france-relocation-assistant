@@ -25,7 +25,7 @@ class R2F_Schengen_Schema {
 	 *
 	 * @var string
 	 */
-	const DB_VERSION = '1.5.0';
+	const DB_VERSION = '1.6.0';
 
 	/**
 	 * Table definitions.
@@ -42,6 +42,7 @@ class R2F_Schengen_Schema {
 		'push_subscriptions'   => 'fra_push_subscriptions',
 		'notifications'        => 'fra_notifications',
 		'family_members'       => 'fra_family_members',
+		'devices'              => 'fra_schengen_devices', // Added in v1.6.0 for mobile app.
 	);
 
 	/**
@@ -262,6 +263,32 @@ class R2F_Schengen_Schema {
 		) $charset_collate;";
 
 		dbDelta( $sql_family_members );
+
+		// Devices table (added in v1.6.0 for mobile app push notifications).
+		$table_devices = self::get_table( 'devices' );
+		$sql_devices = "CREATE TABLE $table_devices (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			user_id bigint(20) unsigned NOT NULL,
+			device_id varchar(255) NOT NULL,
+			push_token text DEFAULT NULL,
+			platform varchar(20) NOT NULL,
+			app_version varchar(20) DEFAULT NULL,
+			device_name varchar(100) DEFAULT NULL,
+			os_version varchar(50) DEFAULT NULL,
+			last_sync datetime DEFAULT NULL,
+			last_active datetime DEFAULT NULL,
+			is_active tinyint(1) DEFAULT 1,
+			settings longtext DEFAULT NULL,
+			created_at datetime DEFAULT CURRENT_TIMESTAMP,
+			updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+			PRIMARY KEY (id),
+			UNIQUE KEY idx_device_id (device_id),
+			KEY idx_user (user_id),
+			KEY idx_platform (platform),
+			KEY idx_active (user_id, is_active)
+		) $charset_collate;";
+
+		dbDelta( $sql_devices );
 
 		// Populate default jurisdiction rules if table is empty.
 		self::maybe_populate_default_rules();
@@ -584,7 +611,13 @@ class R2F_Schengen_Schema {
 		$table_jurisdiction_rules   = self::get_table( 'jurisdiction_rules' );
 		$table_push_subscriptions   = self::get_table( 'push_subscriptions' );
 		$table_notifications        = self::get_table( 'notifications' );
+		$table_family_members       = self::get_table( 'family_members' );
+		$table_devices              = self::get_table( 'devices' );
 
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$wpdb->query( "DROP TABLE IF EXISTS $table_devices" );
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$wpdb->query( "DROP TABLE IF EXISTS $table_family_members" );
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$wpdb->query( "DROP TABLE IF EXISTS $table_notifications" );
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
