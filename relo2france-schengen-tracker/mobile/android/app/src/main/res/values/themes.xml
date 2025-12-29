@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ * themes.xml
+ *
+ * Theme resources for Schengen Tracker.
+ *
+ * @package R2F_Schengen_Tracker
+ * @since   1.0.0
+-->
+<resources>
+    <style name="Theme.SchengenTracker" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
+</resources>

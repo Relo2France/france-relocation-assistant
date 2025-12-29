@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ * strings.xml
+ *
+ * String resources for Schengen Tracker.
+ *
+ * @package R2F_Schengen_Tracker
+ * @since   1.0.0
+-->
+<resources>
+    <string name="app_name">Schengen Tracker</string>
+    <string name="notification_channel_location">Location Tracking</string>
+    <string name="notification_channel_location_desc">Notifications about location tracking</string>
+    <string name="notification_channel_alerts">Schengen Alerts</string>
+    <string name="notification_channel_alerts_desc">Important alerts about your Schengen days</string>
+    <string name="notification_channel_sync">Data Sync</string>
+    <string name="notification_channel_sync_desc">Notifications about data synchronization</string>
+</resources>
