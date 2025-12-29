@@ -2,7 +2,7 @@
 
 **Date:** December 29, 2024
 **Branch:** `claude/resume-france-relocation-tWg9t`
-**Last Commit:** `f1794b8` - Fix analytics API endpoint and improve calendar styling
+**Last Commit:** `9493c95` - Fix btn-primary color by scoping to portal root
 
 ---
 
@@ -142,16 +142,30 @@ Nothing is currently in progress. All started work was completed.
 
 ## 4. Next Steps Discussed
 
-All Phase 7 features have been completed. Potential future enhancements:
+All Phase 7 features have been completed. This session focused on UI polish and bug fixes:
+
+**Completed This Session:**
+- Fixed Analytics API endpoint (404 error)
+- Redesigned Calendar View with prominent month display
+- Fixed button styling consistency across all portal components
+
+**Potential Future Enhancements:**
 - Export analytics as PDF report
 - Email weekly/monthly analytics summaries
 - Compare travel patterns across family members
 - Predictive analytics for trip planning
+- Review other components for styling consistency
 
 ---
 
 ## 5. Decisions Made This Session
 
+### Current Session (Button Styling Fix)
+1. **CSS Scoping Strategy:** Used `#fra-portal-root` selector to scope portal button styles and avoid conflicts with WordPress theme
+2. **!important Usage:** Accepted use of `!important` for button colors since theme CSS loads after portal CSS and overrides it
+3. **Explicit Colors:** Used explicit hex color `#16a34a` (green-600) instead of Tailwind variables to ensure consistency
+
+### Previous Sessions
 1. **CSV Format:** Standard columns: `start_date`, `end_date`, `country`, `category`, `notes`
 2. **PWA Scope:** Limited to `/member-portal/` path
 3. **AI Suggestions:** Server-side analysis (no external AI API) with priority levels: high, medium, low, info
@@ -167,6 +181,15 @@ All Phase 7 features have been completed. Potential future enhancements:
 
 | Issue | Resolution | Commit |
 |-------|------------|--------|
+| Buttons dark navy instead of green | Theme CSS override - scoped to `#fra-portal-root` with `!important` | `9493c95` |
+| Buttons missing base styles | Added `btn` class to `btn-primary` buttons | `0fd374c` |
+| Analytics 404 error | Legacy routes not registered when Member Tools present | `f1794b8` |
+| Calendar view not professional | Redesigned with prominent month display | `f1794b8` |
+
+### Resolved Previous Sessions
+
+| Issue | Resolution | Commit |
+|-------|------------|--------|
 | Portal showing "critical error" | Fixed undefined constant `FRAMT_URL` → `FRAMT_PLUGIN_URL` | `6f12426` |
 | Version mismatch causing upgrade issues | Updated `R2F_SCHENGEN_VERSION` to `1.4.0` | `4f9da42` |
 | Unused 'Check' import in NotificationCenter | Removed unused import | Earlier commit |
@@ -178,6 +201,7 @@ All Phase 7 features have been completed. Potential future enhancements:
 1. **PWA Icons:** `pwa-icon-192.png`, `pwa-icon-512.png` referenced in manifest but may not exist yet - will show default icon
 2. **Web Push:** Service worker uses simplified push (logs intent) - needs `minishlink/web-push` PHP library for production
 3. **VAPID Keys:** Admins need to generate and configure VAPID keys for push notifications to work
+4. **CSS Conflicts:** The WordPress theme (`relo2france-theme/style.css`) defines global `.btn-primary` class. Portal buttons now scoped to `#fra-portal-root` to avoid conflicts. If adding new button classes, may need similar scoping.
 
 ### Google Calendar OAuth - Now Configured ✓
 
@@ -342,9 +366,42 @@ SchengenDashboard
   - Legend centered with improved spacing
   - Overall rounded corners and shadow on container
 
+### Button Styling Fix (Multiple Iterations)
+- **Issue:** Buttons in Data Import/Export, Family, and Settings tabs were appearing dark navy blue instead of green
+- **Root Cause:** The WordPress theme's `style.css` (line 466) defines `.btn-primary` with `background: var(--r2f-primary)` where `--r2f-primary: #1e3a5f` (dark navy). This theme CSS loads after the portal CSS and overrides it.
+- **Investigation Steps:**
+  1. First found buttons were missing base `btn` class - fixed by adding `btn btn-primary` to components
+  2. Then discovered `bg-primary-500` was using CSS variable being set to navy by PHP template
+  3. Changed to `bg-primary-600` - still overridden
+  4. Changed to explicit `bg-green-600` Tailwind color - still overridden by theme
+  5. Finally identified theme's `style.css` as the culprit with lower specificity
+- **Solution:** Added portal-scoped CSS rule at end of `index.css`:
+  ```css
+  #fra-portal-root .btn-primary {
+    background-color: #16a34a !important;
+    color: #ffffff !important;
+  }
+  ```
+  This ensures higher specificity via `#fra-portal-root` scoping plus `!important` to override any theme styles.
+
+### Files Modified This Session
+| File | Changes |
+|------|---------|
+| `portal/src/index.css` | Added portal-scoped `.btn-primary` rule with `!important` |
+| `portal/src/components/schengen/FamilyManager.tsx` | Added missing `btn` class to buttons |
+| `portal/src/components/schengen/CSVImportExport.tsx` | Added missing `btn` class to buttons |
+| `portal/src/components/guides/PersonalizedGuideDetail.tsx` | Added missing `btn` class to buttons |
+| `relo2france-schengen-tracker/includes/class-r2f-schengen-api.php` | Fixed legacy route registration for portal compatibility |
+| `portal/src/components/schengen/CalendarView.tsx` | UI redesign with prominent month display |
+
 ### Commits
 | Commit | Message |
 |--------|---------|
+| `9493c95` | Fix btn-primary color by scoping to portal root |
+| `22ce433` | Use explicit green color for btn-primary instead of CSS variable |
+| `3e9b5f1` | Fix btn-primary color to match green primary buttons |
+| `0fd374c` | Fix button styling consistency - add missing base btn class |
+| `8893f57` | Update HANDOFF.md with session fixes documentation |
 | `f1794b8` | Fix analytics API endpoint and improve calendar styling |
 
 ---
@@ -365,4 +422,4 @@ Resolved merge conflicts between `claude/resume-france-relocation-tWg9t` and `or
 
 ---
 
-*Last Updated: December 29, 2024*
+*Last Updated: December 29, 2024 (Session 2 - Button Styling Fix)*
