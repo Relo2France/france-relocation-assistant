@@ -74,7 +74,7 @@ export default function PersonalizedGuideDetail({ guideType, onBack }: Personali
           <button
             onClick={handleGenerateGuide}
             disabled={generateGuide.isPending}
-            className="btn-primary"
+            className="btn btn-primary"
           >
             {generateGuide.isPending ? (
               <>
@@ -112,7 +112,7 @@ export default function PersonalizedGuideDetail({ guideType, onBack }: Personali
           <button
             onClick={handleGenerateGuide}
             disabled={generateGuide.isPending}
-            className="btn-primary"
+            className="btn btn-primary"
           >
             {generateGuide.isPending ? (
               <>
@@ -169,7 +169,7 @@ export default function PersonalizedGuideDetail({ guideType, onBack }: Personali
               <button
                 onClick={handleGenerateGuide}
                 disabled={generateGuide.isPending}
-                className="btn-primary whitespace-nowrap"
+                className="btn btn-primary whitespace-nowrap"
               >
                 {generateGuide.isPending ? (
                   <>

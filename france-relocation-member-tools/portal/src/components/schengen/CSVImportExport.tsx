@@ -112,7 +112,7 @@ export default function CSVImportExport({ className }: CSVImportExportProps) {
             type="button"
             onClick={handleExport}
             disabled={exportMutation.isPending}
-            className="btn-primary flex items-center gap-2"
+            className="btn btn-primary"
           >
             {exportMutation.isPending ? (
               <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
@@ -239,7 +239,7 @@ export default function CSVImportExport({ className }: CSVImportExportProps) {
                 type="button"
                 onClick={handleImport}
                 disabled={importMutation.isPending || !csvText.trim()}
-                className="btn-primary flex items-center gap-2"
+                className="btn btn-primary"
               >
                 {importMutation.isPending ? (
                   <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />

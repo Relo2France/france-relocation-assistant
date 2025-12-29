@@ -245,7 +245,7 @@ function MemberForm({ member, onSave, onCancel, isLoading }: MemberFormProps) {
         <button
           type="submit"
           disabled={isLoading || !name.trim()}
-          className="btn-primary flex items-center gap-2"
+          className="btn btn-primary"
         >
           {isLoading ? (
             <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
@@ -443,7 +443,7 @@ export default function FamilyManager({ className }: FamilyManagerProps) {
             {!isAddingMember && !editingMember && (
               <button
                 onClick={() => setIsAddingMember(true)}
-                className="btn-primary flex items-center gap-2"
+                className="btn btn-primary"
               >
                 <Plus className="w-4 h-4" aria-hidden="true" />
                 Add Member
@@ -529,7 +529,7 @@ export default function FamilyManager({ className }: FamilyManagerProps) {
             </p>
             <button
               onClick={() => setIsAddingMember(true)}
-              className="btn-primary inline-flex items-center gap-2"
+              className="btn btn-primary"
             >
               <Plus className="w-4 h-4" aria-hidden="true" />
               Add First Member
