@@ -119,10 +119,9 @@ class R2F_Schengen_API {
 		// Register primary routes.
 		$this->register_route_group( self::NAMESPACE );
 
-		// Register legacy routes for backward compatibility with Member Tools.
-		if ( ! r2f_schengen_has_member_tools() ) {
-			$this->register_route_group( self::LEGACY_NAMESPACE, '/schengen' );
-		}
+		// Register legacy routes for Member Tools portal compatibility.
+		// The portal frontend uses fra-portal/v1/schengen/* endpoints.
+		$this->register_route_group( self::LEGACY_NAMESPACE, '/schengen' );
 	}
 
 	/**
