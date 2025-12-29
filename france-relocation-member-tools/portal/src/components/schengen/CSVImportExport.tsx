@@ -251,7 +251,7 @@ export default function CSVImportExport({ className }: CSVImportExportProps) {
               <button
                 type="button"
                 onClick={resetImport}
-                className="btn-secondary"
+                className="btn btn-secondary"
               >
                 Cancel
               </button>
