@@ -73,10 +73,6 @@
     @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2;
   }
 
-  .btn-primary {
-    @apply bg-green-600 text-white hover:bg-green-700 focus:ring-green-600;
-  }
-
   .btn-secondary {
     @apply bg-gray-100 text-gray-700 hover:bg-gray-200 focus:ring-gray-500;
   }
@@ -212,4 +208,18 @@
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
     background-color: rgba(155, 155, 155, 0.7);
   }
+}
+
+/* Portal-scoped button styles to override WordPress theme */
+#fra-portal-root .btn-primary {
+  background-color: #16a34a !important;
+  color: #ffffff !important;
+}
+
+#fra-portal-root .btn-primary:hover {
+  background-color: #15803d !important;
+}
+
+#fra-portal-root .btn-primary:focus {
+  --tw-ring-color: #16a34a;
 }
