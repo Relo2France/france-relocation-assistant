@@ -1,8 +1,8 @@
 # Relo2France Session Handoff Document
 
-**Date:** December 28, 2024
+**Date:** December 29, 2024
 **Branch:** `claude/resume-france-relocation-tWg9t`
-**Last Commit:** `b5a710a` - Add Phase 7: Analytics dashboard for Schengen Tracker
+**Last Commit:** `f1794b8` - Fix analytics API endpoint and improve calendar styling
 
 ---
 
@@ -321,7 +321,35 @@ SchengenDashboard
 
 ---
 
-## 13. Merge Conflict Resolution (This Session)
+## 13. Session Fixes (December 29, 2024)
+
+### Analytics API Endpoint Fix
+- **Issue:** Analytics tab showing "Failed to load analytics data" error
+- **Root Cause:** Legacy routes (`fra-portal/v1/schengen/*`) were only registered when Member Tools was NOT present, but the portal frontend uses these exact routes
+- **Fix:** Modified `class-r2f-schengen-api.php` to always register legacy routes for portal compatibility
+- **File:** `relo2france-schengen-tracker/includes/class-r2f-schengen-api.php:118-125`
+
+### Calendar View UI Redesign
+- **Request:** User wanted more professional calendar with prominent month display
+- **Changes to CalendarView.tsx:**
+  - Redesigned header with prominent month name and year below
+  - Navigation controls grouped in pill-style button container
+  - Added subtle gradient background to header
+  - Weekend columns slightly tinted for visual distinction
+  - Improved cell sizing and padding
+  - Today's date highlighted with ring and background
+  - Trip indicators styled with rounded corners and shadows
+  - Legend centered with improved spacing
+  - Overall rounded corners and shadow on container
+
+### Commits
+| Commit | Message |
+|--------|---------|
+| `f1794b8` | Fix analytics API endpoint and improve calendar styling |
+
+---
+
+## 14. Merge Conflict Resolution (Previous Session)
 
 Resolved merge conflicts between `claude/resume-france-relocation-tWg9t` and `origin/main`:
 
@@ -337,4 +365,4 @@ Resolved merge conflicts between `claude/resume-france-relocation-tWg9t` and `or
 
 ---
 
-*Last Updated: December 28, 2024*
+*Last Updated: December 29, 2024*
