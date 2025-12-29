@@ -4,7 +4,7 @@
  * Imports trip data from calendar events.
  * Scans for travel-related events and extracts location data.
  *
- * @package R2F_Schengen_Tracker
+ * @package MyTravelStatus
  * @since   1.0.0
  */
 

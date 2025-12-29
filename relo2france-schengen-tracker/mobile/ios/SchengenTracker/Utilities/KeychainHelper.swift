@@ -3,7 +3,7 @@
  *
  * Secure storage for sensitive data like auth tokens.
  *
- * @package R2F_Schengen_Tracker
+ * @package MyTravelStatus
  * @since   1.0.0
  */
 
@@ -11,7 +11,7 @@ import Foundation
 import Security
 
 struct KeychainHelper {
-    private static let serviceName = "com.relo2france.schengen"
+    private static let serviceName = "com.mytravelstatus.app"
 
     /// Save a string value to keychain
     static func save(key: String, value: String) {

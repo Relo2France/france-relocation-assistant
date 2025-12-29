@@ -2,8 +2,9 @@
  * SchengenCountries.swift
  *
  * Reference data for Schengen zone countries.
+ * Used as one of multiple jurisdiction types in MyTravelStatus.
  *
- * @package R2F_Schengen_Tracker
+ * @package MyTravelStatus
  * @since   1.0.0
  */
 

@@ -1,9 +1,13 @@
-# Schengen Tracker Native App - Development Handoff
+# MyTravelStatus Native App - Development Handoff
 
-**Project**: Relo2France Schengen Tracker Mobile App
+**Project**: MyTravelStatus - Track your visa, tax, and residency days worldwide
 **Version**: 1.0.0 (In Development)
 **Last Updated**: December 29, 2025
-**Status**: Phase 1 COMPLETE - iOS & Android Apps Built, Moving to Phase 2 Smart Integrations
+**Status**: Phase 2 In Progress - iOS & Android Apps Rebranded to MyTravelStatus
+
+> **Rebranding Note**: This project was originally "Schengen Tracker" under Relo2France.
+> It has been rebranded to **MyTravelStatus.com** to serve a broader audience tracking
+> multiple visa, tax, and residency rules worldwide.
 
 ---
 
@@ -33,6 +37,7 @@ Build a **simple, clean native mobile app** that provides:
 - Passport Control Mode for border crossings
 - Photo GPS metadata import
 - Calendar integration
+- Multi-jurisdiction tracking (Schengen, UK SRT, US SPT, 183-day rules)
 - Seamless sync with existing web portal
 
 ### Design Philosophy
@@ -42,10 +47,11 @@ Build a **simple, clean native mobile app** that provides:
 - **Smart, not intrusive** - 3 GPS reads/day, not constant tracking
 - **Clean UI** - One-tap access to key information
 - **Battery friendly** - Users shouldn't notice it's running
+- **Multi-jurisdiction ready** - Track multiple visa/tax rules simultaneously
 
 ### Target Platforms
-- iOS (Swift/SwiftUI) - Primary
-- Android (Kotlin/Jetpack Compose) - Secondary
+- iOS (Swift/SwiftUI) - Bundle ID: `com.mytravelstatus.app`
+- Android (Kotlin/Jetpack Compose) - Package: `com.mytravelstatus.app`
 - Shared backend: Existing WordPress REST API
 
 ---
@@ -198,7 +204,7 @@ class BackgroundLocationManager: NSObject, CLLocationManagerDelegate {
     func setupBackgroundTasks() {
         // Register background task
         BGTaskScheduler.shared.register(
-            forTaskWithIdentifier: "com.relo2france.schengen.locationCheck",
+            forTaskWithIdentifier: "com.mytravelstatus.app.locationCheck",
             using: nil
         ) { task in
             self.handleLocationCheck(task: task as! BGAppRefreshTask)
@@ -207,7 +213,7 @@ class BackgroundLocationManager: NSObject, CLLocationManagerDelegate {
 
     func scheduleNextCheck() {
         let request = BGAppRefreshTaskRequest(
-            identifier: "com.relo2france.schengen.locationCheck"
+            identifier: "com.mytravelstatus.app.locationCheck"
         )
         request.earliestBeginDate = nextCheckTime()
 
@@ -1690,7 +1696,7 @@ Tab Bar
 | TrackingDays | $48/yr | ✅ | ✅ | ❌ | ❌ |
 | Schengen Simple | $9/yr | ❌ | ❌ | ❌ | ❌ |
 | NomadTracker | Free | ❌ | ✅ | ✅ | Import |
-| **Relo2France** | **$39-79/yr** | **✅** | **🔜** | **✅** | **✅** |
+| **MyTravelStatus** | **$39-79/yr** | **✅** | **✅** | **✅** | **✅** |
 
 ---
 
@@ -1712,31 +1718,36 @@ relo2france-schengen-tracker/
     └── class-r2f-schengen-mobile-api.php # Mobile app API (v1.6.0)
 ```
 
-### iOS App Files (SwiftUI)
+### iOS App Files (SwiftUI) - MyTravelStatus
 ```
 relo2france-schengen-tracker/mobile/ios/SchengenTracker/
 ├── App/
-│   └── SchengenTrackerApp.swift        # App entry point, BGTaskScheduler
+│   └── MyTravelStatusApp.swift         # App entry point (alias: SchengenTrackerApp)
 ├── Models/
 │   └── Models.swift                    # Trip, LocationReading, SyncStatus
 ├── Services/
 │   ├── APIClient.swift                 # REST API client
 │   ├── BackgroundLocationManager.swift # 3x daily GPS capture
 │   ├── LocalDatabase.swift             # Offline storage (actor)
-│   └── SyncManager.swift               # Offline-first sync
+│   ├── SyncManager.swift               # Offline-first sync
+│   ├── PhotoImporter.swift             # Photo GPS import
+│   └── CalendarImporter.swift          # Calendar event import
 ├── Views/
 │   ├── ContentView.swift               # Tab navigation
-│   └── PassportControl/
-│       └── PassportControlView.swift   # Border officer display
+│   ├── PassportControl/
+│   │   └── PassportControlView.swift   # Border officer display
+│   └── Import/
+│       ├── PhotoImportView.swift       # Photo GPS import UI
+│       └── CalendarImportView.swift    # Calendar import UI
 └── Utilities/
     ├── KeychainHelper.swift            # Secure token storage
-    └── SchengenCountries.swift         # Country reference data
+    └── SchengenCountries.swift         # Country reference data (jurisdiction)
 ```
 
-### Android App Files (Jetpack Compose)
+### Android App Files (Jetpack Compose) - MyTravelStatus
 ```
 relo2france-schengen-tracker/mobile/android/app/src/main/java/com/relo2france/schengen/
-├── SchengenTrackerApp.kt               # Application class, WorkManager init
+├── MyTravelStatusApp.kt                # Application class (alias: SchengenTrackerApp)
 ├── MainActivity.kt                     # Main activity
 ├── data/
 │   ├── Models.kt                       # Trip, LocationReading, SyncStatus
@@ -1749,6 +1760,9 @@ relo2france-schengen-tracker/mobile/android/app/src/main/java/com/relo2france/sc
 │   ├── SyncWorker.kt                   # Background sync
 │   ├── NetworkMonitor.kt               # Connectivity monitoring
 │   └── BootReceiver.kt                 # Reschedule after reboot
+├── import/
+│   ├── PhotoImporter.kt                # Photo GPS import
+│   └── CalendarImporter.kt             # Calendar event import
 ├── ui/
 │   ├── MainViewModel.kt                # MVVM state management
 │   ├── theme/
@@ -1759,10 +1773,16 @@ relo2france-schengen-tracker/mobile/android/app/src/main/java/com/relo2france/sc
 │       ├── HomeScreen.kt               # Dashboard
 │       ├── PassportControlScreen.kt    # Border officer display
 │       ├── TripsScreen.kt              # Trip list
-│       └── SettingsScreen.kt           # App settings
+│       ├── SettingsScreen.kt           # App settings
+│       └── PhotoImportScreen.kt        # Photo import UI
 └── util/
-    ├── SchengenCountries.kt            # Country reference data
+    ├── SchengenCountries.kt            # Country reference data (jurisdiction)
     └── SecureStorage.kt                # EncryptedSharedPreferences
+
+# Android Build Configuration
+- applicationId: com.mytravelstatus.app
+- rootProject.name: MyTravelStatus
+- Theme: Theme.MyTravelStatus
 ```
 
 ### Shared Types

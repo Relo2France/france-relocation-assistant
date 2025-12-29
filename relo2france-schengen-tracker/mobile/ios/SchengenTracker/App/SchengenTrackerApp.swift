@@ -1,9 +1,10 @@
 /**
- * SchengenTrackerApp.swift
+ * MyTravelStatusApp.swift
  *
- * Main entry point for the Schengen Tracker iOS app.
+ * Main entry point for the MyTravelStatus iOS app.
+ * Track your visa, tax, and residency days worldwide.
  *
- * @package R2F_Schengen_Tracker
+ * @package MyTravelStatus
  * @since   1.0.0
  */
 
@@ -11,7 +12,7 @@ import SwiftUI
 import BackgroundTasks
 
 @main
-struct SchengenTrackerApp: App {
+struct MyTravelStatusApp: App {
     @StateObject private var appState = AppState()
     @StateObject private var locationManager = BackgroundLocationManager.shared
     @StateObject private var syncManager = SyncManager.shared
@@ -142,3 +143,6 @@ class AppState: ObservableObject {
         isAuthenticated = false
     }
 }
+
+// Legacy alias for compatibility
+typealias SchengenTrackerApp = MyTravelStatusApp

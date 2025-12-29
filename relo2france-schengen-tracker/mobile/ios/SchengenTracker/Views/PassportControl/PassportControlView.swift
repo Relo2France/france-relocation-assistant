@@ -1,10 +1,10 @@
 /**
  * PassportControlView.swift
  *
- * One-tap view optimized for showing border officials your Schengen compliance.
+ * One-tap view optimized for showing border officials your travel compliance.
  * Large, clear status display with recent entries list.
  *
- * @package R2F_Schengen_Tracker
+ * @package MyTravelStatus
  * @since   1.0.0
  */
 

@@ -4,7 +4,7 @@
  * Imports trip data from photo library GPS metadata.
  * Scans photos, groups by location/date, and creates trips.
  *
- * @package R2F_Schengen_Tracker
+ * @package MyTravelStatus
  * @since   1.0.0
  */
 

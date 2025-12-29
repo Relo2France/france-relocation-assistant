@@ -1,9 +1,12 @@
 <?php
 /**
- * Schengen Tracker Mobile API
+ * MyTravelStatus Mobile API
  *
  * Provides REST API endpoints specifically for the native mobile app.
  * Includes batch sync, app status, and device registration.
+ *
+ * Supports the MyTravelStatus mobile apps for iOS and Android.
+ * (Bundle ID / Package: com.mytravelstatus.app)
  *
  * @package R2F_Schengen_Tracker
  * @since   1.6.0
@@ -17,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Class R2F_Schengen_Mobile_API
  *
- * Mobile-specific REST API endpoints for the Schengen Tracker app.
+ * Mobile-specific REST API endpoints for the MyTravelStatus app.
  */
 class R2F_Schengen_Mobile_API {
 

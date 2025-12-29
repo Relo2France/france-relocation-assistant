@@ -1,9 +1,10 @@
 /**
  * ContentView.swift
  *
- * Main navigation container for the Schengen Tracker app.
+ * Main navigation container for the MyTravelStatus app.
+ * Track your visa, tax, and residency days worldwide.
  *
- * @package R2F_Schengen_Tracker
+ * @package MyTravelStatus
  * @since   1.0.0
  */
 
@@ -40,12 +41,18 @@ struct ContentView: View {
 
     private var loadingView: some View {
         VStack(spacing: 20) {
-            Image(systemName: "airplane.circle.fill")
+            Image(systemName: "globe.europe.africa.fill")
                 .font(.system(size: 80))
                 .foregroundColor(.blue)
 
-            Text("Schengen Tracker")
+            Text("MyTravelStatus")
                 .font(.title.bold())
+
+            Text("Track your visa, tax, and residency days worldwide")
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal)
 
             ProgressView()
                 .scaleEffect(1.2)
@@ -63,7 +70,7 @@ struct ContentView: View {
             Text("Update Required")
                 .font(.title.bold())
 
-            Text("Please update to the latest version to continue using Schengen Tracker.")
+            Text("Please update to the latest version to continue using MyTravelStatus.")
                 .multilineTextAlignment(.center)
                 .foregroundColor(.secondary)
                 .padding(.horizontal)
@@ -184,14 +191,17 @@ struct LoginView: View {
             VStack(spacing: 32) {
                 // Logo
                 VStack(spacing: 12) {
-                    Text("🇪🇺")
+                    Image(systemName: "globe.europe.africa.fill")
                         .font(.system(size: 80))
+                        .foregroundColor(.blue)
 
-                    Text("Schengen Tracker")
+                    Text("MyTravelStatus")
                         .font(.title.bold())
 
-                    Text("Track your 90/180 day compliance")
+                    Text("Track your visa, tax, and residency days worldwide")
                         .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal)
                 }
                 .padding(.top, 40)
 
@@ -286,12 +296,16 @@ struct HomeView: View {
 }
 
 struct StatusCard: View {
+    // Support for multiple jurisdictions - Schengen shown as example
+    var jurisdictionName = "Schengen (90/180)"
+    var jurisdictionIcon = "🇪🇺"
+
     var body: some View {
         VStack(spacing: 16) {
             HStack {
-                Text("🇪🇺")
+                Text(jurisdictionIcon)
                     .font(.title)
-                Text("SCHENGEN")
+                Text(jurisdictionName.uppercased())
                     .font(.headline)
                 Spacer()
                 Text("✓ Compliant")

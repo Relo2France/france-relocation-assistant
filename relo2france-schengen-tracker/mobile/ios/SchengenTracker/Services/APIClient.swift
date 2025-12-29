@@ -4,7 +4,7 @@
  * HTTP client for communicating with the WordPress REST API.
  * Handles authentication, request/response encoding, and error handling.
  *
- * @package R2F_Schengen_Tracker
+ * @package MyTravelStatus
  * @since   1.0.0
  */
 

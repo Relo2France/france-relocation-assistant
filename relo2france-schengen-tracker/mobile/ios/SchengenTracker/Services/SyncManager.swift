@@ -4,7 +4,7 @@
  * Manages data synchronization between local storage and server.
  * Handles offline queuing, conflict resolution, and background sync.
  *
- * @package R2F_Schengen_Tracker
+ * @package MyTravelStatus
  * @since   1.0.0
  */
 
@@ -15,7 +15,7 @@ import Network
 @MainActor
 class SyncManager: ObservableObject {
     static let shared = SyncManager()
-    static let taskIdentifier = "com.relo2france.schengen.sync"
+    static let taskIdentifier = "com.mytravelstatus.app.sync"
 
     // MARK: - Published Properties
 

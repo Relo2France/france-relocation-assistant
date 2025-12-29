@@ -3,7 +3,7 @@
  *
  * UI for importing trips from photo library GPS metadata.
  *
- * @package R2F_Schengen_Tracker
+ * @package MyTravelStatus
  * @since   1.0.0
  */
 

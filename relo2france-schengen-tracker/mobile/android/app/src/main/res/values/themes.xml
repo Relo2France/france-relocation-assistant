@@ -2,14 +2,17 @@
 <!--
  * themes.xml
  *
- * Theme resources for Schengen Tracker.
+ * Theme resources for MyTravelStatus.
  *
- * @package R2F_Schengen_Tracker
+ * @package MyTravelStatus
  * @since   1.0.0
 -->
 <resources>
-    <style name="Theme.SchengenTracker" parent="android:Theme.Material.Light.NoActionBar">
+    <style name="Theme.MyTravelStatus" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
     </style>
+
+    <!-- Legacy alias for compatibility -->
+    <style name="Theme.SchengenTracker" parent="Theme.MyTravelStatus" />
 </resources>

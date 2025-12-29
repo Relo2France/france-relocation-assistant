@@ -3,7 +3,7 @@
  *
  * Android app module build configuration.
  *
- * @package R2F_Schengen_Tracker
+ * @package MyTravelStatus
  * @since   1.0.0
  */
 
@@ -15,11 +15,11 @@ plugins {
 }
 
 android {
-    namespace = "com.relo2france.schengen"
+    namespace = "com.mytravelstatus.app"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.relo2france.schengen"
+        applicationId = "com.mytravelstatus.app"
         minSdk = 26
         targetSdk = 34
         versionCode = 1

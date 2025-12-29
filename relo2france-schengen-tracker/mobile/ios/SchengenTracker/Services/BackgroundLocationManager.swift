@@ -4,7 +4,7 @@
  * Manages background GPS tracking with the 3-read daily strategy.
  * Captures location at 8 AM, 2 PM, and 8 PM local time.
  *
- * @package R2F_Schengen_Tracker
+ * @package MyTravelStatus
  * @since   1.0.0
  */
 
@@ -15,7 +15,7 @@ import BackgroundTasks
 @MainActor
 class BackgroundLocationManager: NSObject, ObservableObject {
     static let shared = BackgroundLocationManager()
-    static let taskIdentifier = "com.relo2france.schengen.locationCheck"
+    static let taskIdentifier = "com.mytravelstatus.app.locationCheck"
 
     // MARK: - Published Properties
 

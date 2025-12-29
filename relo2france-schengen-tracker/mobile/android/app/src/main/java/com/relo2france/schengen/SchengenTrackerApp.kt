@@ -1,10 +1,10 @@
 /**
- * SchengenTrackerApp.kt
+ * MyTravelStatusApp.kt
  *
- * Main Application class for Schengen Tracker Android app.
+ * Main Application class for MyTravelStatus Android app.
  * Initializes WorkManager for background tasks.
  *
- * @package R2F_Schengen_Tracker
+ * @package MyTravelStatus
  * @since   1.0.0
  */
 
@@ -15,29 +15,17 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.os.Build
 import androidx.work.Configuration
-import androidx.work.WorkManager
-import com.relo2france.schengen.data.local.LocalDatabase
-import com.relo2france.schengen.data.repository.SchengenRepository
 import com.relo2france.schengen.service.LocationScheduler
+import com.relo2france.schengen.util.SecureStorage
 
-class SchengenTrackerApp : Application(), Configuration.Provider {
-
-    lateinit var repository: SchengenRepository
-        private set
+class MyTravelStatusApp : Application(), Configuration.Provider {
 
     override fun onCreate() {
         super.onCreate()
         instance = this
 
-        // Initialize database
-        val database = LocalDatabase.getInstance(this)
-
-        // Initialize repository
-        repository = SchengenRepository(
-            apiClient = ApiClient.getInstance(this),
-            database = database,
-            preferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
-        )
+        // Initialize secure storage
+        SecureStorage.init(this)
 
         // Create notification channels
         createNotificationChannels()
@@ -58,42 +46,45 @@ class SchengenTrackerApp : Application(), Configuration.Provider {
             // Location tracking channel
             val locationChannel = NotificationChannel(
                 CHANNEL_LOCATION,
-                "Location Tracking",
+                getString(R.string.notification_channel_location),
                 NotificationManager.IMPORTANCE_LOW
             ).apply {
-                description = "Background location tracking notifications"
+                description = getString(R.string.notification_channel_location_desc)
             }
             notificationManager.createNotificationChannel(locationChannel)
 
             // Alerts channel
             val alertsChannel = NotificationChannel(
                 CHANNEL_ALERTS,
-                "Schengen Alerts",
+                getString(R.string.notification_channel_alerts),
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
-                description = "Important alerts about your Schengen status"
+                description = getString(R.string.notification_channel_alerts_desc)
             }
             notificationManager.createNotificationChannel(alertsChannel)
 
             // Sync channel
             val syncChannel = NotificationChannel(
                 CHANNEL_SYNC,
-                "Sync Status",
+                getString(R.string.notification_channel_sync),
                 NotificationManager.IMPORTANCE_LOW
             ).apply {
-                description = "Data synchronization notifications"
+                description = getString(R.string.notification_channel_sync_desc)
             }
             notificationManager.createNotificationChannel(syncChannel)
         }
     }
 
     companion object {
-        const val PREFS_NAME = "schengen_prefs"
+        const val PREFS_NAME = "mytravelstatus_prefs"
         const val CHANNEL_LOCATION = "location_tracking"
-        const val CHANNEL_ALERTS = "schengen_alerts"
+        const val CHANNEL_ALERTS = "travel_alerts"
         const val CHANNEL_SYNC = "sync_status"
 
-        lateinit var instance: SchengenTrackerApp
+        lateinit var instance: MyTravelStatusApp
             private set
     }
 }
+
+// Legacy alias for compatibility
+typealias SchengenTrackerApp = MyTravelStatusApp

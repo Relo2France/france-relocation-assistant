@@ -1,10 +1,10 @@
 /**
  * Models.swift
  *
- * Core data models for the Schengen Tracker iOS app.
+ * Core data models for the MyTravelStatus iOS app.
  * Matches the shared TypeScript types and API responses.
  *
- * @package R2F_Schengen_Tracker
+ * @package MyTravelStatus
  * @since   1.0.0
  */
 

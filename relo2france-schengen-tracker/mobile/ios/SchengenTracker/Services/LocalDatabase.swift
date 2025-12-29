@@ -4,7 +4,7 @@
  * Local SQLite database for offline storage.
  * Uses SwiftData or Core Data in production.
  *
- * @package R2F_Schengen_Tracker
+ * @package MyTravelStatus
  * @since   1.0.0
  */
 

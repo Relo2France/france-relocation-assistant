@@ -1,9 +1,9 @@
 /**
  * settings.gradle.kts
  *
- * Gradle settings for Schengen Tracker Android app.
+ * Gradle settings for MyTravelStatus Android app.
  *
- * @package R2F_Schengen_Tracker
+ * @package MyTravelStatus
  * @since   1.0.0
  */
 
@@ -23,5 +23,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "SchengenTracker"
+rootProject.name = "MyTravelStatus"
 include(":app")
