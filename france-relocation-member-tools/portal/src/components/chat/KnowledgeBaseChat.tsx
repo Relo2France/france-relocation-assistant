@@ -175,12 +175,14 @@ export default function KnowledgeBaseChat() {
         <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center gap-3">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="lg:hidden p-2 hover:bg-gray-100 rounded-lg"
+            className="p-2 hover:bg-gray-100 rounded-lg"
+            title={sidebarOpen ? 'Hide categories' : 'Show categories'}
+            aria-label={sidebarOpen ? 'Hide categories' : 'Show categories'}
           >
             {sidebarOpen ? (
-              <ChevronLeft className="w-5 h-5" />
+              <ChevronLeft className="w-5 h-5 text-gray-600" />
             ) : (
-              <ChevronRight className="w-5 h-5" />
+              <ChevronRight className="w-5 h-5 text-gray-600" />
             )}
           </button>
           <MessageSquare className="w-6 h-6 text-primary-600" />
