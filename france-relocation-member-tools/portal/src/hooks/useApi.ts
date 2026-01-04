@@ -1513,28 +1513,28 @@ export function useSchengenSuggestions() {
 }
 
 // ============================================
-// Schengen Family Tracking Hooks (Phase 8)
+// Schengen Family Member Hooks (Phase 7)
 // ============================================
 
 /**
- * Get all Schengen family member summaries (overview)
- */
-export function useSchengenFamilySummaries() {
-  return useQuery({
-    queryKey: ['schengenFamilySummaries'],
-    queryFn: schengenApi.getFamilySummaries,
-    staleTime: 30000,
-  });
-}
-
-/**
- * Get all Schengen family members
+ * Get all Schengen family members for the current user
  */
 export function useSchengenFamilyMembers() {
   return useQuery({
     queryKey: ['schengenFamilyMembers'],
-    queryFn: schengenApi.getFamilyMembers,
-    staleTime: 30000,
+    queryFn: schengenApi.getSchengenFamilyMembers,
+    staleTime: 30 * 1000, // 30 seconds
+  });
+}
+
+/**
+ * Get Schengen family summary with status for all members
+ */
+export function useSchengenFamilySummary() {
+  return useQuery({
+    queryKey: ['schengenFamilySummary'],
+    queryFn: schengenApi.getSchengenFamilySummary,
+    staleTime: 30 * 1000, // 30 seconds
   });
 }
 
@@ -1544,10 +1544,10 @@ export function useSchengenFamilyMembers() {
 export function useCreateSchengenFamilyMember() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: schengenApi.createFamilyMember,
+    mutationFn: schengenApi.createSchengenFamilyMember,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['schengenFamilySummaries'] });
       queryClient.invalidateQueries({ queryKey: ['schengenFamilyMembers'] });
+      queryClient.invalidateQueries({ queryKey: ['schengenFamilySummary'] });
     },
   });
 }
@@ -1558,11 +1558,11 @@ export function useCreateSchengenFamilyMember() {
 export function useUpdateSchengenFamilyMember() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Partial<import('@/types').SchengenFamilyMember> }) =>
-      schengenApi.updateFamilyMember(id, data),
+    mutationFn: ({ id, data }: { id: number; data: Parameters<typeof schengenApi.updateSchengenFamilyMember>[1] }) =>
+      schengenApi.updateSchengenFamilyMember(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['schengenFamilySummaries'] });
       queryClient.invalidateQueries({ queryKey: ['schengenFamilyMembers'] });
+      queryClient.invalidateQueries({ queryKey: ['schengenFamilySummary'] });
     },
   });
 }
@@ -1573,99 +1573,27 @@ export function useUpdateSchengenFamilyMember() {
 export function useDeleteSchengenFamilyMember() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: schengenApi.deleteFamilyMember,
+    mutationFn: schengenApi.deleteSchengenFamilyMember,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['schengenFamilySummaries'] });
       queryClient.invalidateQueries({ queryKey: ['schengenFamilyMembers'] });
-    },
-  });
-}
-
-/**
- * Get trip travelers
- */
-export function useSchengenTripTravelers(tripId: number) {
-  return useQuery({
-    queryKey: ['schengenTripTravelers', tripId],
-    queryFn: () => schengenApi.getTripTravelers(tripId),
-    enabled: !!tripId,
-  });
-}
-
-/**
- * Update trip travelers
- */
-export function useUpdateSchengenTripTravelers() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({
-      tripId,
-      data,
-    }: {
-      tripId: number;
-      data: { includePrimaryUser: boolean; familyMemberIds: number[] };
-    }) => schengenApi.updateTripTravelers(tripId, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['schengenFamilySummaries'] });
-      queryClient.invalidateQueries({ queryKey: ['schengenTripTravelers'] });
+      queryClient.invalidateQueries({ queryKey: ['schengenFamilySummary'] });
+      queryClient.invalidateQueries({ queryKey: ['schengenTrips'] });
     },
   });
 }
 
 // ============================================
-// Analytics Hooks (Phase 8)
+// Schengen Analytics Hooks (Phase 7)
 // ============================================
 
 /**
- * Get analytics overview
+ * Get analytics data for the Schengen dashboard
  */
-export function useAnalyticsOverview(period = '180d') {
+export function useSchengenAnalytics() {
   return useQuery({
-    queryKey: ['schengenAnalyticsOverview', period],
-    queryFn: () => schengenApi.getAnalyticsOverview(period),
-    staleTime: 60000, // 1 minute
-  });
-}
-
-/**
- * Get travel patterns
- */
-export function useTravelPatterns(period = '1y') {
-  return useQuery({
-    queryKey: ['schengenTravelPatterns', period],
-    queryFn: () => schengenApi.getTravelPatterns(period),
-    staleTime: 60000,
-  });
-}
-
-/**
- * Get compliance history
- */
-export function useComplianceHistory(period = '180d', familyMemberId?: number) {
-  return useQuery({
-    queryKey: ['schengenComplianceHistory', period, familyMemberId],
-    queryFn: () => schengenApi.getComplianceHistory(period, familyMemberId),
-    staleTime: 60000,
-  });
-}
-
-/**
- * Get monthly breakdown
- */
-export function useMonthlyBreakdown(year: number) {
-  return useQuery({
-    queryKey: ['schengenMonthlyBreakdown', year],
-    queryFn: () => schengenApi.getMonthlyBreakdown(year),
-    staleTime: 60000,
-  });
-}
-
-/**
- * Export analytics data
- */
-export function useExportAnalytics() {
-  return useMutation({
-    mutationFn: ({ format, period }: { format: 'json' | 'csv'; period: string }) =>
-      schengenApi.exportAnalytics(format, period),
+    queryKey: ['schengenAnalytics'],
+    queryFn: schengenApi.getAnalytics,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false,
   });
 }

@@ -105,6 +105,21 @@ class R2F_Schengen_Notifications {
 	}
 
 	/**
+	 * Get portal URL with optional path.
+	 *
+	 * @param string $path Optional path to append (e.g., 'schengen').
+	 * @return string Full portal URL.
+	 */
+	private function get_portal_url( string $path = '' ): string {
+		$portal_path = apply_filters( 'r2f_schengen_portal_path', '/portal/' );
+		$full_path   = trailingslashit( $portal_path );
+		if ( $path ) {
+			$full_path .= ltrim( $path, '/' );
+		}
+		return home_url( $full_path );
+	}
+
+	/**
 	 * Register REST API routes.
 	 */
 	public function register_routes(): void {
@@ -721,7 +736,7 @@ class R2F_Schengen_Notifications {
 			__( 'Test Notification', 'r2f-schengen' ),
 			__( 'This is a test notification from Schengen Tracker. If you see this, notifications are working!', 'r2f-schengen' ),
 			array(
-				'action_url' => home_url( '/member-portal/schengen' ),
+				'action_url' => $this->get_portal_url( 'schengen' ),
 				'icon'       => 'info',
 			)
 		);
@@ -733,7 +748,7 @@ class R2F_Schengen_Notifications {
 			'icon'  => '/icons/schengen-icon-192.png',
 			'tag'   => 'test-' . time(),
 			'data'  => array(
-				'url' => home_url( '/member-portal/schengen' ),
+				'url' => $this->get_portal_url( 'schengen' ),
 			),
 		) );
 
@@ -976,7 +991,7 @@ class R2F_Schengen_Notifications {
 		);
 
 		$this->create_notification( $user_id, $type, $title, $body, array(
-			'action_url' => home_url( '/member-portal/schengen' ),
+			'action_url' => $this->get_portal_url( 'schengen' ),
 			'icon'       => 'urgent' === $alert_level ? 'danger' : 'warning',
 			'priority'   => 'urgent' === $alert_level ? 'high' : 'normal',
 		) );
@@ -988,7 +1003,7 @@ class R2F_Schengen_Notifications {
 			'icon'  => '/icons/schengen-icon-192.png',
 			'tag'   => 'schengen-alert-' . $alert_level,
 			'data'  => array(
-				'url' => home_url( '/member-portal/schengen' ),
+				'url' => $this->get_portal_url( 'schengen' ),
 			),
 		) );
 	}
@@ -1020,7 +1035,7 @@ class R2F_Schengen_Notifications {
 		$body = __( 'Review your calendar events and import them as Schengen trips.', 'r2f-schengen' );
 
 		$this->create_notification( $user_id, 'calendar_sync', $title, $body, array(
-			'action_url' => home_url( '/member-portal/schengen?tab=sync' ),
+			'action_url' => $this->get_portal_url( 'schengen?tab=sync' ),
 			'icon'       => 'calendar',
 		) );
 
@@ -1031,7 +1046,7 @@ class R2F_Schengen_Notifications {
 			'icon'  => '/icons/schengen-icon-192.png',
 			'tag'   => 'calendar-sync-' . time(),
 			'data'  => array(
-				'url' => home_url( '/member-portal/schengen?tab=sync' ),
+				'url' => $this->get_portal_url( 'schengen?tab=sync' ),
 			),
 		) );
 	}
@@ -1060,7 +1075,7 @@ class R2F_Schengen_Notifications {
 			);
 
 			$this->create_notification( $user_id, 'trip_reminder', $title, $body, array(
-				'action_url' => home_url( '/member-portal/schengen' ),
+				'action_url' => $this->get_portal_url( 'schengen' ),
 				'icon'       => 'calendar',
 			) );
 		}

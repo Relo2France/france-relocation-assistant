@@ -52,7 +52,7 @@ import JurisdictionOverview from './JurisdictionOverview';
 import NotificationCenter from './NotificationCenter';
 import CSVImportExport from './CSVImportExport';
 import AISuggestions from './AISuggestions';
-import FamilyTracker from './FamilyTracker';
+import FamilyManager from './FamilyManager';
 import AnalyticsDashboard from './AnalyticsDashboard';
 import Modal from '@/components/shared/Modal';
 import ErrorBoundary from '@/components/shared/ErrorBoundary';
@@ -521,7 +521,7 @@ export default function SchengenDashboard() {
       {activeTab === 'family' && (
         isPremium ? (
           <ErrorBoundary>
-            <FamilyTracker />
+            <FamilyManager />
           </ErrorBoundary>
         ) : (
           <PremiumFeaturePrompt

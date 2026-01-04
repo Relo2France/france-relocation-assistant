@@ -820,6 +820,7 @@ export interface SchengenTrip {
   jurisdictionCode?: string;               // Jurisdiction code (default: 'schengen')
   category: 'personal' | 'business';
   notes?: string;
+  familyMemberId?: string | null;          // Family member ID (null = primary account holder)
   createdAt: string;                       // ISO timestamp
   updatedAt: string;                       // ISO timestamp
 }
@@ -1106,6 +1107,72 @@ export interface SuggestionsResponse {
 }
 
 // ============================================
+// Schengen Family Member Types (Phase 7)
+// ============================================
+
+export type SchengenFamilyRelationship = 'spouse' | 'partner' | 'child' | 'parent' | 'sibling' | 'other';
+
+export interface SchengenFamilyMember {
+  id: number;
+  name: string;
+  relationship: SchengenFamilyRelationship | null;
+  nationality: string | null;
+  passportCountry: string | null;
+  dateOfBirth: string | null;
+  notes: string | null;
+  color: string;
+  isActive: boolean;
+  displayOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SchengenFamilyMemberCreate {
+  name: string;
+  relationship?: SchengenFamilyRelationship;
+  nationality?: string;
+  passportCountry?: string;
+  dateOfBirth?: string;
+  notes?: string;
+  color?: string;
+}
+
+export interface SchengenFamilyMemberUpdate extends Partial<SchengenFamilyMemberCreate> {
+  isActive?: boolean;
+  displayOrder?: number;
+}
+
+export interface SchengenFamilyMemberStatus {
+  daysUsed: number;
+  daysRemaining: number;
+  daysAllowed: number;
+  percentage: number;
+  level: 'ok' | 'warning' | 'danger';
+}
+
+export interface SchengenFamilyMemberSummary {
+  id: number;
+  name: string;
+  relationship: SchengenFamilyRelationship | null;
+  color: string;
+  status: SchengenFamilyMemberStatus;
+}
+
+export interface SchengenFamilySummary {
+  primary: {
+    name: string;
+    color: string;
+    status: SchengenFamilyMemberStatus;
+  };
+  members: SchengenFamilyMemberSummary[];
+}
+
+export interface SchengenFamilyMembersResponse {
+  members: SchengenFamilyMember[];
+  total: number;
+}
+
+// ============================================
 // Jurisdiction Types (Phase 3)
 // ============================================
 
@@ -1210,129 +1277,64 @@ export interface NotificationPreferences {
 }
 
 // ============================================
-// Schengen Family Tracking Types (Phase 8)
+// Analytics Types (Phase 7 - Simple Analytics)
 // ============================================
 
-export type SchengenRelationship = 'spouse' | 'child' | 'parent' | 'sibling' | 'other';
-
-export interface SchengenFamilyMember {
-  id: number;
-  name: string;
-  relationship: SchengenRelationship;
-  birthDate: string | null;
-  nationality: string | null;
-  passportNumber: string | null;
-  passportExpiry: string | null;
-  color: string;
-  notes: string | null;
-  sortOrder: number;
-  createdAt: string;
-  updatedAt: string;
+export interface AnalyticsSummary {
+  totalTrips: number;
+  totalDays: number;
+  uniqueCountries: number;
+  firstTrip: string | null;
+  lastTrip: string | null;
+  longestTrip: number;
+  shortestTrip: number;
+  avgTripLength: number;
 }
 
-export interface SchengenFamilySummary {
-  daysUsed: number;
-  daysRemaining: number;
-  status: SchengenStatus;
-  tripCount: number;
-  windowStart: string;
-  windowEnd: string;
-  nextExpiration: string | null;
-}
-
-export interface SchengenFamilyMemberWithSummary {
-  member: SchengenFamilyMember;
-  summary: SchengenFamilySummary;
-}
-
-export interface SchengenFamilyOverview {
-  primaryUser: {
-    id: number;
-    name: string;
-    summary: SchengenFamilySummary;
-  };
-  family: SchengenFamilyMemberWithSummary[];
-}
-
-export interface TripTraveler {
-  id: number;
-  tripId: number;
-  familyMemberId: number | null;
-  isPrimaryUser: boolean;
-  name: string;
-  relationship: string;
-  color: string;
-}
-
-// ============================================
-// Analytics Types (Phase 8)
-// ============================================
-
-export interface AnalyticsOverview {
-  period: string;
-  stats: {
-    totalTrips: number;
-    totalDays: number;
-    uniqueCountries: number;
-    avgTripLength: number;
-    longestTrip: {
-      country: string;
-      days: number;
-      startDate: string;
-      endDate: string;
-    } | null;
-    mostVisited: {
-      country: string;
-      visitCount: number;
-      totalDays: number;
-    } | null;
-  };
-  compliance: {
-    daysUsed: number;
-    daysRemaining: number;
-    status: SchengenStatus;
-    tripCount: number;
-    windowStart: string;
-    windowEnd: string;
-  };
-}
-
-export interface TravelPattern {
+export interface CountryBreakdown {
   country: string;
-  tripCount: number;
-  totalDays: number;
-  percentage: number;
-  firstVisit: string;
-  lastVisit: string;
+  trips: number;
+  days: number;
 }
 
-export interface MonthlyData {
+export interface MonthlyTrend {
   month: string;
-  tripCount: number;
-  totalDays: number;
+  days: number;
+  trips: number;
 }
 
-export interface TravelPatterns {
-  period: string;
-  countries: TravelPattern[];
-  monthly: MonthlyData[];
+export interface YearlyTotal {
+  year: string;
+  trips: number;
+  days: number;
 }
 
 export interface ComplianceHistoryPoint {
   date: string;
   daysUsed: number;
   daysRemaining: number;
-  status: SchengenStatus;
-  tripCount: number;
+  percentage: number;
 }
 
-export interface MonthlyBreakdown {
-  month: string;
+export interface TripDurationBucket {
   label: string;
+  count: number;
+}
+
+export interface CategoryBreakdown {
+  category: string;
+  trips: number;
   days: number;
-  tripCount: number;
-  countryCount: number;
-  countries: string;
+}
+
+export interface AnalyticsData {
+  summary: AnalyticsSummary;
+  countryBreakdown: CountryBreakdown[];
+  monthlyTrends: MonthlyTrend[];
+  yearlyTotals: YearlyTotal[];
+  complianceHistory: ComplianceHistoryPoint[];
+  tripDurations: TripDurationBucket[];
+  categoryBreakdown: CategoryBreakdown[];
 }
 
 // WordPress global types

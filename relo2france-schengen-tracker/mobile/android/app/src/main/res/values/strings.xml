@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ * strings.xml
+ *
+ * String resources for MyTravelStatus.
+ *
+ * @package MyTravelStatus
+ * @since   1.0.0
+-->
+<resources>
+    <string name="app_name">MyTravelStatus</string>
+    <string name="app_tagline">Track your visa, tax, and residency days worldwide</string>
+
+    <!-- Notification Channels -->
+    <string name="notification_channel_location">Location Tracking</string>
+    <string name="notification_channel_location_desc">Notifications about location tracking</string>
+    <string name="notification_channel_alerts">Travel Alerts</string>
+    <string name="notification_channel_alerts_desc">Important alerts about your travel days</string>
+    <string name="notification_channel_sync">Data Sync</string>
+    <string name="notification_channel_sync_desc">Notifications about data synchronization</string>
+
+    <!-- Common Strings -->
+    <string name="schengen_zone">Schengen Zone</string>
+    <string name="days_used">Days Used</string>
+    <string name="days_remaining">Days Remaining</string>
+    <string name="passport_control">Passport Control</string>
+    <string name="recent_trips">Recent Trips</string>
+    <string name="all_trips">All Trips</string>
+    <string name="settings">Settings</string>
+    <string name="sync_now">Sync Now</string>
+    <string name="import_photos">Import from Photos</string>
+    <string name="import_calendar">Import from Calendar</string>
+
+    <!-- Jurisdictions -->
+    <string name="jurisdiction_schengen">Schengen (90/180)</string>
+    <string name="jurisdiction_uk_srt">UK Statutory Residence</string>
+    <string name="jurisdiction_us_spt">US Substantial Presence</string>
+    <string name="jurisdiction_183_day">183-Day Rule</string>
+</resources>

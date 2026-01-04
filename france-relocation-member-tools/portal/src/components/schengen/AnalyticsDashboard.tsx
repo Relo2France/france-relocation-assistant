@@ -1,615 +1,549 @@
 /**
  * AnalyticsDashboard
  *
- * Analytics and insights for Schengen travel history.
- * Shows travel patterns, compliance history, and monthly breakdowns.
+ * Displays analytics charts and statistics for Schengen travel history.
+ * Premium feature with historical visualization, country breakdown,
+ * monthly trends, and compliance tracking.
  */
 
-import { useState } from 'react';
-import { clsx } from 'clsx';
 import {
-  BarChart3,
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+} from 'recharts';
+import {
   TrendingUp,
-  MapPin,
   Calendar,
+  MapPin,
   Clock,
-  Plane,
-  Globe,
-  Loader2,
-  ChevronDown,
+  Briefcase,
+  User,
+  AlertTriangle,
 } from 'lucide-react';
-import type {
-  AnalyticsOverview,
-  TravelPattern,
-  ComplianceHistoryPoint,
-  MonthlyBreakdown,
-} from '@/types';
-import {
-  useAnalyticsOverview,
-  useTravelPatterns,
-  useComplianceHistory,
-  useMonthlyBreakdown,
-} from '@/hooks/useApi';
-import StatusBadge from './StatusBadge';
+import { clsx } from 'clsx';
+import { useSchengenAnalytics } from '@/hooks/useApi';
 
-type Period = '30d' | '90d' | '180d' | '1y' | 'all';
-type AnalyticsTab = 'overview' | 'countries' | 'history' | 'monthly';
+// Chart colors
+const COLORS = {
+  primary: '#3B82F6',
+  secondary: '#10B981',
+  warning: '#F59E0B',
+  danger: '#EF4444',
+  purple: '#8B5CF6',
+  pink: '#EC4899',
+  cyan: '#06B6D4',
+  orange: '#F97316',
+};
 
-export default function AnalyticsDashboard() {
-  const [period, setPeriod] = useState<Period>('180d');
-  const [activeTab, setActiveTab] = useState<AnalyticsTab>('overview');
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+const PIE_COLORS = [
+  COLORS.primary,
+  COLORS.secondary,
+  COLORS.warning,
+  COLORS.purple,
+  COLORS.pink,
+  COLORS.cyan,
+  COLORS.orange,
+  COLORS.danger,
+];
 
-  const overviewQuery = useAnalyticsOverview(period);
-  const patternsQuery = useTravelPatterns(period);
-  const historyQuery = useComplianceHistory(period);
-  const monthlyQuery = useMonthlyBreakdown(selectedYear);
-
-  const periodOptions: { value: Period; label: string }[] = [
-    { value: '30d', label: 'Last 30 days' },
-    { value: '90d', label: 'Last 90 days' },
-    { value: '180d', label: 'Last 180 days' },
-    { value: '1y', label: 'Last year' },
-    { value: 'all', label: 'All time' },
-  ];
-
-  const tabs = [
-    { id: 'overview' as const, label: 'Overview', icon: BarChart3 },
-    { id: 'countries' as const, label: 'Countries', icon: Globe },
-    { id: 'history' as const, label: 'Compliance', icon: TrendingUp },
-    { id: 'monthly' as const, label: 'Monthly', icon: Calendar },
-  ];
-
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-primary-100 rounded-lg">
-            <BarChart3 className="w-5 h-5 text-primary-600" aria-hidden="true" />
-          </div>
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900">Travel Analytics</h2>
-            <p className="text-sm text-gray-500">Insights into your travel patterns</p>
-          </div>
-        </div>
-
-        {/* Period Selector */}
-        <div className="relative">
-          <select
-            value={period}
-            onChange={(e) => setPeriod(e.target.value as Period)}
-            className="appearance-none px-4 py-2 pr-10 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-          >
-            {periodOptions.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-        </div>
-      </div>
-
-      {/* Tab Navigation */}
-      <div className="border-b border-gray-200">
-        <nav className="flex gap-6">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={clsx(
-                'pb-3 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2',
-                activeTab === tab.id
-                  ? 'border-primary-600 text-primary-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              )}
-            >
-              <tab.icon className="w-4 h-4" aria-hidden="true" />
-              {tab.label}
-            </button>
-          ))}
-        </nav>
-      </div>
-
-      {/* Tab Content */}
-      {activeTab === 'overview' && (
-        <OverviewTab data={overviewQuery.data} isLoading={overviewQuery.isLoading} />
-      )}
-      {activeTab === 'countries' && (
-        <CountriesTab data={patternsQuery.data} isLoading={patternsQuery.isLoading} />
-      )}
-      {activeTab === 'history' && (
-        <HistoryTab data={historyQuery.data} isLoading={historyQuery.isLoading} />
-      )}
-      {activeTab === 'monthly' && (
-        <MonthlyTab
-          data={monthlyQuery.data}
-          isLoading={monthlyQuery.isLoading}
-          year={selectedYear}
-          onYearChange={setSelectedYear}
-        />
-      )}
-    </div>
-  );
+interface StatCardProps {
+  title: string;
+  value: string | number;
+  subtitle?: string;
+  icon: React.ReactNode;
+  trend?: 'up' | 'down' | 'neutral';
+  trendValue?: string;
 }
 
-/**
- * Overview Tab
- */
-function OverviewTab({
-  data,
-  isLoading,
-}: {
-  data: AnalyticsOverview | undefined;
-  isLoading: boolean;
-}) {
-  if (isLoading) {
-    return <LoadingState />;
-  }
-
-  if (!data) {
-    return <EmptyState message="No analytics data available" />;
-  }
-
-  const { stats, compliance } = data;
-
+function StatCard({ title, value, subtitle, icon, trend, trendValue }: StatCardProps) {
   return (
-    <div className="space-y-6">
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard
-          icon={Plane}
-          label="Total Trips"
-          value={stats.totalTrips}
-          color="blue"
-        />
-        <StatCard
-          icon={Calendar}
-          label="Days Traveled"
-          value={stats.totalDays}
-          color="green"
-        />
-        <StatCard
-          icon={Globe}
-          label="Countries"
-          value={stats.uniqueCountries}
-          color="purple"
-        />
-        <StatCard
-          icon={Clock}
-          label="Avg Trip Length"
-          value={`${stats.avgTripLength} days`}
-          color="orange"
-        />
+    <div className="bg-white rounded-lg border border-gray-200 p-4">
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-sm text-gray-500">{title}</p>
+          <p className="mt-1 text-2xl font-bold text-gray-900">{value}</p>
+          {subtitle && <p className="mt-1 text-xs text-gray-400">{subtitle}</p>}
+        </div>
+        <div className="rounded-lg bg-primary-50 p-2 text-primary-600">{icon}</div>
       </div>
-
-      {/* Current Compliance Card */}
-      <div className="card p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Current Compliance</h3>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <div className="text-center">
-              <p className="text-4xl font-bold text-gray-900">{compliance.daysUsed}</p>
-              <p className="text-sm text-gray-500">Days Used</p>
-            </div>
-            <div className="text-center">
-              <p className="text-4xl font-bold text-gray-900">{compliance.daysRemaining}</p>
-              <p className="text-sm text-gray-500">Days Remaining</p>
-            </div>
-          </div>
-          <StatusBadge status={compliance.status} size="lg" />
-        </div>
-        <div className="mt-4 pt-4 border-t">
-          <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
-            <div
-              className={clsx(
-                'h-full rounded-full transition-all',
-                compliance.status === 'safe' && 'bg-green-500',
-                compliance.status === 'warning' && 'bg-yellow-500',
-                compliance.status === 'danger' && 'bg-orange-500',
-                compliance.status === 'critical' && 'bg-red-500'
-              )}
-              style={{ width: `${Math.min(100, (compliance.daysUsed / 90) * 100)}%` }}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Highlights */}
-      <div className="grid md:grid-cols-2 gap-4">
-        {stats.longestTrip && (
-          <div className="card p-4">
-            <h4 className="text-sm font-medium text-gray-500 mb-2">Longest Trip</h4>
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <MapPin className="w-5 h-5 text-blue-600" aria-hidden="true" />
-              </div>
-              <div>
-                <p className="font-semibold text-gray-900">{stats.longestTrip.country}</p>
-                <p className="text-sm text-gray-500">{stats.longestTrip.days} days</p>
-              </div>
-            </div>
-          </div>
-        )}
-        {stats.mostVisited && (
-          <div className="card p-4">
-            <h4 className="text-sm font-medium text-gray-500 mb-2">Most Visited</h4>
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <Globe className="w-5 h-5 text-purple-600" aria-hidden="true" />
-              </div>
-              <div>
-                <p className="font-semibold text-gray-900">{stats.mostVisited.country}</p>
-                <p className="text-sm text-gray-500">
-                  {stats.mostVisited.visitCount} trips, {stats.mostVisited.totalDays} days
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-/**
- * Countries Tab
- */
-function CountriesTab({
-  data,
-  isLoading,
-}: {
-  data: { countries: TravelPattern[]; monthly: Array<{ month: string; tripCount: number; totalDays: number }> } | undefined;
-  isLoading: boolean;
-}) {
-  if (isLoading) {
-    return <LoadingState />;
-  }
-
-  if (!data || data.countries.length === 0) {
-    return <EmptyState message="No travel data for this period" />;
-  }
-
-  return (
-    <div className="space-y-6">
-      {/* Countries List */}
-      <div className="card">
-        <div className="p-4 border-b">
-          <h3 className="font-semibold text-gray-900">Countries Visited</h3>
-        </div>
-        <div className="divide-y">
-          {data.countries.map((country, idx) => (
-            <div key={country.country} className="p-4 flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-sm font-medium text-gray-600">
-                  {idx + 1}
-                </div>
-                <div>
-                  <p className="font-medium text-gray-900">{country.country}</p>
-                  <p className="text-sm text-gray-500">
-                    {country.tripCount} {country.tripCount === 1 ? 'trip' : 'trips'}
-                  </p>
-                </div>
-              </div>
-              <div className="text-right">
-                <p className="font-semibold text-gray-900">{country.totalDays} days</p>
-                <p className="text-sm text-gray-500">{country.percentage}%</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Distribution Chart (simplified bar chart) */}
-      <div className="card p-6">
-        <h3 className="font-semibold text-gray-900 mb-4">Days Distribution</h3>
-        <div className="space-y-3">
-          {data.countries.slice(0, 5).map((country) => (
-            <div key={country.country}>
-              <div className="flex items-center justify-between text-sm mb-1">
-                <span className="text-gray-700">{country.country}</span>
-                <span className="text-gray-500">{country.totalDays} days</span>
-              </div>
-              <div className="h-4 bg-gray-100 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-primary-500 rounded-full"
-                  style={{ width: `${country.percentage}%` }}
-                />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/**
- * History Tab
- */
-function HistoryTab({
-  data,
-  isLoading,
-}: {
-  data: { history: ComplianceHistoryPoint[] } | undefined;
-  isLoading: boolean;
-}) {
-  if (isLoading) {
-    return <LoadingState />;
-  }
-
-  if (!data || data.history.length === 0) {
-    return <EmptyState message="No compliance history available" />;
-  }
-
-  // Simple line chart representation
-  const maxDays = 90;
-  const points = data.history;
-
-  return (
-    <div className="space-y-6">
-      {/* Chart Area */}
-      <div className="card p-6">
-        <h3 className="font-semibold text-gray-900 mb-4">Compliance Over Time</h3>
-        <div className="relative h-64">
-          {/* Y-axis labels */}
-          <div className="absolute left-0 top-0 bottom-0 w-12 flex flex-col justify-between text-xs text-gray-500 py-2">
-            <span>90</span>
-            <span>60</span>
-            <span>30</span>
-            <span>0</span>
-          </div>
-
-          {/* Chart area */}
-          <div className="ml-14 h-full relative">
-            {/* Grid lines */}
-            <div className="absolute inset-0 flex flex-col justify-between">
-              <div className="border-t border-gray-100" />
-              <div className="border-t border-gray-100" />
-              <div className="border-t border-gray-100" />
-              <div className="border-t border-gray-200" />
-            </div>
-
-            {/* Warning threshold line */}
-            <div
-              className="absolute left-0 right-0 border-t-2 border-dashed border-yellow-400"
-              style={{ top: `${100 - (60 / maxDays) * 100}%` }}
-            />
-
-            {/* Danger threshold line */}
-            <div
-              className="absolute left-0 right-0 border-t-2 border-dashed border-red-400"
-              style={{ top: `${100 - (80 / maxDays) * 100}%` }}
-            />
-
-            {/* Data points */}
-            <svg className="absolute inset-0 w-full h-full overflow-visible">
-              <polyline
-                fill="none"
-                stroke="#3B82F6"
-                strokeWidth="2"
-                points={points
-                  .map((p, i) => {
-                    const x = (i / (points.length - 1)) * 100;
-                    const y = 100 - (p.daysUsed / maxDays) * 100;
-                    return `${x}%,${y}%`;
-                  })
-                  .join(' ')}
-              />
-            </svg>
-          </div>
-        </div>
-
-        {/* Legend */}
-        <div className="flex items-center gap-4 mt-4 text-sm">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-0.5 bg-yellow-400" />
-            <span className="text-gray-600">Warning (60 days)</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-0.5 bg-red-400" />
-            <span className="text-gray-600">Danger (80 days)</span>
-          </div>
-        </div>
-      </div>
-
-      {/* History Table */}
-      <div className="card">
-        <div className="p-4 border-b">
-          <h3 className="font-semibold text-gray-900">History Details</h3>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Date
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Days Used
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Remaining
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Status
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {points.slice(-10).reverse().map((point) => (
-                <tr key={point.date}>
-                  <td className="px-4 py-3 text-sm text-gray-900">{point.date}</td>
-                  <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                    {point.daysUsed}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-600">{point.daysRemaining}</td>
-                  <td className="px-4 py-3">
-                    <StatusBadge status={point.status} size="sm" />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/**
- * Monthly Tab
- */
-function MonthlyTab({
-  data,
-  isLoading,
-  year,
-  onYearChange,
-}: {
-  data: { months: MonthlyBreakdown[] } | undefined;
-  isLoading: boolean;
-  year: number;
-  onYearChange: (year: number) => void;
-}) {
-  const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
-
-  if (isLoading) {
-    return <LoadingState />;
-  }
-
-  return (
-    <div className="space-y-6">
-      {/* Year Selector */}
-      <div className="flex items-center gap-3">
-        <span className="text-sm text-gray-600">Year:</span>
-        <div className="flex gap-2">
-          {years.map((y) => (
-            <button
-              key={y}
-              onClick={() => onYearChange(y)}
-              className={clsx(
-                'px-3 py-1 rounded-lg text-sm font-medium transition-colors',
-                year === y
-                  ? 'bg-primary-100 text-primary-700'
-                  : 'text-gray-600 hover:bg-gray-100'
-              )}
-            >
-              {y}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Monthly Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {data?.months.map((month) => (
-          <div
-            key={month.month}
+      {trend && trendValue && (
+        <div className="mt-2 flex items-center text-xs">
+          <span
             className={clsx(
-              'card p-4',
-              month.days > 0 ? 'bg-white' : 'bg-gray-50'
+              'font-medium',
+              trend === 'up' && 'text-green-600',
+              trend === 'down' && 'text-red-600',
+              trend === 'neutral' && 'text-gray-500'
             )}
           >
-            <p className="text-sm font-medium text-gray-500 mb-2">{month.label}</p>
-            <p className="text-2xl font-bold text-gray-900">{month.days}</p>
-            <p className="text-xs text-gray-500">
-              {month.days === 1 ? 'day' : 'days'} in Schengen
-            </p>
-            {month.tripCount > 0 && (
-              <p className="text-xs text-gray-400 mt-1">
-                {month.tripCount} {month.tripCount === 1 ? 'trip' : 'trips'}
-              </p>
-            )}
-            {month.countries && (
-              <p className="text-xs text-gray-400 truncate" title={month.countries}>
-                {month.countries}
-              </p>
-            )}
+            {trendValue}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface ChartCardProps {
+  title: string;
+  subtitle?: string;
+  children: React.ReactNode;
+  className?: string;
+}
+
+function ChartCard({ title, subtitle, children, className }: ChartCardProps) {
+  return (
+    <div className={clsx('bg-white rounded-lg border border-gray-200 p-4', className)}>
+      <div className="mb-4">
+        <h3 className="font-semibold text-gray-900">{title}</h3>
+        {subtitle && <p className="text-sm text-gray-500">{subtitle}</p>}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function LoadingSkeleton() {
+  return (
+    <div className="space-y-6">
+      {/* Stats skeleton */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="bg-white rounded-lg border border-gray-200 p-4 animate-pulse">
+            <div className="h-4 bg-gray-200 rounded w-20 mb-2" />
+            <div className="h-8 bg-gray-200 rounded w-16" />
           </div>
         ))}
       </div>
-
-      {/* Summary */}
-      {data && (
-        <div className="card p-6">
-          <h3 className="font-semibold text-gray-900 mb-4">
-            {year} Summary
-          </h3>
-          <div className="grid grid-cols-3 gap-6 text-center">
-            <div>
-              <p className="text-3xl font-bold text-gray-900">
-                {data.months.reduce((sum, m) => sum + m.days, 0)}
-              </p>
-              <p className="text-sm text-gray-500">Total Days</p>
-            </div>
-            <div>
-              <p className="text-3xl font-bold text-gray-900">
-                {data.months.reduce((sum, m) => sum + m.tripCount, 0)}
-              </p>
-              <p className="text-sm text-gray-500">Total Trips</p>
-            </div>
-            <div>
-              <p className="text-3xl font-bold text-gray-900">
-                {new Set(data.months.flatMap((m) => m.countries.split(', ').filter(Boolean))).size}
-              </p>
-              <p className="text-sm text-gray-500">Countries</p>
-            </div>
+      {/* Charts skeleton */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="bg-white rounded-lg border border-gray-200 p-4 animate-pulse">
+            <div className="h-4 bg-gray-200 rounded w-32 mb-4" />
+            <div className="h-48 bg-gray-100 rounded" />
           </div>
-        </div>
-      )}
+        ))}
+      </div>
     </div>
   );
 }
 
-/**
- * Stat Card Component
- */
-function StatCard({
-  icon: Icon,
-  label,
-  value,
-  color,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  value: number | string;
-  color: 'blue' | 'green' | 'purple' | 'orange';
-}) {
-  const colorClasses = {
-    blue: 'bg-blue-100 text-blue-600',
-    green: 'bg-green-100 text-green-600',
-    purple: 'bg-purple-100 text-purple-600',
-    orange: 'bg-orange-100 text-orange-600',
+function EmptyState() {
+  return (
+    <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
+      <TrendingUp className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+      <h3 className="text-lg font-medium text-gray-900 mb-2">No travel data yet</h3>
+      <p className="text-gray-500 text-sm max-w-md mx-auto">
+        Start logging your Schengen trips to see analytics and visualizations of your travel
+        patterns over time.
+      </p>
+    </div>
+  );
+}
+
+export default function AnalyticsDashboard() {
+  const { data, isLoading, error } = useSchengenAnalytics();
+
+  // Format date for display
+  const formatDate = (dateStr: string | null) => {
+    if (!dateStr) return 'N/A';
+    return new Date(dateStr).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
   };
 
-  return (
-    <div className="card p-4">
-      <div className="flex items-center gap-3 mb-2">
-        <div className={clsx('p-2 rounded-lg', colorClasses[color])}>
-          <Icon className="w-5 h-5" aria-hidden="true" />
-        </div>
+  // Custom tooltip for charts
+  const CustomTooltip = ({
+    active,
+    payload,
+    label,
+  }: {
+    active?: boolean;
+    payload?: Array<{ value: number; name: string; color: string }>;
+    label?: string;
+  }) => {
+    if (!active || !payload || !payload.length) return null;
+
+    return (
+      <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3">
+        <p className="text-sm font-medium text-gray-900 mb-1">{label}</p>
+        {payload.map((entry, index) => (
+          <p key={index} className="text-sm" style={{ color: entry.color }}>
+            {entry.name}: {entry.value}
+          </p>
+        ))}
       </div>
-      <p className="text-2xl font-bold text-gray-900">{value}</p>
-      <p className="text-sm text-gray-500">{label}</p>
-    </div>
-  );
-}
+    );
+  };
 
-function LoadingState() {
-  return (
-    <div className="flex items-center justify-center p-12">
-      <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
-    </div>
-  );
-}
+  if (isLoading) {
+    return <LoadingSkeleton />;
+  }
 
-function EmptyState({ message }: { message: string }) {
+  if (error) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+        <AlertTriangle className="w-5 h-5 inline-block mr-2" />
+        Failed to load analytics data. Please try again later.
+      </div>
+    );
+  }
+
+  if (!data || data.summary.totalTrips === 0) {
+    return <EmptyState />;
+  }
+
+  const { summary, countryBreakdown, monthlyTrends, yearlyTotals, complianceHistory, tripDurations, categoryBreakdown } = data;
+
   return (
-    <div className="card p-12 text-center">
-      <BarChart3 className="w-12 h-12 text-gray-300 mx-auto mb-4" aria-hidden="true" />
-      <p className="text-gray-500">{message}</p>
+    <div className="space-y-6">
+      {/* Summary Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatCard
+          title="Total Trips"
+          value={summary.totalTrips}
+          subtitle={`${summary.uniqueCountries} countries visited`}
+          icon={<Calendar className="w-5 h-5" />}
+        />
+        <StatCard
+          title="Total Days"
+          value={summary.totalDays}
+          subtitle={`Avg ${summary.avgTripLength} days/trip`}
+          icon={<Clock className="w-5 h-5" />}
+        />
+        <StatCard
+          title="Longest Trip"
+          value={`${summary.longestTrip} days`}
+          subtitle={summary.shortestTrip > 0 ? `Shortest: ${summary.shortestTrip} days` : undefined}
+          icon={<TrendingUp className="w-5 h-5" />}
+        />
+        <StatCard
+          title="Countries"
+          value={summary.uniqueCountries}
+          subtitle={`First trip: ${formatDate(summary.firstTrip)}`}
+          icon={<MapPin className="w-5 h-5" />}
+        />
+      </div>
+
+      {/* Charts Row 1 */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Monthly Trends */}
+        <ChartCard
+          title="Monthly Travel Trends"
+          subtitle="Days spent in Schengen area per month"
+        >
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={monthlyTrends}>
+                <defs>
+                  <linearGradient id="colorDays" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={COLORS.primary} stopOpacity={0.3} />
+                    <stop offset="95%" stopColor={COLORS.primary} stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                <XAxis
+                  dataKey="month"
+                  tick={{ fontSize: 11 }}
+                  tickLine={false}
+                  axisLine={{ stroke: '#E5E7EB' }}
+                />
+                <YAxis
+                  tick={{ fontSize: 11 }}
+                  tickLine={false}
+                  axisLine={{ stroke: '#E5E7EB' }}
+                />
+                <Tooltip content={<CustomTooltip />} />
+                <Area
+                  type="monotone"
+                  dataKey="days"
+                  name="Days"
+                  stroke={COLORS.primary}
+                  strokeWidth={2}
+                  fill="url(#colorDays)"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </ChartCard>
+
+        {/* Country Breakdown */}
+        <ChartCard
+          title="Country Breakdown"
+          subtitle="Days spent per country"
+        >
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={countryBreakdown.slice(0, 8) as Array<{ country: string; days: number; trips: number; [key: string]: string | number }>}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, percent }: { name?: string; percent?: number }) =>
+                    name && percent && percent > 0.05 ? `${name} (${(percent * 100).toFixed(0)}%)` : ''
+                  }
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="days"
+                  nameKey="country"
+                >
+                  {countryBreakdown.slice(0, 8).map((_, index) => (
+                    <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </ChartCard>
+      </div>
+
+      {/* Charts Row 2 */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Compliance History */}
+        {complianceHistory.length > 0 && (
+          <ChartCard
+            title="90-Day Compliance History"
+            subtitle="Days used in rolling 180-day window over time"
+          >
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={complianceHistory}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fontSize: 10 }}
+                    tickLine={false}
+                    axisLine={{ stroke: '#E5E7EB' }}
+                    tickFormatter={(date) =>
+                      new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                    }
+                    interval="preserveStartEnd"
+                  />
+                  <YAxis
+                    domain={[0, 90]}
+                    tick={{ fontSize: 11 }}
+                    tickLine={false}
+                    axisLine={{ stroke: '#E5E7EB' }}
+                  />
+                  <Tooltip
+                    content={({ active, payload, label }) => {
+                      if (!active || !payload || !payload.length || !label) return null;
+                      const dataPoint = payload[0].payload;
+                      return (
+                        <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3">
+                          <p className="text-sm font-medium text-gray-900 mb-1">
+                            {new Date(String(label)).toLocaleDateString('en-US', {
+                              month: 'long',
+                              day: 'numeric',
+                              year: 'numeric',
+                            })}
+                          </p>
+                          <p className="text-sm text-primary-600">
+                            Days used: {dataPoint.daysUsed}/90
+                          </p>
+                          <p className="text-sm text-green-600">
+                            Days remaining: {dataPoint.daysRemaining}
+                          </p>
+                        </div>
+                      );
+                    }}
+                  />
+                  {/* Reference line at 90 days */}
+                  <Line
+                    type="monotone"
+                    dataKey={() => 90}
+                    stroke={COLORS.danger}
+                    strokeDasharray="5 5"
+                    strokeWidth={1}
+                    dot={false}
+                    name="Limit"
+                  />
+                  {/* Warning threshold at 60 */}
+                  <Line
+                    type="monotone"
+                    dataKey={() => 60}
+                    stroke={COLORS.warning}
+                    strokeDasharray="3 3"
+                    strokeWidth={1}
+                    dot={false}
+                    name="Warning"
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="daysUsed"
+                    name="Days Used"
+                    stroke={COLORS.primary}
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="mt-2 flex items-center justify-center gap-4 text-xs text-gray-500">
+              <span className="flex items-center gap-1">
+                <span className="w-3 h-0.5 bg-red-500" style={{ display: 'inline-block' }} />
+                90-day limit
+              </span>
+              <span className="flex items-center gap-1">
+                <span
+                  className="w-3 h-0.5 bg-yellow-500"
+                  style={{ display: 'inline-block' }}
+                />
+                Warning (60 days)
+              </span>
+            </div>
+          </ChartCard>
+        )}
+
+        {/* Yearly Totals */}
+        {yearlyTotals.length > 0 && (
+          <ChartCard title="Yearly Summary" subtitle="Trips and days per year">
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={yearlyTotals}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                  <XAxis
+                    dataKey="year"
+                    tick={{ fontSize: 11 }}
+                    tickLine={false}
+                    axisLine={{ stroke: '#E5E7EB' }}
+                  />
+                  <YAxis
+                    yAxisId="left"
+                    tick={{ fontSize: 11 }}
+                    tickLine={false}
+                    axisLine={{ stroke: '#E5E7EB' }}
+                  />
+                  <YAxis
+                    yAxisId="right"
+                    orientation="right"
+                    tick={{ fontSize: 11 }}
+                    tickLine={false}
+                    axisLine={{ stroke: '#E5E7EB' }}
+                  />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend />
+                  <Bar yAxisId="left" dataKey="days" name="Days" fill={COLORS.primary} radius={[4, 4, 0, 0]} />
+                  <Bar yAxisId="right" dataKey="trips" name="Trips" fill={COLORS.secondary} radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </ChartCard>
+        )}
+      </div>
+
+      {/* Charts Row 3 */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Trip Duration Distribution */}
+        <ChartCard title="Trip Duration Distribution" subtitle="How long are your trips?">
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={tripDurations} layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                <XAxis type="number" tick={{ fontSize: 11 }} tickLine={false} axisLine={{ stroke: '#E5E7EB' }} />
+                <YAxis
+                  type="category"
+                  dataKey="label"
+                  tick={{ fontSize: 11 }}
+                  tickLine={false}
+                  axisLine={{ stroke: '#E5E7EB' }}
+                  width={80}
+                />
+                <Tooltip content={<CustomTooltip />} />
+                <Bar dataKey="count" name="Trips" fill={COLORS.purple} radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </ChartCard>
+
+        {/* Category Breakdown */}
+        <ChartCard title="Travel Purpose" subtitle="Personal vs Business travel">
+          <div className="h-64 flex items-center justify-center">
+            {categoryBreakdown.length > 0 ? (
+              <div className="flex gap-8">
+                {categoryBreakdown.map((cat) => (
+                  <div key={cat.category} className="text-center">
+                    <div
+                      className={clsx(
+                        'w-24 h-24 rounded-full flex items-center justify-center mb-3',
+                        cat.category === 'personal' ? 'bg-blue-100' : 'bg-green-100'
+                      )}
+                    >
+                      {cat.category === 'personal' ? (
+                        <User className="w-10 h-10 text-blue-600" />
+                      ) : (
+                        <Briefcase className="w-10 h-10 text-green-600" />
+                      )}
+                    </div>
+                    <p className="text-lg font-semibold text-gray-900">{cat.trips} trips</p>
+                    <p className="text-sm text-gray-500">{cat.days} days</p>
+                    <p className="text-xs text-gray-400 capitalize">{cat.category}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-sm">No data available</p>
+            )}
+          </div>
+        </ChartCard>
+      </div>
+
+      {/* Top Countries Table */}
+      {countryBreakdown.length > 0 && (
+        <ChartCard title="Top Countries" subtitle="Countries you've visited most">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-200">
+                  <th className="text-left py-2 px-3 font-medium text-gray-500">Country</th>
+                  <th className="text-right py-2 px-3 font-medium text-gray-500">Trips</th>
+                  <th className="text-right py-2 px-3 font-medium text-gray-500">Days</th>
+                  <th className="text-right py-2 px-3 font-medium text-gray-500">% of Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {countryBreakdown.slice(0, 10).map((country, index) => {
+                  const percentage = summary.totalDays > 0
+                    ? ((country.days / summary.totalDays) * 100).toFixed(1)
+                    : '0';
+                  return (
+                    <tr key={country.country} className="border-b border-gray-100">
+                      <td className="py-2 px-3">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className="w-2 h-2 rounded-full"
+                            style={{ backgroundColor: PIE_COLORS[index % PIE_COLORS.length] }}
+                          />
+                          {country.country}
+                        </div>
+                      </td>
+                      <td className="text-right py-2 px-3 text-gray-600">{country.trips}</td>
+                      <td className="text-right py-2 px-3 text-gray-600">{country.days}</td>
+                      <td className="text-right py-2 px-3 text-gray-400">{percentage}%</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </ChartCard>
+      )}
     </div>
   );
 }
