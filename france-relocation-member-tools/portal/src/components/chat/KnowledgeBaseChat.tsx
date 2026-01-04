@@ -300,9 +300,9 @@ function ChatSidebar({
         'overflow-hidden'
       )}
     >
-      <div className="p-6 h-full flex flex-col">
+      <div className="p-6 h-full flex flex-col overflow-y-auto">
         {/* Topic search */}
-        <div className="mb-6">
+        <div className="mb-6 flex-shrink-0">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
@@ -316,7 +316,7 @@ function ChatSidebar({
         </div>
 
         {/* Categories */}
-        <div className="flex-1 overflow-y-auto space-y-2">
+        <div className="space-y-2 flex-shrink-0">
           <button
             onClick={() => onSelectCategory(null)}
             className={clsx(
@@ -364,7 +364,7 @@ function ChatSidebar({
 
         {/* Popular topics */}
         {!topicSearch && popularTopics && popularTopics.length > 0 && (
-          <div className="mt-6 pt-6 border-t border-gray-200">
+          <div className="mt-6 pt-6 border-t border-gray-200 flex-shrink-0">
             <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
               <Lightbulb className="w-4 h-4 text-yellow-500" />
               {selectedCategory
