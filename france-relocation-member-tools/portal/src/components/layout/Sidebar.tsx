@@ -207,14 +207,21 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      {/* Collapse toggle */}
+      {/* Collapse toggle - always visible */}
       <button
         onClick={toggleSidebar}
-        className="flex items-center justify-center h-12 border-t border-gray-700/50 text-sidebar-text hover:text-sidebar-textActive transition-colors"
+        className={clsx(
+          'flex items-center justify-center h-12 border-t border-gray-700/50 transition-colors',
+          sidebarCollapsed
+            ? 'text-sidebar-textActive hover:bg-sidebar-hover'
+            : 'text-sidebar-text hover:text-sidebar-textActive'
+        )}
         title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        aria-expanded={!sidebarCollapsed}
       >
         {sidebarCollapsed ? (
-          <ChevronRight className="w-5 h-5" />
+          <ChevronRight className="w-6 h-6" />
         ) : (
           <>
             <ChevronLeft className="w-5 h-5" />
