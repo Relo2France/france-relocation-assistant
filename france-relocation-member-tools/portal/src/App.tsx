@@ -1,4 +1,4 @@
-import { useEffect, lazy, Suspense, useMemo } from 'react';
+import { useEffect, useRef, lazy, Suspense, useMemo } from 'react';
 import { clsx } from 'clsx';
 import { useCurrentUser } from '@/hooks/useApi';
 import { usePortalStore } from '@/store';
@@ -6,6 +6,9 @@ import ErrorBoundary from '@/components/shared/ErrorBoundary';
 import PWAPrompt from '@/components/shared/PWAPrompt';
 import Sidebar from '@/components/layout/Sidebar';
 import Header from '@/components/layout/Header';
+
+// Views that should auto-collapse the sidebar for more content space
+const IMMERSIVE_VIEWS = ['chat', 'research', 'schengen'];
 
 // Eagerly load Dashboard (most common initial view)
 import Dashboard from '@/components/dashboard/Dashboard';
@@ -97,8 +100,15 @@ function ViewRouter() {
 }
 
 export default function App() {
-  const { sidebarCollapsed, setUser } = usePortalStore();
+  const {
+    sidebarCollapsed,
+    setSidebarCollapsed,
+    sidebarManuallyExpanded,
+    activeView,
+    setUser,
+  } = usePortalStore();
   const { data: user } = useCurrentUser();
+  const prevViewRef = useRef<string>(activeView);
 
   // Set user in store when loaded
   useEffect(() => {
@@ -106,6 +116,22 @@ export default function App() {
       setUser(user);
     }
   }, [user, setUser]);
+
+  // Auto-collapse sidebar when entering immersive views, restore when leaving
+  useEffect(() => {
+    const isImmersive = IMMERSIVE_VIEWS.includes(activeView);
+    const wasImmersive = IMMERSIVE_VIEWS.includes(prevViewRef.current);
+
+    if (isImmersive && !wasImmersive) {
+      // Entering immersive view - collapse sidebar
+      setSidebarCollapsed(true);
+    } else if (!isImmersive && wasImmersive && sidebarManuallyExpanded) {
+      // Leaving immersive view - restore sidebar if user prefers expanded
+      setSidebarCollapsed(false);
+    }
+
+    prevViewRef.current = activeView;
+  }, [activeView, setSidebarCollapsed, sidebarManuallyExpanded]);
 
   return (
     <div className="min-h-screen bg-gray-50">

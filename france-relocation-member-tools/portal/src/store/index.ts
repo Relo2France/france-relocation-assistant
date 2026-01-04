@@ -89,6 +89,10 @@ interface PortalState {
   toggleSidebar: () => void;
   setSidebarCollapsed: (collapsed: boolean) => void;
 
+  // Track if sidebar was manually expanded (to restore after auto-collapse)
+  sidebarManuallyExpanded: boolean;
+  setSidebarManuallyExpanded: (expanded: boolean) => void;
+
   // Active view for navigation
   activeView: string;
   setActiveView: (view: string) => void;
@@ -138,8 +142,20 @@ export const usePortalStore = create<PortalState>((set, get) => {
 
     // UI state - initialized from PHP settings
     sidebarCollapsed: initialSettings.layout.sidebarCollapsed,
-    toggleSidebar: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
+    toggleSidebar: () =>
+      set((state) => {
+        const newCollapsed = !state.sidebarCollapsed;
+        // Track manual expansion/collapse preference
+        return {
+          sidebarCollapsed: newCollapsed,
+          sidebarManuallyExpanded: !newCollapsed,
+        };
+      }),
     setSidebarCollapsed: (sidebarCollapsed) => set({ sidebarCollapsed }),
+
+    // Track if sidebar was manually expanded (to restore after auto-collapse)
+    sidebarManuallyExpanded: !initialSettings.layout.sidebarCollapsed,
+    setSidebarManuallyExpanded: (sidebarManuallyExpanded) => set({ sidebarManuallyExpanded }),
 
     // Active view - initialized from URL ?view= parameter
     activeView: getInitialView(),
