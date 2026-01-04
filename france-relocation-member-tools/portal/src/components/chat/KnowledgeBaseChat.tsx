@@ -285,12 +285,12 @@ function ChatSidebar({
   const [topicSearch, setTopicSearch] = useState('');
   const { data: searchResults } = useSearchChatTopics(topicSearch);
 
-  // Filter topics based on selected category
+  // Filter topics based on selected category - show all topics when category selected
   const popularTopics =
     searchResults?.results ||
     (selectedCategory
-      ? categories.find((c) => c.id === selectedCategory)?.topics.slice(0, 6) || []
-      : categories.flatMap((cat) => cat.topics.slice(0, 2)).slice(0, 6));
+      ? categories.find((c) => c.id === selectedCategory)?.topics || []
+      : categories.flatMap((cat) => cat.topics.slice(0, 2)).slice(0, 8));
 
   return (
     <div
@@ -371,12 +371,12 @@ function ChatSidebar({
                 ? `${categories.find((c) => c.id === selectedCategory)?.title || 'Category'} Topics`
                 : 'Popular Topics'}
             </h3>
-            <div className="space-y-2">
-              {popularTopics.slice(0, 6).map((topic, index) => (
+            <div className="space-y-1">
+              {popularTopics.map((topic, index) => (
                 <button
                   key={index}
                   onClick={() => onSelectTopic(`Tell me about ${topic.title}`)}
-                  className="text-sm text-gray-600 hover:text-primary-600 cursor-pointer py-1 line-clamp-1 text-left w-full"
+                  className="text-sm text-gray-600 hover:text-primary-600 cursor-pointer py-1.5 line-clamp-1 text-left w-full hover:bg-gray-50 rounded px-2 -mx-2"
                   title={`Ask about: ${topic.title}`}
                 >
                   {topic.title}
