@@ -34,7 +34,7 @@
 |-----------|-------------|
 | **Main Plugin** | AI chat, MemberPress integration, auth flows |
 | **Member Tools Plugin** | React SPA portal, profiles, documents, tasks |
-| **Schengen Tracker Plugin** | 90/180-day compliance tracker (premium feature) |
+| **MyTravelStatus Plugin** | 90/180-day compliance tracker (premium feature) |
 | **Theme** | Custom WordPress theme |
 | **GitHub Sync Plugin** | Deployment sync utility |
 | **MyTravelStatus Native Apps** | iOS/Android apps (in development) |
@@ -79,7 +79,7 @@
 | Member Tools Plugin | v2.1.0 | Active |
 | React Portal | v2.1.0 | Active |
 | Theme | v1.2.4 | Active |
-| **Schengen Tracker Plugin** | **v1.6.0** | **Active** |
+| **MyTravelStatus Plugin** | **v1.6.0** | **Active** |
 | MyTravelStatus iOS | v1.0.0 | In Development |
 | MyTravelStatus Android | v1.0.0 | In Development |
 
@@ -160,7 +160,7 @@ Member Portal (React SPA)
 │   └── GuidesView.tsx
 │
 └── Schengen Tracker
-    ├── SchengenDashboard.tsx
+    ├── TravelStatusDashboard.tsx
     ├── Header
     │   ├── NotificationCenter.tsx
     │   ├── ReportExport.tsx
@@ -215,13 +215,13 @@ Native App (iOS/Android)
 | Portal API (40+ endpoints) | `france-relocation-member-tools/includes/class-framt-portal-api.php` |
 | Portal Settings | `france-relocation-member-tools/includes/class-framt-portal-settings.php` |
 | Portal Template | `france-relocation-member-tools/templates/template-portal.php` |
-| Schengen API | `relo2france-schengen-tracker/includes/class-r2f-schengen-api.php` |
-| Schengen Mobile API | `relo2france-schengen-tracker/includes/class-r2f-schengen-mobile-api.php` |
-| Schengen Location | `relo2france-schengen-tracker/includes/class-r2f-schengen-location.php` |
-| Schengen Family | `relo2france-schengen-tracker/includes/class-r2f-schengen-family.php` |
-| Schengen Notifications | `relo2france-schengen-tracker/includes/class-r2f-schengen-notifications.php` |
-| Schengen Calendar | `relo2france-schengen-tracker/includes/class-r2f-schengen-calendar.php` |
-| Schengen Schema | `relo2france-schengen-tracker/includes/class-r2f-schengen-schema.php` |
+| Schengen API | `mytravelstatus/includes/class-mts-api.php` |
+| Schengen Mobile API | `mytravelstatus/includes/class-mts-mobile-api.php` |
+| Schengen Location | `mytravelstatus/includes/class-mts-location.php` |
+| Schengen Family | `mytravelstatus/includes/class-mts-family.php` |
+| Schengen Notifications | `mytravelstatus/includes/class-mts-notifications.php` |
+| Schengen Calendar | `mytravelstatus/includes/class-mts-calendar.php` |
+| Schengen Schema | `mytravelstatus/includes/class-mts-schema.php` |
 
 ### React Frontend
 
@@ -234,18 +234,18 @@ Native App (iOS/Android)
 | Zustand Store | `portal/src/store/index.ts` |
 | Sidebar Navigation | `portal/src/components/layout/Sidebar.tsx` |
 | Profile Section | `portal/src/components/profile/PersonalSection.tsx` |
-| Schengen Dashboard | `portal/src/components/schengen/SchengenDashboard.tsx` |
-| Schengen Utils | `portal/src/utils/schengenUtils.ts` |
+| Schengen Dashboard | `portal/src/components/travel-status/TravelStatusDashboard.tsx` |
+| Schengen Utils | `portal/src/utils/travelStatusUtils.ts` |
 
 ### Native Apps
 
 | Purpose | Location |
 |---------|----------|
-| iOS App Entry | `mobile/ios/SchengenTracker/App/MyTravelStatusApp.swift` |
-| iOS API Client | `mobile/ios/SchengenTracker/Services/APIClient.swift` |
-| iOS Location Manager | `mobile/ios/SchengenTracker/Services/BackgroundLocationManager.swift` |
-| iOS Passport Control | `mobile/ios/SchengenTracker/Views/PassportControl/PassportControlView.swift` |
-| Android Main | `mobile/android/app/src/main/java/com/relo2france/schengen/MainActivity.kt` |
+| iOS App Entry | `mobile/ios/MyTravelStatus/App/MyTravelStatusApp.swift` |
+| iOS API Client | `mobile/ios/MyTravelStatus/Services/APIClient.swift` |
+| iOS Location Manager | `mobile/ios/MyTravelStatus/Services/BackgroundLocationManager.swift` |
+| iOS Passport Control | `mobile/ios/MyTravelStatus/Views/PassportControl/PassportControlView.swift` |
+| Android Main | `mobile/android/app/src/main/java/com.mytravelstatus.app/MainActivity.kt` |
 | Android API Client | `mobile/android/.../network/ApiClient.kt` |
 | Android Location Worker | `mobile/android/.../service/LocationWorker.kt` |
 | Shared Types | `mobile/shared/types.ts` |
@@ -282,7 +282,7 @@ POST       /chat/message
 POST       /guides/chat
 ```
 
-### Schengen API (`/wp-json/r2f-schengen/v1/`)
+### Schengen API (`/wp-json/mts/v1/`)
 
 ```
 # Trips
@@ -403,7 +403,7 @@ cd france-relocation-member-tools/portal && npm run lint
 cd france-relocation-member-tools/portal && npx tsc --noEmit
 
 # Verify PHP syntax
-php -l relo2france-schengen-tracker/includes/class-r2f-schengen-api.php
+php -l mytravelstatus/includes/class-mts-api.php
 
 # Create deployment zip
 cd france-relocation-member-tools && zip -r ../france-relocation-member-tools.zip . \
@@ -420,8 +420,8 @@ Generate at: https://vapidkeys.com/
 
 ```php
 // wp-config.php or WordPress options
-update_option('r2f_schengen_vapid_public_key', 'your-public-key');
-update_option('r2f_schengen_vapid_private_key', 'your-private-key');
+update_option('mts_vapid_public_key', 'your-public-key');
+update_option('mts_vapid_private_key', 'your-private-key');
 ```
 
 ### Calendar OAuth
@@ -430,12 +430,12 @@ Configure in WordPress admin: Settings → Schengen Tracker
 
 **Google Calendar:**
 - Authorized redirect URIs must include BOTH:
-  - `https://relo2france.com/wp-json/r2f-schengen/v1/calendar/callback`
-  - `https://www.relo2france.com/wp-json/r2f-schengen/v1/calendar/callback`
+  - `https://relo2france.com/wp-json/mts/v1/calendar/callback`
+  - `https://www.relo2france.com/wp-json/mts/v1/calendar/callback`
 
 ```php
-update_option('r2f_schengen_google_client_id', 'your-client-id');
-update_option('r2f_schengen_google_client_secret', 'your-client-secret');
+update_option('mts_google_client_id', 'your-client-id');
+update_option('mts_google_client_secret', 'your-client-secret');
 ```
 
 ---

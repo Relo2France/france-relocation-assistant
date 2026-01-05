@@ -36,24 +36,24 @@ import type {
   SupportTicketDetailResponse,
   CreateTicketRequest,
   TicketReplyRequest,
-  SchengenTrip,
-  SchengenSummary,
-  SchengenAlertSettings,
-  SchengenFeatureStatus,
-  SchengenSimulationResult,
-  SchengenReportResponse,
-  SchengenTestAlertResult,
+  TravelStatusTrip,
+  TravelStatusSummary,
+  TravelStatusAlertSettings,
+  TravelStatusFeatureStatus,
+  TravelStatusSimulationResult,
+  TravelStatusReportResponse,
+  TravelStatusTestAlertResult,
   TaskFilters,
   FileFilters,
   NoteFilters,
   FamilyMember,
   FamilyMembersResponse,
   FamilyFeatureStatus,
-  SchengenFamilyMember,
-  SchengenFamilyMemberCreate,
-  SchengenFamilyMemberUpdate,
-  SchengenFamilyMembersResponse,
-  SchengenFamilySummary,
+  TravelStatusFamilyMember,
+  TravelStatusFamilyMemberCreate,
+  TravelStatusFamilyMemberUpdate,
+  TravelStatusFamilyMembersResponse,
+  TravelStatusFamilySummary,
   LocationSource,
   LocationStoreResponse,
   LocationHistoryResponse,
@@ -750,16 +750,16 @@ export const familyApi = {
 // Schengen Tracker API
 // ============================================
 
-export const schengenApi = {
+export const travelStatusApi = {
   // Get all trips for current user
-  getTrips: () => apiFetch<SchengenTrip[]>('/schengen/trips'),
+  getTrips: () => apiFetch<TravelStatusTrip[]>('/schengen/trips'),
 
   // Get single trip
-  getTrip: (id: string) => apiFetch<SchengenTrip>(`/schengen/trips/${id}`),
+  getTrip: (id: string) => apiFetch<TravelStatusTrip>(`/schengen/trips/${id}`),
 
   // Create a new trip
-  createTrip: (data: Omit<SchengenTrip, 'id' | 'createdAt' | 'updatedAt'>) =>
-    apiFetch<SchengenTrip>('/schengen/trips', {
+  createTrip: (data: Omit<TravelStatusTrip, 'id' | 'createdAt' | 'updatedAt'>) =>
+    apiFetch<TravelStatusTrip>('/schengen/trips', {
       method: 'POST',
       body: JSON.stringify({
         start_date: data.startDate,
@@ -771,8 +771,8 @@ export const schengenApi = {
     }),
 
   // Update an existing trip
-  updateTrip: (id: string, data: Partial<SchengenTrip>) =>
-    apiFetch<SchengenTrip>(`/schengen/trips/${id}`, {
+  updateTrip: (id: string, data: Partial<TravelStatusTrip>) =>
+    apiFetch<TravelStatusTrip>(`/schengen/trips/${id}`, {
       method: 'PUT',
       body: JSON.stringify({
         ...(data.startDate !== undefined && { start_date: data.startDate }),
@@ -790,24 +790,24 @@ export const schengenApi = {
     }),
 
   // Get summary (days used, days remaining, status, etc.)
-  getSummary: () => apiFetch<SchengenSummary>('/schengen/summary'),
+  getSummary: () => apiFetch<TravelStatusSummary>('/schengen/summary'),
 
   // Get user settings
-  getSettings: () => apiFetch<SchengenAlertSettings>('/schengen/settings'),
+  getSettings: () => apiFetch<TravelStatusAlertSettings>('/schengen/settings'),
 
   // Update user settings
-  updateSettings: (data: Partial<SchengenAlertSettings>) =>
-    apiFetch<SchengenAlertSettings>('/schengen/settings', {
+  updateSettings: (data: Partial<TravelStatusAlertSettings>) =>
+    apiFetch<TravelStatusAlertSettings>('/schengen/settings', {
       method: 'PUT',
       body: JSON.stringify(data),
     }),
 
   // Get feature status (premium gating)
-  getFeatureStatus: () => apiFetch<SchengenFeatureStatus>('/schengen/feature-status'),
+  getFeatureStatus: () => apiFetch<TravelStatusFeatureStatus>('/schengen/feature-status'),
 
   // Simulate a trip (premium feature - planning tool)
   simulateTrip: (data: { startDate: string; endDate: string }) =>
-    apiFetch<SchengenSimulationResult>('/schengen/simulate', {
+    apiFetch<TravelStatusSimulationResult>('/schengen/simulate', {
       method: 'POST',
       body: JSON.stringify({
         start_date: data.startDate,
@@ -816,11 +816,11 @@ export const schengenApi = {
     }),
 
   // Generate PDF report (premium feature)
-  generateReport: () => apiFetch<SchengenReportResponse>('/schengen/report'),
+  generateReport: () => apiFetch<TravelStatusReportResponse>('/schengen/report'),
 
   // Test email alert (sends a test alert to current user)
   testAlert: () =>
-    apiFetch<SchengenTestAlertResult>('/schengen/test-alert', {
+    apiFetch<TravelStatusTestAlertResult>('/schengen/test-alert', {
       method: 'POST',
     }),
 
@@ -969,36 +969,36 @@ export const schengenApi = {
   // ============================================
 
   // Get all Schengen family members
-  getSchengenFamilyMembers: () =>
-    apiFetch<SchengenFamilyMembersResponse>('/schengen/family'),
+  getTravelStatusFamilyMembers: () =>
+    apiFetch<TravelStatusFamilyMembersResponse>('/schengen/family'),
 
   // Get a single Schengen family member
-  getSchengenFamilyMember: (id: number) =>
-    apiFetch<SchengenFamilyMember>(`/schengen/family/${id}`),
+  getTravelStatusFamilyMember: (id: number) =>
+    apiFetch<TravelStatusFamilyMember>(`/schengen/family/${id}`),
 
   // Create a new Schengen family member
-  createSchengenFamilyMember: (data: SchengenFamilyMemberCreate) =>
-    apiFetch<SchengenFamilyMember>('/schengen/family', {
+  createTravelStatusFamilyMember: (data: TravelStatusFamilyMemberCreate) =>
+    apiFetch<TravelStatusFamilyMember>('/schengen/family', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
 
   // Update a Schengen family member
-  updateSchengenFamilyMember: (id: number, data: SchengenFamilyMemberUpdate) =>
-    apiFetch<SchengenFamilyMember>(`/schengen/family/${id}`, {
+  updateTravelStatusFamilyMember: (id: number, data: TravelStatusFamilyMemberUpdate) =>
+    apiFetch<TravelStatusFamilyMember>(`/schengen/family/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     }),
 
   // Delete a Schengen family member
-  deleteSchengenFamilyMember: (id: number) =>
+  deleteTravelStatusFamilyMember: (id: number) =>
     apiFetch<{ deleted: boolean; id: number }>(`/schengen/family/${id}`, {
       method: 'DELETE',
     }),
 
   // Get Schengen family summary with status for all members
-  getSchengenFamilySummary: () =>
-    apiFetch<SchengenFamilySummary>('/schengen/family/summary'),
+  getTravelStatusFamilySummary: () =>
+    apiFetch<TravelStatusFamilySummary>('/schengen/family/summary'),
 
   // ============================================
   // Jurisdiction API (Phase 3)
