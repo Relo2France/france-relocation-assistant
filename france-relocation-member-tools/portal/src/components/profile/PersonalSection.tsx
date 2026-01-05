@@ -113,70 +113,67 @@ export default function PersonalSection({ profile }: PersonalSectionProps) {
         </div>
       </fieldset>
 
-      <fieldset className="space-y-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-        <legend className="font-medium text-gray-900 px-2">Identity & Passport</legend>
-        <div className="flex flex-wrap gap-6">
-          <div className="w-full sm:w-44">
-            <label htmlFor="date_of_birth" className="block text-sm font-medium text-gray-700 mb-1">
-              Date of Birth <span className="text-red-500" aria-label="required">*</span>
-            </label>
-            <input
-              type="date"
-              id="date_of_birth"
-              name="date_of_birth"
-              value={formData.date_of_birth}
-              onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white"
-              required
-              aria-required="true"
-              autoComplete="bday"
-            />
-          </div>
-          <div className="w-full sm:w-44">
-            <label htmlFor="nationality" className="block text-sm font-medium text-gray-700 mb-1">
-              Nationality <span className="text-red-500" aria-label="required">*</span>
-            </label>
-            <input
-              type="text"
-              id="nationality"
-              name="nationality"
-              value={formData.nationality}
-              onChange={(e) => setFormData({ ...formData, nationality: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white"
-              placeholder="e.g., American"
-              required
-              aria-required="true"
-            />
-          </div>
-          <div className="w-full sm:w-44">
-            <label htmlFor="passport_number" className="block text-sm font-medium text-gray-700 mb-1">
-              Passport Number
-            </label>
-            <input
-              type="text"
-              id="passport_number"
-              name="passport_number"
-              value={formData.passport_number}
-              onChange={(e) => setFormData({ ...formData, passport_number: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white"
-              autoComplete="off"
-            />
-          </div>
-          <div className="w-full sm:w-44">
-            <label htmlFor="passport_expiry" className="block text-sm font-medium text-gray-700 mb-1">
-              Passport Expiry
-            </label>
-            <input
-              type="date"
-              id="passport_expiry"
-              name="passport_expiry"
-              value={formData.passport_expiry}
-              onChange={(e) => setFormData({ ...formData, passport_expiry: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white"
-            />
-          </div>
+      <div className="flex flex-wrap gap-x-6 gap-y-4">
+        <div className="w-full sm:w-auto sm:min-w-[160px]">
+          <label htmlFor="date_of_birth" className="block text-sm font-medium text-gray-700 mb-1">
+            Date of Birth <span className="text-red-500" aria-label="required">*</span>
+          </label>
+          <input
+            type="date"
+            id="date_of_birth"
+            name="date_of_birth"
+            value={formData.date_of_birth}
+            onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            required
+            aria-required="true"
+            autoComplete="bday"
+          />
         </div>
-      </fieldset>
+        <div className="w-full sm:w-auto sm:min-w-[160px]">
+          <label htmlFor="nationality" className="block text-sm font-medium text-gray-700 mb-1">
+            Nationality <span className="text-red-500" aria-label="required">*</span>
+          </label>
+          <input
+            type="text"
+            id="nationality"
+            name="nationality"
+            value={formData.nationality}
+            onChange={(e) => setFormData({ ...formData, nationality: e.target.value })}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            placeholder="e.g., American"
+            required
+            aria-required="true"
+          />
+        </div>
+        <div className="w-full sm:w-auto sm:min-w-[160px]">
+          <label htmlFor="passport_number" className="block text-sm font-medium text-gray-700 mb-1">
+            Passport Number
+          </label>
+          <input
+            type="text"
+            id="passport_number"
+            name="passport_number"
+            value={formData.passport_number}
+            onChange={(e) => setFormData({ ...formData, passport_number: e.target.value })}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            autoComplete="off"
+          />
+        </div>
+        <div className="w-full sm:w-auto sm:min-w-[160px]">
+          <label htmlFor="passport_expiry" className="block text-sm font-medium text-gray-700 mb-1">
+            Passport Expiry
+          </label>
+          <input
+            type="date"
+            id="passport_expiry"
+            name="passport_expiry"
+            value={formData.passport_expiry}
+            onChange={(e) => setFormData({ ...formData, passport_expiry: e.target.value })}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+          />
+        </div>
+      </div>
 
       <SaveButton
         isPending={updateProfile.isPending}
