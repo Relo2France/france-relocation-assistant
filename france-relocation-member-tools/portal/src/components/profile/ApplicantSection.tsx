@@ -69,7 +69,7 @@ export default function ApplicantSection({ profile }: ApplicantSectionProps) {
   const hasPets = formData.has_pets !== 'no';
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 pt-6">
+    <form onSubmit={handleSubmit} className="space-y-8 pt-6">
       <div>
         <label htmlFor="applicants" className="block text-sm font-medium text-gray-700 mb-1">
           Who will be relocating? <span className="text-red-500" aria-label="required">*</span>

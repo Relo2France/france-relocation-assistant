@@ -53,7 +53,7 @@ export default function LocationSection({ profile }: LocationSectionProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 pt-6">
+    <form onSubmit={handleSubmit} className="space-y-8 pt-6">
       <fieldset className="space-y-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
         <legend className="font-medium text-gray-900 px-2">Current Location</legend>
 
