@@ -94,6 +94,13 @@ class MTS_Core {
 	public $mobile_api;
 
 	/**
+	 * Mobile push notifications handler.
+	 *
+	 * @var MTS_Mobile_Push
+	 */
+	public $mobile_push;
+
+	/**
 	 * Get singleton instance.
 	 *
 	 * @return MTS_Core
@@ -130,6 +137,7 @@ class MTS_Core {
 		require_once $includes_dir . 'class-mts-notifications.php';
 		require_once $includes_dir . 'class-mts-family.php';
 		require_once $includes_dir . 'class-mts-mobile-api.php';
+		require_once $includes_dir . 'class-mts-mobile-push.php';
 	}
 
 	/**
@@ -145,6 +153,7 @@ class MTS_Core {
 		$this->notifications = MTS_Notifications::get_instance();
 		$this->family        = MTS_Family::get_instance();
 		$this->mobile_api    = MTS_Mobile_API::get_instance();
+		$this->mobile_push   = MTS_Mobile_Push::get_instance();
 	}
 
 	/**
@@ -278,6 +287,81 @@ class MTS_Core {
 			array( $this, 'render_vapid_private_key_field' ),
 			'mts-settings',
 			'mts_push'
+		);
+
+		// Mobile Push Notifications settings section.
+		add_settings_section(
+			'mts_mobile_push',
+			__( 'Mobile Push Notifications', 'mytravelstatus' ),
+			array( $this, 'render_mobile_push_section' ),
+			'mts-settings'
+		);
+
+		// APNs settings.
+		register_setting( 'mts_settings', 'mts_apns_team_id' );
+		register_setting( 'mts_settings', 'mts_apns_key_id' );
+		register_setting( 'mts_settings', 'mts_apns_bundle_id' );
+		register_setting( 'mts_settings', 'mts_apns_key_path' );
+		register_setting( 'mts_settings', 'mts_apns_sandbox' );
+
+		add_settings_field(
+			'mts_apns_team_id',
+			__( 'APNs Team ID', 'mytravelstatus' ),
+			array( $this, 'render_apns_team_id_field' ),
+			'mts-settings',
+			'mts_mobile_push'
+		);
+
+		add_settings_field(
+			'mts_apns_key_id',
+			__( 'APNs Key ID', 'mytravelstatus' ),
+			array( $this, 'render_apns_key_id_field' ),
+			'mts-settings',
+			'mts_mobile_push'
+		);
+
+		add_settings_field(
+			'mts_apns_bundle_id',
+			__( 'APNs Bundle ID', 'mytravelstatus' ),
+			array( $this, 'render_apns_bundle_id_field' ),
+			'mts-settings',
+			'mts_mobile_push'
+		);
+
+		add_settings_field(
+			'mts_apns_key_path',
+			__( 'APNs Key Path', 'mytravelstatus' ),
+			array( $this, 'render_apns_key_path_field' ),
+			'mts-settings',
+			'mts_mobile_push'
+		);
+
+		add_settings_field(
+			'mts_apns_sandbox',
+			__( 'APNs Sandbox Mode', 'mytravelstatus' ),
+			array( $this, 'render_apns_sandbox_field' ),
+			'mts-settings',
+			'mts_mobile_push'
+		);
+
+		// FCM settings.
+		register_setting( 'mts_settings', 'mts_fcm_project_id' );
+		register_setting( 'mts_settings', 'mts_fcm_service_account_path' );
+
+		add_settings_field(
+			'mts_fcm_project_id',
+			__( 'FCM Project ID', 'mytravelstatus' ),
+			array( $this, 'render_fcm_project_id_field' ),
+			'mts-settings',
+			'mts_mobile_push'
+		);
+
+		add_settings_field(
+			'mts_fcm_service_account_path',
+			__( 'FCM Service Account Path', 'mytravelstatus' ),
+			array( $this, 'render_fcm_service_account_path_field' ),
+			'mts-settings',
+			'mts_mobile_push'
 		);
 	}
 
@@ -469,6 +553,137 @@ class MTS_Core {
 		<input type="password" name="mts_vapid_private_key" value="<?php echo esc_attr( $value ); ?>" class="large-text">
 		<p class="description">
 			<?php esc_html_e( 'Keep this secret secure. It is used to sign push notification requests.', 'mytravelstatus' ); ?>
+		</p>
+		<?php
+	}
+
+	/**
+	 * Render mobile push section description.
+	 */
+	public function render_mobile_push_section() {
+		$status = $this->mobile_push->get_configuration_status();
+		?>
+		<p><?php esc_html_e( 'Configure push notification credentials for iOS (APNs) and Android (FCM) mobile apps.', 'mytravelstatus' ); ?></p>
+		<table class="widefat" style="max-width: 400px; margin-top: 10px;">
+			<tbody>
+				<tr>
+					<td><strong><?php esc_html_e( 'iOS (APNs)', 'mytravelstatus' ); ?></strong></td>
+					<td>
+						<?php if ( $status['ios']['configured'] ) : ?>
+							<span style="color: green;">&#10003; <?php esc_html_e( 'Configured', 'mytravelstatus' ); ?></span>
+							<?php if ( $status['ios']['sandbox'] ) : ?>
+								<em>(<?php esc_html_e( 'Sandbox', 'mytravelstatus' ); ?>)</em>
+							<?php endif; ?>
+						<?php else : ?>
+							<span style="color: gray;">&#10007; <?php esc_html_e( 'Not configured', 'mytravelstatus' ); ?></span>
+						<?php endif; ?>
+					</td>
+				</tr>
+				<tr>
+					<td><strong><?php esc_html_e( 'Android (FCM)', 'mytravelstatus' ); ?></strong></td>
+					<td>
+						<?php if ( $status['android']['configured'] ) : ?>
+							<span style="color: green;">&#10003; <?php esc_html_e( 'Configured', 'mytravelstatus' ); ?></span>
+						<?php else : ?>
+							<span style="color: gray;">&#10007; <?php esc_html_e( 'Not configured', 'mytravelstatus' ); ?></span>
+						<?php endif; ?>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+		<?php
+	}
+
+	/**
+	 * Render APNs Team ID field.
+	 */
+	public function render_apns_team_id_field() {
+		$value = get_option( 'mts_apns_team_id', '' );
+		?>
+		<input type="text" name="mts_apns_team_id" value="<?php echo esc_attr( $value ); ?>" class="regular-text" placeholder="XXXXXXXXXX">
+		<p class="description">
+			<?php esc_html_e( 'Your Apple Developer Team ID (10 characters). Found in Apple Developer account settings.', 'mytravelstatus' ); ?>
+		</p>
+		<?php
+	}
+
+	/**
+	 * Render APNs Key ID field.
+	 */
+	public function render_apns_key_id_field() {
+		$value = get_option( 'mts_apns_key_id', '' );
+		?>
+		<input type="text" name="mts_apns_key_id" value="<?php echo esc_attr( $value ); ?>" class="regular-text" placeholder="XXXXXXXXXX">
+		<p class="description">
+			<?php esc_html_e( 'APNs Key ID from App Store Connect. Create a key with Push Notifications capability.', 'mytravelstatus' ); ?>
+		</p>
+		<?php
+	}
+
+	/**
+	 * Render APNs Bundle ID field.
+	 */
+	public function render_apns_bundle_id_field() {
+		$value = get_option( 'mts_apns_bundle_id', 'com.mytravelstatus.app' );
+		?>
+		<input type="text" name="mts_apns_bundle_id" value="<?php echo esc_attr( $value ); ?>" class="regular-text" placeholder="com.mytravelstatus.app">
+		<p class="description">
+			<?php esc_html_e( 'Your iOS app bundle identifier. Must match the app ID in Xcode.', 'mytravelstatus' ); ?>
+		</p>
+		<?php
+	}
+
+	/**
+	 * Render APNs Key Path field.
+	 */
+	public function render_apns_key_path_field() {
+		$value = get_option( 'mts_apns_key_path', '' );
+		?>
+		<input type="text" name="mts_apns_key_path" value="<?php echo esc_attr( $value ); ?>" class="large-text" placeholder="/path/to/AuthKey_XXXXXXXXXX.p8">
+		<p class="description">
+			<?php esc_html_e( 'Absolute path to your APNs .p8 key file. Store outside web root for security.', 'mytravelstatus' ); ?>
+		</p>
+		<?php
+	}
+
+	/**
+	 * Render APNs Sandbox field.
+	 */
+	public function render_apns_sandbox_field() {
+		$value = get_option( 'mts_apns_sandbox', '0' );
+		?>
+		<label>
+			<input type="checkbox" name="mts_apns_sandbox" value="1" <?php checked( $value, '1' ); ?>>
+			<?php esc_html_e( 'Use APNs Sandbox environment (for development/TestFlight builds)', 'mytravelstatus' ); ?>
+		</label>
+		<p class="description">
+			<?php esc_html_e( 'Enable this for development. Disable for production App Store builds.', 'mytravelstatus' ); ?>
+		</p>
+		<?php
+	}
+
+	/**
+	 * Render FCM Project ID field.
+	 */
+	public function render_fcm_project_id_field() {
+		$value = get_option( 'mts_fcm_project_id', '' );
+		?>
+		<input type="text" name="mts_fcm_project_id" value="<?php echo esc_attr( $value ); ?>" class="regular-text" placeholder="mytravelstatus-xxxxx">
+		<p class="description">
+			<?php esc_html_e( 'Your Firebase project ID. Found in Firebase Console > Project settings.', 'mytravelstatus' ); ?>
+		</p>
+		<?php
+	}
+
+	/**
+	 * Render FCM Service Account Path field.
+	 */
+	public function render_fcm_service_account_path_field() {
+		$value = get_option( 'mts_fcm_service_account_path', '' );
+		?>
+		<input type="text" name="mts_fcm_service_account_path" value="<?php echo esc_attr( $value ); ?>" class="large-text" placeholder="/path/to/firebase-service-account.json">
+		<p class="description">
+			<?php esc_html_e( 'Path to Firebase service account JSON file. Generate in Firebase Console > Project settings > Service accounts.', 'mytravelstatus' ); ?>
 		</p>
 		<?php
 	}

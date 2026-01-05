@@ -62,8 +62,10 @@
 
 ### What's In Progress
 - Native app widgets (iOS/Android)
-- Push notifications (APNs/FCM integration)
 - Multi-jurisdiction expansion (UK SRT, US SPT, 183-day rules)
+
+### Recently Completed
+- Push notifications (APNs for iOS, FCM for Android) - Full implementation
 
 ### Recent Session Work
 - PersonalSection form redesign (simple 2-column grid fix)
@@ -128,7 +130,7 @@
 | 1.5 | Passport Control Mode | Complete |
 | 1.6 | API Integration | Complete |
 | 1.7 | Offline Support | Complete |
-| 1.8 | Push Notifications | Pending |
+| 1.8 | Push Notifications (APNs/FCM) | Complete |
 | 2.1 | Photo GPS Import | Complete |
 | 2.2 | Calendar Integration | Complete |
 | 2.3 | Widgets | Pending |
@@ -221,6 +223,7 @@ Native App (iOS/Android)
 | Schengen Family | `mytravelstatus/includes/class-mts-family.php` |
 | Schengen Notifications | `mytravelstatus/includes/class-mts-notifications.php` |
 | Schengen Calendar | `mytravelstatus/includes/class-mts-calendar.php` |
+| Schengen Mobile Push | `mytravelstatus/includes/class-mts-mobile-push.php` |
 | Schengen Schema | `mytravelstatus/includes/class-mts-schema.php` |
 
 ### React Frontend
@@ -242,11 +245,14 @@ Native App (iOS/Android)
 | Purpose | Location |
 |---------|----------|
 | iOS App Entry | `mobile/ios/MyTravelStatus/App/MyTravelStatusApp.swift` |
+| iOS App Delegate | `mobile/ios/MyTravelStatus/App/AppDelegate.swift` |
+| iOS Push Manager | `mobile/ios/MyTravelStatus/Services/PushNotificationManager.swift` |
 | iOS API Client | `mobile/ios/MyTravelStatus/Services/APIClient.swift` |
 | iOS Location Manager | `mobile/ios/MyTravelStatus/Services/BackgroundLocationManager.swift` |
 | iOS Passport Control | `mobile/ios/MyTravelStatus/Views/PassportControl/PassportControlView.swift` |
 | Android Main | `mobile/android/app/src/main/java/com.mytravelstatus.app/MainActivity.kt` |
 | Android API Client | `mobile/android/.../network/ApiClient.kt` |
+| Android FCM Service | `mobile/android/.../service/FCMService.kt` |
 | Android Location Worker | `mobile/android/.../service/LocationWorker.kt` |
 | Shared Types | `mobile/shared/types.ts` |
 | API Reference | `mobile/shared/api-reference.md` |
@@ -344,6 +350,8 @@ GET        /passport-control
 POST       /device/register
 POST       /device/unregister
 POST       /locations/batch
+GET        /push/status
+POST       /push/test
 ```
 
 ---
@@ -432,6 +440,31 @@ update_option('mts_vapid_private_key', 'your-private-key');
 ```
 
 Note: Without Composer dependencies, push notifications will store in DB for frontend polling (works but no background delivery).
+
+### Mobile Push Notifications (APNs/FCM)
+
+Configure in WordPress admin: Settings → MyTravelStatus → Mobile Push Notifications
+
+**iOS (APNs):**
+1. Create an APNs Key in App Store Connect → Keys
+2. Download the .p8 file and store securely (outside web root)
+3. Configure settings:
+```php
+update_option('mts_apns_team_id', 'XXXXXXXXXX');        // 10-char team ID
+update_option('mts_apns_key_id', 'XXXXXXXXXX');         // 10-char key ID
+update_option('mts_apns_bundle_id', 'com.mytravelstatus.app');
+update_option('mts_apns_key_path', '/secure/path/AuthKey.p8');
+update_option('mts_apns_sandbox', '1');  // '1' for dev, '0' for production
+```
+
+**Android (FCM):**
+1. Create a Firebase project and download service account JSON
+2. Enable Firebase Cloud Messaging API
+3. Configure settings:
+```php
+update_option('mts_fcm_project_id', 'mytravelstatus-xxxxx');
+update_option('mts_fcm_service_account_path', '/secure/path/firebase-sa.json');
+```
 
 ### Calendar OAuth
 
@@ -525,13 +558,35 @@ The WordPress theme defines global `.btn-primary` with navy color. Portal button
 - [ ] Photo import extracts GPS
 - [ ] Calendar import detects trips
 
+### Push Notifications
+- [ ] iOS: Request notification permission on first login
+- [ ] iOS: Device token registers with backend
+- [ ] iOS: Test notification arrives on device
+- [ ] iOS: Notification tap opens correct screen
+- [ ] Android: FCM token saves to SharedPreferences
+- [ ] Android: Token registers with backend on login
+- [ ] Android: Test notification displays with correct icon
+- [ ] Android: Notification tap navigates to app
+- [ ] Backend: `/push/status` shows registered devices
+- [ ] Backend: `/push/test` sends notification to all devices
+- [ ] Logout clears device registration
+
 ---
 
 ## 13. Session History
 
-### January 5, 2026
+### January 5, 2026 (Session 2)
+- Implemented complete push notification system for native apps
+- iOS: PushNotificationManager.swift, AppDelegate.swift, MyTravelStatusApp integration
+- Android: FCMService.kt, Firebase dependencies, MainViewModel integration
+- Backend: class-mts-mobile-push.php with APNs JWT auth and FCM HTTP v1
+- Added admin settings for APNs and FCM configuration
+- Added /push/status and /push/test API endpoints
+
+### January 5, 2026 (Session 1)
 - Read and consolidated all handoff documents
 - Created MASTER-HANDOFF.md
+- Fixed known issues (PWA icons, Web Push library, npm vulnerabilities)
 
 ### December 29, 2024 (Session 2)
 - Fixed button styling (theme CSS override)
@@ -579,7 +634,7 @@ The WordPress theme defines global `.btn-primary` with navy color. Portal button
 ## 15. Future Roadmap
 
 ### Short Term
-- [ ] Complete native app push notifications (APNs/FCM)
+- [x] Complete native app push notifications (APNs/FCM) ✓
 - [ ] Build iOS/Android widgets
 - [ ] App Store / Play Store submission
 

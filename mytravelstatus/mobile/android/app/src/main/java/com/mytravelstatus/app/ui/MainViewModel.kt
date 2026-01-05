@@ -14,6 +14,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.mytravelstatus.app.data.*
 import com.mytravelstatus.app.network.ApiClient
+import com.mytravelstatus.app.service.PushNotificationManager
 import com.mytravelstatus.app.util.SecureStorage
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -116,6 +117,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                             isLoading = false
                         )
                     }
+                    // Register push notifications after login
+                    PushNotificationManager.onLogin(getApplication())
                     loadInitialData()
                 }
                 .onFailure { error ->
@@ -131,6 +134,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun logout() {
         viewModelScope.launch {
+            // Unregister push notifications before logout
+            PushNotificationManager.unregisterDevice(getApplication())
             apiClient.logout()
             SecureStorage.clearAuth()
             repository.clearAll()

@@ -10,12 +10,16 @@
 
 import SwiftUI
 import BackgroundTasks
+import UserNotifications
 
 @main
 struct MyTravelStatusApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+
     @StateObject private var appState = AppState()
     @StateObject private var locationManager = BackgroundLocationManager.shared
     @StateObject private var syncManager = SyncManager.shared
+    @StateObject private var pushManager = PushNotificationManager.shared
 
     init() {
         // Register background tasks
@@ -28,6 +32,7 @@ struct MyTravelStatusApp: App {
                 .environmentObject(appState)
                 .environmentObject(locationManager)
                 .environmentObject(syncManager)
+                .environmentObject(pushManager)
                 .onAppear {
                     // Check app status on launch
                     Task {
@@ -36,6 +41,11 @@ struct MyTravelStatusApp: App {
 
                     // Schedule background location checks
                     locationManager.scheduleBackgroundTasks()
+
+                    // Check push notification authorization status
+                    Task {
+                        await pushManager.checkAuthorizationStatus()
+                    }
                 }
         }
     }
@@ -136,9 +146,15 @@ class AppState: ObservableObject {
     func login(email: String, password: String) async throws {
         try await apiClient.login(email: email, password: password)
         isAuthenticated = true
+
+        // Register device for push notifications after login
+        await PushNotificationManager.shared.registerOnLogin()
     }
 
-    func logout() {
+    func logout() async {
+        // Unregister device from push notifications before logout
+        await PushNotificationManager.shared.unregisterDevice()
+
         apiClient.logout()
         isAuthenticated = false
     }
