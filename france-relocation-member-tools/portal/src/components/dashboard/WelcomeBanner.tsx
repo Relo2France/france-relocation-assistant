@@ -56,13 +56,16 @@ export default function WelcomeBanner({ banner }: WelcomeBannerProps) {
             <p className="text-gray-700 leading-relaxed whitespace-pre-line mb-3">
               {banner.message}
             </p>
-            <button
-              onClick={handleGoToProfile}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-primary-200 text-primary-700 font-medium text-sm rounded-lg hover:bg-primary-50 hover:border-primary-300 transition-colors"
-            >
-              Complete Your Visa Profile
-              <ArrowRight className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Start here:</span>
+              <button
+                onClick={handleGoToProfile}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-primary-200 text-primary-700 font-medium text-sm rounded-lg hover:bg-primary-50 hover:border-primary-300 transition-colors"
+              >
+                Complete Your Visa Profile
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
         <button
