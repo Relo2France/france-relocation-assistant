@@ -197,12 +197,9 @@ export default function PersonalSection({ profile }: PersonalSectionProps) {
         </div>
       </fieldset>
 
-      <fieldset className="space-y-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-        <legend className="font-medium text-gray-900 px-2">Identity & Passport</legend>
-        <div className="flex flex-wrap gap-6">
-          {identityFields.map(renderField)}
-        </div>
-      </fieldset>
+      <div className="flex flex-wrap gap-6">
+        {identityFields.map(renderField)}
+      </div>
 
       <SaveButton
         isPending={updateProfile.isPending}
