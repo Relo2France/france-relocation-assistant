@@ -115,8 +115,8 @@ export default function PersonalSection({ profile }: PersonalSectionProps) {
 
       <fieldset className="space-y-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
         <legend className="font-medium text-gray-900 px-2">Identity & Passport</legend>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-4">
-          <div>
+        <div className="flex flex-wrap gap-6">
+          <div className="w-full sm:w-44">
             <label htmlFor="date_of_birth" className="block text-sm font-medium text-gray-700 mb-1">
               Date of Birth <span className="text-red-500" aria-label="required">*</span>
             </label>
@@ -132,7 +132,7 @@ export default function PersonalSection({ profile }: PersonalSectionProps) {
               autoComplete="bday"
             />
           </div>
-          <div>
+          <div className="w-full sm:w-44">
             <label htmlFor="nationality" className="block text-sm font-medium text-gray-700 mb-1">
               Nationality <span className="text-red-500" aria-label="required">*</span>
             </label>
@@ -148,7 +148,7 @@ export default function PersonalSection({ profile }: PersonalSectionProps) {
               aria-required="true"
             />
           </div>
-          <div>
+          <div className="w-full sm:w-44">
             <label htmlFor="passport_number" className="block text-sm font-medium text-gray-700 mb-1">
               Passport Number
             </label>
@@ -162,7 +162,7 @@ export default function PersonalSection({ profile }: PersonalSectionProps) {
               autoComplete="off"
             />
           </div>
-          <div>
+          <div className="w-full sm:w-44">
             <label htmlFor="passport_expiry" className="block text-sm font-medium text-gray-700 mb-1">
               Passport Expiry
             </label>
