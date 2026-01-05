@@ -414,15 +414,24 @@ cd france-relocation-member-tools && zip -r ../france-relocation-member-tools.zi
 
 ## 10. Configuration Required
 
-### VAPID Keys (Push Notifications)
+### Web Push Notifications (Production)
 
-Generate at: https://vapidkeys.com/
+**Step 1: Install dependencies**
+```bash
+cd mytravelstatus
+composer install
+```
 
+**Step 2: Generate VAPID keys** at https://vapidkeys.com/
+
+**Step 3: Configure keys**
 ```php
 // wp-config.php or WordPress options
 update_option('mts_vapid_public_key', 'your-public-key');
 update_option('mts_vapid_private_key', 'your-private-key');
 ```
+
+Note: Without Composer dependencies, push notifications will store in DB for frontend polling (works but no background delivery).
 
 ### Calendar OAuth
 
@@ -446,14 +455,16 @@ update_option('mts_google_client_secret', 'your-client-secret');
 
 | Issue | Severity | Notes |
 |-------|----------|-------|
-| PWA Icons missing | Low | `pwa-icon-192.png`, `pwa-icon-512.png` referenced but may not exist |
-| Web Push simplified | Low | Needs `minishlink/web-push` PHP library for production |
-| npm audit vulnerabilities | Low | 7 in dev dependencies (not production) |
+| esbuild vulnerability | Low | Dev-only (vite dev server), doesn't affect production builds |
 
 ### Resolved Issues
 
 | Issue | Resolution | Commit |
 |-------|------------|--------|
+| npm audit (d3-color ReDoS) | Fixed via npm overrides for d3-color ^3.1.0 | Jan 5, 2026 |
+| PWA Icons missing | Created 192x192 and 512x512 icons from logo | Jan 5, 2026 |
+| Web Push simplified | Added `minishlink/web-push` integration via Composer | Jan 5, 2026 |
+| ESLint warnings | Fixed all lint warnings across portal | Jan 5, 2026 |
 | Buttons dark navy instead of green | Scoped to `#fra-portal-root` with `!important` | `9493c95` |
 | Analytics 404 error | Legacy routes always registered | `f1794b8` |
 | FRAMT_URL undefined | Changed to `FRAMT_PLUGIN_URL` | `6f12426` |

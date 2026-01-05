@@ -1,0 +1,19 @@
+{
+    "name": "relo2france/mytravelstatus",
+    "description": "Travel day tracking and compliance for Schengen 90/180 rule",
+    "type": "wordpress-plugin",
+    "license": "GPL-2.0-or-later",
+    "require": {
+        "php": ">=7.4",
+        "minishlink/web-push": "^8.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "MTS\\": "includes/"
+        }
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "sort-packages": true
+    }
+}
