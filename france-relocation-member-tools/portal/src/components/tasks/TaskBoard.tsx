@@ -9,16 +9,16 @@
  * - ARIA attributes for drag-and-drop states
  */
 
-import { useState, useRef, useCallback } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { clsx } from 'clsx';
 import {
+  AlertTriangle,
+  Calendar,
+  CheckCircle,
   Circle,
   Clock,
-  CheckCircle,
-  AlertTriangle,
-  Plus,
-  Calendar,
   GripVertical,
+  Plus,
 } from 'lucide-react';
 import type { Task, TaskStatus } from '@/types';
 

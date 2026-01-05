@@ -5,19 +5,19 @@
  * Handles spouse details, children info, and pet information.
  */
 
-import { useState, useEffect, useRef } from 'react';
-import { useUpdateMemberProfile } from '@/hooks/useApi';
+import { useEffect, useRef, useState } from 'react';
 import SaveButton from '@/components/shared/SaveButton';
 import {
   APPLICANT_TYPE_OPTIONS,
-  WORK_STATUS_OPTIONS,
   PET_TYPE_OPTIONS,
+  WORK_STATUS_OPTIONS,
 } from '@/config/profile';
+import { useUpdateMemberProfile } from '@/hooks/useApi';
 import type {
-  MemberProfile,
   ApplicantType,
-  WorkStatus,
+  MemberProfile,
   PetType,
+  WorkStatus,
 } from '@/types';
 
 interface ApplicantSectionProps {

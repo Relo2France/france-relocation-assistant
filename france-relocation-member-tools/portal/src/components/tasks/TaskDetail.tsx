@@ -1,21 +1,21 @@
-import { useState, useRef, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { clsx } from 'clsx';
 import {
+  AlertTriangle,
   Calendar,
-  Clock,
-  Flag,
-  Tag,
-  User,
-  Trash2,
   CheckCircle,
   Circle,
-  AlertTriangle,
+  Clock,
   FileText,
+  Flag,
   MessageSquare,
+  Tag,
+  Trash2,
+  User,
 } from 'lucide-react';
 import { Drawer } from '@/components/shared/Modal';
-import { useUpdateTask, useUpdateTaskStatus, useDeleteTask } from '@/hooks/useApi';
-import type { Task, TaskStatus, TaskPriority } from '@/types';
+import { useDeleteTask, useUpdateTask, useUpdateTaskStatus } from '@/hooks/useApi';
+import type { Task, TaskPriority, TaskStatus } from '@/types';
 import TaskChecklist from './TaskChecklist';
 
 interface TaskDetailProps {
@@ -312,7 +312,7 @@ export default function TaskDetail({ task, isOpen, onClose }: TaskDetailProps) {
           <div className="bg-white rounded-xl p-6 max-w-sm mx-4">
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Delete Task?</h3>
             <p className="text-gray-600 mb-4">
-              Are you sure you want to delete "{task.title}"? This action cannot be undone.
+              Are you sure you want to delete &quot;{task.title}&quot;? This action cannot be undone.
             </p>
             <div className="flex gap-2 justify-end">
               <button

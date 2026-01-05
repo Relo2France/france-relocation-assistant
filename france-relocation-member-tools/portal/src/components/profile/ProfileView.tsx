@@ -10,26 +10,26 @@
 import { useState } from 'react';
 import { clsx } from 'clsx';
 import {
-  User,
-  Users,
   Briefcase,
-  MapPin,
-  DollarSign,
   Calendar,
-  FileText,
   ChevronDown,
   ChevronUp,
+  DollarSign,
+  FileText,
+  MapPin,
+  User,
+  Users,
 } from 'lucide-react';
 import { useMemberProfile, useProfileCompletion } from '@/hooks/useApi';
-import PersonalSection from './PersonalSection';
-import ApplicantSection from './ApplicantSection';
-import VisaSection from './VisaSection';
-import LocationSection from './LocationSection';
-import TimelineSection from './TimelineSection';
-import FinancialSection from './FinancialSection';
-import DocumentsSection from './DocumentsSection';
-import ProfileSkeleton from './ProfileSkeleton';
 import type { MemberProfile } from '@/types';
+import ApplicantSection from './ApplicantSection';
+import DocumentsSection from './DocumentsSection';
+import FinancialSection from './FinancialSection';
+import LocationSection from './LocationSection';
+import PersonalSection from './PersonalSection';
+import ProfileSkeleton from './ProfileSkeleton';
+import TimelineSection from './TimelineSection';
+import VisaSection from './VisaSection';
 
 type SectionId = 'personal' | 'applicant' | 'visa' | 'location' | 'timeline' | 'financial' | 'documents';
 

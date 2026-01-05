@@ -5,9 +5,9 @@
  * with accurate region boundaries from official GeoJSON data.
  */
 
-import { useState, memo } from 'react';
-import { ComposableMap, Geographies, Geography, Marker } from 'react-simple-maps';
+import { memo, useState } from 'react';
 import { FileText } from 'lucide-react';
+import { ComposableMap, Geographies, Geography, Marker } from 'react-simple-maps';
 import { FRANCE_REGIONS } from '@/config/research';
 import type { FranceRegion } from '@/types';
 

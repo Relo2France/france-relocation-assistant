@@ -15,23 +15,23 @@
  * Refactored to use extracted sub-components for better maintainability.
  */
 
-import { useState, useMemo, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { clsx } from 'clsx';
-import { ChevronRight, ChevronLeft, Loader2, X, Check } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, Loader2, X } from 'lucide-react';
 import Modal from '@/components/shared/Modal';
+import { DOCUMENT_QUESTIONS, WIZARD_STEPS, type WizardStep } from '@/config/documents';
 import {
+  useDashboard,
   useDocumentTypes,
-  usePreviewDocument,
   useGenerateDocument,
   useMemberProfile,
-  useDashboard,
+  usePreviewDocument,
 } from '@/hooks/useApi';
-import { DOCUMENT_QUESTIONS, WIZARD_STEPS, type WizardStep } from '@/config/documents';
+import type { DocumentPreview, GeneratedDocumentType } from '@/types';
+import DocumentPreviewStep from './DocumentPreviewStep';
 import DocumentTypeSelector from './DocumentTypeSelector';
 import DocumentWizard from './DocumentWizard';
-import DocumentPreviewStep from './DocumentPreviewStep';
 import DownloadOptions from './DownloadOptions';
-import type { GeneratedDocumentType, DocumentPreview } from '@/types';
 
 interface DocumentGeneratorProps {
   isOpen: boolean;

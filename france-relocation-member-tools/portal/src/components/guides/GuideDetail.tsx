@@ -4,26 +4,26 @@
  * Displays a guide with interactive AI chat functionality.
  */
 
-import { useState, useRef, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { clsx } from 'clsx';
 import {
-  ChevronRight,
-  Sparkles,
-  Loader2,
-  Send,
   Bot,
-  User,
-  MessageSquare,
-  FileText,
-  ChevronDown,
   Check,
+  ChevronDown,
+  ChevronRight,
+  FileText,
+  Loader2,
+  MessageSquare,
+  Send,
+  Sparkles,
+  User,
 } from 'lucide-react';
-import { useSendChatMessage, useMemberProfile, useUpdateMemberProfile } from '@/hooks/useApi';
 import { VISA_TYPES } from '@/config/profile';
-import { difficultyColors, getSuggestedQuestionsForGuide } from './guidesData';
-import GuideMessageContent from './GuideMessageContent';
-import type { Guide } from './guidesData';
+import { useMemberProfile, useSendChatMessage, useUpdateMemberProfile } from '@/hooks/useApi';
 import type { ChatMessage as ChatMessageType, ProfileVisaType } from '@/types';
+import GuideMessageContent from './GuideMessageContent';
+import { difficultyColors, getSuggestedQuestionsForGuide } from './guidesData';
+import type { Guide } from './guidesData';
 
 interface GuideDetailProps {
   guide: Guide;

@@ -1,28 +1,28 @@
 import { useState } from 'react';
 import { clsx } from 'clsx';
 import {
-  CreditCard,
+  AlertCircle,
+  ArrowUpCircle,
   Calendar,
   CheckCircle,
-  XCircle,
-  AlertCircle,
-  Clock,
-  ArrowUpCircle,
-  Loader2,
   ChevronLeft,
   ChevronRight,
+  Clock,
+  CreditCard,
+  Loader2,
+  XCircle,
 } from 'lucide-react';
+import Modal from '@/components/shared/Modal';
 import {
-  useMembership,
-  useSubscriptions,
-  usePayments,
   useCancelSubscription,
-  useSuspendSubscription,
+  useMembership,
+  usePayments,
   useResumeSubscription,
+  useSubscriptions,
+  useSuspendSubscription,
   useUpgradeOptions,
 } from '@/hooks/useApi';
-import type { SubscriptionStatus, PaymentStatus } from '@/types';
-import Modal from '@/components/shared/Modal';
+import type { PaymentStatus, SubscriptionStatus } from '@/types';
 
 interface ConfirmModalProps {
   isOpen: boolean;
@@ -439,7 +439,7 @@ export default function MembershipView() {
             <CreditCard className="w-12 h-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">No Active Subscriptions</h3>
             <p className="text-gray-600 mb-6">
-              You don't have any active subscriptions at the moment.
+              You don&apos;t have any active subscriptions at the moment.
             </p>
             {hasUpgradeOptions && (
               <button className="btn btn-primary">

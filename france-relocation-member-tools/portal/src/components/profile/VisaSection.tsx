@@ -5,15 +5,15 @@
  * Handles visa type, employment status, and work plans.
  */
 
-import { useState, useEffect } from 'react';
-import { useUpdateMemberProfile } from '@/hooks/useApi';
+import { useEffect, useState } from 'react';
 import SaveButton from '@/components/shared/SaveButton';
-import { VISA_TYPES, WORK_STATUS_OPTIONS, WORK_IN_FRANCE_OPTIONS } from '@/config/profile';
+import { VISA_TYPES, WORK_IN_FRANCE_OPTIONS, WORK_STATUS_OPTIONS } from '@/config/profile';
+import { useUpdateMemberProfile } from '@/hooks/useApi';
 import type {
   MemberProfile,
   ProfileVisaType,
-  WorkStatus,
   WorkInFranceType,
+  WorkStatus,
 } from '@/types';
 
 interface VisaSectionProps {

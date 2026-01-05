@@ -1,22 +1,22 @@
 import { useState } from 'react';
 import { clsx } from 'clsx';
 import {
-  X,
-  Download,
-  Trash2,
-  FileText,
-  Image,
-  FileSpreadsheet,
-  File,
-  ExternalLink,
   Calendar,
+  Download,
+  ExternalLink,
+  File,
+  FileSpreadsheet,
+  FileText,
   HardDrive,
+  Image,
   Tag,
+  Trash2,
   User,
+  X,
 } from 'lucide-react';
 import Modal from '@/components/shared/Modal';
 import { useDeleteFile, useDownloadFile, useUpdateFile } from '@/hooks/useApi';
-import type { PortalFile, FileType, FileCategory } from '@/types';
+import type { FileCategory, FileType, PortalFile } from '@/types';
 
 interface FilePreviewProps {
   file: PortalFile | null;

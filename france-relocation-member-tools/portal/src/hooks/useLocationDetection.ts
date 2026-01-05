@@ -10,7 +10,7 @@
  * @since   2.2.0
  */
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 /**
  * Map of timezone prefixes to likely Schengen countries

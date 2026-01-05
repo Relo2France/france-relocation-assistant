@@ -1,30 +1,29 @@
 import { clsx } from 'clsx';
 import {
-  LayoutDashboard,
+  BookMarked,
+  BookOpen,
+  Bot,
+  Calendar,
   CheckSquare,
-  FileText,
-  MessageSquare,
-  Users,
-  Settings,
-  HelpCircle,
   ChevronLeft,
   ChevronRight,
-  FolderOpen,
-  BookOpen,
-  Calendar,
-  LucideIcon,
-  // New icons for added features
   ClipboardList,
-  BookMarked,
-  Bot,
-  User,
   CreditCard,
-  MapPin,
-  Headphones,
+  FileText,
+  FolderOpen,
   Globe,
+  Headphones,
+  HelpCircle,
+  LayoutDashboard,
+  LucideIcon,
+  MapPin,
+  MessageSquare,
+  Settings,
+  User,
+  Users,
 } from 'lucide-react';
-import { usePortalStore } from '@/store';
 import { useUserSettings } from '@/hooks/useApi';
+import { usePortalStore } from '@/store';
 import type { MenuItem, MenuSectionOrder } from '@/types';
 
 // Map icon names to components

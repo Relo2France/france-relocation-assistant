@@ -6,10 +6,10 @@
  * Loads commune data directly from GeoJSON for comprehensive coverage.
  */
 
-import { useState, useEffect, useCallback } from 'react';
-import { ArrowLeft, FileText, MapPin, Users, Search, Loader2, Building, Home, TreeDeciduous } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { ArrowLeft, Building, FileText, Home, Loader2, MapPin, Search, TreeDeciduous, Users } from 'lucide-react';
+import type { FranceCommune, FranceDepartment, ResearchLevel } from '@/types';
 import DepartmentMapView from './DepartmentMapView';
-import type { FranceDepartment, FranceCommune, ResearchLevel } from '@/types';
 
 // Slugify department name for URL (e.g., "Côte-d'Or" -> "cote-d-or")
 const slugifyDeptName = (name: string): string => {

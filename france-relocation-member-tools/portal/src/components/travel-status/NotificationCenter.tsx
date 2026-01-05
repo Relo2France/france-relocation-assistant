@@ -5,28 +5,28 @@
  * Shows notifications in a dropdown panel with bell icon badge.
  */
 
-import { useState, useRef, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { clsx } from 'clsx';
 import {
+  AlertTriangle,
   Bell,
+  Calendar,
   CheckCheck,
+  Info,
+  Loader2,
+  MapPin,
+  Settings,
   Trash2,
   X,
-  AlertTriangle,
-  Calendar,
-  MapPin,
-  Info,
-  Settings,
-  Loader2,
 } from 'lucide-react';
-import type { NotificationItem, NotificationType } from '@/types';
 import {
-  useNotifications,
-  useNotificationUnreadCount,
-  useMarkNotificationRead,
-  useMarkAllNotificationsRead,
   useDeleteNotification,
+  useMarkAllNotificationsRead,
+  useMarkNotificationRead,
+  useNotificationUnreadCount,
+  useNotifications,
 } from '@/hooks/useApi';
+import type { NotificationItem, NotificationType } from '@/types';
 
 interface NotificationCenterProps {
   className?: string;

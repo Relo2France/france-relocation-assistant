@@ -1,17 +1,15 @@
-import { useEffect, useRef, lazy, Suspense, useMemo } from 'react';
+import { Suspense, lazy, useEffect, useMemo, useRef } from 'react';
 import { clsx } from 'clsx';
-import { useCurrentUser } from '@/hooks/useApi';
-import { usePortalStore } from '@/store';
+import Dashboard from '@/components/dashboard/Dashboard';
+import Header from '@/components/layout/Header';
+import Sidebar from '@/components/layout/Sidebar';
 import ErrorBoundary from '@/components/shared/ErrorBoundary';
 import PWAPrompt from '@/components/shared/PWAPrompt';
-import Sidebar from '@/components/layout/Sidebar';
-import Header from '@/components/layout/Header';
+import { useCurrentUser } from '@/hooks/useApi';
+import { usePortalStore } from '@/store';
 
 // Views that should auto-collapse the sidebar for more content space
 const IMMERSIVE_VIEWS = ['chat', 'research', 'schengen', 'guides'];
-
-// Eagerly load Dashboard (most common initial view)
-import Dashboard from '@/components/dashboard/Dashboard';
 
 // Lazy load all other views for better initial bundle size
 const TasksView = lazy(() => import('@/components/tasks/TasksView'));

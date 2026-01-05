@@ -5,20 +5,20 @@
  * Premium feature for bulk trip management.
  */
 
-import { useState, useRef } from 'react';
+import { useRef, useState } from 'react';
 import { clsx } from 'clsx';
 import {
-  Upload,
-  Download,
-  FileSpreadsheet,
   AlertCircle,
   CheckCircle2,
-  Loader2,
+  Download,
+  FileSpreadsheet,
   Info,
+  Loader2,
+  Upload,
   X,
 } from 'lucide-react';
+import { useExportTripsCSV, useImportTripsCSV } from '@/hooks/useApi';
 import type { CSVImportResult } from '@/types';
-import { useImportTripsCSV, useExportTripsCSV } from '@/hooks/useApi';
 
 interface CSVImportExportProps {
   className?: string;
@@ -269,7 +269,7 @@ export default function CSVImportExport({ className }: CSVImportExportProps) {
                 <li><strong>start_date</strong>: Trip start date (YYYY-MM-DD format, required)</li>
                 <li><strong>end_date</strong>: Trip end date (YYYY-MM-DD format, required)</li>
                 <li><strong>country</strong>: Schengen country name (required)</li>
-                <li><strong>category</strong>: "personal" or "business" (optional, defaults to personal)</li>
+                <li><strong>category</strong>: &quot;personal&quot; or &quot;business&quot; (optional, defaults to personal)</li>
                 <li><strong>notes</strong>: Trip notes (optional)</li>
               </ul>
               <p className="mt-3 font-medium text-gray-700">Sample CSV:</p>

@@ -1,6 +1,6 @@
-import { useState, useCallback, useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { clsx } from 'clsx';
-import { Upload, X, File, CheckCircle, AlertCircle } from 'lucide-react';
+import { AlertCircle, CheckCircle, File, Upload, X } from 'lucide-react';
 import { useUploadFile } from '@/hooks/useApi';
 import type { FileCategory } from '@/types';
 

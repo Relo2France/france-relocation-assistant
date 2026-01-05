@@ -1,31 +1,31 @@
-import { useState, useRef, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { clsx } from 'clsx';
 import {
-  MessageSquare,
-  Send,
+  AlertCircle,
   Bot,
-  User,
-  Lightbulb,
-  FileText,
-  Home,
-  Heart,
-  DollarSign,
-  Car,
-  Ship,
   Building,
-  MapPin,
-  Search,
+  Car,
+  Check,
   ChevronLeft,
   ChevronRight,
   Copy,
-  Check,
-  AlertCircle,
+  DollarSign,
+  FileText,
+  Heart,
+  Home,
+  Lightbulb,
   Loader2,
+  MapPin,
+  MessageSquare,
+  Search,
+  Send,
+  Ship,
+  User,
 } from 'lucide-react';
 import {
   useChatCategories,
-  useSendChatMessage,
   useSearchChatTopics,
+  useSendChatMessage,
 } from '@/hooks/useApi';
 import type { ChatMessage as ChatMessageType, ChatSource } from '@/types';
 
@@ -776,7 +776,7 @@ function EmptyState({ onSelectQuestion }: EmptyStateProps) {
           <div>
             <h4 className="font-medium text-blue-900 mb-1">Pro Tip</h4>
             <p className="text-sm text-blue-700">
-              Toggle "Include real-world insights" to get practical advice from people who have
+              Toggle &quot;Include real-world insights&quot; to get practical advice from people who have
               actually gone through the relocation process, not just official requirements.
             </p>
           </div>

@@ -1,12 +1,12 @@
-import { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useDashboard, useTasks, useUpdateTaskStatus } from '@/hooks/useApi';
 import { usePortalStore } from '@/store';
+import type { Task, TaskStatus } from '@/types';
 import FilterBar from './FilterBar';
-import TaskList from './TaskList';
 import TaskBoard from './TaskBoard';
 import TaskDetail from './TaskDetail';
 import TaskForm from './TaskForm';
-import type { Task, TaskStatus } from '@/types';
+import TaskList from './TaskList';
 
 export default function TasksView() {
   // View state

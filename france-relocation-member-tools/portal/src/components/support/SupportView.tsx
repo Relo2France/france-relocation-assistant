@@ -1,23 +1,23 @@
 import { useState } from 'react';
 import { clsx } from 'clsx';
 import {
-  MessageSquare,
-  Plus,
-  ArrowLeft,
-  Send,
-  Clock,
-  CheckCircle2,
   AlertCircle,
-  Trash2,
+  ArrowLeft,
+  CheckCircle2,
+  Clock,
   Info,
   Loader2,
+  MessageSquare,
+  Plus,
+  Send,
+  Trash2,
 } from 'lucide-react';
 import {
-  useSupportTickets,
-  useSupportTicket,
   useCreateSupportTicket,
-  useReplyToSupportTicket,
   useDeleteSupportTicket,
+  useReplyToSupportTicket,
+  useSupportTicket,
+  useSupportTickets,
 } from '@/hooks/useApi';
 import type { SupportTicket } from '@/types';
 

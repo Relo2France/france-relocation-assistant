@@ -1,13 +1,13 @@
-import { useState, useRef, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { clsx } from 'clsx';
 import {
+  Clock,
+  Edit2,
   MoreVertical,
   Pin,
-  Edit2,
   Trash2,
-  Clock,
 } from 'lucide-react';
-import { useToggleNotePin, useDeleteNote, useUpdateNote } from '@/hooks/useApi';
+import { useDeleteNote, useToggleNotePin, useUpdateNote } from '@/hooks/useApi';
 import type { Note } from '@/types';
 
 interface NoteCardProps {

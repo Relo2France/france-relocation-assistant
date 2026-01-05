@@ -1,17 +1,17 @@
 import { useState } from 'react';
 import { clsx } from 'clsx';
 import {
-  Circle,
-  ListChecks,
-  Filter,
-  X,
-  FileText,
-  Plane,
   ArrowUpDown,
+  Circle,
+  FileText,
+  Filter,
+  ListChecks,
+  Plane,
+  X,
 } from 'lucide-react';
-import { useDashboard, useChecklists, useUpdateChecklistItem } from '@/hooks/useApi';
+import { useChecklists, useDashboard, useUpdateChecklistItem } from '@/hooks/useApi';
+import type { Checklist, ChecklistItemStatus, ChecklistItem as ChecklistItemType } from '@/types';
 import ChecklistItem from './ChecklistItem';
-import type { Checklist, ChecklistItem as ChecklistItemType, ChecklistItemStatus } from '@/types';
 
 type FilterType = 'all' | 'pending' | 'complete';
 type SortType = 'default' | 'lead_time' | 'status';

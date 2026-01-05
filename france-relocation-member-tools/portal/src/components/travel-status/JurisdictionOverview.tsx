@@ -8,22 +8,22 @@
 import { useState } from 'react';
 import { clsx } from 'clsx';
 import {
+  Calendar,
+  ChevronDown,
+  Clock,
   Globe,
+  Loader2,
   Plus,
   X,
-  Clock,
-  Calendar,
-  Loader2,
-  ChevronDown,
 } from 'lucide-react';
-import type { JurisdictionRule, JurisdictionSummary, JurisdictionType } from '@/types';
 import {
-  useJurisdictions,
-  useTrackedJurisdictions,
   useAddTrackedJurisdiction,
-  useRemoveTrackedJurisdiction,
+  useJurisdictions,
   useMultiJurisdictionSummary,
+  useRemoveTrackedJurisdiction,
+  useTrackedJurisdictions,
 } from '@/hooks/useApi';
+import type { JurisdictionRule, JurisdictionSummary, JurisdictionType } from '@/types';
 import DayCounter from './DayCounter';
 import StatusBadge from './StatusBadge';
 

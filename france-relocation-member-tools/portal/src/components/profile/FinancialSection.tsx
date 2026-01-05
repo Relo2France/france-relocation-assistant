@@ -5,15 +5,15 @@
  * Handles financial resources, income sources, and French language proficiency.
  */
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { AlertCircle } from 'lucide-react';
-import { useUpdateMemberProfile } from '@/hooks/useApi';
 import SaveButton from '@/components/shared/SaveButton';
 import { FINANCIAL_RANGES } from '@/config/profile';
+import { useUpdateMemberProfile } from '@/hooks/useApi';
 import type {
-  MemberProfile,
   FinancialRange,
   FrenchProficiency,
+  MemberProfile,
   YesNoMaybe,
 } from '@/types';
 

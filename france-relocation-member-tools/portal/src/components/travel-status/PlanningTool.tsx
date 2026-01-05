@@ -8,10 +8,10 @@
 
 import { useState } from 'react';
 import { clsx } from 'clsx';
-import { Calculator, Calendar, AlertTriangle, CheckCircle, Loader2, Info } from 'lucide-react';
+import { AlertTriangle, Calculator, Calendar, CheckCircle, Info, Loader2 } from 'lucide-react';
 import { useSimulateTravelStatusTrip } from '@/hooks/useApi';
-import { formatDate } from './travelStatusUtils';
 import type { TravelStatusSimulationResult } from '@/types';
+import { formatDate } from './travelStatusUtils';
 
 export default function PlanningTool() {
   const [startDate, setStartDate] = useState('');

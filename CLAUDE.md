@@ -2,6 +2,19 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Quick Reference
+
+```bash
+# ALWAYS run after React changes
+cd france-relocation-member-tools/portal && npm run build
+
+# Verify TypeScript compiles
+cd france-relocation-member-tools/portal && npx tsc --noEmit
+
+# Run linter
+cd france-relocation-member-tools/portal && npm run lint
+```
+
 ## Project Overview
 
 **Relo2France** is a WordPress-based platform helping Americans relocate to France. It consists of:
@@ -10,6 +23,60 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 2. **Member Tools Plugin** (`france-relocation-member-tools/`) - React SPA portal, profiles, documents, tasks
 3. **Theme** (`relo2france-theme/`) - Custom WordPress theme
 4. **GitHub Sync Plugin** (`france-relocation-github-sync/`) - Deployment sync utility
+5. **MyTravelStatus Plugin** (`mytravelstatus/`) - Standalone Schengen/travel day tracker (rebranded)
+
+## Verification Workflow (REQUIRED)
+
+Before marking any task complete, verify your changes:
+
+1. **TypeScript**: Run `npx tsc --noEmit` - fix all errors
+2. **Build**: Run `npm run build` - must succeed
+3. **Lint**: Run `npm run lint` - fix warnings
+4. **Test the flow**: Describe how to manually test the change
+
+Example verification block to include in commits:
+```
+Verified:
+- [x] TypeScript compiles without errors
+- [x] Build succeeds
+- [x] Lint passes
+- [x] Tested: [describe manual test steps]
+```
+
+## Common Gotchas (Learn from Past Mistakes)
+
+### React/TypeScript Gotchas
+
+1. **Adding fields to forms? Update the type!**
+   - When adding a field to a form component, ALWAYS add it to the corresponding type in `types/index.ts`
+   - Error: `Property 'X' does not exist on type 'MemberProfile'`
+
+2. **Unused imports cause build failures**
+   - TypeScript strict mode fails on unused imports
+   - Remove any imports you don't use
+
+3. **Don't duplicate fields across sections**
+   - Before adding a field, check if it exists in another section
+   - ProfileView has: PersonalSection, ApplicantSection, VisaSection, LocationSection, TimelineSection, FinancialSection, DocumentsSection
+   - Each field should exist in ONE section only
+
+4. **Progress bars and completion hooks**
+   - Use `useProfileCompletion()` hook for live updates
+   - Don't create duplicate progress indicators
+
+5. **Collapsible sections**
+   - ProfileView already wraps sections in collapsible cards
+   - Don't add internal collapsible sections within section components
+
+### PHP/WordPress Gotchas
+
+1. **New user meta fields need backend support**
+   - Adding a profile field? Update `class-framt-portal-api.php` allowed fields array
+   - Otherwise the field won't save
+
+2. **REST API returns WP_Error, not exceptions**
+   - Always return `new WP_Error()` for errors
+   - Never throw exceptions in REST handlers
 
 ## Build Commands
 

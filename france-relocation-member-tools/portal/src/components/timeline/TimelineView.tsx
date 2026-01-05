@@ -4,13 +4,13 @@ import {
   CheckCircle,
   Circle,
   Clock,
+  Flag,
   MessageSquare,
+  Settings,
   Upload,
   UserPlus,
-  Settings,
-  Flag,
 } from 'lucide-react';
-import { useDashboard, useActivity } from '@/hooks/useApi';
+import { useActivity, useDashboard } from '@/hooks/useApi';
 import type { Activity } from '@/types';
 
 const actionIcons: Record<string, React.ElementType> = {

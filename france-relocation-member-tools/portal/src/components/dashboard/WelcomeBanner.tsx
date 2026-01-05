@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Sparkles, ArrowRight } from 'lucide-react';
+import { ArrowRight, Sparkles, X } from 'lucide-react';
 import { useDismissWelcomeBanner } from '@/hooks/useApi';
 import { usePortalStore } from '@/store';
 import type { WelcomeBanner as WelcomeBannerType } from '@/types';

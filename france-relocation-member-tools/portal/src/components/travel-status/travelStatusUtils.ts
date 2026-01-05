@@ -5,7 +5,7 @@
  * The rule: Maximum 90 days within ANY rolling 180-day period.
  */
 
-import type { TravelStatusTrip, TravelStatusSummary, TravelStatusStatus, TravelStatusPlanningResult } from '@/types';
+import type { TravelStatusPlanningResult, TravelStatusStatus, TravelStatusSummary, TravelStatusTrip } from '@/types';
 
 const SCHENGEN_MAX_DAYS = 90;
 const SCHENGEN_WINDOW_DAYS = 180;

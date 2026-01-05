@@ -5,7 +5,7 @@
  * Used across profile sections and other forms.
  */
 
-import { Save, Check, Loader2 } from 'lucide-react';
+import { Check, Loader2, Save } from 'lucide-react';
 
 interface SaveButtonProps {
   isPending: boolean;

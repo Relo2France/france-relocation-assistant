@@ -6,56 +6,56 @@
  * Includes premium features: calendar view, planning tool, PDF export.
  */
 
-import { useState, useMemo, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { clsx } from 'clsx';
 import {
-  Plus,
-  Calendar,
-  Clock,
   AlertTriangle,
-  Info,
-  Crown,
+  BarChart3,
+  Bell,
   Calculator,
+  Calendar,
   CalendarDays,
   CalendarPlus,
-  Lock,
-  Settings,
-  Bell,
-  Send,
-  Loader2,
   CheckCircle,
-  MapPin,
-  HelpCircle,
+  Clock,
+  Crown,
   Globe,
+  HelpCircle,
+  Info,
+  Loader2,
+  Lock,
+  MapPin,
+  Plus,
+  Send,
+  Settings,
   Users,
-  BarChart3,
 } from 'lucide-react';
+import ErrorBoundary from '@/components/shared/ErrorBoundary';
+import Modal from '@/components/shared/Modal';
+import { useTestTravelStatusAlert, useTravelStatusFeatureStatus } from '@/hooks/useApi';
 import type { TravelStatusTrip } from '@/types';
-import { useTravelStatusStore } from './useTravelStatusStore';
-import { useTravelStatusFeatureStatus, useTestTravelStatusAlert } from '@/hooks/useApi';
-import {
-  getTravelStatusSummary,
-  formatDate,
-} from './travelStatusUtils';
+import AISuggestions from './AISuggestions';
+import AnalyticsDashboard from './AnalyticsDashboard';
+import CalendarSync from './CalendarSync';
+import CalendarView from './CalendarView';
+import CSVImportExport from './CSVImportExport';
 import DayCounter from './DayCounter';
+import FamilyManager from './FamilyManager';
+import JurisdictionOverview from './JurisdictionOverview';
+import LocationDetectionBanner from './LocationDetectionBanner';
+import LocationTracker from './LocationTracker';
+import NotificationCenter from './NotificationCenter';
+import PlanningTool from './PlanningTool';
+import ReportExport from './ReportExport';
 import StatusBadge from './StatusBadge';
+import TravelStatusOnboarding, { hasCompletedOnboarding } from './TravelStatusOnboarding';
+import {
+  formatDate,
+  getTravelStatusSummary,
+} from './travelStatusUtils';
 import TripForm from './TripForm';
 import TripList from './TripList';
-import PlanningTool from './PlanningTool';
-import CalendarView from './CalendarView';
-import CalendarSync from './CalendarSync';
-import ReportExport from './ReportExport';
-import LocationTracker from './LocationTracker';
-import LocationDetectionBanner from './LocationDetectionBanner';
-import TravelStatusOnboarding, { hasCompletedOnboarding } from './TravelStatusOnboarding';
-import JurisdictionOverview from './JurisdictionOverview';
-import NotificationCenter from './NotificationCenter';
-import CSVImportExport from './CSVImportExport';
-import AISuggestions from './AISuggestions';
-import FamilyManager from './FamilyManager';
-import AnalyticsDashboard from './AnalyticsDashboard';
-import Modal from '@/components/shared/Modal';
-import ErrorBoundary from '@/components/shared/ErrorBoundary';
+import { useTravelStatusStore } from './useTravelStatusStore';
 
 type ViewTab = 'trips' | 'family' | 'analytics' | 'jurisdictions' | 'calendar' | 'sync' | 'planning' | 'location' | 'settings';
 

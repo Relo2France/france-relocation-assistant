@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { clsx } from 'clsx';
 import { Send, X } from 'lucide-react';
 import { useCreateNote } from '@/hooks/useApi';

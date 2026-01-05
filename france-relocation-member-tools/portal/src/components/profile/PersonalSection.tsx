@@ -4,10 +4,10 @@
  * Personal information section of the profile form.
  */
 
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AlertCircle } from 'lucide-react';
-import { useUpdateMemberProfile } from '@/hooks/useApi';
 import SaveButton from '@/components/shared/SaveButton';
+import { useUpdateMemberProfile } from '@/hooks/useApi';
 import type { MemberProfile } from '@/types';
 
 interface PersonalSectionProps {

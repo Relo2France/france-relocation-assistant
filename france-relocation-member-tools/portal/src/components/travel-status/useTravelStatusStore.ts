@@ -6,16 +6,16 @@
  * server-side persistence (Phase 2).
  */
 
-import { useMemo, useCallback } from 'react';
-import type { TravelStatusTrip, TravelStatusAlertSettings } from '@/types';
+import { useCallback, useMemo } from 'react';
 import {
-  useTravelStatusTrips,
-  useTravelStatusSettings,
   useCreateTravelStatusTrip,
-  useUpdateTravelStatusTrip,
   useDeleteTravelStatusTrip,
+  useTravelStatusSettings,
+  useTravelStatusTrips,
   useUpdateTravelStatusSettings,
+  useUpdateTravelStatusTrip,
 } from '@/hooks/useApi';
+import type { TravelStatusAlertSettings, TravelStatusTrip } from '@/types';
 
 /**
  * Default settings for new users

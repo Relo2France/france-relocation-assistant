@@ -5,12 +5,12 @@
  * Allows users to drill down into departments or generate region reports.
  */
 
-import { useState, useEffect } from 'react';
-import { ArrowLeft, FileText, MapPin, Users, Building2, Thermometer, Loader2 } from 'lucide-react';
-import { getDepartmentsByRegion } from '@/config/research';
+import { useEffect, useState } from 'react';
+import { ArrowLeft, Building2, FileText, Loader2, MapPin, Thermometer, Users } from 'lucide-react';
 import { hasRegionMap } from '@/config/regionMaps';
+import { getDepartmentsByRegion } from '@/config/research';
+import type { FranceDepartment, FranceRegion } from '@/types';
 import RegionMapView from './RegionMapView';
-import type { FranceRegion, FranceDepartment } from '@/types';
 
 interface RegionViewProps {
   region: FranceRegion;

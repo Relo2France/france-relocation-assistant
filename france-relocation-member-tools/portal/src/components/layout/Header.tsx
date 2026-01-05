@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from 'react';
-import { Bell, Search, User, CheckCircle, AlertTriangle, Info, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { AlertTriangle, Bell, CheckCircle, Info, Search, User, X } from 'lucide-react';
 import { useCurrentUser, useDashboard } from '@/hooks/useApi';
 import { usePortalStore } from '@/store';
 
@@ -159,7 +159,7 @@ export default function Header() {
                 ) : (
                   <div className="px-4 py-8 text-center">
                     <CheckCircle className="w-10 h-10 text-gray-300 mx-auto mb-2" />
-                    <p className="text-sm text-gray-500">You're all caught up!</p>
+                    <p className="text-sm text-gray-500">You&apos;re all caught up!</p>
                     <p className="text-xs text-gray-400 mt-1">No new notifications</p>
                   </div>
                 )}

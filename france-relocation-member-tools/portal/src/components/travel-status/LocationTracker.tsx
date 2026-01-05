@@ -5,31 +5,31 @@
  * Allows users to "check in" their current location for Schengen tracking.
  */
 
-import { useState, useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { clsx } from 'clsx';
 import {
+  AlertTriangle,
+  CheckCircle,
+  Globe,
+  History,
+  Info,
+  Loader2,
   MapPin,
   Navigation,
-  CheckCircle,
-  AlertTriangle,
-  Loader2,
-  History,
-  Trash2,
-  Globe,
-  X,
   RefreshCw,
-  Info,
+  Trash2,
+  X,
 } from 'lucide-react';
-import { useGeolocation } from '@/hooks/useGeolocation';
+import Modal from '@/components/shared/Modal';
 import {
-  useTravelStatusLocationToday,
+  useClearTravelStatusLocationHistory,
+  useDeleteTravelStatusLocation,
   useStoreTravelStatusLocation,
   useTravelStatusLocationHistory,
-  useDeleteTravelStatusLocation,
-  useClearTravelStatusLocationHistory,
+  useTravelStatusLocationToday,
 } from '@/hooks/useApi';
+import { useGeolocation } from '@/hooks/useGeolocation';
 import type { TravelStatusLocation } from '@/types';
-import Modal from '@/components/shared/Modal';
 
 interface LocationTrackerProps {
   /** Compact mode for dashboard widget */
@@ -250,7 +250,7 @@ export default function LocationTracker({ compact = false }: LocationTrackerProp
             <div className="flex items-center gap-3">
               <Info className="w-5 h-5 text-gray-500" aria-hidden="true" />
               <p className="text-sm text-gray-600">
-                You haven't checked in today. Check in to record your location for Schengen tracking.
+                You haven&apos;t checked in today. Check in to record your location for Schengen tracking.
               </p>
             </div>
           </div>
@@ -297,8 +297,8 @@ export default function LocationTracker({ compact = false }: LocationTrackerProp
             <div className="text-xs text-blue-700">
               <p className="font-medium mb-1">How location tracking works:</p>
               <ul className="space-y-1 list-disc list-inside">
-                <li>Your location is detected using your browser's GPS</li>
-                <li>We determine which country you're in automatically</li>
+                <li>Your location is detected using your browser&apos;s GPS</li>
+                <li>We determine which country you&apos;re in automatically</li>
                 <li>Schengen zone countries are tracked for the 90/180 rule</li>
                 <li>You can view and delete your location history at any time</li>
               </ul>

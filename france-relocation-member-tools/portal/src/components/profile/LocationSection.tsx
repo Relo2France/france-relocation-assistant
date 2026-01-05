@@ -5,11 +5,11 @@
  * Handles current location, birth/marriage states, and target destination.
  */
 
-import { useState, useEffect } from 'react';
-import { useUpdateMemberProfile } from '@/hooks/useApi';
+import { useEffect, useState } from 'react';
 import SaveButton from '@/components/shared/SaveButton';
-import { US_STATES, APPLICATION_LOCATION_OPTIONS } from '@/config/profile';
-import type { MemberProfile, ApplicationLocation } from '@/types';
+import { APPLICATION_LOCATION_OPTIONS, US_STATES } from '@/config/profile';
+import { useUpdateMemberProfile } from '@/hooks/useApi';
+import type { ApplicationLocation, MemberProfile } from '@/types';
 
 interface LocationSectionProps {
   profile: MemberProfile | undefined;

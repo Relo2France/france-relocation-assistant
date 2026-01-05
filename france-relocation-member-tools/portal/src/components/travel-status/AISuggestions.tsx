@@ -6,18 +6,18 @@
 
 import { clsx } from 'clsx';
 import {
+  AlertTriangle,
   Calendar,
   Clock,
-  Sparkles,
-  TrendingUp,
-  ShieldAlert,
-  AlertTriangle,
   Lightbulb,
   Loader2,
   RefreshCw,
+  ShieldAlert,
+  Sparkles,
+  TrendingUp,
 } from 'lucide-react';
-import type { Suggestion, SuggestionPriority } from '@/types';
 import { useTravelStatusSuggestions } from '@/hooks/useApi';
+import type { Suggestion, SuggestionPriority } from '@/types';
 
 interface AISuggestionsProps {
   className?: string;

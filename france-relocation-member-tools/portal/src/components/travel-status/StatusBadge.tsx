@@ -5,7 +5,7 @@
  */
 
 import { clsx } from 'clsx';
-import { Check, AlertTriangle, AlertCircle, XCircle } from 'lucide-react';
+import { AlertCircle, AlertTriangle, Check, XCircle } from 'lucide-react';
 import type { TravelStatusStatus } from '@/types';
 
 interface StatusBadgeProps {
