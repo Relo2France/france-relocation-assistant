@@ -338,10 +338,12 @@ export interface MemberProfile {
   current_state: string;
   current_city: string;
   birth_state: string;
+  birth_state_other: string;
   spouse_birth_state: string;
   marriage_state: string;
   marriage_country: string;
   target_location: string;
+  housing_plan: HousingPlan;
   application_location: ApplicationLocation;
 
   // Timeline
@@ -352,6 +354,14 @@ export interface MemberProfile {
   // Financial Information
   financial_resources: FinancialRange;
   income_sources: string;
+  french_proficiency: FrenchProficiency;
+  french_mortgage: YesNoMaybe;
+
+  // Document Status
+  has_birth_cert: DocumentStatus;
+  birth_cert_apostilled: YesNo;
+  has_marriage_cert: MarriageDocStatus;
+  marriage_cert_apostilled: YesNo;
 
   // Metadata
   profile_completion: number;
@@ -366,8 +376,14 @@ export type ProfileVisaType = 'undecided' | 'visitor' | 'talent_passport' | 'emp
 export type WorkInFranceType = 'no' | 'yes_local' | 'yes_remote' | 'yes_self' | 'undecided';
 export type ApplicationLocation = 'us' | 'france';
 export type FinancialRange = 'under_50k' | '50k_100k' | '100k_200k' | '200k_500k' | 'over_500k';
-export type TimelineType = 'asap' | '1_3_months' | '3_6_months' | '6_12_months' | '12_plus_months' | 'flexible';
+export type TimelineType = 'asap' | '3_months' | '6_months' | '12_months' | 'over_12' | 'undecided';
 export type MoveDateCertainty = 'fixed' | 'anticipated' | 'flexible';
+export type HousingPlan = 'buying' | 'renting' | 'undecided' | 'already_own';
+export type FrenchProficiency = 'none' | 'basic' | 'conversational' | 'fluent' | 'native';
+export type YesNoMaybe = 'yes' | 'no' | 'maybe';
+export type YesNo = 'yes' | 'no';
+export type DocumentStatus = 'yes' | 'no' | 'unsure';
+export type MarriageDocStatus = 'yes' | 'no' | 'unsure' | 'na';
 
 // Checklist types
 export interface Checklist {
