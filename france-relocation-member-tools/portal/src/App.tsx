@@ -8,7 +8,7 @@ import Sidebar from '@/components/layout/Sidebar';
 import Header from '@/components/layout/Header';
 
 // Views that should auto-collapse the sidebar for more content space
-const IMMERSIVE_VIEWS = ['chat', 'research', 'schengen'];
+const IMMERSIVE_VIEWS = ['chat', 'research', 'schengen', 'guides'];
 
 // Eagerly load Dashboard (most common initial view)
 import Dashboard from '@/components/dashboard/Dashboard';

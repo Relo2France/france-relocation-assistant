@@ -14,12 +14,16 @@ import {
   Bot,
   User,
   MessageSquare,
+  FileText,
+  ChevronDown,
+  Check,
 } from 'lucide-react';
-import { useSendChatMessage } from '@/hooks/useApi';
+import { useSendChatMessage, useMemberProfile, useUpdateMemberProfile } from '@/hooks/useApi';
+import { VISA_TYPES } from '@/config/profile';
 import { difficultyColors, getSuggestedQuestionsForGuide } from './guidesData';
 import GuideMessageContent from './GuideMessageContent';
 import type { Guide } from './guidesData';
-import type { ChatMessage as ChatMessageType } from '@/types';
+import type { ChatMessage as ChatMessageType, ProfileVisaType } from '@/types';
 
 interface GuideDetailProps {
   guide: Guide;
@@ -32,9 +36,34 @@ export default function GuideDetail({ guide, onBack }: GuideDetailProps) {
   const [inputValue, setInputValue] = useState('');
   const [activeSection, setActiveSection] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [visaDropdownOpen, setVisaDropdownOpen] = useState(false);
   const latestResponseRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const visaDropdownRef = useRef<HTMLDivElement>(null);
   const sendMessage = useSendChatMessage();
+  const { data: profile } = useMemberProfile();
+  const updateProfile = useUpdateMemberProfile();
+
+  // Close visa dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (visaDropdownRef.current && !visaDropdownRef.current.contains(event.target as Node)) {
+        setVisaDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Get current visa type from profile
+  const currentVisaType = profile?.visa_type || 'undecided';
+  const currentVisaLabel = VISA_TYPES.find(v => v.value === currentVisaType)?.label || 'Select your visa type';
+  const currentVisaDescription = VISA_TYPES.find(v => v.value === currentVisaType)?.description || '';
+
+  const handleVisaChange = (visaType: ProfileVisaType) => {
+    updateProfile.mutate({ visa_type: visaType });
+    setVisaDropdownOpen(false);
+  };
 
   // Scroll to the top of the latest response (not bottom)
   useEffect(() => {
@@ -132,6 +161,90 @@ export default function GuideDetail({ guide, onBack }: GuideDetailProps) {
               </div>
             </div>
           </div>
+
+          {/* Visa Type Selector - Only show for visa-related guides */}
+          {guide.category === 'Visa & Immigration' && (
+            <div className="card p-6">
+              <div className="flex items-start gap-3 mb-3">
+                <div className="p-2 bg-blue-50 rounded-lg">
+                  <FileText className="w-5 h-5 text-blue-600" />
+                </div>
+                <div className="flex-1">
+                  <h2 className="text-sm font-semibold text-gray-900">Your Visa Type</h2>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    {currentVisaType === 'undecided'
+                      ? 'Select your visa type after researching your options'
+                      : 'Based on your profile settings'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Visa dropdown */}
+              <div className="relative" ref={visaDropdownRef}>
+                <button
+                  onClick={() => setVisaDropdownOpen(!visaDropdownOpen)}
+                  className={clsx(
+                    'w-full flex items-center justify-between px-4 py-3 rounded-lg border transition-colors text-left',
+                    currentVisaType === 'undecided'
+                      ? 'border-dashed border-gray-300 bg-gray-50 hover:bg-gray-100'
+                      : 'border-primary-200 bg-primary-50 hover:bg-primary-100'
+                  )}
+                >
+                  <div className="flex-1">
+                    <div className={clsx(
+                      'font-medium',
+                      currentVisaType === 'undecided' ? 'text-gray-600' : 'text-primary-700'
+                    )}>
+                      {currentVisaLabel}
+                    </div>
+                    {currentVisaType !== 'undecided' && currentVisaDescription && (
+                      <div className="text-xs text-primary-600 mt-0.5">{currentVisaDescription}</div>
+                    )}
+                  </div>
+                  <ChevronDown className={clsx(
+                    'w-5 h-5 transition-transform',
+                    visaDropdownOpen ? 'rotate-180' : '',
+                    currentVisaType === 'undecided' ? 'text-gray-400' : 'text-primary-600'
+                  )} />
+                </button>
+
+                {visaDropdownOpen && (
+                  <div className="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto">
+                    {VISA_TYPES.map((visa) => (
+                      <button
+                        key={visa.value}
+                        onClick={() => handleVisaChange(visa.value as ProfileVisaType)}
+                        className={clsx(
+                          'w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-50 transition-colors',
+                          visa.value === currentVisaType && 'bg-primary-50'
+                        )}
+                      >
+                        <div>
+                          <div className={clsx(
+                            'font-medium text-sm',
+                            visa.value === currentVisaType ? 'text-primary-700' : 'text-gray-900'
+                          )}>
+                            {visa.label}
+                          </div>
+                          <div className="text-xs text-gray-500">{visa.description}</div>
+                        </div>
+                        {visa.value === currentVisaType && (
+                          <Check className="w-4 h-4 text-primary-600 flex-shrink-0" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {updateProfile.isPending && (
+                <div className="mt-2 flex items-center gap-2 text-xs text-gray-500">
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  Saving...
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Table of contents */}
           <div className="card p-6">
