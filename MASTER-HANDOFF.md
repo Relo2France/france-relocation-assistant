@@ -66,10 +66,13 @@
 
 ### Recently Completed
 - Push notifications (APNs for iOS, FCM for Android) - Full implementation
+- iOS App Store Review Readiness - Complete compliance implementation
+- Android Google Play Compliance - Complete compliance implementation
 
 ### Recent Session Work
-- PersonalSection form redesign (simple 2-column grid fix)
-- Profile view layout improvements
+- iOS: Privacy manifest, permissions, StoreKit subscriptions, demo mode, data export/delete
+- Android: Privacy settings, Google Play Billing, photo picker, analytics, demo mode
+- Both: Background location OFF by default, educational disclosure screens
 
 ---
 
@@ -136,6 +139,25 @@
 | 2.3 | Widgets | Pending |
 | 3.x | Multi-Jurisdiction Engine | Pending |
 | 4.x | Premium Features | Pending |
+
+### App Store / Play Store Compliance
+
+| Feature | iOS | Android |
+|---------|-----|---------|
+| Privacy Settings Manager | Complete | Complete |
+| Background Location (opt-in) | Complete | Complete |
+| Location Education Screen | Complete | Complete |
+| Photo Picker (limited access) | Complete | Complete |
+| EXIF Confirmation Dialog | Complete | Complete |
+| Analytics (opt-in only) | Complete | Complete |
+| Subscriptions | Complete (StoreKit 2) | Complete (Google Play Billing) |
+| Restore Purchases | Complete | Complete |
+| Demo Mode for Reviewers | Complete | Complete |
+| Data Export (JSON) | Complete | Complete |
+| Account Deletion | Complete | Complete |
+| Legal Disclaimer | Complete | Complete |
+| Privacy Policy Links | Complete | Complete |
+| Compliance Documentation | APP-REVIEW-READINESS.md | PLAY-STORE-COMPLIANCE.md |
 
 ---
 
@@ -256,6 +278,23 @@ Native App (iOS/Android)
 | Android Location Worker | `mobile/android/.../service/LocationWorker.kt` |
 | Shared Types | `mobile/shared/types.ts` |
 | API Reference | `mobile/shared/api-reference.md` |
+
+### Native App Compliance Files
+
+| Purpose | iOS | Android |
+|---------|-----|---------|
+| Privacy Settings | `Services/PrivacySettings.swift` | `service/PrivacySettings.kt` |
+| Analytics Manager | `Services/AnalyticsManager.swift` | `service/AnalyticsManager.kt` |
+| Subscription Manager | `Services/SubscriptionManager.swift` | `service/SubscriptionManager.kt` |
+| Demo Mode Service | `Services/DemoModeService.swift` | `service/DemoModeService.kt` |
+| Data Management | `Services/DataManagementService.swift` | `service/DataManagementService.kt` |
+| Photo Picker | `Services/PhotoPickerService.swift` | `service/PhotoPickerService.kt` |
+| Location Education UI | `Views/Privacy/LocationEducationView.swift` | `ui/screens/LocationEducationScreen.kt` |
+| Privacy Settings UI | `Views/Settings/PrivacySettingsView.swift` | `ui/screens/PrivacySettingsScreen.kt` |
+| Subscription UI | `Views/Subscription/SubscriptionView.swift` | `ui/screens/SubscriptionScreen.kt` |
+| Privacy Manifest | `PrivacyInfo.xcprivacy` | N/A |
+| Permissions Config | `Info.plist` | `AndroidManifest.xml` |
+| Compliance Docs | `APP-REVIEW-READINESS.md` | `PLAY-STORE-COMPLIANCE.md` |
 
 ---
 
@@ -571,9 +610,87 @@ The WordPress theme defines global `.btn-primary` with navy color. Portal button
 - [ ] Backend: `/push/test` sends notification to all devices
 - [ ] Logout clears device registration
 
+### App Store / Play Store Compliance
+
+#### Background Location
+- [ ] Background location is OFF by default on fresh install
+- [ ] Educational screen (3 pages) shown before permission request
+- [ ] User can decline and use manual check-in instead
+- [ ] App functions fully with foreground-only permission
+- [ ] Can be toggled off in Settings → Privacy & Data
+- [ ] Only country names stored (never precise coordinates)
+
+#### Photo Import
+- [ ] Uses system Photo Picker (not full gallery access)
+- [ ] Only selected photos are processed
+- [ ] Confirmation dialog appears before reading EXIF
+- [ ] User can cancel metadata extraction
+- [ ] Manual entry alternative is offered
+
+#### Analytics
+- [ ] Analytics is OFF by default
+- [ ] Toggle in Settings → Privacy & Data works
+- [ ] No analytics events fire when disabled
+- [ ] No PII in analytics when enabled
+
+#### Subscriptions
+- [ ] Products load from App Store / Play Store
+- [ ] Purchase flow completes
+- [ ] Restore Purchases button works
+- [ ] Manage Subscription opens store
+- [ ] Auto-renewal disclosure text visible
+- [ ] Terms/Privacy links work
+
+#### Demo Mode (Reviewer Access)
+- [ ] Demo credentials work: `demo@mytravelstatus.com` / `demo123`
+- [ ] All premium features accessible
+- [ ] Demo data loads correctly
+- [ ] iOS: Shake activation (5 times in Settings)
+- [ ] Android: Tap version 5 times
+- [ ] Deep link `mytravelstatus://demo` works
+
+#### Data Management
+- [ ] Export My Data generates valid JSON
+- [ ] Share sheet opens with export file
+- [ ] Delete Account shows two-step confirmation
+- [ ] Typing DELETE confirms deletion
+- [ ] All local data cleared after deletion
+
 ---
 
 ## 13. Session History
+
+### January 5, 2026 (Session 3)
+- **iOS App Store Review Readiness** - Complete implementation:
+  - `PrivacyInfo.xcprivacy` - Privacy manifest required by Apple
+  - `Info.plist` - All permission usage strings with user-friendly descriptions
+  - `PrivacySettings.swift` - Privacy preferences manager (bg location OFF by default)
+  - `AnalyticsManager.swift` - Privacy-focused analytics (opt-in only, no PII)
+  - `SubscriptionManager.swift` - StoreKit 2 auto-renewable subscriptions
+  - `DemoModeService.swift` - Reviewer demo mode (credentials, shake, URL scheme)
+  - `DataManagementService.swift` - Data export (JSON) and account deletion
+  - `PhotoPickerService.swift` - PHPicker with EXIF confirmation dialog
+  - `LocationEducationView.swift` - 3-page background location disclosure
+  - `PrivacySettingsView.swift` - Privacy settings UI with legal disclaimer
+  - `SubscriptionView.swift` - Subscription UI with full App Store disclosures
+  - `APP-REVIEW-READINESS.md` - Complete compliance documentation
+
+- **Android Google Play Compliance** - Complete implementation:
+  - `PrivacySettings.kt` - Privacy preferences manager (StateFlow-based)
+  - `AnalyticsManager.kt` - Privacy-focused analytics (opt-in only)
+  - `SubscriptionManager.kt` - Google Play Billing Library v6.1.0
+  - `DemoModeService.kt` - Reviewer demo mode (tap version 5x, deep link)
+  - `DataManagementService.kt` - Data export and account deletion
+  - `PhotoPickerService.kt` - Photo Picker with EXIF confirmation
+  - `LocationScheduler.kt` - Updated with PrivacySettings integration
+  - `LocationEducationScreen.kt` - 3-page HorizontalPager disclosure
+  - `PrivacySettingsScreen.kt` - Privacy settings with legal disclaimer
+  - `SubscriptionScreen.kt` - Subscription UI with Play Store disclosures
+  - `AndroidManifest.xml` - Documented permissions, deep link, FileProvider
+  - `build.gradle.kts` - Added billing and exifinterface dependencies
+  - `libs.versions.toml` - Version catalog updates
+  - `file_paths.xml` - FileProvider paths for data export
+  - `PLAY-STORE-COMPLIANCE.md` - Complete compliance documentation
 
 ### January 5, 2026 (Session 2)
 - Implemented complete push notification system for native apps
@@ -635,8 +752,10 @@ The WordPress theme defines global `.btn-primary` with navy color. Portal button
 
 ### Short Term
 - [x] Complete native app push notifications (APNs/FCM) ✓
+- [x] iOS App Store Review Readiness ✓
+- [x] Android Google Play Compliance ✓
 - [ ] Build iOS/Android widgets
-- [ ] App Store / Play Store submission
+- [ ] App Store / Play Store submission (compliance ready, pending final build & submit)
 
 ### Medium Term
 - [ ] Multi-jurisdiction engine (UK SRT, US SPT, 183-day rules)
