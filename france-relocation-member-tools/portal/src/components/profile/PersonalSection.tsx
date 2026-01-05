@@ -193,9 +193,9 @@ export default function PersonalSection({ profile }: PersonalSectionProps) {
         </div>
       </fieldset>
 
-      <fieldset className="space-y-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+      <fieldset className="p-4 bg-gray-50 rounded-lg border border-gray-200 overflow-hidden">
         <legend className="font-medium text-gray-900 px-2">Identity & Passport</legend>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
           {identityFields.map(renderField)}
         </div>
       </fieldset>
