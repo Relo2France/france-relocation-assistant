@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { X, Sparkles } from 'lucide-react';
+import { X, Sparkles, ArrowRight } from 'lucide-react';
 import { useDismissWelcomeBanner } from '@/hooks/useApi';
+import { usePortalStore } from '@/store';
 import type { WelcomeBanner as WelcomeBannerType } from '@/types';
 
 interface WelcomeBannerProps {
@@ -10,6 +11,7 @@ interface WelcomeBannerProps {
 export default function WelcomeBanner({ banner }: WelcomeBannerProps) {
   const [isVisible, setIsVisible] = useState(true);
   const dismissBanner = useDismissWelcomeBanner();
+  const setActiveView = usePortalStore((state) => state.setActiveView);
 
   const handleDismiss = async () => {
     setIsVisible(false);
@@ -19,6 +21,10 @@ export default function WelcomeBanner({ banner }: WelcomeBannerProps) {
       // Banner is already hidden locally, so we don't need to show it again
       console.error('Failed to dismiss banner:', error);
     }
+  };
+
+  const handleGoToProfile = () => {
+    setActiveView('profile');
   };
 
   if (!isVisible) {
@@ -47,9 +53,16 @@ export default function WelcomeBanner({ banner }: WelcomeBannerProps) {
             <h2 className="text-lg font-semibold text-gray-900 mb-1">
               {banner.title}
             </h2>
-            <p className="text-gray-700 leading-relaxed whitespace-pre-line">
+            <p className="text-gray-700 leading-relaxed whitespace-pre-line mb-3">
               {banner.message}
             </p>
+            <button
+              onClick={handleGoToProfile}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-primary-200 text-primary-700 font-medium text-sm rounded-lg hover:bg-primary-50 hover:border-primary-300 transition-colors"
+            >
+              Complete Your Visa Profile
+              <ArrowRight className="w-4 h-4" />
+            </button>
           </div>
         </div>
         <button
