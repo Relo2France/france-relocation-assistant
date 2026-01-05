@@ -10,19 +10,68 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Permissions -->
+    <!-- ========================================== -->
+    <!-- NETWORK PERMISSIONS                       -->
+    <!-- ========================================== -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- ========================================== -->
+    <!-- LOCATION PERMISSIONS                      -->
+    <!-- ========================================== -->
+    <!-- ACCESS_FINE_LOCATION: Required for foreground manual check-in.
+         Requested when user taps "Check In" button.
+         Purpose: Determine current country for travel compliance. -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+
+    <!-- ACCESS_COARSE_LOCATION: Fallback for country-level detection.
+         Used when fine location unavailable. -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
+    <!-- ACCESS_BACKGROUND_LOCATION: OPTIONAL - OFF BY DEFAULT
+         Only enabled after:
+         1. User views educational disclosure screen
+         2. User explicitly enables in Settings > Privacy & Data
+         Purpose: Automatic 3x daily country checks (8 AM, 2 PM, 8 PM)
+         Data stored: Country name only - never precise coordinates -->
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+
+    <!-- ========================================== -->
+    <!-- SERVICE PERMISSIONS                       -->
+    <!-- ========================================== -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+
+    <!-- ========================================== -->
+    <!-- NOTIFICATION PERMISSION (Android 13+)     -->
+    <!-- ========================================== -->
+    <!-- Only requested after user opts-in via app Settings.
+         Never requested on first launch. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- ========================================== -->
+    <!-- BACKGROUND TASK PERMISSIONS               -->
+    <!-- ========================================== -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+    <!-- ========================================== -->
+    <!-- OPTIONAL IMPORT PERMISSIONS               -->
+    <!-- ========================================== -->
+    <!-- READ_CALENDAR: Optional - for importing trips from calendar.
+         Only requested when user taps "Import from Calendar".
+         Data read locally only - never uploaded. -->
     <uses-permission android:name="android.permission.READ_CALENDAR" />
+
+    <!-- READ_MEDIA_IMAGES: Uses Android Photo Picker (limited access).
+         User selects specific photos - no full gallery access.
+         EXIF extraction requires explicit confirmation dialog. -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+
+    <!-- ========================================== -->
+    <!-- BILLING PERMISSION                        -->
+    <!-- ========================================== -->
+    <uses-permission android:name="com.android.vending.BILLING" />
 
     <application
         android:name=".MyTravelStatusApp"
@@ -46,6 +95,16 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <!-- Deep link for demo mode (reviewer access) -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="mytravelstatus"
+                    android:host="demo" />
             </intent-filter>
         </activity>
 
@@ -87,6 +146,17 @@
                 android:name="androidx.work.WorkManagerInitializer"
                 android:value="androidx.startup"
                 tools:node="remove" />
+        </provider>
+
+        <!-- FileProvider for data export sharing -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
         </provider>
 
     </application>

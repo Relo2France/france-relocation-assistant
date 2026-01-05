@@ -104,6 +104,12 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.messaging)
 
+    // Google Play Billing
+    implementation(libs.billing)
+
+    // EXIF for photo metadata
+    implementation(libs.androidx.exifinterface)
+
     // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

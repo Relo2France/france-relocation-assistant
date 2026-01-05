@@ -23,6 +23,9 @@
 13. [Session History](#13-session-history)
 14. [Lessons Learned](#14-lessons-learned)
 15. [Future Roadmap](#15-future-roadmap)
+16. [Appendix A: Brand Guidelines](#appendix-a-brand-guidelines)
+17. [Appendix B: Adding New Portal Menu Items](#appendix-b-adding-new-portal-menu-items)
+18. [Appendix C: Multi-Jurisdiction Expansion Plan](#appendix-c-multi-jurisdiction-expansion-plan)
 
 ---
 
@@ -62,14 +65,20 @@
 
 ### What's In Progress
 - Native app widgets (iOS/Android)
-- Multi-jurisdiction expansion (UK SRT, US SPT, 183-day rules)
+- Multi-jurisdiction expansion (see Appendix C for detailed 6-phase plan)
+  - Phase 1: Foundation + France tax (next)
+  - Phase 2-5: 15+ jurisdictions, PDF reports, native sync
+  - Phase 6: Other relo sites (Relo2Spain, Relo2Portugal, etc.)
 
 ### Recently Completed
 - Push notifications (APNs for iOS, FCM for Android) - Full implementation
+- iOS App Store Review Readiness - Complete compliance implementation
+- Android Google Play Compliance - Complete compliance implementation
 
 ### Recent Session Work
-- PersonalSection form redesign (simple 2-column grid fix)
-- Profile view layout improvements
+- iOS: Privacy manifest, permissions, StoreKit subscriptions, demo mode, data export/delete
+- Android: Privacy settings, Google Play Billing, photo picker, analytics, demo mode
+- Both: Background location OFF by default, educational disclosure screens
 
 ---
 
@@ -136,6 +145,25 @@
 | 2.3 | Widgets | Pending |
 | 3.x | Multi-Jurisdiction Engine | Pending |
 | 4.x | Premium Features | Pending |
+
+### App Store / Play Store Compliance
+
+| Feature | iOS | Android |
+|---------|-----|---------|
+| Privacy Settings Manager | Complete | Complete |
+| Background Location (opt-in) | Complete | Complete |
+| Location Education Screen | Complete | Complete |
+| Photo Picker (limited access) | Complete | Complete |
+| EXIF Confirmation Dialog | Complete | Complete |
+| Analytics (opt-in only) | Complete | Complete |
+| Subscriptions | Complete (StoreKit 2) | Complete (Google Play Billing) |
+| Restore Purchases | Complete | Complete |
+| Demo Mode for Reviewers | Complete | Complete |
+| Data Export (JSON) | Complete | Complete |
+| Account Deletion | Complete | Complete |
+| Legal Disclaimer | Complete | Complete |
+| Privacy Policy Links | Complete | Complete |
+| Compliance Documentation | APP-REVIEW-READINESS.md | PLAY-STORE-COMPLIANCE.md |
 
 ---
 
@@ -256,6 +284,23 @@ Native App (iOS/Android)
 | Android Location Worker | `mobile/android/.../service/LocationWorker.kt` |
 | Shared Types | `mobile/shared/types.ts` |
 | API Reference | `mobile/shared/api-reference.md` |
+
+### Native App Compliance Files
+
+| Purpose | iOS | Android |
+|---------|-----|---------|
+| Privacy Settings | `Services/PrivacySettings.swift` | `service/PrivacySettings.kt` |
+| Analytics Manager | `Services/AnalyticsManager.swift` | `service/AnalyticsManager.kt` |
+| Subscription Manager | `Services/SubscriptionManager.swift` | `service/SubscriptionManager.kt` |
+| Demo Mode Service | `Services/DemoModeService.swift` | `service/DemoModeService.kt` |
+| Data Management | `Services/DataManagementService.swift` | `service/DataManagementService.kt` |
+| Photo Picker | `Services/PhotoPickerService.swift` | `service/PhotoPickerService.kt` |
+| Location Education UI | `Views/Privacy/LocationEducationView.swift` | `ui/screens/LocationEducationScreen.kt` |
+| Privacy Settings UI | `Views/Settings/PrivacySettingsView.swift` | `ui/screens/PrivacySettingsScreen.kt` |
+| Subscription UI | `Views/Subscription/SubscriptionView.swift` | `ui/screens/SubscriptionScreen.kt` |
+| Privacy Manifest | `PrivacyInfo.xcprivacy` | N/A |
+| Permissions Config | `Info.plist` | `AndroidManifest.xml` |
+| Compliance Docs | `APP-REVIEW-READINESS.md` | `PLAY-STORE-COMPLIANCE.md` |
 
 ---
 
@@ -571,9 +616,99 @@ The WordPress theme defines global `.btn-primary` with navy color. Portal button
 - [ ] Backend: `/push/test` sends notification to all devices
 - [ ] Logout clears device registration
 
+### App Store / Play Store Compliance
+
+#### Background Location
+- [ ] Background location is OFF by default on fresh install
+- [ ] Educational screen (3 pages) shown before permission request
+- [ ] User can decline and use manual check-in instead
+- [ ] App functions fully with foreground-only permission
+- [ ] Can be toggled off in Settings → Privacy & Data
+- [ ] Only country names stored (never precise coordinates)
+
+#### Photo Import
+- [ ] Uses system Photo Picker (not full gallery access)
+- [ ] Only selected photos are processed
+- [ ] Confirmation dialog appears before reading EXIF
+- [ ] User can cancel metadata extraction
+- [ ] Manual entry alternative is offered
+
+#### Analytics
+- [ ] Analytics is OFF by default
+- [ ] Toggle in Settings → Privacy & Data works
+- [ ] No analytics events fire when disabled
+- [ ] No PII in analytics when enabled
+
+#### Subscriptions
+- [ ] Products load from App Store / Play Store
+- [ ] Purchase flow completes
+- [ ] Restore Purchases button works
+- [ ] Manage Subscription opens store
+- [ ] Auto-renewal disclosure text visible
+- [ ] Terms/Privacy links work
+
+#### Demo Mode (Reviewer Access)
+- [ ] Demo credentials work: `demo@mytravelstatus.com` / `demo123`
+- [ ] All premium features accessible
+- [ ] Demo data loads correctly
+- [ ] iOS: Shake activation (5 times in Settings)
+- [ ] Android: Tap version 5 times
+- [ ] Deep link `mytravelstatus://demo` works
+
+#### Data Management
+- [ ] Export My Data generates valid JSON
+- [ ] Share sheet opens with export file
+- [ ] Delete Account shows two-step confirmation
+- [ ] Typing DELETE confirms deletion
+- [ ] All local data cleared after deletion
+
 ---
 
 ## 13. Session History
+
+### January 5, 2026 (Session 4)
+- **Multi-Jurisdiction Expansion Planning** - Complete documentation:
+  - Added Appendix C: Multi-Jurisdiction Expansion Plan
+  - Documented 15+ jurisdictions with rules (France, Spain, UK SRT, US SPT, etc.)
+  - Created 6-phase development schedule with effort estimates
+  - Designed Compliance Quick View UI specification
+  - Designed Auditable PDF Report format
+  - Added database schema for jurisdictions, compliance snapshots, UK ties
+  - Added API endpoint specifications
+  - Created development checklists and notes sections per phase
+  - Phase 6 reserved for other relo sites (Relo2Spain, Relo2Portugal, etc.)
+
+### January 5, 2026 (Session 3)
+- **iOS App Store Review Readiness** - Complete implementation:
+  - `PrivacyInfo.xcprivacy` - Privacy manifest required by Apple
+  - `Info.plist` - All permission usage strings with user-friendly descriptions
+  - `PrivacySettings.swift` - Privacy preferences manager (bg location OFF by default)
+  - `AnalyticsManager.swift` - Privacy-focused analytics (opt-in only, no PII)
+  - `SubscriptionManager.swift` - StoreKit 2 auto-renewable subscriptions
+  - `DemoModeService.swift` - Reviewer demo mode (credentials, shake, URL scheme)
+  - `DataManagementService.swift` - Data export (JSON) and account deletion
+  - `PhotoPickerService.swift` - PHPicker with EXIF confirmation dialog
+  - `LocationEducationView.swift` - 3-page background location disclosure
+  - `PrivacySettingsView.swift` - Privacy settings UI with legal disclaimer
+  - `SubscriptionView.swift` - Subscription UI with full App Store disclosures
+  - `APP-REVIEW-READINESS.md` - Complete compliance documentation
+
+- **Android Google Play Compliance** - Complete implementation:
+  - `PrivacySettings.kt` - Privacy preferences manager (StateFlow-based)
+  - `AnalyticsManager.kt` - Privacy-focused analytics (opt-in only)
+  - `SubscriptionManager.kt` - Google Play Billing Library v6.1.0
+  - `DemoModeService.kt` - Reviewer demo mode (tap version 5x, deep link)
+  - `DataManagementService.kt` - Data export and account deletion
+  - `PhotoPickerService.kt` - Photo Picker with EXIF confirmation
+  - `LocationScheduler.kt` - Updated with PrivacySettings integration
+  - `LocationEducationScreen.kt` - 3-page HorizontalPager disclosure
+  - `PrivacySettingsScreen.kt` - Privacy settings with legal disclaimer
+  - `SubscriptionScreen.kt` - Subscription UI with Play Store disclosures
+  - `AndroidManifest.xml` - Documented permissions, deep link, FileProvider
+  - `build.gradle.kts` - Added billing and exifinterface dependencies
+  - `libs.versions.toml` - Version catalog updates
+  - `file_paths.xml` - FileProvider paths for data export
+  - `PLAY-STORE-COMPLIANCE.md` - Complete compliance documentation
 
 ### January 5, 2026 (Session 2)
 - Implemented complete push notification system for native apps
@@ -633,22 +768,33 @@ The WordPress theme defines global `.btn-primary` with navy color. Portal button
 
 ## 15. Future Roadmap
 
-### Short Term
+### Short Term (Next Up)
 - [x] Complete native app push notifications (APNs/FCM) ✓
+- [x] iOS App Store Review Readiness ✓
+- [x] Android Google Play Compliance ✓
 - [ ] Build iOS/Android widgets
-- [ ] App Store / Play Store submission
+- [ ] App Store / Play Store submission (compliance ready, pending final build & submit)
+- [ ] **Phase 1: Multi-Jurisdiction Foundation** (see Appendix C)
+  - Jurisdiction configuration schema
+  - Multi-jurisdiction calculator engine
+  - France 183-day tax rule
+  - Compliance Quick View UI
 
-### Medium Term
-- [ ] Multi-jurisdiction engine (UK SRT, US SPT, 183-day rules)
+### Medium Term (Phases 2-5)
+- [ ] **Phase 2**: Spain, Portugal, Germany, Italy, Netherlands
+- [ ] **Phase 3**: UK SRT, US SPT, Canada, Mexico
+- [ ] **Phase 4**: Ireland, Japan, Singapore, NZ, Australia + PDF Reports
+- [ ] **Phase 5**: Native app sync, widgets, polish
 - [ ] Family sync in native apps
 - [ ] AI suggestions in native apps
-- [ ] Proof of presence feature
 
-### Long Term
+### Long Term (Phase 6+)
+- [ ] **Phase 6**: Other relo sites (Relo2Spain, Relo2Portugal, Relo2UK, Relo2Mexico)
 - [ ] Multi-user household accounts
 - [ ] Travel document management (passport expiry)
 - [ ] Integration with visa tracking module
 - [ ] Tax advisor sharing portal
+- [ ] Proof of presence feature
 - [ ] Community features
 
 ---
@@ -708,3 +854,760 @@ When adding a new menu item to the portal sidebar, ALL locations must be updated
 ---
 
 *This document consolidates: HANDOFF.md, SCHENGEN-TRACKER-HANDOFF.md, SCHENGEN-APP-HANDOFF.md, handoff-document.md, and HANDOFF-PersonalSection-Redesign.md*
+
+---
+
+## Appendix C: Multi-Jurisdiction Expansion Plan
+
+This appendix contains the complete development plan for expanding MyTravelStatus beyond Schengen 90/180 to support tax residency rules, visa compliance, and complex multi-factor tests for 15+ jurisdictions.
+
+**Target Markets:** Americans relocating to France (primary), with future expansion to other destinations.
+
+---
+
+### C.1 Overview & Goals
+
+#### Business Objectives
+1. **Tax Compliance Tracking** - Help users avoid unintended tax residency triggers
+2. **Visa Compliance** - Track visa-free stay limits, residence card requirements
+3. **Audit-Ready Reports** - Generate professional PDF reports for tax advisors/immigration
+4. **Multi-Country Support** - Support top 15 destinations Americans relocate to
+
+#### User Stories
+- "As a France resident, I want to know if I'm approaching 183 days in another country so I don't trigger tax obligations there"
+- "As a frequent traveler, I want one app to track my compliance status in multiple jurisdictions"
+- "As someone meeting with a tax advisor, I want to export a professional report showing my travel history"
+- "At passport control, I want a quick view showing I'm compliant with local rules"
+
+---
+
+### C.2 Jurisdiction Rules Reference
+
+#### Tier 1: Simple 183-Day Calendar Year (1-2 days each)
+
+| Country | Tax Trigger | Visa-Free Limit | Notes |
+|---------|-------------|-----------------|-------|
+| **France** | 183+ days/year | N/A (resident) | Calendar year Jan-Dec |
+| **Spain** | 183+ days/year | N/A (resident) | Calendar year |
+| **Portugal** | 183+ days/year | N/A (resident) | Calendar year |
+| **Germany** | 183+ days/year | N/A (resident) | Calendar year; also permanent home test |
+| **Mexico** | 183+ days/year | 180 days visa-free | Calendar year |
+| **Singapore** | 183+ days/year | 90 days visa-free | Calendar year |
+| **Japan** | 183+ days/year | 90 days visa-free | Calendar year |
+| **New Zealand** | 183 days/12 months | 90 days visa-free | Rolling 12-month window |
+
+**Logic:** Reuse 80% of existing Schengen calculator with different thresholds.
+
+#### Tier 2: Multi-Year or Multi-Factor Tests (3-5 days each)
+
+| Country | Primary Test | Secondary Test | Complexity |
+|---------|--------------|----------------|------------|
+| **Ireland** | 183 days/year | OR 280 days over 2 years | Cumulative check |
+| **USA (SPT)** | 31+ days current year | + weighted 3-year calculation | Complex formula |
+| **Canada** | 183+ days/year | + significant ties test | Multi-factor |
+| **France (full)** | 183 days | OR principal home OR economic center | Multi-factor |
+| **UK (visitor)** | 180 days/rolling year | Informal rule | Rolling window |
+
+**USA Substantial Presence Test (SPT) Formula:**
+```
+Current year days × 1.0
++ Prior year days × 1/3
++ Second prior year days × 1/6
+≥ 183 = US tax resident
+```
+
+**Ireland Formula:**
+```
+(Current year ≥ 183) OR (Current year + Prior year ≥ 280)
+```
+
+#### Tier 3: Complex Multi-Test Systems (1-2 weeks each)
+
+| Country | Test Name | Components |
+|---------|-----------|------------|
+| **UK** | Statutory Residence Test (SRT) | 3 automatic overseas tests, 3 automatic UK tests, sufficient ties test |
+| **Australia** | Domicile Test | Primary test of resides, 183-day test, superannuation test, Commonwealth test |
+| **Netherlands** | Multi-factor | Permanent home, vital interests, habitual abode |
+| **Italy** | Multi-factor | Registered residence, domicile, presence |
+
+**UK SRT Summary:**
+1. **Automatic Overseas Tests** - If ANY true, automatically non-resident:
+   - Resident previous 3 years + <16 days UK
+   - Not resident previous 3 years + <46 days UK
+   - Leave UK during year + <16 days UK
+
+2. **Automatic UK Tests** - If ANY true, automatically resident:
+   - 183+ days in UK
+   - Only home in UK
+   - Full-time work in UK
+
+3. **Sufficient Ties Test** - Count UK ties, compare to day threshold:
+   - Family tie (spouse/children in UK)
+   - Accommodation tie (available 91+ days)
+   - Work tie (40+ days substantive work)
+   - 90-day tie (90+ days either of previous 2 years)
+   - Country tie (UK is country of most days)
+
+---
+
+### C.3 Phased Development Schedule
+
+#### Phase 1: Foundation + France Focus (3-4 weeks)
+
+**Objective:** Build multi-jurisdiction engine, France tax compliance, Compliance Quick View UI
+
+| Task | Est. Days | Description |
+|------|-----------|-------------|
+| Jurisdiction Configuration Schema | 2 | Define JSON/DB schema for jurisdiction rules |
+| Multi-Jurisdiction Calculator Engine | 5 | Abstract calculator supporting multiple rule types |
+| France 183-Day Tax Rule | 2 | Implement France tax residency (183 days/calendar year) |
+| Jurisdiction Selection UI | 2 | User selects which jurisdictions to track |
+| Compliance Quick View UI | 3 | Stacked card view per jurisdiction |
+| Database Updates | 1 | New tables for jurisdiction tracking |
+| API Endpoints | 2 | `/jurisdictions`, `/compliance/summary`, `/compliance/{jurisdiction}` |
+| Unit Tests | 2 | Core calculator tests |
+
+**Deliverables:**
+- [ ] User can enable France tax tracking alongside Schengen
+- [ ] Dashboard shows compliance status for multiple jurisdictions
+- [ ] Compliance Quick View available in app
+
+**Development Notes (Phase 1):**
+```
+Started: ___________
+Completed: ___________
+Issues encountered:
+-
+-
+-
+
+Blockers resolved:
+-
+-
+```
+
+---
+
+#### Phase 2: Top Schengen Countries (2 weeks)
+
+**Objective:** Add Spain, Portugal, Germany, Italy 183-day rules
+
+| Task | Est. Days | Description |
+|------|-----------|-------------|
+| Spain 183-Day | 1 | Clone France rule, adjust parameters |
+| Portugal 183-Day | 1 | Clone France rule |
+| Germany 183-Day | 1.5 | 183-day + permanent home indicator |
+| Italy Multi-Factor | 2 | Registered residence, domicile, presence |
+| Netherlands Multi-Factor | 2 | Permanent home, vital interests, habitual abode |
+| Bulk Enable/Disable | 1 | "Enable all EU countries" toggle |
+| Settings UI Updates | 1.5 | Per-jurisdiction settings |
+
+**Deliverables:**
+- [ ] Spain, Portugal, Germany available with simple toggle
+- [ ] Italy, Netherlands with multi-factor indicators
+- [ ] User can enable "all EU countries" in one click
+
+**Development Notes (Phase 2):**
+```
+Started: ___________
+Completed: ___________
+Issues encountered:
+-
+-
+-
+
+Blockers resolved:
+-
+-
+```
+
+---
+
+#### Phase 3: UK + Americas (3 weeks)
+
+**Objective:** UK SRT (complex), US SPT, Canada, Mexico
+
+| Task | Est. Days | Description |
+|------|-----------|-------------|
+| UK SRT Engine | 7 | Full statutory residence test with all components |
+| UK Ties Questionnaire | 2 | UI for user to input family, accommodation, work ties |
+| UK SRT Result Display | 1 | Clear explanation of which test determined status |
+| US SPT Calculator | 3 | Weighted 3-year calculation |
+| US SPT Historical Data | 1 | Ensure 3-year trip history available |
+| Canada 183 + Ties | 2 | Day count + significant ties questionnaire |
+| Mexico 183-Day | 1 | Simple implementation |
+| Americas Integration Tests | 1 | Cross-jurisdiction test suite |
+
+**Deliverables:**
+- [ ] UK SRT fully implemented with ties questionnaire
+- [ ] US SPT with 3-year rolling calculation
+- [ ] Canada with ties indicator
+- [ ] Mexico simple day count
+
+**Development Notes (Phase 3):**
+```
+Started: ___________
+Completed: ___________
+Issues encountered:
+-
+-
+-
+
+Blockers resolved:
+-
+-
+```
+
+---
+
+#### Phase 4: Rest of World + Reports (2 weeks)
+
+**Objective:** Australia, Japan, Singapore, NZ, Ireland + PDF Reports
+
+| Task | Est. Days | Description |
+|------|-----------|-------------|
+| Ireland 183/280 Rule | 1.5 | Cumulative 2-year check |
+| Japan 183-Day | 1 | Simple calendar year |
+| Singapore 183-Day | 1 | Simple calendar year |
+| New Zealand 183/12mo | 1.5 | Rolling 12-month window |
+| Australia Domicile Test | 3 | Multi-factor with indicators |
+| PDF Report Generator | 3 | Professional audit-ready reports |
+| Report Templates | 1 | Per-jurisdiction report sections |
+| QR Verification | 1 | Optional verification QR code |
+
+**Deliverables:**
+- [ ] All 15 primary jurisdictions available
+- [ ] PDF report generation for any jurisdiction
+- [ ] Professional, advisor-ready formatting
+
+**Development Notes (Phase 4):**
+```
+Started: ___________
+Completed: ___________
+Issues encountered:
+-
+-
+-
+
+Blockers resolved:
+-
+-
+```
+
+---
+
+#### Phase 5: Infrastructure & Polish (2 weeks)
+
+**Objective:** Performance, native app sync, widget updates, final polish
+
+| Task | Est. Days | Description |
+|------|-----------|-------------|
+| Performance Optimization | 2 | Caching, lazy loading, calculation optimization |
+| Native App Sync | 3 | Multi-jurisdiction sync to iOS/Android |
+| Widget Updates | 2 | Update widgets for multi-jurisdiction display |
+| Compliance Alerts | 2 | Push notifications for approaching thresholds |
+| Documentation | 1 | User guides, help content |
+| End-to-End Testing | 2 | Full test suite across all jurisdictions |
+| Bug Fixes & Polish | 2 | Address issues from earlier phases |
+
+**Deliverables:**
+- [ ] Native apps show multi-jurisdiction compliance
+- [ ] Widgets display most critical status
+- [ ] Push alerts for approaching limits
+- [ ] Comprehensive documentation
+
+**Development Notes (Phase 5):**
+```
+Started: ___________
+Completed: ___________
+Issues encountered:
+-
+-
+-
+
+Blockers resolved:
+-
+-
+```
+
+---
+
+#### Phase 6 (Future): Other Relo Sites
+
+**Objective:** Expand beyond France to other destination markets
+
+| Market | Description | Estimated Effort |
+|--------|-------------|------------------|
+| **Relo2Spain** | Spain as primary destination, similar feature set | 4-6 weeks |
+| **Relo2Portugal** | Portugal Golden Visa market | 4-6 weeks |
+| **Relo2UK** | UK post-Brexit, complex visa landscape | 6-8 weeks |
+| **Relo2Mexico** | Digital nomad market | 3-4 weeks |
+| **Relo2Netherlands** | DAFT visa for Americans | 4-6 weeks |
+
+**Scope per site:**
+- Localized content and guidance
+- Country-specific visa checklists
+- Local tax residency rules as primary
+- Integration with local services/advisors
+
+**Development Notes (Phase 6):**
+```
+Started: ___________
+Completed: ___________
+Priority order:
+1.
+2.
+3.
+
+Issues encountered:
+-
+-
+```
+
+---
+
+### C.4 UI Specifications
+
+#### Compliance Quick View
+
+**Purpose:** Clean, easy-to-read display for border officials, tax advisors, or quick personal reference.
+
+**Location:** New tab in Travel Status, also available as standalone view in native apps.
+
+**Design:**
+
+```
+┌─────────────────────────────────────────────────────┐
+│  COMPLIANCE QUICK VIEW                    [⚙] [📄]  │
+│  As of January 5, 2026                              │
+├─────────────────────────────────────────────────────┤
+│                                                     │
+│  ┌─────────────────────────────────────────────┐   │
+│  │ 🇪🇺 SCHENGEN AREA                    ✓ OK    │   │
+│  │ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━░░░░ │   │
+│  │ 67 of 90 days used  •  23 days remaining     │   │
+│  │ Current period: Jul 10, 2025 - Jan 5, 2026   │   │
+│  │ [View Details]                               │   │
+│  └─────────────────────────────────────────────┘   │
+│                                                     │
+│  ┌─────────────────────────────────────────────┐   │
+│  │ 🇫🇷 FRANCE TAX RESIDENCY              ✓ OK   │   │
+│  │ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━░░░░░░░░░░░░░░ │   │
+│  │ 142 of 183 days (2026)  •  41 days to limit  │   │
+│  │ Rule: 183+ days = French tax resident        │   │
+│  │ [View Details]                               │   │
+│  └─────────────────────────────────────────────┘   │
+│                                                     │
+│  ┌─────────────────────────────────────────────┐   │
+│  │ 🇺🇸 US SUBSTANTIAL PRESENCE            ✓ OK   │   │
+│  │ ━━━━━━━━━━━░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │   │
+│  │ SPT Score: 68 of 183  •  115 days to limit   │   │
+│  │ 2026: 15 days × 1.0 = 15                     │   │
+│  │ 2025: 90 days × ⅓ = 30                       │   │
+│  │ 2024: 68 days × ⅙ = 11                       │   │
+│  │ [View Details]                               │   │
+│  └─────────────────────────────────────────────┘   │
+│                                                     │
+│  ┌─────────────────────────────────────────────┐   │
+│  │ 🇬🇧 UK VISITOR STATUS                 ⚠ WARN │   │
+│  │ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━░░░ │   │
+│  │ 165 of 180 days  •  15 days remaining        │   │
+│  │ Rolling 12-month period                      │   │
+│  │ [View Details]                               │   │
+│  └─────────────────────────────────────────────┘   │
+│                                                     │
+│  [+ Add Jurisdiction]                              │
+│                                                     │
+│  ────────────────────────────────────────────────  │
+│  ℹ️ This is not legal or tax advice. Always        │
+│  consult qualified professionals.                  │
+│  [Privacy Policy] [Terms of Service]               │
+└─────────────────────────────────────────────────────┘
+```
+
+**Status Indicators:**
+| Status | Color | Icon | Threshold |
+|--------|-------|------|-----------|
+| OK | Green | ✓ | < 80% of limit |
+| Warning | Amber | ⚠ | 80-95% of limit |
+| Critical | Red | ⚠ | > 95% of limit |
+| Exceeded | Red | ✗ | Over limit |
+
+**Interactions:**
+- Tap card → Expand to show trip details for that jurisdiction
+- [⚙] → Jurisdiction settings
+- [📄] → Generate PDF report
+- [View Details] → Full breakdown with trip list
+
+---
+
+#### Auditable PDF Report
+
+**Purpose:** Professional document for tax advisors, immigration officials, audit defense.
+
+**Sections:**
+
+```
+═══════════════════════════════════════════════════════════
+                    TRAVEL COMPLIANCE REPORT
+                       MyTravelStatus
+═══════════════════════════════════════════════════════════
+
+REPORT DETAILS
+──────────────────────────────────────────────────────────
+Report ID:        MTS-2026-001-ABC123
+Generated:        January 5, 2026 at 14:32 UTC
+Report Period:    January 1, 2025 - December 31, 2025
+User:             John Smith (user ID: 12345)
+Email:            john.smith@email.com
+
+═══════════════════════════════════════════════════════════
+                    COMPLIANCE SUMMARY
+═══════════════════════════════════════════════════════════
+
+Jurisdiction          Status    Days Used    Limit    Margin
+────────────────────────────────────────────────────────────
+Schengen Area         ✓ OK      67/90        90       23 days
+France Tax            ✓ OK      142/183      183      41 days
+US (SPT)              ✓ OK      68/183       183      115 days
+UK Visitor            ⚠ WARN    165/180      180      15 days
+
+═══════════════════════════════════════════════════════════
+              FRANCE TAX RESIDENCY ANALYSIS
+═══════════════════════════════════════════════════════════
+
+RULE SUMMARY
+─────────────────────────────────────────────────────────
+An individual is considered a French tax resident if they:
+  • Spend 183 or more days in France during a calendar year
+  • Have their principal residence ("foyer") in France
+  • Exercise their principal professional activity in France
+  • Have the center of their economic interests in France
+
+This report tracks the 183-day presence test only.
+
+2025 CALENDAR YEAR SUMMARY
+─────────────────────────────────────────────────────────
+Total days in France:     142 days
+Threshold:                183 days
+Days remaining:           41 days
+Status:                   ✓ COMPLIANT
+
+MONTHLY BREAKDOWN
+─────────────────────────────────────────────────────────
+Month         Days in France    Running Total
+January       31                31
+February      28                59
+March         15                74
+April         0                 74
+May           0                 74
+June          12                86
+July          18                104
+August        31                135
+September     7                 142
+October       0                 142
+November      0                 142
+December      0 (projected)     142
+
+═══════════════════════════════════════════════════════════
+                    DETAILED TRIP LOG
+═══════════════════════════════════════════════════════════
+
+#    Entry Date    Exit Date     Location       Days   Source
+──────────────────────────────────────────────────────────────
+1    Jan 1, 2025   Jan 31, 2025  Paris, FR      31     Manual
+2    Feb 1, 2025   Feb 28, 2025  Lyon, FR       28     Calendar
+3    Mar 1, 2025   Mar 15, 2025  Nice, FR       15     GPS Auto
+4    Jun 10, 2025  Jun 21, 2025  Bordeaux, FR   12     Manual
+5    Jul 1, 2025   Jul 18, 2025  Paris, FR      18     Photo GPS
+6    Aug 1, 2025   Aug 31, 2025  Provence, FR   31     Manual
+7    Sep 15, 2025  Sep 21, 2025  Paris, FR      7      GPS Auto
+
+TOTAL DAYS IN FRANCE: 142
+
+═══════════════════════════════════════════════════════════
+                    CALCULATION METHODOLOGY
+═══════════════════════════════════════════════════════════
+
+Day Counting Method:
+  • Entry day counted as Day 1
+  • Exit day counted as final day
+  • Partial days count as full days
+  • Overnight stays determine location
+
+Data Sources:
+  • Manual Entry: User-entered trips
+  • GPS Auto: Automatic location detection (3x daily)
+  • Calendar: Imported from Google/Microsoft calendar
+  • Photo GPS: Extracted from photo EXIF metadata
+
+Accuracy Notes:
+  • GPS accuracy: ±50 meters, converted to country only
+  • Calendar events may not reflect actual travel
+  • Photo timestamps depend on camera settings
+
+═══════════════════════════════════════════════════════════
+                    LEGAL DISCLAIMER
+═══════════════════════════════════════════════════════════
+
+IMPORTANT NOTICE
+
+This report is provided for INFORMATIONAL PURPOSES ONLY and
+does NOT constitute legal, tax, or immigration advice.
+
+• Tax residency determination involves multiple factors beyond
+  physical presence, including intention, family ties, property
+  ownership, and economic interests.
+
+• Immigration status depends on visa type, entry conditions,
+  and individual circumstances.
+
+• Always consult with qualified legal and tax professionals
+  for advice specific to your situation.
+
+• Border officials and tax authorities make final
+  determinations at their discretion.
+
+• MyTravelStatus does not guarantee the accuracy of
+  calculations or compliance with any jurisdiction's rules.
+
+USE THIS REPORT AS A HELPFUL REFERENCE, NOT AS LEGAL GUIDANCE.
+
+═══════════════════════════════════════════════════════════
+                    VERIFICATION
+═══════════════════════════════════════════════════════════
+
+Report Hash:    sha256:a1b2c3d4e5f6...
+Generated By:   MyTravelStatus v1.6.0
+Verification:   https://mytravelstatus.com/verify/MTS-2026-001
+
+[QR CODE for verification URL]
+
+───────────────────────────────────────────────────────────
+© 2026 MyTravelStatus  |  Privacy Policy  |  Terms of Service
+```
+
+**PDF Features:**
+- Timestamped with report ID for audit trail
+- SHA-256 hash for integrity verification
+- QR code linking to online verification
+- Professional formatting suitable for advisors
+- Per-jurisdiction sections with rules explanation
+- Complete trip log with data sources
+- Prominent legal disclaimer
+
+---
+
+### C.5 Database Schema Updates
+
+#### New Tables
+
+**`wp_fra_jurisdictions`**
+```sql
+CREATE TABLE wp_fra_jurisdictions (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(10) NOT NULL,              -- 'FR', 'UK', 'US', 'SCHENGEN'
+    name VARCHAR(100) NOT NULL,             -- 'France', 'United Kingdom'
+    rule_type ENUM('simple_calendar', 'rolling_window', 'multi_year', 'multi_factor', 'complex') NOT NULL,
+    threshold INT NOT NULL,                 -- 183, 90, etc.
+    period_type ENUM('calendar_year', 'rolling_days', 'tax_year') NOT NULL,
+    period_days INT DEFAULT NULL,           -- For rolling: 180, 365
+    config JSON DEFAULT NULL,               -- Additional rule parameters
+    enabled BOOLEAN DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+**`wp_fra_user_jurisdictions`**
+```sql
+CREATE TABLE wp_fra_user_jurisdictions (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT UNSIGNED NOT NULL,
+    jurisdiction_id BIGINT UNSIGNED NOT NULL,
+    enabled BOOLEAN DEFAULT 1,
+    alert_threshold INT DEFAULT 80,         -- Alert at X% of limit
+    custom_config JSON DEFAULT NULL,        -- User-specific settings
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY user_jurisdiction (user_id, jurisdiction_id)
+);
+```
+
+**`wp_fra_compliance_snapshots`**
+```sql
+CREATE TABLE wp_fra_compliance_snapshots (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT UNSIGNED NOT NULL,
+    jurisdiction_id BIGINT UNSIGNED NOT NULL,
+    snapshot_date DATE NOT NULL,
+    days_used INT NOT NULL,
+    days_remaining INT NOT NULL,
+    status ENUM('ok', 'warning', 'critical', 'exceeded') NOT NULL,
+    calculation_data JSON NOT NULL,         -- Full calculation details
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_user_jurisdiction_date (user_id, jurisdiction_id, snapshot_date)
+);
+```
+
+**`wp_fra_uk_ties`** (UK SRT specific)
+```sql
+CREATE TABLE wp_fra_uk_ties (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT UNSIGNED NOT NULL,
+    tax_year VARCHAR(9) NOT NULL,           -- '2025-2026'
+    family_tie BOOLEAN DEFAULT 0,
+    accommodation_tie BOOLEAN DEFAULT 0,
+    work_tie BOOLEAN DEFAULT 0,
+    ninety_day_tie BOOLEAN DEFAULT 0,
+    country_tie BOOLEAN DEFAULT 0,
+    notes TEXT DEFAULT NULL,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY user_year (user_id, tax_year)
+);
+```
+
+---
+
+### C.6 API Endpoints
+
+**New Endpoints for `/wp-json/mts/v1/`**
+
+```
+# Jurisdictions
+GET    /jurisdictions                    # List all available jurisdictions
+GET    /jurisdictions/{code}             # Get jurisdiction details
+GET    /jurisdictions/user               # Get user's enabled jurisdictions
+POST   /jurisdictions/user               # Enable jurisdiction for user
+DELETE /jurisdictions/user/{code}        # Disable jurisdiction for user
+
+# Compliance
+GET    /compliance/summary               # Summary of all enabled jurisdictions
+GET    /compliance/{code}                # Detailed compliance for jurisdiction
+GET    /compliance/{code}/history        # Historical compliance data
+GET    /compliance/{code}/trips          # Trips relevant to jurisdiction
+
+# UK SRT Specific
+GET    /uk/ties                          # Get UK ties for current year
+PUT    /uk/ties                          # Update UK ties
+GET    /uk/srt-result                    # Full SRT calculation result
+
+# Reports
+POST   /reports/generate                 # Generate PDF report
+GET    /reports/{id}                     # Download generated report
+GET    /reports/{id}/verify              # Verify report integrity
+```
+
+---
+
+### C.7 Effort Summary
+
+| Phase | Duration | Focus |
+|-------|----------|-------|
+| **Phase 1** | 3-4 weeks | Foundation, France tax, Quick View UI |
+| **Phase 2** | 2 weeks | Spain, Portugal, Germany, Italy, Netherlands |
+| **Phase 3** | 3 weeks | UK SRT, US SPT, Canada, Mexico |
+| **Phase 4** | 2 weeks | Ireland, Japan, Singapore, NZ, Australia, PDF Reports |
+| **Phase 5** | 2 weeks | Native app sync, widgets, polish |
+| **Phase 6** | TBD | Other relo sites (Spain, Portugal, UK, Mexico, etc.) |
+
+**Total Estimated:** 12-15 weeks for Phases 1-5
+
+---
+
+### C.8 Development Checklist by Phase
+
+#### Phase 1 Checklist
+- [ ] Jurisdiction configuration schema designed
+- [ ] Multi-jurisdiction calculator engine built
+- [ ] France 183-day rule implemented
+- [ ] Jurisdiction selection UI created
+- [ ] Compliance Quick View UI implemented
+- [ ] Database tables created
+- [ ] API endpoints functional
+- [ ] Unit tests passing
+- [ ] Integration tested with existing Schengen tracker
+
+#### Phase 2 Checklist
+- [ ] Spain 183-day rule
+- [ ] Portugal 183-day rule
+- [ ] Germany 183-day rule (+ permanent home indicator)
+- [ ] Italy multi-factor
+- [ ] Netherlands multi-factor
+- [ ] Bulk enable/disable UI
+- [ ] Settings UI per jurisdiction
+
+#### Phase 3 Checklist
+- [ ] UK SRT engine complete
+- [ ] UK ties questionnaire UI
+- [ ] UK SRT result display with explanation
+- [ ] US SPT calculator with 3-year lookback
+- [ ] Canada 183 + ties
+- [ ] Mexico 183-day
+- [ ] Cross-jurisdiction tests passing
+
+#### Phase 4 Checklist
+- [ ] Ireland 183/280 rule
+- [ ] Japan 183-day
+- [ ] Singapore 183-day
+- [ ] New Zealand 183/12mo rolling
+- [ ] Australia domicile test
+- [ ] PDF report generator
+- [ ] Report templates per jurisdiction
+- [ ] QR verification functional
+
+#### Phase 5 Checklist
+- [ ] Performance optimized
+- [ ] Native iOS app updated
+- [ ] Native Android app updated
+- [ ] Widgets show multi-jurisdiction
+- [ ] Push alerts for thresholds
+- [ ] Documentation complete
+- [ ] End-to-end tests passing
+
+---
+
+### C.9 How to Prompt for Next Phase
+
+When ready to start the next phase, use:
+
+> "Let's start **Phase [N]** of the multi-jurisdiction expansion. Please review the requirements in MASTER-HANDOFF.md Appendix C and begin implementation."
+
+Or for status check:
+
+> "What's the current status of the multi-jurisdiction expansion? Which phase are we on?"
+
+The assistant should:
+1. Read the phase requirements from this document
+2. Create a task list for the phase
+3. Implement features in order
+4. Update the Development Notes section for the phase
+5. Mark checklist items as complete
+6. Report on completion and any issues
+
+---
+
+### C.10 Risk & Mitigation
+
+| Risk | Likelihood | Impact | Mitigation |
+|------|------------|--------|------------|
+| Tax rules change | Medium | High | Design for configurable rules via JSON |
+| UK SRT complexity | High | Medium | Start with simplified version, iterate |
+| Performance with many jurisdictions | Medium | Medium | Lazy loading, caching, pagination |
+| User confusion | Medium | High | Clear UI, tooltips, help content |
+| Legal liability | Low | High | Prominent disclaimers, not advice |
+
+---
+
+### C.11 Success Metrics
+
+| Metric | Target |
+|--------|--------|
+| Jurisdictions supported | 15+ |
+| Calculation accuracy | 99%+ |
+| PDF report generation time | < 5 seconds |
+| User adoption (enabled > 1 jurisdiction) | 50% of active users |
+| Quick View load time | < 1 second |
+| Mobile app sync latency | < 3 seconds |
+
+---
+
+*End of Appendix C: Multi-Jurisdiction Expansion Plan*
