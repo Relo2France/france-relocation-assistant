@@ -66,7 +66,7 @@
 ### What's In Progress
 - Native app widgets (iOS/Android)
 - Multi-jurisdiction expansion (see Appendix C for detailed 6-phase plan)
-  - Phase 1: Foundation + France tax (next)
+  - Phase 1: Foundation + France tax - **Backend + Frontend core complete**
   - Phase 2-5: 15+ jurisdictions, PDF reports, native sync
   - Phase 6: Other relo sites (Relo2Spain, Relo2Portugal, etc.)
 
@@ -90,7 +90,7 @@
 | Member Tools Plugin | v2.1.0 | Active |
 | React Portal | v2.1.0 | Active |
 | Theme | v1.2.4 | Active |
-| **MyTravelStatus Plugin** | **v1.6.0** | **Active** |
+| **MyTravelStatus Plugin** | **v1.7.0** | **Active** |
 | MyTravelStatus iOS | v1.0.0 | In Development |
 | MyTravelStatus Android | v1.0.0 | In Development |
 
@@ -666,6 +666,34 @@ The WordPress theme defines global `.btn-primary` with navy color. Portal button
 
 ## 13. Session History
 
+### January 5, 2026 (Session 5)
+- **Multi-Jurisdiction Expansion Phase 1 Implementation** - Backend + Frontend:
+  - **Database Schema v1.7.0:**
+    - Added `user_jurisdictions` table for user tracking preferences
+    - Added `compliance_snapshots` table for historical compliance tracking
+    - Extended `jurisdiction_rules` with `category`, `rule_config`, `country_code`, `flag_emoji`
+    - Database migration for existing installations
+  - **Calculator Engine (PHP):**
+    - Implemented multi-year counting method (Ireland 183/280 rule)
+    - Implemented weighted multi-year counting (US SPT with weights 1.0/⅓/⅙)
+    - Added 14 tax residency jurisdictions (France, Spain, Portugal, Germany, Italy, Netherlands, Ireland, US SPT, Mexico, Japan, Singapore, Australia, New Zealand, Canada)
+    - Updated `calculate_summary()` to return breakdown data for complex rules
+  - **TypeScript Types:**
+    - Added `JurisdictionCategory`, `CountingMethod` extended types
+    - Added `WeightedBreakdown`, `MultiYearBreakdown` interfaces
+    - Added `UserJurisdiction`, `ComplianceSnapshot`, `ComplianceAlert` types
+    - Added `ComplianceOverview` response type
+  - **React Hooks:**
+    - Extended `useJurisdictionsByCategory()` for category filtering
+    - Added `useUserJurisdictions()` for user preferences
+    - Added `useComplianceOverview()` for alerts dashboard
+    - Added `useComplianceHistory()` for historical snapshots
+  - **React Components:**
+    - Enhanced `JurisdictionOverview.tsx` with category tabs (visa/tax/immigration/custom)
+    - Added flag emoji support and enhanced Add Jurisdiction modal
+    - Updated `JurisdictionCard` with weighted/multi-year breakdown displays
+    - Created `ComplianceQuickView.tsx` stacked card component with alerts
+
 ### January 5, 2026 (Session 4)
 - **Multi-Jurisdiction Expansion Planning** - Complete documentation:
   - Added Appendix C: Multi-Jurisdiction Expansion Plan
@@ -968,22 +996,36 @@ Current year days × 1.0
 | Unit Tests | 2 | Core calculator tests |
 
 **Deliverables:**
-- [ ] User can enable France tax tracking alongside Schengen
-- [ ] Dashboard shows compliance status for multiple jurisdictions
-- [ ] Compliance Quick View available in app
+- [x] User can enable France tax tracking alongside Schengen
+- [x] Dashboard shows compliance status for multiple jurisdictions
+- [x] Compliance Quick View available in app
 
 **Development Notes (Phase 1):**
 ```
-Started: ___________
-Completed: ___________
-Issues encountered:
--
--
--
+Started: January 5, 2026
+Completed: January 5, 2026 (Backend + Frontend core)
 
-Blockers resolved:
--
--
+Implementation highlights:
+- Database v1.7.0 with user_jurisdictions, compliance_snapshots tables
+- Extended jurisdiction_rules with category, rule_config, country_code, flag_emoji
+- Calculator engine supports: rolling, calendar_year, fiscal_year, multi_year, weighted_multi_year
+- 14 tax residency jurisdictions pre-populated (FR, ES, PT, DE, IT, NL, IE, US SPT, MX, JP, SG, AU, NZ, CA)
+- JurisdictionOverview enhanced with category tabs (visa/tax/immigration/custom)
+- ComplianceQuickView component with stacked cards and alert banners
+- TypeScript types: WeightedBreakdown, MultiYearBreakdown for complex rules
+
+Key files modified:
+- mytravelstatus/includes/class-mts-schema.php (DB_VERSION 1.7.0)
+- mytravelstatus/includes/class-mts-jurisdiction.php (calculator engine)
+- portal/src/types/index.ts (extended jurisdiction types)
+- portal/src/hooks/useApi.ts (new hooks)
+- portal/src/api/client.ts (new API endpoints)
+- portal/src/components/travel-status/JurisdictionOverview.tsx (enhanced)
+- portal/src/components/travel-status/ComplianceQuickView.tsx (new)
+
+Pending for production:
+- Backend API endpoints for compliance/overview and compliance/history
+- Integration into TravelStatusDashboard main view
 ```
 
 ---

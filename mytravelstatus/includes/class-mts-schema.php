@@ -25,7 +25,7 @@ class MTS_Schema {
 	 *
 	 * @var string
 	 */
-	const DB_VERSION = '1.6.0';
+	const DB_VERSION = '1.7.0';
 
 	/**
 	 * Table definitions.
@@ -34,15 +34,17 @@ class MTS_Schema {
 	 * @var array
 	 */
 	private static $tables = array(
-		'trips'                => 'mts_trips', // Keep same name for backward compatibility.
-		'location_log'         => 'mts_location_log',
-		'calendar_connections' => 'mts_calendar_connections',
-		'calendar_events'      => 'mts_calendar_events',
-		'jurisdiction_rules'   => 'mts_jurisdiction_rules',
-		'push_subscriptions'   => 'mts_push_subscriptions',
-		'notifications'        => 'mts_notifications',
-		'family_members'       => 'mts_family_members',
-		'devices'              => 'mts_devices', // Added in v1.6.0 for mobile app.
+		'trips'                 => 'mts_trips', // Keep same name for backward compatibility.
+		'location_log'          => 'mts_location_log',
+		'calendar_connections'  => 'mts_calendar_connections',
+		'calendar_events'       => 'mts_calendar_events',
+		'jurisdiction_rules'    => 'mts_jurisdiction_rules',
+		'user_jurisdictions'    => 'mts_user_jurisdictions', // Added in v1.7.0 for user jurisdiction settings.
+		'compliance_snapshots'  => 'mts_compliance_snapshots', // Added in v1.7.0 for compliance history.
+		'push_subscriptions'    => 'mts_push_subscriptions',
+		'notifications'         => 'mts_notifications',
+		'family_members'        => 'mts_family_members',
+		'devices'               => 'mts_devices', // Added in v1.6.0 for mobile app.
 	);
 
 	/**
@@ -171,22 +173,26 @@ class MTS_Schema {
 
 		dbDelta( $sql_calendar_events );
 
-		// Jurisdiction rules table (added in v1.3.0 for multi-jurisdiction support).
+		// Jurisdiction rules table (added in v1.3.0, expanded in v1.7.0 for tax residency).
 		$table_jurisdiction_rules = self::get_table( 'jurisdiction_rules' );
 		$sql_jurisdiction_rules = "CREATE TABLE $table_jurisdiction_rules (
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 			code varchar(20) NOT NULL,
 			name varchar(100) NOT NULL,
 			type varchar(20) NOT NULL DEFAULT 'zone',
+			category varchar(20) DEFAULT 'visa',
 			parent_code varchar(20) DEFAULT NULL,
 			days_allowed int(11) NOT NULL,
 			window_days int(11) NOT NULL,
-			counting_method varchar(20) DEFAULT 'rolling',
+			counting_method varchar(30) DEFAULT 'rolling',
 			reset_month int(11) DEFAULT NULL,
 			reset_day int(11) DEFAULT NULL,
 			description text DEFAULT NULL,
 			notes text DEFAULT NULL,
 			countries text DEFAULT NULL,
+			rule_config longtext DEFAULT NULL,
+			country_code varchar(2) DEFAULT NULL,
+			flag_emoji varchar(10) DEFAULT NULL,
 			is_active tinyint(1) DEFAULT 1,
 			is_system tinyint(1) DEFAULT 1,
 			display_order int(11) DEFAULT 0,
@@ -195,6 +201,7 @@ class MTS_Schema {
 			PRIMARY KEY (id),
 			UNIQUE KEY idx_code (code),
 			KEY idx_type (type),
+			KEY idx_category (category),
 			KEY idx_active (is_active)
 		) $charset_collate;";
 
@@ -289,6 +296,44 @@ class MTS_Schema {
 		) $charset_collate;";
 
 		dbDelta( $sql_devices );
+
+		// User jurisdictions table (added in v1.7.0 for user-specific jurisdiction settings).
+		$table_user_jurisdictions = self::get_table( 'user_jurisdictions' );
+		$sql_user_jurisdictions = "CREATE TABLE $table_user_jurisdictions (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			user_id bigint(20) unsigned NOT NULL,
+			jurisdiction_code varchar(20) NOT NULL,
+			enabled tinyint(1) DEFAULT 1,
+			alert_threshold int(11) DEFAULT 80,
+			custom_config longtext DEFAULT NULL,
+			display_order int(11) DEFAULT 0,
+			created_at datetime DEFAULT CURRENT_TIMESTAMP,
+			updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+			PRIMARY KEY (id),
+			UNIQUE KEY idx_user_jurisdiction (user_id, jurisdiction_code),
+			KEY idx_user_enabled (user_id, enabled)
+		) $charset_collate;";
+
+		dbDelta( $sql_user_jurisdictions );
+
+		// Compliance snapshots table (added in v1.7.0 for compliance history tracking).
+		$table_compliance_snapshots = self::get_table( 'compliance_snapshots' );
+		$sql_compliance_snapshots = "CREATE TABLE $table_compliance_snapshots (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			user_id bigint(20) unsigned NOT NULL,
+			jurisdiction_code varchar(20) NOT NULL,
+			snapshot_date date NOT NULL,
+			days_used int(11) NOT NULL,
+			days_remaining int(11) NOT NULL,
+			status varchar(20) NOT NULL,
+			calculation_data longtext NOT NULL,
+			created_at datetime DEFAULT CURRENT_TIMESTAMP,
+			PRIMARY KEY (id),
+			KEY idx_user_jurisdiction_date (user_id, jurisdiction_code, snapshot_date),
+			KEY idx_user_date (user_id, snapshot_date)
+		) $charset_collate;";
+
+		dbDelta( $sql_compliance_snapshots );
 
 		// Populate default jurisdiction rules if table is empty.
 		self::maybe_populate_default_rules();
@@ -397,6 +442,51 @@ class MTS_Schema {
 					ADD KEY idx_family_member (family_member_id)"
 				);
 			}
+		}
+
+		// Migration from 1.6.x to 1.7.0: Add tax residency columns to jurisdiction_rules.
+		if ( version_compare( $current_version, '1.7.0', '<' ) ) {
+			$table_rules = self::get_table( 'jurisdiction_rules' );
+
+			// Check if category column exists.
+			$column_exists = $wpdb->get_results(
+				$wpdb->prepare(
+					"SHOW COLUMNS FROM $table_rules LIKE %s",
+					'category'
+				)
+			);
+
+			if ( empty( $column_exists ) ) {
+				// Add new columns for tax residency support.
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$wpdb->query(
+					"ALTER TABLE $table_rules
+					ADD COLUMN category varchar(20) DEFAULT 'visa' AFTER type,
+					ADD COLUMN rule_config longtext DEFAULT NULL AFTER countries,
+					ADD COLUMN country_code varchar(2) DEFAULT NULL AFTER rule_config,
+					ADD COLUMN flag_emoji varchar(10) DEFAULT NULL AFTER country_code"
+				);
+
+				// Add index for category queries.
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$wpdb->query(
+					"ALTER TABLE $table_rules
+					ADD KEY idx_category (category)"
+				);
+
+				// Update existing Schengen rule with flag.
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$wpdb->update(
+					$table_rules,
+					array( 'flag_emoji' => '🇪🇺' ),
+					array( 'code' => 'schengen' ),
+					array( '%s' ),
+					array( '%s' )
+				);
+			}
+
+			// Add tax residency rules.
+			self::maybe_populate_tax_residency_rules();
 		}
 	}
 
@@ -568,6 +658,309 @@ class MTS_Schema {
 					'display_order'   => $rule['display_order'],
 				),
 				array( '%s', '%s', '%s', '%s', '%d', '%d', '%s', '%d', '%d', '%s', '%s', '%d', '%d' )
+			);
+		}
+	}
+
+	/**
+	 * Populate tax residency jurisdiction rules (added in v1.7.0).
+	 * These are distinct from visa/visitor rules.
+	 */
+	private static function maybe_populate_tax_residency_rules() {
+		global $wpdb;
+
+		$table = self::get_table( 'jurisdiction_rules' );
+
+		// Tax residency rules to add.
+		$tax_rules = array(
+			// France 183-day tax residency.
+			array(
+				'code'            => 'fr_tax',
+				'name'            => 'France Tax Residency',
+				'type'            => 'country',
+				'category'        => 'tax',
+				'days_allowed'    => 183,
+				'window_days'     => 365,
+				'counting_method' => 'calendar_year',
+				'reset_month'     => 1,
+				'reset_day'       => 1,
+				'description'     => 'French tax residency threshold (183-day rule).',
+				'notes'           => '183+ days in France during a calendar year may trigger French tax residency. Other factors include principal residence (foyer), professional activity, and center of economic interests.',
+				'country_code'    => 'FR',
+				'flag_emoji'      => '🇫🇷',
+				'is_system'       => 1,
+				'display_order'   => 100,
+			),
+			// Spain 183-day tax residency.
+			array(
+				'code'            => 'es_tax',
+				'name'            => 'Spain Tax Residency',
+				'type'            => 'country',
+				'category'        => 'tax',
+				'days_allowed'    => 183,
+				'window_days'     => 365,
+				'counting_method' => 'calendar_year',
+				'reset_month'     => 1,
+				'reset_day'       => 1,
+				'description'     => 'Spanish tax residency threshold (183-day rule).',
+				'notes'           => '183+ days in Spain during a calendar year triggers tax residency. Includes days of arrival and departure.',
+				'country_code'    => 'ES',
+				'flag_emoji'      => '🇪🇸',
+				'is_system'       => 1,
+				'display_order'   => 101,
+			),
+			// Portugal 183-day tax residency.
+			array(
+				'code'            => 'pt_tax',
+				'name'            => 'Portugal Tax Residency',
+				'type'            => 'country',
+				'category'        => 'tax',
+				'days_allowed'    => 183,
+				'window_days'     => 365,
+				'counting_method' => 'calendar_year',
+				'reset_month'     => 1,
+				'reset_day'       => 1,
+				'description'     => 'Portuguese tax residency threshold (183-day rule).',
+				'notes'           => '183+ days in Portugal during any 12-month period starting or ending in the tax year triggers residency.',
+				'country_code'    => 'PT',
+				'flag_emoji'      => '🇵🇹',
+				'is_system'       => 1,
+				'display_order'   => 102,
+			),
+			// Germany 183-day tax residency.
+			array(
+				'code'            => 'de_tax',
+				'name'            => 'Germany Tax Residency',
+				'type'            => 'country',
+				'category'        => 'tax',
+				'days_allowed'    => 183,
+				'window_days'     => 365,
+				'counting_method' => 'calendar_year',
+				'reset_month'     => 1,
+				'reset_day'       => 1,
+				'description'     => 'German tax residency threshold.',
+				'notes'           => 'Residency primarily determined by habitual abode (more than 6 months) or permanent home in Germany.',
+				'country_code'    => 'DE',
+				'flag_emoji'      => '🇩🇪',
+				'is_system'       => 1,
+				'display_order'   => 103,
+			),
+			// Italy 183-day tax residency.
+			array(
+				'code'            => 'it_tax',
+				'name'            => 'Italy Tax Residency',
+				'type'            => 'country',
+				'category'        => 'tax',
+				'days_allowed'    => 183,
+				'window_days'     => 365,
+				'counting_method' => 'calendar_year',
+				'reset_month'     => 1,
+				'reset_day'       => 1,
+				'description'     => 'Italian tax residency threshold.',
+				'notes'           => 'Tax residency triggered by: registered residence in Italy, domicile (center of interests), OR 183+ days presence.',
+				'country_code'    => 'IT',
+				'flag_emoji'      => '🇮🇹',
+				'is_system'       => 1,
+				'display_order'   => 104,
+			),
+			// Netherlands 183-day tax residency.
+			array(
+				'code'            => 'nl_tax',
+				'name'            => 'Netherlands Tax Residency',
+				'type'            => 'country',
+				'category'        => 'tax',
+				'days_allowed'    => 183,
+				'window_days'     => 365,
+				'counting_method' => 'calendar_year',
+				'reset_month'     => 1,
+				'reset_day'       => 1,
+				'description'     => 'Dutch tax residency threshold.',
+				'notes'           => 'Residency based on permanent home, vital interests, and habitual abode. 183 days is an indicator but not determinative.',
+				'country_code'    => 'NL',
+				'flag_emoji'      => '🇳🇱',
+				'is_system'       => 1,
+				'display_order'   => 105,
+			),
+			// Ireland 183/280 tax residency.
+			array(
+				'code'            => 'ie_tax',
+				'name'            => 'Ireland Tax Residency',
+				'type'            => 'country',
+				'category'        => 'tax',
+				'days_allowed'    => 183,
+				'window_days'     => 365,
+				'counting_method' => 'multi_year',
+				'reset_month'     => 1,
+				'reset_day'       => 1,
+				'description'     => 'Irish tax residency (183/280-day rule).',
+				'notes'           => 'Tax resident if: 183+ days in current year, OR 280+ days combined over current and previous year (min 31 days each year).',
+				'rule_config'     => '{"secondary_threshold":280,"secondary_years":2,"min_days_per_year":31}',
+				'country_code'    => 'IE',
+				'flag_emoji'      => '🇮🇪',
+				'is_system'       => 1,
+				'display_order'   => 106,
+			),
+			// US Substantial Presence Test.
+			array(
+				'code'            => 'us_spt',
+				'name'            => 'US Substantial Presence Test',
+				'type'            => 'country',
+				'category'        => 'tax',
+				'days_allowed'    => 183,
+				'window_days'     => 1095, // 3 years
+				'counting_method' => 'weighted_multi_year',
+				'reset_month'     => 1,
+				'reset_day'       => 1,
+				'description'     => 'US Substantial Presence Test for tax residency.',
+				'notes'           => 'SPT calculation: Current year days × 1 + Prior year × 1/3 + Second prior × 1/6. Must be 31+ days in current year AND total ≥ 183.',
+				'rule_config'     => '{"current_year_weight":1,"prior_year_weight":0.333,"second_prior_weight":0.167,"min_current_year_days":31}',
+				'country_code'    => 'US',
+				'flag_emoji'      => '🇺🇸',
+				'is_system'       => 1,
+				'display_order'   => 110,
+			),
+			// Mexico 183-day tax residency.
+			array(
+				'code'            => 'mx_tax',
+				'name'            => 'Mexico Tax Residency',
+				'type'            => 'country',
+				'category'        => 'tax',
+				'days_allowed'    => 183,
+				'window_days'     => 365,
+				'counting_method' => 'calendar_year',
+				'reset_month'     => 1,
+				'reset_day'       => 1,
+				'description'     => 'Mexican tax residency threshold.',
+				'notes'           => 'Tax resident if primary home in Mexico OR 183+ days present in calendar year.',
+				'country_code'    => 'MX',
+				'flag_emoji'      => '🇲🇽',
+				'is_system'       => 1,
+				'display_order'   => 111,
+			),
+			// Japan 183-day tax residency.
+			array(
+				'code'            => 'jp_tax',
+				'name'            => 'Japan Tax Residency',
+				'type'            => 'country',
+				'category'        => 'tax',
+				'days_allowed'    => 183,
+				'window_days'     => 365,
+				'counting_method' => 'calendar_year',
+				'reset_month'     => 1,
+				'reset_day'       => 1,
+				'description'     => 'Japanese tax residency threshold.',
+				'notes'           => 'Resident status based on domicile (jusho) or residence for 1+ year. 183 days is a reference point.',
+				'country_code'    => 'JP',
+				'flag_emoji'      => '🇯🇵',
+				'is_system'       => 1,
+				'display_order'   => 112,
+			),
+			// Singapore 183-day tax residency.
+			array(
+				'code'            => 'sg_tax',
+				'name'            => 'Singapore Tax Residency',
+				'type'            => 'country',
+				'category'        => 'tax',
+				'days_allowed'    => 183,
+				'window_days'     => 365,
+				'counting_method' => 'calendar_year',
+				'reset_month'     => 1,
+				'reset_day'       => 1,
+				'description'     => 'Singapore tax residency threshold.',
+				'notes'           => 'Tax resident if physically present 183+ days in calendar year, OR employed in Singapore (excluding director).',
+				'country_code'    => 'SG',
+				'flag_emoji'      => '🇸🇬',
+				'is_system'       => 1,
+				'display_order'   => 113,
+			),
+			// Australia 183-day tax residency.
+			array(
+				'code'            => 'au_tax',
+				'name'            => 'Australia Tax Residency',
+				'type'            => 'country',
+				'category'        => 'tax',
+				'days_allowed'    => 183,
+				'window_days'     => 365,
+				'counting_method' => 'fiscal_year',
+				'reset_month'     => 7,
+				'reset_day'       => 1,
+				'description'     => 'Australian tax residency (fiscal year July-June).',
+				'notes'           => 'Residency determined by: resides test, domicile test, 183-day test, or superannuation test. Complex multi-factor assessment.',
+				'country_code'    => 'AU',
+				'flag_emoji'      => '🇦🇺',
+				'is_system'       => 1,
+				'display_order'   => 114,
+			),
+			// New Zealand 183-day tax residency.
+			array(
+				'code'            => 'nz_tax',
+				'name'            => 'New Zealand Tax Residency',
+				'type'            => 'country',
+				'category'        => 'tax',
+				'days_allowed'    => 183,
+				'window_days'     => 365,
+				'counting_method' => 'rolling',
+				'description'     => 'New Zealand tax residency (183-day rolling).',
+				'notes'           => 'Tax resident if present 183+ days in any 12-month period, OR have a permanent place of abode.',
+				'country_code'    => 'NZ',
+				'flag_emoji'      => '🇳🇿',
+				'is_system'       => 1,
+				'display_order'   => 115,
+			),
+			// Canada 183-day tax residency.
+			array(
+				'code'            => 'ca_tax',
+				'name'            => 'Canada Tax Residency',
+				'type'            => 'country',
+				'category'        => 'tax',
+				'days_allowed'    => 183,
+				'window_days'     => 365,
+				'counting_method' => 'calendar_year',
+				'reset_month'     => 1,
+				'reset_day'       => 1,
+				'description'     => 'Canadian tax residency threshold.',
+				'notes'           => 'Residency based on significant ties (home, spouse, dependents). 183+ days creates deemed residency for that year.',
+				'country_code'    => 'CA',
+				'flag_emoji'      => '🇨🇦',
+				'is_system'       => 1,
+				'display_order'   => 116,
+			),
+		);
+
+		foreach ( $tax_rules as $rule ) {
+			// Check if rule already exists.
+			$exists = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT COUNT(*) FROM $table WHERE code = %s",
+					$rule['code']
+				)
+			);
+
+			if ( $exists > 0 ) {
+				continue;
+			}
+
+			$wpdb->insert(
+				$table,
+				array(
+					'code'            => $rule['code'],
+					'name'            => $rule['name'],
+					'type'            => $rule['type'],
+					'category'        => $rule['category'],
+					'days_allowed'    => $rule['days_allowed'],
+					'window_days'     => $rule['window_days'],
+					'counting_method' => $rule['counting_method'],
+					'reset_month'     => isset( $rule['reset_month'] ) ? $rule['reset_month'] : null,
+					'reset_day'       => isset( $rule['reset_day'] ) ? $rule['reset_day'] : null,
+					'description'     => $rule['description'],
+					'notes'           => isset( $rule['notes'] ) ? $rule['notes'] : null,
+					'rule_config'     => isset( $rule['rule_config'] ) ? $rule['rule_config'] : null,
+					'country_code'    => isset( $rule['country_code'] ) ? $rule['country_code'] : null,
+					'flag_emoji'      => isset( $rule['flag_emoji'] ) ? $rule['flag_emoji'] : null,
+					'is_system'       => $rule['is_system'],
+					'display_order'   => $rule['display_order'],
+				),
+				array( '%s', '%s', '%s', '%s', '%d', '%d', '%s', '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%d', '%d' )
 			);
 		}
 	}

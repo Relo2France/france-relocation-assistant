@@ -12,5 +12,7 @@ export { default as TripList } from './TripList';
 export { default as PlanningTool } from './PlanningTool';
 export { default as CalendarView } from './CalendarView';
 export { default as ReportExport } from './ReportExport';
+export { default as JurisdictionOverview } from './JurisdictionOverview';
+export { default as ComplianceQuickView } from './ComplianceQuickView';
 export { useTravelStatusStore } from './useTravelStatusStore';
 export * from './travelStatusUtils';

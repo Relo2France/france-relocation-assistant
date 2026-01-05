@@ -29,6 +29,7 @@ import type {
   FamilyMember,
   FileCategory,
   FileFilters,
+  JurisdictionCategory,
   JurisdictionType,
   MemberProfile,
   NoteFilters,
@@ -40,6 +41,7 @@ import type {
   TravelStatusAlertSettings,
   TravelStatusTrip,
   UpdateProfileData,
+  UpdateUserJurisdictionRequest,
   UserSettings,
 } from '@/types';
 
@@ -1262,9 +1264,12 @@ export function useImportICalFile() {
 }
 
 // ============================================
-// Jurisdiction Hooks (Phase 3)
+// Jurisdiction Hooks (Phase 3 - Multi-Jurisdiction)
 // ============================================
 
+/**
+ * Get all available jurisdiction rules, optionally filtered by type
+ */
 export function useJurisdictions(type?: JurisdictionType) {
   return useQuery({
     queryKey: ['jurisdictions', type] as const,
@@ -1274,6 +1279,21 @@ export function useJurisdictions(type?: JurisdictionType) {
   });
 }
 
+/**
+ * Get jurisdiction rules by category (visa, tax, immigration, custom)
+ */
+export function useJurisdictionsByCategory(category?: JurisdictionCategory) {
+  return useQuery({
+    queryKey: ['jurisdictionsByCategory', category] as const,
+    queryFn: () => travelStatusApi.getJurisdictionsByCategory(category),
+    staleTime: STALE_TIME.LONG,
+    throwOnError: false,
+  });
+}
+
+/**
+ * Get a single jurisdiction rule by code
+ */
 export function useJurisdiction(code: string) {
   return useQuery({
     queryKey: ['jurisdiction', code] as const,
@@ -1284,6 +1304,9 @@ export function useJurisdiction(code: string) {
   });
 }
 
+/**
+ * Get user's tracked jurisdictions with preferences
+ */
 export function useTrackedJurisdictions() {
   return useQuery({
     queryKey: ['trackedJurisdictions'] as const,
@@ -1293,6 +1316,21 @@ export function useTrackedJurisdictions() {
   });
 }
 
+/**
+ * Get user jurisdiction preferences (includes alert thresholds, display order)
+ */
+export function useUserJurisdictions() {
+  return useQuery({
+    queryKey: ['userJurisdictions'] as const,
+    queryFn: travelStatusApi.getUserJurisdictions,
+    staleTime: STALE_TIME.DEFAULT,
+    throwOnError: false,
+  });
+}
+
+/**
+ * Add a jurisdiction to user's tracking list
+ */
 export function useAddTrackedJurisdiction() {
   const queryClient = useQueryClient();
 
@@ -1300,11 +1338,16 @@ export function useAddTrackedJurisdiction() {
     mutationFn: travelStatusApi.addTrackedJurisdiction,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['trackedJurisdictions'] });
+      queryClient.invalidateQueries({ queryKey: ['userJurisdictions'] });
       queryClient.invalidateQueries({ queryKey: ['multiJurisdictionSummary'] });
+      queryClient.invalidateQueries({ queryKey: ['complianceOverview'] });
     },
   });
 }
 
+/**
+ * Remove a jurisdiction from user's tracking list
+ */
 export function useRemoveTrackedJurisdiction() {
   const queryClient = useQueryClient();
 
@@ -1312,11 +1355,32 @@ export function useRemoveTrackedJurisdiction() {
     mutationFn: travelStatusApi.removeTrackedJurisdiction,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['trackedJurisdictions'] });
+      queryClient.invalidateQueries({ queryKey: ['userJurisdictions'] });
       queryClient.invalidateQueries({ queryKey: ['multiJurisdictionSummary'] });
+      queryClient.invalidateQueries({ queryKey: ['complianceOverview'] });
     },
   });
 }
 
+/**
+ * Update user jurisdiction preferences (alert threshold, display order, enabled)
+ */
+export function useUpdateUserJurisdiction() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: UpdateUserJurisdictionRequest) =>
+      travelStatusApi.updateUserJurisdiction(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['userJurisdictions'] });
+      queryClient.invalidateQueries({ queryKey: ['complianceOverview'] });
+    },
+  });
+}
+
+/**
+ * Get compliance summary for a single jurisdiction
+ */
 export function useJurisdictionSummary(code: string, date?: string) {
   return useQuery({
     queryKey: ['jurisdictionSummary', code, date] as const,
@@ -1327,12 +1391,41 @@ export function useJurisdictionSummary(code: string, date?: string) {
   });
 }
 
+/**
+ * Get compliance summaries for all tracked jurisdictions
+ */
 export function useMultiJurisdictionSummary() {
   return useQuery({
     queryKey: ['multiJurisdictionSummary'] as const,
     queryFn: travelStatusApi.getMultiJurisdictionSummary,
     staleTime: STALE_TIME.DEFAULT,
     throwOnError: false,
+  });
+}
+
+/**
+ * Get compliance overview with alerts across all tracked jurisdictions
+ */
+export function useComplianceOverview() {
+  return useQuery({
+    queryKey: ['complianceOverview'] as const,
+    queryFn: travelStatusApi.getComplianceOverview,
+    staleTime: STALE_TIME.DEFAULT,
+    throwOnError: false,
+    refetchInterval: REFETCH_INTERVAL.SUPPORT_UNREAD, // Refresh periodically for alerts
+  });
+}
+
+/**
+ * Get compliance history snapshots for a jurisdiction
+ */
+export function useComplianceHistory(code: string, options?: { days?: number }) {
+  return useQuery({
+    queryKey: ['complianceHistory', code, options?.days] as const,
+    queryFn: () => travelStatusApi.getComplianceHistory(code, options?.days),
+    staleTime: STALE_TIME.MEDIUM, // 5 minutes
+    throwOnError: false,
+    enabled: !!code,
   });
 }
 

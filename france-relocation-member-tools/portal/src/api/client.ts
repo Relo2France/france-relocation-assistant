@@ -1,6 +1,8 @@
 import type {
   Activity,
   AnalyticsData,
+  ComplianceOverview,
+  ComplianceSnapshot,
   CSVExportResult,
   CSVImportResult,
   CalendarConnection,
@@ -29,7 +31,9 @@ import type {
   GeocodeResult,
   GlossaryCategory,
   IPDetectionResult,
+  JurisdictionCategory,
   JurisdictionRule,
+  JurisdictionRulesResponse,
   JurisdictionSummary,
   JurisdictionType,
   KnowledgeCategory,
@@ -76,8 +80,11 @@ import type {
   TravelStatusTestAlertResult,
   TravelStatusTrip,
   UpdateProfileData,
+  UpdateUserJurisdictionRequest,
   UpgradeOption,
   User,
+  UserJurisdiction,
+  UserJurisdictionsResponse,
   UserSettings,
   VerificationRequest,
   VerificationResult,
@@ -1001,22 +1008,32 @@ export const travelStatusApi = {
     apiFetch<TravelStatusFamilySummary>('/schengen/family/summary'),
 
   // ============================================
-  // Jurisdiction API (Phase 3)
+  // Jurisdiction API (Phase 3 - Multi-Jurisdiction)
   // ============================================
 
-  // Get all available jurisdiction rules
+  // Get all available jurisdiction rules, optionally filtered by type
   getJurisdictions: (type?: JurisdictionType) =>
     apiFetch<JurisdictionRule[]>(
       type ? `/schengen/jurisdictions?type=${type}` : '/schengen/jurisdictions'
+    ),
+
+  // Get jurisdiction rules by category (visa, tax, immigration, custom)
+  getJurisdictionsByCategory: (category?: JurisdictionCategory) =>
+    apiFetch<JurisdictionRulesResponse>(
+      category ? `/schengen/jurisdictions?category=${category}` : '/schengen/jurisdictions'
     ),
 
   // Get a single jurisdiction rule by code
   getJurisdiction: (code: string) =>
     apiFetch<JurisdictionRule>(`/schengen/jurisdictions/${code}`),
 
-  // Get user's tracked jurisdictions
+  // Get user's tracked jurisdictions (basic list)
   getTrackedJurisdictions: () =>
     apiFetch<JurisdictionRule[]>('/schengen/jurisdictions/tracked'),
+
+  // Get user's jurisdiction preferences (includes alert thresholds, display order)
+  getUserJurisdictions: () =>
+    apiFetch<UserJurisdictionsResponse>('/schengen/user-jurisdictions'),
 
   // Add a jurisdiction to tracking
   addTrackedJurisdiction: (code: string) =>
@@ -1031,6 +1048,13 @@ export const travelStatusApi = {
       method: 'DELETE',
     }),
 
+  // Update user jurisdiction preferences (alert threshold, display order, enabled)
+  updateUserJurisdiction: (data: UpdateUserJurisdictionRequest) =>
+    apiFetch<UserJurisdiction>('/schengen/user-jurisdictions', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
   // Get summary for a specific jurisdiction
   getJurisdictionSummary: (code: string, date?: string) =>
     apiFetch<JurisdictionSummary>(
@@ -1042,6 +1066,18 @@ export const travelStatusApi = {
   // Get summary for all tracked jurisdictions
   getMultiJurisdictionSummary: () =>
     apiFetch<MultiJurisdictionSummary>('/schengen/jurisdictions/summary'),
+
+  // Get compliance overview with alerts across all tracked jurisdictions
+  getComplianceOverview: () =>
+    apiFetch<ComplianceOverview>('/schengen/compliance/overview'),
+
+  // Get compliance history snapshots for a jurisdiction
+  getComplianceHistory: (code: string, days?: number) =>
+    apiFetch<ComplianceSnapshot[]>(
+      days
+        ? `/schengen/compliance/history/${code}?days=${days}`
+        : `/schengen/compliance/history/${code}`
+    ),
 
   // ============================================
   // Notifications API (Phase 5)
