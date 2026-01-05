@@ -3,6 +3,7 @@
  *
  * Personal information section of the profile form.
  * Handles legal names, DOB, nationality, and passport information.
+ * Uses dynamic field rendering for consistent sizing.
  */
 
 import { useState, useEffect, useRef } from 'react';
@@ -15,18 +16,72 @@ interface PersonalSectionProps {
   profile: MemberProfile | undefined;
 }
 
+type FieldSize = 'compact' | 'short' | 'medium';
+
+interface FieldConfig {
+  name: keyof typeof initialFormData;
+  label: string;
+  type: 'text' | 'date';
+  size: FieldSize;
+  required?: boolean;
+  placeholder?: string;
+  autoComplete?: string;
+}
+
+const initialFormData = {
+  legal_first_name: '',
+  legal_middle_name: '',
+  legal_last_name: '',
+  date_of_birth: '',
+  nationality: '',
+  passport_number: '',
+  passport_expiry: '',
+};
+
+// Field configuration for identity & passport section
+const identityFields: FieldConfig[] = [
+  {
+    name: 'date_of_birth',
+    label: 'Date of Birth',
+    type: 'date',
+    size: 'compact',
+    required: true,
+    autoComplete: 'bday',
+  },
+  {
+    name: 'nationality',
+    label: 'Nationality',
+    type: 'text',
+    size: 'short',
+    required: true,
+    placeholder: 'e.g., American',
+  },
+  {
+    name: 'passport_number',
+    label: 'Passport Number',
+    type: 'text',
+    size: 'medium',
+    autoComplete: 'off',
+  },
+  {
+    name: 'passport_expiry',
+    label: 'Passport Expiry',
+    type: 'date',
+    size: 'compact',
+  },
+];
+
+// Size classes for different field types
+const sizeClasses: Record<FieldSize, string> = {
+  compact: 'w-[150px]',
+  short: 'w-[180px]',
+  medium: 'w-[200px]',
+};
+
 export default function PersonalSection({ profile }: PersonalSectionProps) {
   const updateProfile = useUpdateMemberProfile();
   const initializedRef = useRef(false);
-  const [formData, setFormData] = useState({
-    legal_first_name: '',
-    legal_middle_name: '',
-    legal_last_name: '',
-    date_of_birth: '',
-    nationality: '',
-    passport_number: '',
-    passport_expiry: '',
-  });
+  const [formData, setFormData] = useState(initialFormData);
 
   // Sync form with profile data when first loaded
   useEffect(() => {
@@ -47,6 +102,35 @@ export default function PersonalSection({ profile }: PersonalSectionProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     updateProfile.mutate(formData);
+  };
+
+  const handleFieldChange = (name: keyof typeof formData, value: string) => {
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const renderField = (field: FieldConfig) => {
+    const value = formData[field.name];
+
+    return (
+      <div key={field.name} className={`${sizeClasses[field.size]} flex-shrink-0`}>
+        <label htmlFor={field.name} className="block text-sm font-medium text-gray-700 mb-1">
+          {field.label}
+          {field.required && <span className="text-red-500 ml-1" aria-label="required">*</span>}
+        </label>
+        <input
+          type={field.type}
+          id={field.name}
+          name={field.name}
+          value={value}
+          onChange={(e) => handleFieldChange(field.name, e.target.value)}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+          required={field.required}
+          aria-required={field.required}
+          placeholder={field.placeholder}
+          autoComplete={field.autoComplete}
+        />
+      </div>
+    );
   };
 
   return (
@@ -73,7 +157,7 @@ export default function PersonalSection({ profile }: PersonalSectionProps) {
               id="legal_first_name"
               name="legal_first_name"
               value={formData.legal_first_name}
-              onChange={(e) => setFormData({ ...formData, legal_first_name: e.target.value })}
+              onChange={(e) => handleFieldChange('legal_first_name', e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white"
               required
               aria-required="true"
@@ -89,7 +173,7 @@ export default function PersonalSection({ profile }: PersonalSectionProps) {
               id="legal_middle_name"
               name="legal_middle_name"
               value={formData.legal_middle_name}
-              onChange={(e) => setFormData({ ...formData, legal_middle_name: e.target.value })}
+              onChange={(e) => handleFieldChange('legal_middle_name', e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white"
               autoComplete="additional-name"
             />
@@ -103,7 +187,7 @@ export default function PersonalSection({ profile }: PersonalSectionProps) {
               id="legal_last_name"
               name="legal_last_name"
               value={formData.legal_last_name}
-              onChange={(e) => setFormData({ ...formData, legal_last_name: e.target.value })}
+              onChange={(e) => handleFieldChange('legal_last_name', e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white"
               required
               aria-required="true"
@@ -113,67 +197,12 @@ export default function PersonalSection({ profile }: PersonalSectionProps) {
         </div>
       </fieldset>
 
-      <div className="flex flex-wrap gap-x-6 gap-y-4">
-        <div className="w-full sm:w-auto sm:min-w-[160px]">
-          <label htmlFor="date_of_birth" className="block text-sm font-medium text-gray-700 mb-1">
-            Date of Birth <span className="text-red-500" aria-label="required">*</span>
-          </label>
-          <input
-            type="date"
-            id="date_of_birth"
-            name="date_of_birth"
-            value={formData.date_of_birth}
-            onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-            required
-            aria-required="true"
-            autoComplete="bday"
-          />
+      <fieldset className="space-y-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+        <legend className="font-medium text-gray-900 px-2">Identity & Passport</legend>
+        <div className="flex flex-wrap gap-6">
+          {identityFields.map(renderField)}
         </div>
-        <div className="w-full sm:w-auto sm:min-w-[160px]">
-          <label htmlFor="nationality" className="block text-sm font-medium text-gray-700 mb-1">
-            Nationality <span className="text-red-500" aria-label="required">*</span>
-          </label>
-          <input
-            type="text"
-            id="nationality"
-            name="nationality"
-            value={formData.nationality}
-            onChange={(e) => setFormData({ ...formData, nationality: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-            placeholder="e.g., American"
-            required
-            aria-required="true"
-          />
-        </div>
-        <div className="w-full sm:w-auto sm:min-w-[160px]">
-          <label htmlFor="passport_number" className="block text-sm font-medium text-gray-700 mb-1">
-            Passport Number
-          </label>
-          <input
-            type="text"
-            id="passport_number"
-            name="passport_number"
-            value={formData.passport_number}
-            onChange={(e) => setFormData({ ...formData, passport_number: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-            autoComplete="off"
-          />
-        </div>
-        <div className="w-full sm:w-auto sm:min-w-[160px]">
-          <label htmlFor="passport_expiry" className="block text-sm font-medium text-gray-700 mb-1">
-            Passport Expiry
-          </label>
-          <input
-            type="date"
-            id="passport_expiry"
-            name="passport_expiry"
-            value={formData.passport_expiry}
-            onChange={(e) => setFormData({ ...formData, passport_expiry: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-          />
-        </div>
-      </div>
+      </fieldset>
 
       <SaveButton
         isPending={updateProfile.isPending}
