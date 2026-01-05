@@ -33,6 +33,7 @@ export default function VisaSection({ profile }: VisaSectionProps) {
     work_in_france: 'undecided' as WorkInFranceType,
     industry: '',
     employer_name: '',
+    job_title: '',
   });
 
   // Sync form with profile data when first loaded
@@ -44,6 +45,7 @@ export default function VisaSection({ profile }: VisaSectionProps) {
         work_in_france: (profile.work_in_france as WorkInFranceType) || 'undecided',
         industry: profile.industry || '',
         employer_name: profile.employer_name || '',
+        job_title: profile.job_title || '',
       });
       initializedRef.current = true;
     }
@@ -123,40 +125,58 @@ export default function VisaSection({ profile }: VisaSectionProps) {
         </div>
       </div>
 
-      {isEmployed && (
-        <fieldset className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div>
-            <label htmlFor="industry" className="block text-sm font-medium text-gray-700 mb-1">
-              Industry/Field
-            </label>
-            <input
-              type="text"
-              id="industry"
-              name="industry"
-              value={formData.industry}
-              onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-              placeholder="e.g., Technology, Healthcare, Finance"
-              autoComplete="organization-title"
-            />
-          </div>
+      {/* Industry and Job Title - always visible */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div>
+          <label htmlFor="industry" className="block text-sm font-medium text-gray-700 mb-1">
+            Industry/Field
+          </label>
+          <input
+            type="text"
+            id="industry"
+            name="industry"
+            value={formData.industry}
+            onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            placeholder="e.g., Technology, Healthcare, Finance"
+            autoComplete="organization-title"
+          />
+        </div>
 
-          <div>
-            <label htmlFor="employer_name" className="block text-sm font-medium text-gray-700 mb-1">
-              Current Employer
-            </label>
-            <input
-              type="text"
-              id="employer_name"
-              name="employer_name"
-              value={formData.employer_name}
-              onChange={(e) => setFormData({ ...formData, employer_name: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-              placeholder="Company name"
-              autoComplete="organization"
-            />
-          </div>
-        </fieldset>
+        <div>
+          <label htmlFor="job_title" className="block text-sm font-medium text-gray-700 mb-1">
+            Job Title
+          </label>
+          <input
+            type="text"
+            id="job_title"
+            name="job_title"
+            value={formData.job_title}
+            onChange={(e) => setFormData({ ...formData, job_title: e.target.value })}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            placeholder="e.g., Software Engineer, Marketing Director"
+            autoComplete="organization-title"
+          />
+        </div>
+      </div>
+
+      {/* Employer name - only if employed */}
+      {isEmployed && (
+        <div>
+          <label htmlFor="employer_name" className="block text-sm font-medium text-gray-700 mb-1">
+            Current Employer
+          </label>
+          <input
+            type="text"
+            id="employer_name"
+            name="employer_name"
+            value={formData.employer_name}
+            onChange={(e) => setFormData({ ...formData, employer_name: e.target.value })}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            placeholder="Company name"
+            autoComplete="organization"
+          />
+        </div>
       )}
 
       <SaveButton
