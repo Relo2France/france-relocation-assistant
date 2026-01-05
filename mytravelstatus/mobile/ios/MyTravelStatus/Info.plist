@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Info.plist
+
+  MyTravelStatus iOS App Configuration
+  Contains all required permission usage descriptions and app configuration.
+
+  @package MyTravelStatus
+  @since   1.0.0
+-->
+<plist version="1.0">
+<dict>
+    <!-- App Identity -->
+    <key>CFBundleName</key>
+    <string>MyTravelStatus</string>
+    <key>CFBundleDisplayName</key>
+    <string>MyTravelStatus</string>
+    <key>CFBundleIdentifier</key>
+    <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+    <key>CFBundleVersion</key>
+    <string>$(CURRENT_PROJECT_VERSION)</string>
+    <key>CFBundleShortVersionString</key>
+    <string>$(MARKETING_VERSION)</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleExecutable</key>
+    <string>$(EXECUTABLE_NAME)</string>
+
+    <!-- App Configuration -->
+    <key>LSRequiresIPhoneOS</key>
+    <true/>
+    <key>UIApplicationSupportsIndirectInputEvents</key>
+    <true/>
+    <key>UILaunchScreen</key>
+    <dict/>
+    <key>UIRequiredDeviceCapabilities</key>
+    <array>
+        <string>armv7</string>
+    </array>
+    <key>UISupportedInterfaceOrientations</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+        <string>UIInterfaceOrientationLandscapeLeft</string>
+        <string>UIInterfaceOrientationLandscapeRight</string>
+    </array>
+    <key>UISupportedInterfaceOrientations~ipad</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+        <string>UIInterfaceOrientationPortraitUpsideDown</string>
+        <string>UIInterfaceOrientationLandscapeLeft</string>
+        <string>UIInterfaceOrientationLandscapeRight</string>
+    </array>
+
+    <!-- Background Modes -->
+    <key>UIBackgroundModes</key>
+    <array>
+        <string>location</string>
+        <string>fetch</string>
+        <string>processing</string>
+        <string>remote-notification</string>
+    </array>
+
+    <!-- Background Task Identifiers -->
+    <key>BGTaskSchedulerPermittedIdentifiers</key>
+    <array>
+        <string>com.mytravelstatus.app.locationCheck</string>
+        <string>com.mytravelstatus.app.sync</string>
+    </array>
+
+    <!-- ================================== -->
+    <!-- PRIVACY USAGE DESCRIPTIONS         -->
+    <!-- ================================== -->
+
+    <!-- Location Services - When In Use -->
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>MyTravelStatus uses your location to automatically detect which country you're in and help track your travel days for visa compliance. Your location is used solely to determine your country of presence and is never shared with third parties.</string>
+
+    <!-- Location Services - Always (Background) -->
+    <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+    <string>Enable background location to automatically track country entries and exits for accurate travel compliance monitoring. This feature is optional and can be enabled in Settings. When enabled, your device checks your location three times daily (morning, afternoon, evening) to record which country you're in. Your precise coordinates are never stored—only the country name. You can disable this anytime and manually enter trips instead.</string>
+
+    <!-- Location - Temporary Full Accuracy -->
+    <key>NSLocationTemporaryUsageDescriptionDictionary</key>
+    <dict>
+        <key>CountryDetection</key>
+        <string>To determine your current country for travel tracking. We only store the country name, not your precise location.</string>
+    </dict>
+
+    <!-- Photo Library - Limited Access (iOS 14+) -->
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>MyTravelStatus can scan photos you select to detect trip dates from GPS metadata. Select specific photos to import travel history. We only read location data from photos you choose—photos are never uploaded or stored on our servers. You can skip this and manually enter trips instead.</string>
+
+    <!-- Photo Library - Add Only -->
+    <key>NSPhotoLibraryAddUsageDescription</key>
+    <string>Save travel reports and documents to your photo library.</string>
+
+    <!-- Calendar Access -->
+    <key>NSCalendarsUsageDescription</key>
+    <string>MyTravelStatus can scan your calendar for travel events (flights, hotels, trips) to automatically suggest trip entries. We only read event titles, dates, and locations locally on your device—calendar data is never uploaded to our servers. You can skip this and manually enter trips instead.</string>
+
+    <!-- Contacts (optional - for future family sharing) -->
+    <key>NSContactsUsageDescription</key>
+    <string>Add family members from your contacts to track their travel compliance alongside yours.</string>
+
+    <!-- Face ID / Touch ID -->
+    <key>NSFaceIDUsageDescription</key>
+    <string>Use Face ID to securely unlock the app and protect your travel data.</string>
+
+    <!-- Camera (for future document scanning) -->
+    <key>NSCameraUsageDescription</key>
+    <string>Take photos of travel documents like boarding passes or passport stamps to verify trip entries.</string>
+
+    <!-- User Notifications -->
+    <key>NSUserNotificationsUsageDescription</key>
+    <string>Receive alerts when you're approaching visa day limits, reminders about upcoming trips, and important travel compliance updates.</string>
+
+    <!-- ================================== -->
+    <!-- APP TRANSPORT SECURITY            -->
+    <!-- ================================== -->
+    <key>NSAppTransportSecurity</key>
+    <dict>
+        <key>NSAllowsArbitraryLoads</key>
+        <false/>
+    </dict>
+
+    <!-- ================================== -->
+    <!-- ITUNES FILE SHARING               -->
+    <!-- ================================== -->
+    <key>UIFileSharingEnabled</key>
+    <false/>
+    <key>LSSupportsOpeningDocumentsInPlace</key>
+    <false/>
+
+    <!-- ================================== -->
+    <!-- URL SCHEMES                       -->
+    <!-- ================================== -->
+    <key>CFBundleURLTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleURLName</key>
+            <string>com.mytravelstatus.app</string>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>mytravelstatus</string>
+            </array>
+        </dict>
+    </array>
+
+    <!-- ================================== -->
+    <!-- IN-APP PURCHASE                   -->
+    <!-- ================================== -->
+    <key>SKAdNetworkItems</key>
+    <array/>
+</dict>
+</plist>
