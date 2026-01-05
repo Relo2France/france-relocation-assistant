@@ -115,7 +115,7 @@ export default function PersonalSection({ profile }: PersonalSectionProps) {
 
       <fieldset className="space-y-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
         <legend className="font-medium text-gray-900 px-2">Identity & Passport</legend>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
             <label htmlFor="date_of_birth" className="block text-sm font-medium text-gray-700 mb-1">
               Date of Birth <span className="text-red-500" aria-label="required">*</span>
