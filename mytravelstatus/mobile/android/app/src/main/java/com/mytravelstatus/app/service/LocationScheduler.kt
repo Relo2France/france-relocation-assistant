@@ -4,7 +4,12 @@
  * Schedules background location checks at 8 AM, 2 PM, and 8 PM.
  * Uses WorkManager for reliable background execution.
  *
- * @package R2F_Schengen_Tracker
+ * Privacy features:
+ * - OFF by default (requires explicit opt-in via PrivacySettings)
+ * - Only stores country names, never precise coordinates
+ * - User can disable at any time
+ *
+ * @package MyTravelStatus
  * @since   1.0.0
  */
 
@@ -15,6 +20,7 @@ import android.util.Log
 import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import java.util.Calendar
@@ -32,6 +38,8 @@ object LocationScheduler {
     /**
      * Schedule location checks for 3 times daily.
      * Each check is a separate periodic work request.
+     *
+     * IMPORTANT: Only schedules if background location is enabled in PrivacySettings.
      */
     fun scheduleLocationChecks(context: Context) {
         val workManager = WorkManager.getInstance(context)
@@ -41,6 +49,20 @@ object LocationScheduler {
         }
 
         Log.d(TAG, "Scheduled location checks for hours: $CHECK_HOURS")
+    }
+
+    /**
+     * Schedule all location checks (alias for scheduleLocationChecks).
+     * Checks PrivacySettings before scheduling.
+     */
+    fun scheduleAllChecks(context: Context) {
+        // Check if background location is enabled
+        if (!PrivacySettings.backgroundLocationEnabled.value) {
+            Log.d(TAG, "Background location not enabled, skipping schedule")
+            return
+        }
+
+        scheduleLocationChecks(context)
     }
 
     /**
@@ -100,6 +122,27 @@ object LocationScheduler {
         val workManager = WorkManager.getInstance(context)
         workManager.cancelAllWorkByTag("location_check")
         Log.d(TAG, "Cancelled all location checks")
+    }
+
+    /**
+     * Cancel all tasks (alias for cancelAll).
+     */
+    fun cancelAllTasks(context: Context) {
+        cancelAll(context)
+    }
+
+    /**
+     * Run an immediate location check (one-time).
+     */
+    fun runImmediateCheck(context: Context) {
+        val workManager = WorkManager.getInstance(context)
+
+        val workRequest = OneTimeWorkRequestBuilder<LocationWorker>()
+            .addTag("location_check_immediate")
+            .build()
+
+        workManager.enqueue(workRequest)
+        Log.d(TAG, "Queued immediate location check")
     }
 
     /**

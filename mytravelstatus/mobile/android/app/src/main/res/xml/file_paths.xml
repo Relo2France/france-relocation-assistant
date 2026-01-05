@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ * file_paths.xml
+ *
+ * FileProvider paths configuration for data export sharing.
+ *
+ * @package MyTravelStatus
+ * @since   1.0.0
+-->
+<paths>
+    <!-- Cache directory for data export files -->
+    <cache-path
+        name="exports"
+        path="exports/" />
+</paths>
