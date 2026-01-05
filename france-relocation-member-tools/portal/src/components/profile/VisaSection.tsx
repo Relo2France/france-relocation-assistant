@@ -57,7 +57,7 @@ export default function VisaSection({ profile }: VisaSectionProps) {
   const isEmployed = formData.employment_status === 'employed' || formData.employment_status === 'self_employed';
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 pt-6">
+    <form onSubmit={handleSubmit} className="space-y-8 pt-6">
       <div>
         <label htmlFor="visa_type" className="block text-sm font-medium text-gray-700 mb-1">
           Visa Type <span className="text-red-500" aria-label="required">*</span>

@@ -50,7 +50,7 @@ export default function PersonalSection({ profile }: PersonalSectionProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 pt-6">
+    <form onSubmit={handleSubmit} className="space-y-8 pt-6">
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4" role="note">
         <div className="flex gap-2">
           <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" aria-hidden="true" />
