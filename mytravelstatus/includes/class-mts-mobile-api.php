@@ -159,6 +159,28 @@ class MTS_Mobile_API {
 				'permission_callback' => array( $this, 'check_permission' ),
 			)
 		);
+
+		// Get mobile push configuration status.
+		register_rest_route(
+			self::NAMESPACE,
+			'/push/status',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( $this, 'get_push_status' ),
+				'permission_callback' => array( $this, 'check_permission' ),
+			)
+		);
+
+		// Send test push notification.
+		register_rest_route(
+			self::NAMESPACE,
+			'/push/test',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( $this, 'send_test_push' ),
+				'permission_callback' => array( $this, 'check_permission' ),
+			)
+		);
 	}
 
 	/**
@@ -887,5 +909,125 @@ class MTS_Mobile_API {
 			array( '%s' ),
 			array( '%d', '%s' )
 		);
+	}
+
+	/**
+	 * Get mobile push configuration status and user's registered devices.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response
+	 */
+	public function get_push_status( WP_REST_Request $request ): WP_REST_Response {
+		global $wpdb;
+
+		$user_id = get_current_user_id();
+		$table   = $wpdb->prefix . 'mts_devices';
+
+		// Get user's devices.
+		$devices = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT device_id, platform, device_name, app_version, last_active, created_at
+				 FROM $table
+				 WHERE user_id = %d AND is_active = 1
+				 ORDER BY last_active DESC",
+				$user_id
+			)
+		);
+
+		// Get configuration status.
+		$config_status = MTS_Mobile_Push::get_instance()->get_configuration_status();
+
+		return rest_ensure_response( array(
+			'configuration' => $config_status,
+			'devices'       => array_map( function( $device ) {
+				return array(
+					'deviceId'   => $device->device_id,
+					'platform'   => $device->platform,
+					'deviceName' => $device->device_name,
+					'appVersion' => $device->app_version,
+					'lastActive' => $device->last_active,
+					'createdAt'  => $device->created_at,
+				);
+			}, $devices ),
+		) );
+	}
+
+	/**
+	 * Send a test push notification to user's devices.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response
+	 */
+	public function send_test_push( WP_REST_Request $request ): WP_REST_Response {
+		$user_id = get_current_user_id();
+		$params  = $request->get_json_params();
+
+		// Optional: target a specific device.
+		$device_id = isset( $params['device_id'] ) ? sanitize_text_field( $params['device_id'] ) : null;
+
+		$mobile_push = MTS_Mobile_Push::get_instance();
+
+		if ( $device_id ) {
+			// Send to specific device.
+			global $wpdb;
+			$table  = $wpdb->prefix . 'mts_devices';
+			$device = $wpdb->get_row(
+				$wpdb->prepare(
+					"SELECT * FROM $table WHERE device_id = %s AND user_id = %d AND is_active = 1",
+					$device_id,
+					$user_id
+				)
+			);
+
+			if ( ! $device ) {
+				return new WP_Error(
+					'device_not_found',
+					__( 'Device not found or not registered.', 'mytravelstatus' ),
+					array( 'status' => 404 )
+				);
+			}
+
+			$payload = array(
+				'title' => __( 'Test Notification', 'mytravelstatus' ),
+				'body'  => __( 'Push notifications are working on this device!', 'mytravelstatus' ),
+				'data'  => array(
+					'type' => 'test',
+					'url'  => home_url( '/portal/schengen' ),
+				),
+			);
+
+			$success = false;
+			if ( 'ios' === $device->platform ) {
+				$success = $mobile_push->send_ios_push( $device->push_token, $payload );
+			} elseif ( 'android' === $device->platform ) {
+				$success = $mobile_push->send_android_push( $device->push_token, $payload );
+			}
+
+			return rest_ensure_response( array(
+				'success'  => $success,
+				'deviceId' => $device_id,
+				'platform' => $device->platform,
+				'message'  => $success
+					? __( 'Test notification sent successfully.', 'mytravelstatus' )
+					: __( 'Failed to send test notification.', 'mytravelstatus' ),
+			) );
+		}
+
+		// Send to all user's devices.
+		$results = $mobile_push->send_test( $user_id );
+
+		$total_sent = $results['ios_sent'] + $results['android_sent'];
+
+		return rest_ensure_response( array(
+			'success' => $total_sent > 0,
+			'results' => $results,
+			'message' => $total_sent > 0
+				? sprintf(
+					/* translators: %d: number of devices */
+					__( 'Test notification sent to %d device(s).', 'mytravelstatus' ),
+					$total_sent
+				)
+				: __( 'No devices available to send test notification.', 'mytravelstatus' ),
+		) );
 	}
 }

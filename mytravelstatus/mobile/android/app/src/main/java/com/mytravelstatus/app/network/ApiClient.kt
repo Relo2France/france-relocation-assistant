@@ -23,20 +23,26 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 
-class ApiClient private constructor() {
+class ApiClient private constructor(private val context: android.content.Context? = null) {
 
     companion object {
         @Volatile
         private var INSTANCE: ApiClient? = null
 
-        fun getInstance(): ApiClient {
+        fun getInstance(context: android.content.Context? = null): ApiClient {
             return INSTANCE ?: synchronized(this) {
-                INSTANCE ?: ApiClient().also { INSTANCE = it }
+                INSTANCE ?: ApiClient(context).also { INSTANCE = it }
             }
         }
 
         private const val DEFAULT_BASE_URL = "https://relo2france.com/wp-json/mts/v1"
     }
+
+    /**
+     * Check if user is authenticated
+     */
+    val isAuthenticated: Boolean
+        get() = authToken != null
 
     private val json = Json {
         ignoreUnknownKeys = true
@@ -155,6 +161,25 @@ class ApiClient private constructor() {
      */
     suspend fun registerDevice(registration: DeviceRegistration): Result<Map<String, Boolean>> {
         return post("/device/register", registration)
+    }
+
+    /**
+     * Register device for push notifications (convenience method)
+     */
+    suspend fun registerDevice(
+        deviceId: String,
+        pushToken: String,
+        platform: String,
+        appVersion: String
+    ): Result<Map<String, Boolean>> {
+        val registration = DeviceRegistration(
+            deviceId = deviceId,
+            pushToken = pushToken,
+            platform = platform,
+            appVersion = appVersion,
+            deviceName = android.os.Build.MODEL
+        )
+        return registerDevice(registration)
     }
 
     /**
