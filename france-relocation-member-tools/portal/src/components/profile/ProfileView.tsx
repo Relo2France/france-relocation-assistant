@@ -15,19 +15,23 @@ import {
   Briefcase,
   MapPin,
   DollarSign,
+  Calendar,
+  FileText,
   ChevronDown,
   ChevronUp,
 } from 'lucide-react';
-import { useMemberProfile } from '@/hooks/useApi';
+import { useMemberProfile, useProfileCompletion } from '@/hooks/useApi';
 import PersonalSection from './PersonalSection';
 import ApplicantSection from './ApplicantSection';
 import VisaSection from './VisaSection';
 import LocationSection from './LocationSection';
+import TimelineSection from './TimelineSection';
 import FinancialSection from './FinancialSection';
+import DocumentsSection from './DocumentsSection';
 import ProfileSkeleton from './ProfileSkeleton';
 import type { MemberProfile } from '@/types';
 
-type SectionId = 'personal' | 'applicant' | 'visa' | 'location' | 'financial';
+type SectionId = 'personal' | 'applicant' | 'visa' | 'location' | 'timeline' | 'financial' | 'documents';
 
 interface ProfileSection {
   id: SectionId;
@@ -41,13 +45,16 @@ const sections: ProfileSection[] = [
   { id: 'applicant', label: 'Applicant & Family', icon: Users, component: ApplicantSection },
   { id: 'visa', label: 'Visa & Employment', icon: Briefcase, component: VisaSection },
   { id: 'location', label: 'Location Information', icon: MapPin, component: LocationSection },
-  { id: 'financial', label: 'Financial Information', icon: DollarSign, component: FinancialSection },
+  { id: 'timeline', label: 'Timeline & Plans', icon: Calendar, component: TimelineSection },
+  { id: 'financial', label: 'Financial & Language', icon: DollarSign, component: FinancialSection },
+  { id: 'documents', label: 'Document Status', icon: FileText, component: DocumentsSection },
 ];
 
 export default function ProfileView() {
   const { data: profile, isLoading: profileLoading } = useMemberProfile();
+  const { data: completion } = useProfileCompletion();
   const [openSections, setOpenSections] = useState<Set<SectionId>>(
-    new Set(['personal', 'applicant', 'visa', 'location', 'financial'])
+    new Set(['personal', 'applicant', 'visa', 'location', 'timeline', 'financial', 'documents'])
   );
 
   const toggleSection = (sectionId: SectionId) => {
@@ -66,6 +73,8 @@ export default function ProfileView() {
     return <ProfileSkeleton />;
   }
 
+  const completionPercentage = completion?.percentage ?? profile?.profile_completion ?? 0;
+
   return (
     <div className="p-6">
       {/* Page header */}
@@ -77,7 +86,7 @@ export default function ProfileView() {
       </div>
 
       {/* Profile completion indicator */}
-      {profile && <ProfileCompletionCard profile={profile} />}
+      <ProfileCompletionCard completion={completionPercentage} />
 
       {/* Sections */}
       <div className="space-y-4">
@@ -98,9 +107,7 @@ export default function ProfileView() {
 /**
  * Profile completion progress card
  */
-function ProfileCompletionCard({ profile }: { profile: MemberProfile }) {
-  const completion = profile.profile_completion || 0;
-
+function ProfileCompletionCard({ completion }: { completion: number }) {
   return (
     <div className="card p-6 mb-6">
       <div className="flex items-center justify-between mb-2">
