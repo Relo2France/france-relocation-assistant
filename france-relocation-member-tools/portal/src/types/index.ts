@@ -331,6 +331,7 @@ export interface MemberProfile {
   work_in_france: WorkInFranceType;
   industry: string;
   employer_name: string;
+  job_title: string;
 
   // Location Information
   current_country: string;
