@@ -57,7 +57,7 @@ export default function LocationSection({ profile }: LocationSectionProps) {
       <fieldset className="space-y-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
         <legend className="font-medium text-gray-900 px-2">Current Location</legend>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div>
             <label htmlFor="current_country" className="block text-sm font-medium text-gray-700 mb-1">
               Current Country
@@ -116,7 +116,7 @@ export default function LocationSection({ profile }: LocationSectionProps) {
         <legend className="font-medium text-gray-900 px-2">Birth & Marriage Information</legend>
         <p className="text-sm text-gray-600 -mt-2">Required for apostille processing</p>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label htmlFor="birth_state" className="block text-sm font-medium text-gray-700 mb-1">
               Your Birth State (US)
@@ -163,7 +163,7 @@ export default function LocationSection({ profile }: LocationSectionProps) {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label htmlFor="marriage_state" className="block text-sm font-medium text-gray-700 mb-1">
               Marriage State (US)

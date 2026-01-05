@@ -61,7 +61,7 @@ export default function PersonalSection({ profile }: PersonalSectionProps) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div>
           <label htmlFor="legal_first_name" className="block text-sm font-medium text-gray-700 mb-1">
             Legal First Name <span className="text-red-500" aria-label="required">*</span>
@@ -110,7 +110,7 @@ export default function PersonalSection({ profile }: PersonalSectionProps) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <label htmlFor="date_of_birth" className="block text-sm font-medium text-gray-700 mb-1">
             Date of Birth <span className="text-red-500" aria-label="required">*</span>
@@ -145,7 +145,7 @@ export default function PersonalSection({ profile }: PersonalSectionProps) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <label htmlFor="passport_number" className="block text-sm font-medium text-gray-700 mb-1">
             Passport Number
