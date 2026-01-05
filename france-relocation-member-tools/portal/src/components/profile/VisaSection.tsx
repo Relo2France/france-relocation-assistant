@@ -83,7 +83,7 @@ export default function VisaSection({ profile }: VisaSectionProps) {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div>
           <label htmlFor="employment_status" className="block text-sm font-medium text-gray-700 mb-1">
             Current Employment Status
@@ -124,7 +124,7 @@ export default function VisaSection({ profile }: VisaSectionProps) {
       </div>
 
       {isEmployed && (
-        <fieldset className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <fieldset className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div>
             <label htmlFor="industry" className="block text-sm font-medium text-gray-700 mb-1">
               Industry/Field

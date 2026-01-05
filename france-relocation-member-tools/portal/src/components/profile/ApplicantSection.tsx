@@ -96,7 +96,7 @@ export default function ApplicantSection({ profile }: ApplicantSectionProps) {
         <fieldset className="space-y-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
           <legend className="font-medium text-gray-900 px-2">Spouse/Partner Information</legend>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
               <label htmlFor="spouse_legal_first_name" className="block text-sm font-medium text-gray-700 mb-1">
                 Spouse Legal First Name
@@ -127,7 +127,7 @@ export default function ApplicantSection({ profile }: ApplicantSectionProps) {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
               <label htmlFor="spouse_date_of_birth" className="block text-sm font-medium text-gray-700 mb-1">
                 Spouse Date of Birth
@@ -184,7 +184,7 @@ export default function ApplicantSection({ profile }: ApplicantSectionProps) {
         <fieldset className="space-y-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
           <legend className="font-medium text-gray-900 px-2">Children Information</legend>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
               <label htmlFor="num_children" className="block text-sm font-medium text-gray-700 mb-1">
                 Number of Children
