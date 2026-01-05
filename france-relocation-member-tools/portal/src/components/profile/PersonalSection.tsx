@@ -71,12 +71,8 @@ const identityFields: FieldConfig[] = [
   },
 ];
 
-// Size classes for different field types
-const sizeClasses: Record<FieldSize, string> = {
-  compact: 'w-[150px]',
-  short: 'w-[180px]',
-  medium: 'w-[200px]',
-};
+// All fields use consistent width in grid
+const fieldClass = 'w-full';
 
 export default function PersonalSection({ profile }: PersonalSectionProps) {
   const updateProfile = useUpdateMemberProfile();
@@ -112,7 +108,7 @@ export default function PersonalSection({ profile }: PersonalSectionProps) {
     const value = formData[field.name];
 
     return (
-      <div key={field.name} className={`${sizeClasses[field.size]} flex-shrink-0`}>
+      <div key={field.name}>
         <label htmlFor={field.name} className="block text-sm font-medium text-gray-700 mb-1">
           {field.label}
           {field.required && <span className="text-red-500 ml-1" aria-label="required">*</span>}
@@ -123,7 +119,7 @@ export default function PersonalSection({ profile }: PersonalSectionProps) {
           name={field.name}
           value={value}
           onChange={(e) => handleFieldChange(field.name, e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+          className={`${fieldClass} px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500`}
           required={field.required}
           aria-required={field.required}
           placeholder={field.placeholder}
@@ -197,12 +193,9 @@ export default function PersonalSection({ profile }: PersonalSectionProps) {
         </div>
       </fieldset>
 
-      <fieldset className="space-y-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-        <legend className="font-medium text-gray-900 px-2">Identity & Passport</legend>
-        <div className="flex flex-wrap gap-6">
-          {identityFields.map(renderField)}
-        </div>
-      </fieldset>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {identityFields.map(renderField)}
+      </div>
 
       <SaveButton
         isPending={updateProfile.isPending}
