@@ -5,11 +5,11 @@
  * Provides autocomplete suggestions with type indicators.
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { Search, MapPin, Building2, Home, X, Loader2 } from 'lucide-react';
-import { FRANCE_REGIONS, FRANCE_DEPARTMENTS } from '@/config/research';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Building2, Home, Loader2, MapPin, Search, X } from 'lucide-react';
 import { researchApi } from '@/api/client';
-import type { FranceRegion, FranceDepartment, FranceCommune, ResearchLevel } from '@/types';
+import { FRANCE_DEPARTMENTS, FRANCE_REGIONS } from '@/config/research';
+import type { FranceCommune, FranceDepartment, FranceRegion, ResearchLevel } from '@/types';
 
 interface LocationSearchProps {
   onSelect: (
@@ -279,7 +279,7 @@ export default function LocationSearch({ onSelect }: LocationSearchProps) {
             </ul>
           ) : query.length >= 2 ? (
             <div className="py-4 text-center text-gray-500 text-sm">
-              No results found for "{query}"
+              No results found for &quot;{query}&quot;
             </div>
           ) : (
             <div className="py-4 text-center text-gray-500 text-sm">

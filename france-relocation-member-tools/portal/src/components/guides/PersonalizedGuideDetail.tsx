@@ -5,23 +5,23 @@
  */
 
 import {
-  ChevronRight,
-  Sparkles,
-  Loader2,
   AlertCircle,
   BookOpen,
-  MapPin,
-  DollarSign,
+  ChevronRight,
   Clock,
+  DollarSign,
   ExternalLink,
+  Loader2,
+  MapPin,
+  Sparkles,
   Star,
 } from 'lucide-react';
+import SafeHtml from '@/components/shared/SafeHtml';
 import {
-  usePersonalizedGuide,
   useGenerateAIGuide,
   useMemberProfile,
+  usePersonalizedGuide,
 } from '@/hooks/useApi';
-import SafeHtml from '@/components/shared/SafeHtml';
 import type { GuideType } from '@/types';
 
 interface PersonalizedGuideDetailProps {

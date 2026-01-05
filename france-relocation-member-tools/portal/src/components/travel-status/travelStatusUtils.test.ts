@@ -4,21 +4,21 @@
  * Comprehensive tests for the Schengen compliance algorithm.
  */
 
-import { describe, it, expect } from 'vitest';
-import type { TravelStatusTrip, TravelStatusCountry } from '@/types';
+import { describe, expect, it } from 'vitest';
+import type { TravelStatusCountry, TravelStatusTrip } from '@/types';
 import {
   calculateSchengenDays,
-  getSchengenDatesInWindow,
-  getTravelStatusStatus,
-  findNextExpiration,
-  getTravelStatusSummary,
   daysBetween,
-  getTripDuration,
-  wouldTripViolate,
   findEarliestEntryDate,
   findMaxTripLength,
+  findNextExpiration,
   formatDate,
   formatDateRange,
+  getSchengenDatesInWindow,
+  getTravelStatusStatus,
+  getTravelStatusSummary,
+  getTripDuration,
+  wouldTripViolate,
 } from './travelStatusUtils';
 
 // Helper to create a trip

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Project, User, PortalSettings, MenuItem } from '@/types';
+import type { MenuItem, PortalSettings, Project, User } from '@/types';
 
 // Default settings when not provided by PHP
 const defaultSettings: PortalSettings = {

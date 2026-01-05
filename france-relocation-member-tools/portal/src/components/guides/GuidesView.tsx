@@ -8,14 +8,14 @@
 import { useState } from 'react';
 import { clsx } from 'clsx';
 import {
-  BookOpen,
-  Search,
-  Star,
-  Sparkles,
   AlertCircle,
+  BookOpen,
   FileText,
-  Shield,
   PawPrint,
+  Search,
+  Shield,
+  Sparkles,
+  Star,
 } from 'lucide-react';
 import {
   useGuides,
@@ -23,12 +23,12 @@ import {
   useProfileCompletion,
 } from '@/hooks/useApi';
 import { usePortalStore } from '@/store';
-import { GuideCard, FeaturedGuideCard, PersonalizedGuideCard } from './GuideCards';
-import GuideDetail from './GuideDetail';
-import PersonalizedGuideDetail from './PersonalizedGuideDetail';
-import { guides, categories } from './guidesData';
-import type { Guide } from './guidesData';
 import type { GuideType } from '@/types';
+import { FeaturedGuideCard, GuideCard, PersonalizedGuideCard } from './GuideCards';
+import GuideDetail from './GuideDetail';
+import { categories, guides } from './guidesData';
+import PersonalizedGuideDetail from './PersonalizedGuideDetail';
+import type { Guide } from './guidesData';
 
 export default function GuidesView() {
   const [searchQuery, setSearchQuery] = useState('');

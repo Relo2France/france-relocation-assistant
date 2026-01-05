@@ -1,10 +1,10 @@
 import { clsx } from 'clsx';
 import {
+  AlertTriangle,
+  Calendar,
   CheckCircle,
   Circle,
   Clock,
-  AlertTriangle,
-  Calendar,
   MoreVertical,
   Plus,
 } from 'lucide-react';

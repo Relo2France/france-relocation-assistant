@@ -1,27 +1,27 @@
 import { useState } from 'react';
 import { clsx } from 'clsx';
 import {
-  Users,
-  UserPlus,
-  Edit2,
-  Trash2,
-  X,
-  Calendar,
-  Flag,
-  FileText,
-  CheckCircle,
   AlertCircle,
-  User,
   Baby,
+  Calendar,
+  CheckCircle,
+  Crown,
+  Edit2,
+  FileText,
+  Flag,
   Heart,
   Lock,
-  Crown,
+  Trash2,
+  User,
+  UserPlus,
+  Users,
+  X,
 } from 'lucide-react';
 import {
-  useFamilyMembers,
   useCreateFamilyMember,
-  useUpdateFamilyMember,
   useDeleteFamilyMember,
+  useFamilyMembers,
+  useUpdateFamilyMember,
 } from '@/hooks/useApi';
 import type { FamilyMember } from '@/types';
 
@@ -89,7 +89,7 @@ export default function FamilyView() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Family Members</h1>
           <p className="text-gray-600 mt-1">
-            Manage your family's relocation details and documents
+            Manage your family&apos;s relocation details and documents
           </p>
         </div>
         {canEdit ? (

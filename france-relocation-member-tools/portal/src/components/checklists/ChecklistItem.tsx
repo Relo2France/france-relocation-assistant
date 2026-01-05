@@ -1,16 +1,16 @@
 import { useState } from 'react';
 import { clsx } from 'clsx';
 import {
+  Check,
   CheckCircle2,
-  Circle,
-  Clock,
   ChevronDown,
   ChevronUp,
+  Circle,
+  Clock,
   Edit2,
-  Check,
   X,
 } from 'lucide-react';
-import type { ChecklistItem as ChecklistItemType, ChecklistItemStatus } from '@/types';
+import type { ChecklistItemStatus, ChecklistItem as ChecklistItemType } from '@/types';
 
 interface ChecklistItemProps {
   item: ChecklistItemType;

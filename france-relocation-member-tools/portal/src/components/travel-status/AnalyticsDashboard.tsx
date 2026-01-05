@@ -6,33 +6,33 @@
  * monthly trends, and compliance tracking.
  */
 
+import { clsx } from 'clsx';
 import {
-  BarChart,
+  AlertTriangle,
+  Briefcase,
+  Calendar,
+  Clock,
+  MapPin,
+  TrendingUp,
+  User,
+} from 'lucide-react';
+import {
+  Area,
+  AreaChart,
   Bar,
-  LineChart,
-  Line,
-  PieChart,
-  Pie,
+  BarChart,
+  CartesianGrid,
   Cell,
+  Legend,
+  Line,
+  LineChart,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  AreaChart,
-  Area,
 } from 'recharts';
-import {
-  TrendingUp,
-  Calendar,
-  MapPin,
-  Clock,
-  Briefcase,
-  User,
-  AlertTriangle,
-} from 'lucide-react';
-import { clsx } from 'clsx';
 import { useTravelStatusAnalytics } from '@/hooks/useApi';
 
 // Chart colors

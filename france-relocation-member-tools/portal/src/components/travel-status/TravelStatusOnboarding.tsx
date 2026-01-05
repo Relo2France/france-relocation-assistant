@@ -5,16 +5,19 @@
  * Walks users through the 90/180 rule and key features.
  */
 
+/* eslint-disable react-refresh/only-export-components */
+// Utility functions are intentionally co-located with this component
+
 import { useState } from 'react';
 import { clsx } from 'clsx';
 import {
-  Globe,
-  Calculator,
   Bell,
-  MapPin,
-  ChevronRight,
-  ChevronLeft,
+  Calculator,
   Check,
+  ChevronLeft,
+  ChevronRight,
+  Globe,
+  MapPin,
   Plane,
 } from 'lucide-react';
 import Modal from '@/components/shared/Modal';
@@ -107,7 +110,7 @@ export default function TravelStatusOnboarding({
                 <span className="text-sm font-bold text-white">1</span>
               </div>
               <div className="text-left">
-                <p className="font-semibold text-gray-900">Click "Add Trip"</p>
+                <p className="font-semibold text-gray-900">Click &quot;Add Trip&quot;</p>
                 <p className="text-sm text-gray-600 mt-0.5">Enter your travel dates and destination country</p>
               </div>
             </div>

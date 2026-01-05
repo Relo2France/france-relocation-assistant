@@ -1,11 +1,11 @@
 import { clsx } from 'clsx';
 import {
-  LayoutList,
-  LayoutGrid,
   Filter,
+  LayoutGrid,
+  LayoutList,
+  Plus,
   Search,
   X,
-  Plus,
 } from 'lucide-react';
 import type { StageProgress, TaskStatus } from '@/types';
 

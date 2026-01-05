@@ -10,22 +10,22 @@
  * @since   2.2.0
  */
 
-import { useState, useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { clsx } from 'clsx';
 import {
+  AlertCircle,
+  CheckCircle,
+  Clock,
+  Globe,
+  Loader2,
   MapPin,
   Navigation,
-  AlertCircle,
-  X,
-  Loader2,
-  Globe,
   Plane,
-  Clock,
-  CheckCircle,
+  X,
 } from 'lucide-react';
-import { useLocationDetection } from '@/hooks/useLocationDetection';
 import { useIPDetection, useStoreTravelStatusLocation } from '@/hooks/useApi';
 import { useGeolocation } from '@/hooks/useGeolocation';
+import { useLocationDetection } from '@/hooks/useLocationDetection';
 
 interface LocationDetectionBannerProps {
   /** Whether the banner is enabled */

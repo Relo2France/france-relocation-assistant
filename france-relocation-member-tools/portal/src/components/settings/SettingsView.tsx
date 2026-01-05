@@ -1,47 +1,47 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { clsx } from 'clsx';
 import {
-  User,
+  AlertTriangle,
   Bell,
-  Save,
+  BookMarked,
+  BookOpen,
+  Bot,
+  Calendar,
   Check,
-  Loader2,
-  FileText,
+  CheckSquare,
   ChevronDown,
   ChevronUp,
-  AlertTriangle,
-  Trash2,
-  RefreshCw,
-  Menu,
-  GripVertical,
-  LayoutDashboard,
-  CheckSquare,
-  MessageSquare,
-  Calendar,
-  BookOpen,
-  HelpCircle,
-  FolderOpen,
   ClipboardList,
-  BookMarked,
-  Bot,
   CreditCard,
-  Users,
-  Settings,
+  FileText,
+  FolderOpen,
+  GripVertical,
+  HelpCircle,
+  LayoutDashboard,
+  Loader2,
   LucideIcon,
+  Menu,
+  MessageSquare,
+  RefreshCw,
+  Save,
+  Settings,
+  Trash2,
+  User,
+  Users,
 } from 'lucide-react';
 import {
   useCurrentUser,
-  useUpdateProfile,
-  useUserSettings,
-  useUpdateSettings,
-  useMemberProfile,
-  useUpdateMemberProfile,
-  useProfileCompletion,
   useDeleteAccount,
+  useMemberProfile,
+  useProfileCompletion,
   useResetProfile,
+  useUpdateMemberProfile,
+  useUpdateProfile,
+  useUpdateSettings,
+  useUserSettings,
 } from '@/hooks/useApi';
 import { usePortalStore } from '@/store';
-import type { UserSettings, MemberProfile, MenuSectionOrder } from '@/types';
+import type { MemberProfile, MenuSectionOrder, UserSettings } from '@/types';
 
 type SettingsTab = 'portal-account' | 'visa-profile' | 'notifications' | 'menu';
 
@@ -373,7 +373,7 @@ function PortalAccountSection() {
             <div className="flex-1">
               <h3 className="font-medium text-gray-900">Reset Visa Profile</h3>
               <p className="text-sm text-gray-600 mt-1">
-                Reset all your profile data, tasks, documents, and progress. Your account will remain active, but it will be as if you're starting fresh as a new member.
+                Reset all your profile data, tasks, documents, and progress. Your account will remain active, but it will be as if you&apos;re starting fresh as a new member.
               </p>
 
               {resetSuccess ? (
@@ -1212,7 +1212,7 @@ function MenuSection() {
             <p className="text-sm text-blue-700">
               Drag items up or down within each section to change their order in the sidebar.
               Items can only be reordered within their own section (Project, Resources, or Account).
-              Your changes will be saved and applied immediately when you click "Save Order".
+              Your changes will be saved and applied immediately when you click &quot;Save Order&quot;.
             </p>
           </div>
         </div>

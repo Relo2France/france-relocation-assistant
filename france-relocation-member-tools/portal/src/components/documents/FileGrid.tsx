@@ -1,20 +1,20 @@
+import { useEffect, useRef, useState } from 'react';
 import { clsx } from 'clsx';
 import {
-  FileText,
-  Image,
-  FileSpreadsheet,
-  File,
   Download,
-  Trash2,
-  MoreVertical,
   Eye,
+  File,
+  FileSpreadsheet,
+  FileText,
   FolderOpen,
+  Image,
+  MoreVertical,
   Shield,
+  Trash2,
 } from 'lucide-react';
-import { useState, useRef, useEffect } from 'react';
 import { VirtualGrid } from '@/components/shared/VirtualList';
 import { useVirtualization } from '@/hooks/useVirtualization';
-import type { PortalFile, FileType } from '@/types';
+import type { FileType, PortalFile } from '@/types';
 
 interface FileGridProps {
   files: PortalFile[];

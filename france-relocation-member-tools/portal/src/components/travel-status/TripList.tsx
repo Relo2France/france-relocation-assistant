@@ -6,7 +6,7 @@
 
 import { useState } from 'react';
 import { clsx } from 'clsx';
-import { Pencil, Trash2, MapPin, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
+import { Calendar, ChevronDown, ChevronUp, MapPin, Pencil, Trash2 } from 'lucide-react';
 import type { TravelStatusTrip } from '@/types';
 import { formatDateRange, getTripDuration } from './travelStatusUtils';
 

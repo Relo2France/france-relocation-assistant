@@ -5,7 +5,7 @@
  * using react-simple-maps with official GeoJSON data.
  */
 
-import { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { ComposableMap, Geographies, Geography, ZoomableGroup } from 'react-simple-maps';
 import type { FranceDepartment } from '@/types';
 

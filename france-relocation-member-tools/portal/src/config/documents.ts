@@ -3,7 +3,7 @@
  * Extracted from DocumentGenerator for reusability and maintainability
  */
 
-import { FileText, DollarSign, Home, FileCheck } from 'lucide-react';
+import { DollarSign, FileCheck, FileText, Home } from 'lucide-react';
 
 // Document type icons
 export const DOCUMENT_ICONS: Record<string, typeof FileText> = {

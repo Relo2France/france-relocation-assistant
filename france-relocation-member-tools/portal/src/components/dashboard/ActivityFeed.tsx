@@ -1,14 +1,14 @@
 import {
-  CheckCircle,
-  Plus,
-  Pencil,
-  Trash,
+  ArrowRight,
   ArrowRightLeft,
-  Upload,
+  CheckCircle,
   FileText,
   MessageSquare,
+  Pencil,
+  Plus,
+  Trash,
+  Upload,
   User,
-  ArrowRight,
 } from 'lucide-react';
 import type { Activity } from '@/types';
 

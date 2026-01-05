@@ -9,25 +9,25 @@
 import { useState } from 'react';
 import { clsx } from 'clsx';
 import {
-  Users,
-  Plus,
-  Edit2,
-  Trash2,
-  X,
-  Check,
-  Loader2,
-  User,
   AlertTriangle,
+  Check,
+  Edit2,
+  Loader2,
+  Plus,
   RefreshCw,
+  Trash2,
+  User,
+  Users,
+  X,
 } from 'lucide-react';
-import type { TravelStatusFamilyMember, TravelStatusFamilyMemberCreate, TravelStatusFamilyRelationship, TravelStatusFamilyMemberStatus } from '@/types';
 import {
+  useCreateTravelStatusFamilyMember,
+  useDeleteTravelStatusFamilyMember,
   useTravelStatusFamilyMembers,
   useTravelStatusFamilySummary,
-  useCreateTravelStatusFamilyMember,
   useUpdateTravelStatusFamilyMember,
-  useDeleteTravelStatusFamilyMember,
 } from '@/hooks/useApi';
+import type { TravelStatusFamilyMember, TravelStatusFamilyMemberCreate, TravelStatusFamilyMemberStatus, TravelStatusFamilyRelationship } from '@/types';
 
 interface FamilyManagerProps {
   className?: string;
@@ -200,10 +200,10 @@ function MemberForm({ member, onSave, onCancel, isLoading }: MemberFormProps) {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <span id="color-label" className="block text-sm font-medium text-gray-700 mb-2">
           Color
-        </label>
-        <div className="flex gap-2">
+        </span>
+        <div className="flex gap-2" role="group" aria-labelledby="color-label">
           {COLORS.map((c) => (
             <button
               key={c}

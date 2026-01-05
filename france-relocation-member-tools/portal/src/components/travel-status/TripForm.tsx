@@ -4,13 +4,13 @@
  * Form for adding/editing trips with jurisdiction support.
  */
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { clsx } from 'clsx';
-import { Calendar, MapPin, Briefcase, FileText, AlertTriangle, Globe } from 'lucide-react';
+import { AlertTriangle, Briefcase, Calendar, FileText, Globe, MapPin } from 'lucide-react';
+import { useTrackedJurisdictions } from '@/hooks/useApi';
 import { SCHENGEN_COUNTRIES } from '@/types';
 import type { TravelStatusTrip } from '@/types';
-import { useTrackedJurisdictions } from '@/hooks/useApi';
-import { wouldTripViolate, getTripDuration } from './travelStatusUtils';
+import { getTripDuration, wouldTripViolate } from './travelStatusUtils';
 
 interface TripFormProps {
   trip?: TravelStatusTrip;
@@ -73,12 +73,16 @@ export default function TripForm({
   };
 
   // Update country when jurisdiction changes
+  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
+    // Intentionally only runs when jurisdiction changes - including country/getLocationOptions
+    // would cause infinite loops since this effect sets country
     const options = getLocationOptions();
     if (!options.includes(country)) {
       setCountry(options[0] || '');
     }
   }, [jurisdictionCode]);
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   // Validate trip against rule limits
   useEffect(() => {

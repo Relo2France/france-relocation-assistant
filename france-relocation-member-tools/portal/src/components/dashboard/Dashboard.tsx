@@ -1,20 +1,20 @@
 import { useState } from 'react';
 import { clsx } from 'clsx';
 import {
+  AlertTriangle,
+  ArrowRight,
+  Calendar,
   CheckCircle,
   Clock,
-  AlertTriangle,
-  Calendar,
-  ArrowRight,
   FileText,
 } from 'lucide-react';
+import Modal from '@/components/shared/Modal';
 import { useDashboard, useUpdateProject } from '@/hooks/useApi';
 import { usePortalStore } from '@/store';
+import ActivityFeed from './ActivityFeed';
 import ProgressTracker from './ProgressTracker';
 import TaskCard from './TaskCard';
-import ActivityFeed from './ActivityFeed';
 import WelcomeBanner from './WelcomeBanner';
-import Modal from '@/components/shared/Modal';
 
 export default function Dashboard() {
   const { data, isLoading, error } = useDashboard();

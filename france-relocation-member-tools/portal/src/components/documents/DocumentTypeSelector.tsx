@@ -6,8 +6,8 @@
  */
 
 import { clsx } from 'clsx';
-import { FileText, ChevronRight } from 'lucide-react';
-import { DOCUMENT_ICONS, DOCUMENT_COLORS, DEFAULT_DOCUMENT_TYPES } from '@/config/documents';
+import { ChevronRight, FileText } from 'lucide-react';
+import { DEFAULT_DOCUMENT_TYPES, DOCUMENT_COLORS, DOCUMENT_ICONS } from '@/config/documents';
 import type { GeneratedDocumentType } from '@/types';
 
 interface DocumentTypeSelectorProps {

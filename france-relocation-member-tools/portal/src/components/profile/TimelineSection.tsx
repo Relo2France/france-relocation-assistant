@@ -5,14 +5,14 @@
  * Handles move timeline, target dates, and housing plans.
  */
 
-import { useState, useEffect } from 'react';
-import { useUpdateMemberProfile } from '@/hooks/useApi';
+import { useEffect, useState } from 'react';
 import SaveButton from '@/components/shared/SaveButton';
+import { useUpdateMemberProfile } from '@/hooks/useApi';
 import type {
-  MemberProfile,
-  TimelineType,
-  MoveDateCertainty,
   HousingPlan,
+  MemberProfile,
+  MoveDateCertainty,
+  TimelineType,
 } from '@/types';
 
 interface TimelineSectionProps {

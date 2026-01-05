@@ -5,7 +5,7 @@
  * Displays download format options (PDF/DOCX).
  */
 
-import { Check, FileText, Download, Info, Loader2 } from 'lucide-react';
+import { Check, Download, FileText, Info, Loader2 } from 'lucide-react';
 
 interface DownloadOptionsProps {
   onDownload: (format: 'pdf' | 'docx') => void;

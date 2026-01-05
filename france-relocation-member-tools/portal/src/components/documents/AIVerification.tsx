@@ -1,22 +1,22 @@
-import { useState, useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { clsx } from 'clsx';
 import {
-  Shield,
-  ShieldCheck,
-  ShieldX,
-  ShieldAlert,
-  Upload,
-  FileText,
   AlertCircle,
   CheckCircle,
-  Clock,
   ChevronDown,
   ChevronUp,
+  Clock,
+  FileText,
+  Shield,
+  ShieldAlert,
+  ShieldCheck,
+  ShieldX,
+  Upload,
   X,
 } from 'lucide-react';
-import { useVerifyDocument, useVerificationHistory } from '@/hooks/useApi';
 import Modal from '@/components/shared/Modal';
-import type { VerificationResult, VerificationType, VerificationStatus } from '@/types';
+import { useVerificationHistory, useVerifyDocument } from '@/hooks/useApi';
+import type { VerificationResult, VerificationStatus, VerificationType } from '@/types';
 
 interface AIVerificationProps {
   projectId: number;

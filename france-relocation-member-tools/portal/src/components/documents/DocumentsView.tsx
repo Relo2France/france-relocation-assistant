@@ -1,25 +1,25 @@
-import { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { clsx } from 'clsx';
 import {
-  LayoutGrid,
-  LayoutList,
-  Search,
-  Filter,
-  X,
-  Plus,
-  MapPin,
-  Download,
-  FileText,
   ChevronDown,
   ChevronUp,
+  Download,
+  FileText,
+  Filter,
+  LayoutGrid,
+  LayoutList,
+  MapPin,
+  Plus,
+  Search,
+  X,
 } from 'lucide-react';
-import { useDashboard, useFiles, useDownloadFile, useSavedReports } from '@/hooks/useApi';
-import FileUpload from './FileUpload';
+import Modal from '@/components/shared/Modal';
+import { useDashboard, useDownloadFile, useFiles, useSavedReports } from '@/hooks/useApi';
+import type { FileCategory, FileType, PortalFile } from '@/types';
+import { AIVerificationModal } from './AIVerification';
 import FileGrid from './FileGrid';
 import FilePreview from './FilePreview';
-import { AIVerificationModal } from './AIVerification';
-import Modal from '@/components/shared/Modal';
-import type { PortalFile, FileCategory, FileType } from '@/types';
+import FileUpload from './FileUpload';
 
 const categoryOptions: { value: FileCategory | ''; label: string }[] = [
   { value: '', label: 'All Categories' },

@@ -5,7 +5,7 @@
  * Shows days spent in Schengen zone with color coding.
  */
 
-import { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { clsx } from 'clsx';
 import { ChevronLeft, ChevronRight, Plane } from 'lucide-react';
 import type { TravelStatusTrip } from '@/types';

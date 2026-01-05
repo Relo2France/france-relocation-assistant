@@ -5,8 +5,8 @@
  * Handles report generation, caching status, and saving to user documents.
  */
 
-import { useState, useEffect } from 'react';
-import { X, FileText, Save, Loader2, CheckCircle, Clock, AlertCircle, RefreshCw } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { AlertCircle, CheckCircle, Clock, FileText, Loader2, RefreshCw, Save, X } from 'lucide-react';
 import { researchApi } from '@/api/client';
 import type { ResearchLevel } from '@/types';
 
@@ -322,7 +322,7 @@ export default function GenerateReportModal({
                 Saved to Documents
               </h3>
               <p className="text-gray-600 mb-6">
-                This report is now linked in your documents. You'll always have
+                This report is now linked in your documents. You&apos;ll always have
                 access to the latest version.
               </p>
 

@@ -5,8 +5,8 @@
  * Uses the browser's print functionality with custom HTML styling.
  */
 
-import { useState, useRef } from 'react';
-import { FileText, Download, Loader2, X, Printer } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { Download, FileText, Loader2, Printer, X } from 'lucide-react';
 import Modal from '@/components/shared/Modal';
 import { useGenerateTravelStatusReport } from '@/hooks/useApi';
 import type { TravelStatusReportResponse } from '@/types';
@@ -147,7 +147,7 @@ export default function ReportExport({ disabled }: ReportExportProps) {
           </div>
 
           <p className="text-xs text-gray-500 text-center">
-            Tip: Use your browser's "Print to PDF" option to save as a PDF file
+            Tip: Use your browser&apos;s &quot;Print to PDF&quot; option to save as a PDF file
           </p>
         </div>
       </Modal>

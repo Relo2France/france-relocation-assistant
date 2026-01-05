@@ -5,7 +5,7 @@
  * Data covers Metropolitan France only (13 regions, 96 departments).
  */
 
-import type { FranceRegion, FranceDepartment, ClimateType } from '@/types';
+import type { ClimateType, FranceDepartment, FranceRegion } from '@/types';
 
 // Climate type labels for display
 export const CLIMATE_LABELS: Record<ClimateType, string> = {

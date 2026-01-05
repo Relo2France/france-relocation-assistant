@@ -8,7 +8,7 @@
  * @since   2.2.0
  */
 
-import { useState, useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 export type GeolocationPermission = 'prompt' | 'granted' | 'denied' | 'unavailable';
 

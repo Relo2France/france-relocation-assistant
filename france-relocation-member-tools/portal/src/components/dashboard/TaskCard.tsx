@@ -1,5 +1,5 @@
 import { clsx } from 'clsx';
-import { Calendar, AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Calendar } from 'lucide-react';
 import type { Task } from '@/types';
 
 interface TaskCardProps {

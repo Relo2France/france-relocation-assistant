@@ -4,14 +4,14 @@
  * Displays install prompt and update notifications for the PWA.
  */
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { clsx } from 'clsx';
 import {
   Download,
-  X,
   RefreshCw,
   Smartphone,
   WifiOff,
+  X,
 } from 'lucide-react';
 import { usePWA } from '@/hooks/usePWA';
 
@@ -80,7 +80,7 @@ export default function PWAPrompt({ className }: PWAPromptProps) {
         )}
       >
         <WifiOff className="w-4 h-4" aria-hidden="true" />
-        <span>You're offline. Some features may be unavailable.</span>
+        <span>You&apos;re offline. Some features may be unavailable.</span>
       </div>
     );
   }

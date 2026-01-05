@@ -6,14 +6,14 @@
  * and generate AI-researched relocation reports.
  */
 
-import { useState, useCallback } from 'react';
-import { MapPin, ChevronRight, FileText } from 'lucide-react';
-import FranceMap from './FranceMap';
-import RegionView from './RegionView';
+import { useCallback, useState } from 'react';
+import { ChevronRight, FileText, MapPin } from 'lucide-react';
+import type { FranceCommune, FranceDepartment, FranceRegion, LocationBreadcrumb, ResearchLevel } from '@/types';
 import DepartmentView from './DepartmentView';
-import LocationSearch from './LocationSearch';
+import FranceMap from './FranceMap';
 import GenerateReportModal from './GenerateReportModal';
-import type { ResearchLevel, LocationBreadcrumb, FranceRegion, FranceDepartment, FranceCommune } from '@/types';
+import LocationSearch from './LocationSearch';
+import RegionView from './RegionView';
 
 type ViewLevel = 'france' | 'region' | 'department' | 'commune';
 

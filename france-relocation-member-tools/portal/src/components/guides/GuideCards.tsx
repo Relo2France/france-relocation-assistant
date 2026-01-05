@@ -5,10 +5,10 @@
  */
 
 import { clsx } from 'clsx';
-import { Clock, ChevronRight, ArrowRight, Sparkles } from 'lucide-react';
+import { ArrowRight, ChevronRight, Clock, Sparkles } from 'lucide-react';
+import type { GuideType } from '@/types';
 import { difficultyColors } from './guidesData';
 import type { Guide } from './guidesData';
-import type { GuideType } from '@/types';
 
 interface GuideCardProps {
   guide: Guide;

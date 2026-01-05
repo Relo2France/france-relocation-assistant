@@ -5,38 +5,38 @@
  * or iCal file imports to detect and import travel-related entries as Schengen trips.
  */
 
-import { useState, useRef, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { clsx } from 'clsx';
 import {
+  AlertCircle,
   Calendar,
-  Link,
-  Unlink,
-  RefreshCw,
-  Upload,
   Check,
-  X,
-  Clock,
-  MapPin,
-  Plane,
+  CheckCircle,
   ChevronDown,
   ChevronUp,
+  Clock,
+  Link,
   Loader2,
-  CheckCircle,
+  MapPin,
+  Plane,
+  RefreshCw,
+  Unlink,
+  Upload,
+  X,
   XCircle,
-  AlertCircle,
 } from 'lucide-react';
-import type { CalendarConnection, CalendarEvent } from '@/types';
 import {
-  useCalendarProviders,
   useCalendarConnections,
+  useCalendarEvents,
+  useCalendarProviders,
   useConnectCalendar,
   useDisconnectCalendar,
-  useSyncCalendar,
-  useCalendarEvents,
   useImportCalendarEvents,
-  useSkipCalendarEvents,
   useImportICalFile,
+  useSkipCalendarEvents,
+  useSyncCalendar,
 } from '@/hooks/useApi';
+import type { CalendarConnection, CalendarEvent } from '@/types';
 
 interface CalendarSyncProps {
   compact?: boolean;

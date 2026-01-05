@@ -5,14 +5,14 @@
  * Tracks vital documents needed for visa applications.
  */
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { AlertCircle } from 'lucide-react';
-import { useUpdateMemberProfile } from '@/hooks/useApi';
 import SaveButton from '@/components/shared/SaveButton';
+import { useUpdateMemberProfile } from '@/hooks/useApi';
 import type {
-  MemberProfile,
   DocumentStatus,
   MarriageDocStatus,
+  MemberProfile,
   YesNo,
 } from '@/types';
 

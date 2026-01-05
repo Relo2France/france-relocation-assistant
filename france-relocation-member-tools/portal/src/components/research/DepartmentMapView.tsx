@@ -6,8 +6,8 @@
  * Includes zoom controls and clickable communes for report generation.
  */
 
-import { useState, useMemo, useCallback } from 'react';
-import { ComposableMap, Geographies, Geography, ZoomableGroup, Marker } from 'react-simple-maps';
+import { useCallback, useMemo, useState } from 'react';
+import { ComposableMap, Geographies, Geography, Marker, ZoomableGroup } from 'react-simple-maps';
 import { FRANCE_DEPARTMENTS } from '@/config/research';
 import type { FranceCommune } from '@/types';
 

@@ -1,22 +1,22 @@
-import React, { useState, useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { clsx } from 'clsx';
 import {
+  AlertCircle,
   Book,
-  Search,
+  Building2,
+  Check,
   ChevronDown,
   ChevronRight,
-  Copy,
-  Check,
-  FileText,
-  Home as HomeIcon,
-  Heart,
-  AlertCircle,
-  Landmark,
-  Building2,
   Coffee,
+  Copy,
+  FileText,
+  Heart,
+  Home as HomeIcon,
+  Landmark,
+  Search,
 } from 'lucide-react';
 import { useGlossary } from '@/hooks/useApi';
-import type { GlossaryTerm, GlossaryCategory } from '@/types';
+import type { GlossaryCategory, GlossaryTerm } from '@/types';
 
 // Transform API data format to match our expected format
 // API returns: { term, definition, pronunciation }

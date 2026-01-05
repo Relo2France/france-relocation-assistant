@@ -1,11 +1,11 @@
-import { useState, useRef, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { clsx } from 'clsx';
-import { Square, CheckSquare, Plus, X, Loader2 } from 'lucide-react';
+import { CheckSquare, Loader2, Plus, Square, X } from 'lucide-react';
 import {
-  useTaskChecklist,
-  useUpdateTaskChecklistItem,
   useAddTaskChecklistItem,
   useDeleteTaskChecklistItem,
+  useTaskChecklist,
+  useUpdateTaskChecklistItem,
 } from '@/hooks/useApi';
 
 interface TaskChecklistProps {

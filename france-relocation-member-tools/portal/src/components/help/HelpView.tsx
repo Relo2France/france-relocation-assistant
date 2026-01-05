@@ -1,21 +1,21 @@
 import { useState } from 'react';
 import { clsx } from 'clsx';
 import {
-  HelpCircle,
+  AlertCircle,
+  Book,
+  Briefcase,
+  CheckCircle,
   ChevronDown,
   ChevronRight,
-  Book,
-  MessageCircle,
-  Mail,
+  Clock,
   ExternalLink,
   FileText,
-  Clock,
-  CheckCircle,
-  AlertCircle,
-  Plane,
-  Home,
-  Briefcase,
   GraduationCap,
+  HelpCircle,
+  Home,
+  Mail,
+  MessageCircle,
+  Plane,
 } from 'lucide-react';
 
 interface FAQItem {
@@ -219,7 +219,7 @@ export default function HelpView() {
               <div className="space-y-3">
                 {filteredFaq.length === 0 ? (
                   <p className="text-gray-500 text-center py-8">
-                    No results found for "{searchQuery}"
+                    No results found for &quot;{searchQuery}&quot;
                   </p>
                 ) : (
                   filteredFaq.map((item) => (
@@ -314,7 +314,7 @@ export default function HelpView() {
 
             <div className="space-y-4">
               <p className="text-sm text-gray-600">
-                Can't find what you're looking for? Our support team is here to help.
+                Can&apos;t find what you&apos;re looking for? Our support team is here to help.
               </p>
 
               <div className="p-4 bg-green-50 border border-green-200 rounded-lg">

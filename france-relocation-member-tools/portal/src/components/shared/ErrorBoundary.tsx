@@ -10,8 +10,8 @@
  * </ErrorBoundary>
  */
 
-import { Component, type ReactNode, type ErrorInfo } from 'react';
-import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
+import { Component, type ErrorInfo, type ReactNode } from 'react';
+import { AlertTriangle, Home, RefreshCw } from 'lucide-react';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
