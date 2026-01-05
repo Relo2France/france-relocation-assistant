@@ -799,7 +799,7 @@ export interface TicketReplyRequest {
 }
 
 // ============================================
-// Schengen Tracker Types
+// MyTravelStatus Types
 // ============================================
 
 export const SCHENGEN_COUNTRIES = [
@@ -810,13 +810,13 @@ export const SCHENGEN_COUNTRIES = [
   'Slovenia', 'Spain', 'Sweden', 'Switzerland'
 ] as const;
 
-export type SchengenCountry = typeof SCHENGEN_COUNTRIES[number];
+export type TravelStatusCountry = typeof SCHENGEN_COUNTRIES[number];
 
-export interface SchengenTrip {
+export interface TravelStatusTrip {
   id: string;                              // UUID
   startDate: string;                       // ISO date (YYYY-MM-DD)
   endDate: string;                         // ISO date (YYYY-MM-DD)
-  country: SchengenCountry | string;       // Country/state name (string for non-Schengen)
+  country: TravelStatusCountry | string;       // Country/state name (string for non-Schengen)
   jurisdictionCode?: string;               // Jurisdiction code (default: 'schengen')
   category: 'personal' | 'business';
   notes?: string;
@@ -825,12 +825,12 @@ export interface SchengenTrip {
   updatedAt: string;                       // ISO timestamp
 }
 
-export interface SchengenSummary {
+export interface TravelStatusSummary {
   daysUsed: number;                        // Days in current 180-day window
   daysRemaining: number;                   // 90 - daysUsed
   windowStart: string;                     // Date 180 days ago
   windowEnd: string;                       // Today
-  status: SchengenStatus;                  // Compliance status
+  status: TravelStatusStatus;                  // Compliance status
   nextExpiration: string | null;           // When oldest days drop off
   statusThresholds: {
     yellow: number;                        // Default: 60
@@ -838,16 +838,16 @@ export interface SchengenSummary {
   };
 }
 
-export type SchengenStatus = 'safe' | 'warning' | 'danger' | 'critical';
+export type TravelStatusStatus = 'safe' | 'warning' | 'danger' | 'critical';
 
-export interface SchengenAlertSettings {
+export interface TravelStatusAlertSettings {
   yellowThreshold: number;                 // Days (default 60)
   redThreshold: number;                    // Days (default 80)
   emailAlerts: boolean;
   upcomingTripReminders: boolean;
 }
 
-export interface SchengenPlanningResult {
+export interface TravelStatusPlanningResult {
   wouldViolate: boolean;
   projectedDaysUsed: number;
   earliestSafeEntry: string | null;
@@ -855,7 +855,7 @@ export interface SchengenPlanningResult {
   message: string;
 }
 
-export interface SchengenFeatureStatus {
+export interface TravelStatusFeatureStatus {
   isPremium: boolean;
   tripLimit: number | null;               // null for premium users
   tripCount: number;
@@ -866,7 +866,7 @@ export interface SchengenFeatureStatus {
   upgradeMessage: string | null;
 }
 
-export interface SchengenSimulationResult {
+export interface TravelStatusSimulationResult {
   wouldViolate: boolean;
   violations: string[];                   // Array of dates that would violate
   maxDaysUsed: number;
@@ -876,18 +876,18 @@ export interface SchengenSimulationResult {
   daysOverLimit: number;
 }
 
-export interface SchengenReportResponse {
+export interface TravelStatusReportResponse {
   html: string;
   filename: string;
   summary: {
     daysUsed: number;
     daysRemaining: number;
-    status: SchengenStatus;
+    status: TravelStatusStatus;
     tripCount: number;
   };
 }
 
-export interface SchengenTestAlertResult {
+export interface TravelStatusTestAlertResult {
   success: boolean;
   message: string;
   alert_level?: string;
@@ -907,12 +907,12 @@ export interface SchengenTestAlertResult {
 }
 
 // ============================================
-// Schengen Location Types (Phase 1)
+// Travel Status Location Types (Phase 1)
 // ============================================
 
 export type LocationSource = 'browser' | 'manual' | 'calendar' | 'checkin';
 
-export interface SchengenLocation {
+export interface TravelStatusLocation {
   id: number;
   lat: number;
   lng: number;
@@ -927,12 +927,12 @@ export interface SchengenLocation {
 
 export interface LocationStoreResponse {
   success: boolean;
-  location: SchengenLocation;
+  location: TravelStatusLocation;
   message: string;
 }
 
 export interface LocationHistoryResponse {
-  locations: SchengenLocation[];
+  locations: TravelStatusLocation[];
   total: number;
   limit: number;
   offset: number;
@@ -940,8 +940,8 @@ export interface LocationHistoryResponse {
 
 export interface LocationTodayStatus {
   hasCheckedInToday: boolean;
-  todayLocations: SchengenLocation[];
-  lastLocation: SchengenLocation | null;
+  todayLocations: TravelStatusLocation[];
+  lastLocation: TravelStatusLocation | null;
   reminderEnabled: boolean;
   trackingEnabled: boolean;
 }
@@ -1107,15 +1107,15 @@ export interface SuggestionsResponse {
 }
 
 // ============================================
-// Schengen Family Member Types (Phase 7)
+// Travel Status Family Member Types (Phase 7)
 // ============================================
 
-export type SchengenFamilyRelationship = 'spouse' | 'partner' | 'child' | 'parent' | 'sibling' | 'other';
+export type TravelStatusFamilyRelationship = 'spouse' | 'partner' | 'child' | 'parent' | 'sibling' | 'other';
 
-export interface SchengenFamilyMember {
+export interface TravelStatusFamilyMember {
   id: number;
   name: string;
-  relationship: SchengenFamilyRelationship | null;
+  relationship: TravelStatusFamilyRelationship | null;
   nationality: string | null;
   passportCountry: string | null;
   dateOfBirth: string | null;
@@ -1127,9 +1127,9 @@ export interface SchengenFamilyMember {
   updatedAt: string;
 }
 
-export interface SchengenFamilyMemberCreate {
+export interface TravelStatusFamilyMemberCreate {
   name: string;
-  relationship?: SchengenFamilyRelationship;
+  relationship?: TravelStatusFamilyRelationship;
   nationality?: string;
   passportCountry?: string;
   dateOfBirth?: string;
@@ -1137,12 +1137,12 @@ export interface SchengenFamilyMemberCreate {
   color?: string;
 }
 
-export interface SchengenFamilyMemberUpdate extends Partial<SchengenFamilyMemberCreate> {
+export interface TravelStatusFamilyMemberUpdate extends Partial<TravelStatusFamilyMemberCreate> {
   isActive?: boolean;
   displayOrder?: number;
 }
 
-export interface SchengenFamilyMemberStatus {
+export interface TravelStatusFamilyMemberStatus {
   daysUsed: number;
   daysRemaining: number;
   daysAllowed: number;
@@ -1150,25 +1150,25 @@ export interface SchengenFamilyMemberStatus {
   level: 'ok' | 'warning' | 'danger';
 }
 
-export interface SchengenFamilyMemberSummary {
+export interface TravelStatusFamilyMemberSummary {
   id: number;
   name: string;
-  relationship: SchengenFamilyRelationship | null;
+  relationship: TravelStatusFamilyRelationship | null;
   color: string;
-  status: SchengenFamilyMemberStatus;
+  status: TravelStatusFamilyMemberStatus;
 }
 
-export interface SchengenFamilySummary {
+export interface TravelStatusFamilySummary {
   primary: {
     name: string;
     color: string;
-    status: SchengenFamilyMemberStatus;
+    status: TravelStatusFamilyMemberStatus;
   };
-  members: SchengenFamilyMemberSummary[];
+  members: TravelStatusFamilyMemberSummary[];
 }
 
-export interface SchengenFamilyMembersResponse {
-  members: SchengenFamilyMember[];
+export interface TravelStatusFamilyMembersResponse {
+  members: TravelStatusFamilyMember[];
   total: number;
 }
 

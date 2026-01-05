@@ -19,7 +19,7 @@ import {
   supportApi,
   researchApi,
   familyApi,
-  schengenApi,
+  travelStatusApi,
 } from '@/api/client';
 import type {
   FamilyMember,
@@ -35,8 +35,8 @@ import type {
   DocumentGenerationRequest,
   ChatRequest,
   DashboardData,
-  SchengenTrip,
-  SchengenAlertSettings,
+  TravelStatusTrip,
+  TravelStatusAlertSettings,
   TaskFilters,
   FileFilters,
   NoteFilters,
@@ -88,15 +88,15 @@ export const queryKeys = {
   familyMember: (id: number) => ['familyMember', id] as const,
   familyFeatureStatus: ['familyFeatureStatus'] as const,
   // Schengen tracker
-  schengenTrips: ['schengenTrips'] as const,
-  schengenTrip: (id: string) => ['schengenTrip', id] as const,
-  schengenSummary: ['schengenSummary'] as const,
-  schengenSettings: ['schengenSettings'] as const,
-  schengenFeatureStatus: ['schengenFeatureStatus'] as const,
+  travelStatusTrips: ['travelStatusTrips'] as const,
+  travelStatusTrip: (id: string) => ['travelStatusTrip', id] as const,
+  travelStatusSummary: ['travelStatusSummary'] as const,
+  travelStatusSettings: ['travelStatusSettings'] as const,
+  travelStatusFeatureStatus: ['travelStatusFeatureStatus'] as const,
   // Schengen location tracking (Phase 1)
-  schengenLocationHistory: ['schengenLocationHistory'] as const,
-  schengenLocationToday: ['schengenLocationToday'] as const,
-  schengenLocationSettings: ['schengenLocationSettings'] as const,
+  travelStatusLocationHistory: ['travelStatusLocationHistory'] as const,
+  travelStatusLocationToday: ['travelStatusLocationToday'] as const,
+  travelStatusLocationSettings: ['travelStatusLocationSettings'] as const,
 };
 
 // Dashboard hook
@@ -968,103 +968,103 @@ export function useDeleteFamilyMember() {
 // Schengen Tracker Hooks
 // ============================================
 
-export function useSchengenTrips() {
+export function useTravelStatusTrips() {
   return useQuery({
-    queryKey: queryKeys.schengenTrips,
-    queryFn: schengenApi.getTrips,
+    queryKey: queryKeys.travelStatusTrips,
+    queryFn: travelStatusApi.getTrips,
     staleTime: STALE_TIME.DEFAULT, // 30 seconds
   });
 }
 
-export function useSchengenSummary() {
+export function useTravelStatusSummary() {
   return useQuery({
-    queryKey: queryKeys.schengenSummary,
-    queryFn: schengenApi.getSummary,
+    queryKey: queryKeys.travelStatusSummary,
+    queryFn: travelStatusApi.getSummary,
     staleTime: STALE_TIME.DEFAULT, // 30 seconds
   });
 }
 
-export function useSchengenSettings() {
+export function useTravelStatusSettings() {
   return useQuery({
-    queryKey: queryKeys.schengenSettings,
-    queryFn: schengenApi.getSettings,
+    queryKey: queryKeys.travelStatusSettings,
+    queryFn: travelStatusApi.getSettings,
     staleTime: STALE_TIME.MEDIUM, // 5 minutes
   });
 }
 
-export function useCreateSchengenTrip() {
+export function useCreateTravelStatusTrip() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: schengenApi.createTrip,
+    mutationFn: travelStatusApi.createTrip,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.schengenTrips });
-      queryClient.invalidateQueries({ queryKey: queryKeys.schengenSummary });
+      queryClient.invalidateQueries({ queryKey: queryKeys.travelStatusTrips });
+      queryClient.invalidateQueries({ queryKey: queryKeys.travelStatusSummary });
     },
   });
 }
 
-export function useUpdateSchengenTrip() {
+export function useUpdateTravelStatusTrip() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<SchengenTrip> }) =>
-      schengenApi.updateTrip(id, data),
+    mutationFn: ({ id, data }: { id: string; data: Partial<TravelStatusTrip> }) =>
+      travelStatusApi.updateTrip(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.schengenTrips });
-      queryClient.invalidateQueries({ queryKey: queryKeys.schengenSummary });
+      queryClient.invalidateQueries({ queryKey: queryKeys.travelStatusTrips });
+      queryClient.invalidateQueries({ queryKey: queryKeys.travelStatusSummary });
     },
   });
 }
 
-export function useDeleteSchengenTrip() {
+export function useDeleteTravelStatusTrip() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: schengenApi.deleteTrip,
+    mutationFn: travelStatusApi.deleteTrip,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.schengenTrips });
-      queryClient.invalidateQueries({ queryKey: queryKeys.schengenSummary });
+      queryClient.invalidateQueries({ queryKey: queryKeys.travelStatusTrips });
+      queryClient.invalidateQueries({ queryKey: queryKeys.travelStatusSummary });
     },
   });
 }
 
-export function useUpdateSchengenSettings() {
+export function useUpdateTravelStatusSettings() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: Partial<SchengenAlertSettings>) => schengenApi.updateSettings(data),
+    mutationFn: (data: Partial<TravelStatusAlertSettings>) => travelStatusApi.updateSettings(data),
     onSuccess: (updatedSettings) => {
-      queryClient.setQueryData(queryKeys.schengenSettings, updatedSettings);
+      queryClient.setQueryData(queryKeys.travelStatusSettings, updatedSettings);
       // Summary depends on settings thresholds, so invalidate it too
-      queryClient.invalidateQueries({ queryKey: queryKeys.schengenSummary });
+      queryClient.invalidateQueries({ queryKey: queryKeys.travelStatusSummary });
     },
   });
 }
 
-export function useSchengenFeatureStatus() {
+export function useTravelStatusFeatureStatus() {
   return useQuery({
-    queryKey: queryKeys.schengenFeatureStatus,
-    queryFn: schengenApi.getFeatureStatus,
+    queryKey: queryKeys.travelStatusFeatureStatus,
+    queryFn: travelStatusApi.getFeatureStatus,
     staleTime: STALE_TIME.MEDIUM, // 5 minutes
   });
 }
 
-export function useSimulateSchengenTrip() {
+export function useSimulateTravelStatusTrip() {
   return useMutation({
-    mutationFn: schengenApi.simulateTrip,
+    mutationFn: travelStatusApi.simulateTrip,
   });
 }
 
-export function useGenerateSchengenReport() {
+export function useGenerateTravelStatusReport() {
   return useMutation({
-    mutationFn: schengenApi.generateReport,
+    mutationFn: travelStatusApi.generateReport,
   });
 }
 
-export function useTestSchengenAlert() {
+export function useTestTravelStatusAlert() {
   return useMutation({
-    mutationFn: schengenApi.testAlert,
+    mutationFn: travelStatusApi.testAlert,
   });
 }
 
@@ -1072,73 +1072,73 @@ export function useTestSchengenAlert() {
 // Schengen Location Hooks (Phase 1)
 // ============================================
 
-export function useSchengenLocationHistory(options?: { limit?: number; offset?: number }) {
+export function useTravelStatusLocationHistory(options?: { limit?: number; offset?: number }) {
   return useQuery({
-    queryKey: queryKeys.schengenLocationHistory,
-    queryFn: () => schengenApi.getLocationHistory(options),
+    queryKey: queryKeys.travelStatusLocationHistory,
+    queryFn: () => travelStatusApi.getLocationHistory(options),
     staleTime: STALE_TIME.DEFAULT, // 30 seconds
   });
 }
 
-export function useSchengenLocationToday() {
+export function useTravelStatusLocationToday() {
   return useQuery({
-    queryKey: queryKeys.schengenLocationToday,
-    queryFn: schengenApi.getTodayStatus,
+    queryKey: queryKeys.travelStatusLocationToday,
+    queryFn: travelStatusApi.getTodayStatus,
     staleTime: STALE_TIME.DEFAULT, // 30 seconds
   });
 }
 
-export function useSchengenLocationSettings() {
+export function useTravelStatusLocationSettings() {
   return useQuery({
-    queryKey: queryKeys.schengenLocationSettings,
-    queryFn: schengenApi.getLocationSettings,
+    queryKey: queryKeys.travelStatusLocationSettings,
+    queryFn: travelStatusApi.getLocationSettings,
     staleTime: STALE_TIME.MEDIUM, // 5 minutes
   });
 }
 
-export function useStoreSchengenLocation() {
+export function useStoreTravelStatusLocation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: schengenApi.storeLocation,
+    mutationFn: travelStatusApi.storeLocation,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.schengenLocationHistory });
-      queryClient.invalidateQueries({ queryKey: queryKeys.schengenLocationToday });
+      queryClient.invalidateQueries({ queryKey: queryKeys.travelStatusLocationHistory });
+      queryClient.invalidateQueries({ queryKey: queryKeys.travelStatusLocationToday });
     },
   });
 }
 
-export function useDeleteSchengenLocation() {
+export function useDeleteTravelStatusLocation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: schengenApi.deleteLocation,
+    mutationFn: travelStatusApi.deleteLocation,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.schengenLocationHistory });
-      queryClient.invalidateQueries({ queryKey: queryKeys.schengenLocationToday });
+      queryClient.invalidateQueries({ queryKey: queryKeys.travelStatusLocationHistory });
+      queryClient.invalidateQueries({ queryKey: queryKeys.travelStatusLocationToday });
     },
   });
 }
 
-export function useClearSchengenLocationHistory() {
+export function useClearTravelStatusLocationHistory() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: schengenApi.clearLocationHistory,
+    mutationFn: travelStatusApi.clearLocationHistory,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.schengenLocationHistory });
-      queryClient.invalidateQueries({ queryKey: queryKeys.schengenLocationToday });
+      queryClient.invalidateQueries({ queryKey: queryKeys.travelStatusLocationHistory });
+      queryClient.invalidateQueries({ queryKey: queryKeys.travelStatusLocationToday });
     },
   });
 }
 
-export function useUpdateSchengenLocationSettings() {
+export function useUpdateTravelStatusLocationSettings() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: schengenApi.updateLocationSettings,
+    mutationFn: travelStatusApi.updateLocationSettings,
     onSuccess: (updatedSettings) => {
-      queryClient.setQueryData(queryKeys.schengenLocationSettings, updatedSettings);
+      queryClient.setQueryData(queryKeys.travelStatusLocationSettings, updatedSettings);
     },
   });
 }
@@ -1146,14 +1146,14 @@ export function useUpdateSchengenLocationSettings() {
 export function useGeocodeLocation() {
   return useMutation({
     mutationFn: ({ lat, lng }: { lat: number; lng: number }) =>
-      schengenApi.geocode(lat, lng),
+      travelStatusApi.geocode(lat, lng),
   });
 }
 
 export function useIPDetection() {
   return useQuery({
     queryKey: ['schengenIPDetection'] as const,
-    queryFn: schengenApi.detectFromIP,
+    queryFn: travelStatusApi.detectFromIP,
     staleTime: STALE_TIME.MEDIUM, // 5 minutes - IP doesn't change often
     retry: 1, // Only retry once for IP detection
   });
@@ -1166,7 +1166,7 @@ export function useIPDetection() {
 export function useCalendarProviders() {
   return useQuery({
     queryKey: ['calendarProviders'] as const,
-    queryFn: schengenApi.getCalendarProviders,
+    queryFn: travelStatusApi.getCalendarProviders,
     staleTime: STALE_TIME.LONG, // 1 hour - providers don't change
     throwOnError: false, // Handle errors in component, not error boundary
   });
@@ -1175,7 +1175,7 @@ export function useCalendarProviders() {
 export function useCalendarConnections() {
   return useQuery({
     queryKey: ['calendarConnections'] as const,
-    queryFn: schengenApi.getCalendarConnections,
+    queryFn: travelStatusApi.getCalendarConnections,
     staleTime: STALE_TIME.DEFAULT, // 30 seconds
     throwOnError: false, // Handle errors in component, not error boundary
   });
@@ -1183,7 +1183,7 @@ export function useCalendarConnections() {
 
 export function useConnectCalendar() {
   return useMutation({
-    mutationFn: schengenApi.connectCalendar,
+    mutationFn: travelStatusApi.connectCalendar,
     onSuccess: (data) => {
       // Redirect to OAuth URL
       if (data.authUrl) {
@@ -1197,7 +1197,7 @@ export function useDisconnectCalendar() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: schengenApi.disconnectCalendar,
+    mutationFn: travelStatusApi.disconnectCalendar,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['calendarConnections'] });
       queryClient.invalidateQueries({ queryKey: ['calendarEvents'] });
@@ -1209,7 +1209,7 @@ export function useSyncCalendar() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: schengenApi.syncCalendar,
+    mutationFn: travelStatusApi.syncCalendar,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['calendarConnections'] });
       queryClient.invalidateQueries({ queryKey: ['calendarEvents'] });
@@ -1220,7 +1220,7 @@ export function useSyncCalendar() {
 export function useCalendarEvents(status?: 'pending' | 'imported' | 'skipped' | 'all') {
   return useQuery({
     queryKey: ['calendarEvents', status] as const,
-    queryFn: () => schengenApi.getCalendarEvents(status),
+    queryFn: () => travelStatusApi.getCalendarEvents(status),
     staleTime: STALE_TIME.DEFAULT, // 30 seconds
     throwOnError: false, // Handle errors in component, not error boundary
   });
@@ -1230,11 +1230,11 @@ export function useImportCalendarEvents() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: schengenApi.importCalendarEvents,
+    mutationFn: travelStatusApi.importCalendarEvents,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['calendarEvents'] });
-      queryClient.invalidateQueries({ queryKey: queryKeys.schengenTrips });
-      queryClient.invalidateQueries({ queryKey: queryKeys.schengenSummary });
+      queryClient.invalidateQueries({ queryKey: queryKeys.travelStatusTrips });
+      queryClient.invalidateQueries({ queryKey: queryKeys.travelStatusSummary });
     },
   });
 }
@@ -1243,7 +1243,7 @@ export function useSkipCalendarEvents() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: schengenApi.skipCalendarEvents,
+    mutationFn: travelStatusApi.skipCalendarEvents,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['calendarEvents'] });
     },
@@ -1254,7 +1254,7 @@ export function useImportICalFile() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: schengenApi.importICalFile,
+    mutationFn: travelStatusApi.importICalFile,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['calendarEvents'] });
     },
@@ -1268,7 +1268,7 @@ export function useImportICalFile() {
 export function useJurisdictions(type?: JurisdictionType) {
   return useQuery({
     queryKey: ['jurisdictions', type] as const,
-    queryFn: () => schengenApi.getJurisdictions(type),
+    queryFn: () => travelStatusApi.getJurisdictions(type),
     staleTime: STALE_TIME.LONG, // Rules don't change often
     throwOnError: false,
   });
@@ -1277,7 +1277,7 @@ export function useJurisdictions(type?: JurisdictionType) {
 export function useJurisdiction(code: string) {
   return useQuery({
     queryKey: ['jurisdiction', code] as const,
-    queryFn: () => schengenApi.getJurisdiction(code),
+    queryFn: () => travelStatusApi.getJurisdiction(code),
     staleTime: STALE_TIME.LONG,
     throwOnError: false,
     enabled: !!code,
@@ -1287,7 +1287,7 @@ export function useJurisdiction(code: string) {
 export function useTrackedJurisdictions() {
   return useQuery({
     queryKey: ['trackedJurisdictions'] as const,
-    queryFn: schengenApi.getTrackedJurisdictions,
+    queryFn: travelStatusApi.getTrackedJurisdictions,
     staleTime: STALE_TIME.DEFAULT,
     throwOnError: false,
   });
@@ -1297,7 +1297,7 @@ export function useAddTrackedJurisdiction() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: schengenApi.addTrackedJurisdiction,
+    mutationFn: travelStatusApi.addTrackedJurisdiction,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['trackedJurisdictions'] });
       queryClient.invalidateQueries({ queryKey: ['multiJurisdictionSummary'] });
@@ -1309,7 +1309,7 @@ export function useRemoveTrackedJurisdiction() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: schengenApi.removeTrackedJurisdiction,
+    mutationFn: travelStatusApi.removeTrackedJurisdiction,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['trackedJurisdictions'] });
       queryClient.invalidateQueries({ queryKey: ['multiJurisdictionSummary'] });
@@ -1320,7 +1320,7 @@ export function useRemoveTrackedJurisdiction() {
 export function useJurisdictionSummary(code: string, date?: string) {
   return useQuery({
     queryKey: ['jurisdictionSummary', code, date] as const,
-    queryFn: () => schengenApi.getJurisdictionSummary(code, date),
+    queryFn: () => travelStatusApi.getJurisdictionSummary(code, date),
     staleTime: STALE_TIME.DEFAULT,
     throwOnError: false,
     enabled: !!code,
@@ -1330,7 +1330,7 @@ export function useJurisdictionSummary(code: string, date?: string) {
 export function useMultiJurisdictionSummary() {
   return useQuery({
     queryKey: ['multiJurisdictionSummary'] as const,
-    queryFn: schengenApi.getMultiJurisdictionSummary,
+    queryFn: travelStatusApi.getMultiJurisdictionSummary,
     staleTime: STALE_TIME.DEFAULT,
     throwOnError: false,
   });
@@ -1343,7 +1343,7 @@ export function useMultiJurisdictionSummary() {
 export function useNotifications(unreadOnly = false) {
   return useQuery({
     queryKey: ['notifications', unreadOnly] as const,
-    queryFn: () => schengenApi.getNotifications(unreadOnly),
+    queryFn: () => travelStatusApi.getNotifications(unreadOnly),
     staleTime: STALE_TIME.DYNAMIC, // 10 seconds - notifications are dynamic
     throwOnError: false,
     refetchInterval: REFETCH_INTERVAL.SUPPORT_UNREAD, // 1 minute
@@ -1353,7 +1353,7 @@ export function useNotifications(unreadOnly = false) {
 export function useNotificationUnreadCount() {
   return useQuery({
     queryKey: ['notificationUnreadCount'] as const,
-    queryFn: schengenApi.getNotificationUnreadCount,
+    queryFn: travelStatusApi.getNotificationUnreadCount,
     staleTime: STALE_TIME.DYNAMIC, // 10 seconds
     refetchInterval: REFETCH_INTERVAL.SUPPORT_UNREAD, // 1 minute
   });
@@ -1363,7 +1363,7 @@ export function useMarkNotificationRead() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: schengenApi.markNotificationRead,
+    mutationFn: travelStatusApi.markNotificationRead,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
       queryClient.invalidateQueries({ queryKey: ['notificationUnreadCount'] });
@@ -1375,7 +1375,7 @@ export function useMarkAllNotificationsRead() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: schengenApi.markAllNotificationsRead,
+    mutationFn: travelStatusApi.markAllNotificationsRead,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
       queryClient.invalidateQueries({ queryKey: ['notificationUnreadCount'] });
@@ -1387,7 +1387,7 @@ export function useDeleteNotification() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: schengenApi.deleteNotification,
+    mutationFn: travelStatusApi.deleteNotification,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
       queryClient.invalidateQueries({ queryKey: ['notificationUnreadCount'] });
@@ -1398,7 +1398,7 @@ export function useDeleteNotification() {
 export function usePushStatus() {
   return useQuery({
     queryKey: ['pushStatus'] as const,
-    queryFn: schengenApi.getPushStatus,
+    queryFn: travelStatusApi.getPushStatus,
     staleTime: STALE_TIME.MEDIUM, // 5 minutes
     throwOnError: false,
   });
@@ -1408,7 +1408,7 @@ export function useSubscribePush() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: schengenApi.subscribePush,
+    mutationFn: travelStatusApi.subscribePush,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pushStatus'] });
     },
@@ -1419,7 +1419,7 @@ export function useUnsubscribePush() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: schengenApi.unsubscribePush,
+    mutationFn: travelStatusApi.unsubscribePush,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pushStatus'] });
     },
@@ -1429,7 +1429,7 @@ export function useUnsubscribePush() {
 export function useVapidKey() {
   return useQuery({
     queryKey: ['vapidKey'] as const,
-    queryFn: schengenApi.getVapidKey,
+    queryFn: travelStatusApi.getVapidKey,
     staleTime: STALE_TIME.LONG, // 1 hour - key doesn't change
     throwOnError: false,
   });
@@ -1438,7 +1438,7 @@ export function useVapidKey() {
 export function useNotificationPreferences() {
   return useQuery({
     queryKey: ['notificationPreferences'] as const,
-    queryFn: schengenApi.getNotificationPreferences,
+    queryFn: travelStatusApi.getNotificationPreferences,
     staleTime: STALE_TIME.MEDIUM, // 5 minutes
     throwOnError: false,
   });
@@ -1448,7 +1448,7 @@ export function useUpdateNotificationPreferences() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: schengenApi.updateNotificationPreferences,
+    mutationFn: travelStatusApi.updateNotificationPreferences,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notificationPreferences'] });
     },
@@ -1459,7 +1459,7 @@ export function useSendTestNotification() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: schengenApi.sendTestNotification,
+    mutationFn: travelStatusApi.sendTestNotification,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
       queryClient.invalidateQueries({ queryKey: ['notificationUnreadCount'] });
@@ -1479,10 +1479,10 @@ export function useImportTripsCSV() {
 
   return useMutation({
     mutationFn: ({ csv, skipDuplicates = true }: { csv: string; skipDuplicates?: boolean }) =>
-      schengenApi.importTripsCSV(csv, skipDuplicates),
+      travelStatusApi.importTripsCSV(csv, skipDuplicates),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['schengenTrips'] });
-      queryClient.invalidateQueries({ queryKey: ['schengenSummary'] });
+      queryClient.invalidateQueries({ queryKey: ['travelStatusTrips'] });
+      queryClient.invalidateQueries({ queryKey: ['travelStatusSummary'] });
     },
   });
 }
@@ -1492,7 +1492,7 @@ export function useImportTripsCSV() {
  */
 export function useExportTripsCSV() {
   return useMutation({
-    mutationFn: schengenApi.exportTripsCSV,
+    mutationFn: travelStatusApi.exportTripsCSV,
   });
 }
 
@@ -1503,10 +1503,10 @@ export function useExportTripsCSV() {
 /**
  * Get AI-powered trip planning suggestions
  */
-export function useSchengenSuggestions() {
+export function useTravelStatusSuggestions() {
   return useQuery({
-    queryKey: ['schengenSuggestions'],
-    queryFn: schengenApi.getSuggestions,
+    queryKey: ['travelStatusSuggestions'],
+    queryFn: travelStatusApi.getSuggestions,
     staleTime: 5 * 60 * 1000, // 5 minutes
     refetchOnWindowFocus: false,
   });
@@ -1519,10 +1519,10 @@ export function useSchengenSuggestions() {
 /**
  * Get all Schengen family members for the current user
  */
-export function useSchengenFamilyMembers() {
+export function useTravelStatusFamilyMembers() {
   return useQuery({
-    queryKey: ['schengenFamilyMembers'],
-    queryFn: schengenApi.getSchengenFamilyMembers,
+    queryKey: ['travelStatusFamilyMembers'],
+    queryFn: travelStatusApi.getTravelStatusFamilyMembers,
     staleTime: 30 * 1000, // 30 seconds
   });
 }
@@ -1530,10 +1530,10 @@ export function useSchengenFamilyMembers() {
 /**
  * Get Schengen family summary with status for all members
  */
-export function useSchengenFamilySummary() {
+export function useTravelStatusFamilySummary() {
   return useQuery({
-    queryKey: ['schengenFamilySummary'],
-    queryFn: schengenApi.getSchengenFamilySummary,
+    queryKey: ['travelStatusFamilySummary'],
+    queryFn: travelStatusApi.getTravelStatusFamilySummary,
     staleTime: 30 * 1000, // 30 seconds
   });
 }
@@ -1541,13 +1541,13 @@ export function useSchengenFamilySummary() {
 /**
  * Create a new Schengen family member
  */
-export function useCreateSchengenFamilyMember() {
+export function useCreateTravelStatusFamilyMember() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: schengenApi.createSchengenFamilyMember,
+    mutationFn: travelStatusApi.createTravelStatusFamilyMember,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['schengenFamilyMembers'] });
-      queryClient.invalidateQueries({ queryKey: ['schengenFamilySummary'] });
+      queryClient.invalidateQueries({ queryKey: ['travelStatusFamilyMembers'] });
+      queryClient.invalidateQueries({ queryKey: ['travelStatusFamilySummary'] });
     },
   });
 }
@@ -1555,14 +1555,14 @@ export function useCreateSchengenFamilyMember() {
 /**
  * Update a Schengen family member
  */
-export function useUpdateSchengenFamilyMember() {
+export function useUpdateTravelStatusFamilyMember() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Parameters<typeof schengenApi.updateSchengenFamilyMember>[1] }) =>
-      schengenApi.updateSchengenFamilyMember(id, data),
+    mutationFn: ({ id, data }: { id: number; data: Parameters<typeof travelStatusApi.updateTravelStatusFamilyMember>[1] }) =>
+      travelStatusApi.updateTravelStatusFamilyMember(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['schengenFamilyMembers'] });
-      queryClient.invalidateQueries({ queryKey: ['schengenFamilySummary'] });
+      queryClient.invalidateQueries({ queryKey: ['travelStatusFamilyMembers'] });
+      queryClient.invalidateQueries({ queryKey: ['travelStatusFamilySummary'] });
     },
   });
 }
@@ -1570,14 +1570,14 @@ export function useUpdateSchengenFamilyMember() {
 /**
  * Delete a Schengen family member
  */
-export function useDeleteSchengenFamilyMember() {
+export function useDeleteTravelStatusFamilyMember() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: schengenApi.deleteSchengenFamilyMember,
+    mutationFn: travelStatusApi.deleteTravelStatusFamilyMember,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['schengenFamilyMembers'] });
-      queryClient.invalidateQueries({ queryKey: ['schengenFamilySummary'] });
-      queryClient.invalidateQueries({ queryKey: ['schengenTrips'] });
+      queryClient.invalidateQueries({ queryKey: ['travelStatusFamilyMembers'] });
+      queryClient.invalidateQueries({ queryKey: ['travelStatusFamilySummary'] });
+      queryClient.invalidateQueries({ queryKey: ['travelStatusTrips'] });
     },
   });
 }
@@ -1589,10 +1589,10 @@ export function useDeleteSchengenFamilyMember() {
 /**
  * Get analytics data for the Schengen dashboard
  */
-export function useSchengenAnalytics() {
+export function useTravelStatusAnalytics() {
   return useQuery({
-    queryKey: ['schengenAnalytics'],
-    queryFn: schengenApi.getAnalytics,
+    queryKey: ['travelStatusAnalytics'],
+    queryFn: travelStatusApi.getAnalytics,
     staleTime: 5 * 60 * 1000, // 5 minutes
     refetchOnWindowFocus: false,
   });
