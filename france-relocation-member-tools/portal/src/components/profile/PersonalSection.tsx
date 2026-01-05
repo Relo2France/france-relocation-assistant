@@ -110,7 +110,7 @@ export default function PersonalSection({ profile }: PersonalSectionProps) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
         <div>
           <label htmlFor="date_of_birth" className="block text-sm font-medium text-gray-700 mb-1">
             Date of Birth <span className="text-red-500" aria-label="required">*</span>
@@ -138,14 +138,11 @@ export default function PersonalSection({ profile }: PersonalSectionProps) {
             value={formData.nationality}
             onChange={(e) => setFormData({ ...formData, nationality: e.target.value })}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-            placeholder="e.g., American, Canadian"
+            placeholder="e.g., American"
             required
             aria-required="true"
           />
         </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div>
           <label htmlFor="passport_number" className="block text-sm font-medium text-gray-700 mb-1">
             Passport Number
@@ -162,7 +159,7 @@ export default function PersonalSection({ profile }: PersonalSectionProps) {
         </div>
         <div>
           <label htmlFor="passport_expiry" className="block text-sm font-medium text-gray-700 mb-1">
-            Passport Expiry Date
+            Passport Expiry
           </label>
           <input
             type="date"
