@@ -1190,19 +1190,45 @@ export interface TravelStatusFamilyMembersResponse {
 }
 
 // ============================================
-// Jurisdiction Types (Phase 3)
+// Jurisdiction Types (Phase 3 - Multi-Jurisdiction)
 // ============================================
 
 export type JurisdictionType = 'zone' | 'country' | 'state';
-export type CountingMethod = 'rolling' | 'calendar_year' | 'fiscal_year';
+export type JurisdictionCategory = 'visa' | 'tax' | 'immigration' | 'custom';
+export type CountingMethod = 'rolling' | 'calendar_year' | 'fiscal_year' | 'multi_year' | 'weighted_multi_year';
 export type JurisdictionStatus = 'safe' | 'warning' | 'danger' | 'critical' | 'exceeded';
+
+/**
+ * Configuration for multi-year counting rules (e.g., Ireland 183/280)
+ */
+export interface MultiYearRuleConfig {
+  type: 'multi_year';
+  primaryThreshold: number;    // e.g., 183 days
+  secondaryThreshold: number;  // e.g., 280 days combined
+  yearsToCount: number;        // e.g., 2 years
+}
+
+/**
+ * Configuration for weighted multi-year counting (e.g., US SPT)
+ */
+export interface WeightedMultiYearRuleConfig {
+  type: 'weighted_multi_year';
+  weights: number[];           // [1.0, 0.333, 0.167] for current/prior/second-prior
+  threshold: number;           // 183 weighted days
+  currentYearMinimum?: number; // 31 days minimum in current year for US
+}
+
+export type JurisdictionRuleConfig = MultiYearRuleConfig | WeightedMultiYearRuleConfig;
 
 export interface JurisdictionRule {
   id: number;
   code: string;
   name: string;
   type: JurisdictionType;
+  category: JurisdictionCategory;
   parentCode: string | null;
+  countryCode: string | null;
+  flagEmoji: string | null;
   daysAllowed: number;
   windowDays: number;
   countingMethod: CountingMethod;
@@ -1211,6 +1237,54 @@ export interface JurisdictionRule {
   description: string | null;
   notes: string | null;
   isSystem: boolean;
+  ruleConfig?: JurisdictionRuleConfig;
+}
+
+/**
+ * Breakdown of weighted days calculation (US SPT)
+ */
+export interface WeightedBreakdown {
+  currentYear: {
+    year: number;
+    days: number;
+    weight: number;
+    weighted: number;
+  };
+  priorYear: {
+    year: number;
+    days: number;
+    weight: number;
+    weighted: number;
+  };
+  secondPriorYear: {
+    year: number;
+    days: number;
+    weight: number;
+    weighted: number;
+  };
+  totalWeighted: number;
+  threshold: number;
+  meetsThreshold: boolean;
+  meetsCurrentYearMinimum: boolean;
+}
+
+/**
+ * Breakdown of multi-year days calculation (Ireland 183/280)
+ */
+export interface MultiYearBreakdown {
+  currentYear: {
+    year: number;
+    days: number;
+  };
+  priorYear: {
+    year: number;
+    days: number;
+  };
+  combinedDays: number;
+  primaryThreshold: number;
+  secondaryThreshold: number;
+  meetsPrimary: boolean;
+  meetsSecondary: boolean;
 }
 
 export interface JurisdictionSummary {
@@ -1224,19 +1298,111 @@ export interface JurisdictionSummary {
   windowEnd: string;
   referenceDate: string;
   countingMethod: CountingMethod;
+  category: JurisdictionCategory;
+  flagEmoji: string | null;
   nextExpiringDate: string | null;
   nextExpiringDays: number;
   tripCount: number;
   rule?: JurisdictionRule;
+  // Breakdown data for complex rules
+  weightedBreakdown?: WeightedBreakdown;
+  multiYearBreakdown?: MultiYearBreakdown;
 }
 
 export interface MultiJurisdictionSummary {
   [jurisdictionCode: string]: JurisdictionSummary;
 }
 
+/**
+ * User's tracked jurisdiction preferences
+ */
+export interface UserJurisdiction {
+  id: number;
+  userId: number;
+  jurisdictionCode: string;
+  enabled: boolean;
+  alertThreshold: number;      // Percentage (0-100) to trigger alerts
+  customConfig: Record<string, unknown> | null;
+  displayOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Compliance snapshot for historical tracking
+ */
+export interface ComplianceSnapshot {
+  id: number;
+  userId: number;
+  jurisdictionCode: string;
+  snapshotDate: string;
+  daysUsed: number;
+  daysAllowed: number;
+  daysRemaining: number;
+  percentage: number;
+  status: JurisdictionStatus;
+  tripCount: number;
+  metadata: Record<string, unknown> | null;
+  createdAt: string;
+}
+
 export interface TrackedJurisdictionsResponse {
   success: boolean;
   tracked: string[];
+}
+
+/**
+ * Response for jurisdiction rules list
+ */
+export interface JurisdictionRulesResponse {
+  success: boolean;
+  rules: JurisdictionRule[];
+  categories: {
+    visa: JurisdictionRule[];
+    tax: JurisdictionRule[];
+    immigration: JurisdictionRule[];
+    custom: JurisdictionRule[];
+  };
+}
+
+/**
+ * Request to add/update user jurisdiction tracking
+ */
+export interface UpdateUserJurisdictionRequest {
+  jurisdictionCode: string;
+  enabled?: boolean;
+  alertThreshold?: number;
+  displayOrder?: number;
+}
+
+/**
+ * Response for user jurisdictions
+ */
+export interface UserJurisdictionsResponse {
+  success: boolean;
+  jurisdictions: UserJurisdiction[];
+}
+
+/**
+ * Compliance overview across all tracked jurisdictions
+ */
+export interface ComplianceOverview {
+  jurisdictions: JurisdictionSummary[];
+  alerts: ComplianceAlert[];
+  lastUpdated: string;
+}
+
+/**
+ * Alert for jurisdiction compliance issues
+ */
+export interface ComplianceAlert {
+  jurisdictionCode: string;
+  jurisdictionName: string;
+  type: 'warning' | 'danger' | 'exceeded';
+  message: string;
+  percentage: number;
+  daysUsed: number;
+  daysAllowed: number;
 }
 
 // ============================================

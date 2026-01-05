@@ -531,11 +531,12 @@ class MTS_Jurisdiction {
 	 * @return array Formatted rule.
 	 */
 	private function format_rule( $rule ) {
-		return array(
+		$formatted = array(
 			'id'             => (int) $rule['id'],
 			'code'           => $rule['code'],
 			'name'           => $rule['name'],
 			'type'           => $rule['type'],
+			'category'       => isset( $rule['category'] ) ? $rule['category'] : 'visa',
 			'parentCode'     => $rule['parent_code'],
 			'daysAllowed'    => (int) $rule['days_allowed'],
 			'windowDays'     => (int) $rule['window_days'],
@@ -544,8 +545,20 @@ class MTS_Jurisdiction {
 			'resetDay'       => $rule['reset_day'] ? (int) $rule['reset_day'] : null,
 			'description'    => $rule['description'],
 			'notes'          => $rule['notes'],
+			'countryCode'    => isset( $rule['country_code'] ) ? $rule['country_code'] : null,
+			'flagEmoji'      => isset( $rule['flag_emoji'] ) ? $rule['flag_emoji'] : null,
 			'isSystem'       => (bool) $rule['is_system'],
 		);
+
+		// Parse JSON rule_config if present.
+		if ( ! empty( $rule['rule_config'] ) ) {
+			$config = json_decode( $rule['rule_config'], true );
+			if ( $config ) {
+				$formatted['ruleConfig'] = $config;
+			}
+		}
+
+		return $formatted;
 	}
 
 	/**
@@ -568,15 +581,13 @@ class MTS_Jurisdiction {
 		$days_remaining = max( 0, $rule['daysAllowed'] - $days_used );
 		$percentage     = ( $days_used / $rule['daysAllowed'] ) * 100;
 
-		// Determine status.
-		$status = 'safe';
+		// Determine status based on percentage thresholds.
+		$status = 'ok';
 		if ( $percentage >= 100 ) {
 			$status = 'exceeded';
-		} elseif ( $percentage >= 94 ) { // ~85/90 for Schengen.
+		} elseif ( $percentage >= 95 ) {
 			$status = 'critical';
-		} elseif ( $percentage >= 89 ) { // ~80/90 for Schengen.
-			$status = 'danger';
-		} elseif ( $percentage >= 67 ) { // ~60/90 for Schengen.
+		} elseif ( $percentage >= 80 ) {
 			$status = 'warning';
 		}
 
@@ -586,7 +597,7 @@ class MTS_Jurisdiction {
 
 		if ( 'rolling' === $rule['countingMethod'] ) {
 			$window_start->modify( '-' . ( $rule['windowDays'] - 1 ) . ' days' );
-		} elseif ( 'calendar_year' === $rule['countingMethod'] ) {
+		} elseif ( in_array( $rule['countingMethod'], array( 'calendar_year', 'multi_year', 'weighted_multi_year' ), true ) ) {
 			$window_start->setDate(
 				(int) $reference_date->format( 'Y' ),
 				$rule['resetMonth'] ?? 1,
@@ -621,8 +632,11 @@ class MTS_Jurisdiction {
 			$next_expiring_count = $expiring['count'];
 		}
 
-		return array(
+		$summary = array(
 			'jurisdictionCode' => $rule['code'],
+			'jurisdictionName' => $rule['name'],
+			'category'         => isset( $rule['category'] ) ? $rule['category'] : 'visa',
+			'flagEmoji'        => isset( $rule['flagEmoji'] ) ? $rule['flagEmoji'] : null,
 			'daysUsed'         => $days_used,
 			'daysAllowed'      => $rule['daysAllowed'],
 			'daysRemaining'    => $days_remaining,
@@ -636,6 +650,95 @@ class MTS_Jurisdiction {
 			'nextExpiringDays' => $next_expiring_count,
 			'tripCount'        => count( $trips ),
 		);
+
+		// Add breakdown for multi-year calculations.
+		if ( 'weighted_multi_year' === $rule['countingMethod'] ) {
+			$summary['breakdown'] = $this->get_weighted_breakdown( $trips, $rule, $reference_date );
+		} elseif ( 'multi_year' === $rule['countingMethod'] ) {
+			$summary['breakdown'] = $this->get_multi_year_breakdown( $trips, $rule, $reference_date );
+		}
+
+		return $summary;
+	}
+
+	/**
+	 * Get breakdown for US SPT weighted calculation.
+	 *
+	 * @param array    $trips          Trips.
+	 * @param array    $rule           Rule.
+	 * @param DateTime $reference_date Reference date.
+	 * @return array Breakdown by year.
+	 */
+	private function get_weighted_breakdown( $trips, $rule, $reference_date ) {
+		$config = isset( $rule['ruleConfig'] ) ? $rule['ruleConfig'] : array();
+		$current_weight      = isset( $config['current_year_weight'] ) ? (float) $config['current_year_weight'] : 1.0;
+		$prior_weight        = isset( $config['prior_year_weight'] ) ? (float) $config['prior_year_weight'] : 0.333;
+		$second_prior_weight = isset( $config['second_prior_weight'] ) ? (float) $config['second_prior_weight'] : 0.167;
+
+		$current_year = (int) $reference_date->format( 'Y' );
+		$current_days = $this->calculate_calendar_year( $trips, $rule, $reference_date );
+
+		$prior_date = clone $reference_date;
+		$prior_date->modify( '-1 year' );
+		$prior_days = $this->calculate_calendar_year( $trips, $rule, $prior_date );
+
+		$second_prior_date = clone $reference_date;
+		$second_prior_date->modify( '-2 years' );
+		$second_prior_days = $this->calculate_calendar_year( $trips, $rule, $second_prior_date );
+
+		return array(
+			'currentYear' => array(
+				'year'     => $current_year,
+				'days'     => $current_days,
+				'weight'   => $current_weight,
+				'weighted' => round( $current_days * $current_weight, 1 ),
+			),
+			'priorYear' => array(
+				'year'     => $current_year - 1,
+				'days'     => $prior_days,
+				'weight'   => $prior_weight,
+				'weighted' => round( $prior_days * $prior_weight, 1 ),
+			),
+			'secondPriorYear' => array(
+				'year'     => $current_year - 2,
+				'days'     => $second_prior_days,
+				'weight'   => $second_prior_weight,
+				'weighted' => round( $second_prior_days * $second_prior_weight, 1 ),
+			),
+		);
+	}
+
+	/**
+	 * Get breakdown for Ireland multi-year calculation.
+	 *
+	 * @param array    $trips          Trips.
+	 * @param array    $rule           Rule.
+	 * @param DateTime $reference_date Reference date.
+	 * @return array Breakdown by year.
+	 */
+	private function get_multi_year_breakdown( $trips, $rule, $reference_date ) {
+		$config = isset( $rule['ruleConfig'] ) ? $rule['ruleConfig'] : array();
+		$secondary_threshold = isset( $config['secondary_threshold'] ) ? (int) $config['secondary_threshold'] : 280;
+
+		$current_year = (int) $reference_date->format( 'Y' );
+		$current_days = $this->calculate_calendar_year( $trips, $rule, $reference_date );
+
+		$prior_date = clone $reference_date;
+		$prior_date->modify( '-1 year' );
+		$prior_days = $this->calculate_calendar_year( $trips, $rule, $prior_date );
+
+		return array(
+			'currentYear' => array(
+				'year' => $current_year,
+				'days' => $current_days,
+			),
+			'priorYear' => array(
+				'year' => $current_year - 1,
+				'days' => $prior_days,
+			),
+			'combined'          => $current_days + $prior_days,
+			'secondaryThreshold' => $secondary_threshold,
+		);
 	}
 
 	/**
@@ -644,7 +747,7 @@ class MTS_Jurisdiction {
 	 * @param array    $trips          Array of trips.
 	 * @param array    $rule           Jurisdiction rule.
 	 * @param DateTime $reference_date Reference date.
-	 * @return int Days used.
+	 * @return int|float Days used (float for weighted calculations).
 	 */
 	public function calculate_days_used( $trips, $rule, $reference_date ) {
 		switch ( $rule['countingMethod'] ) {
@@ -656,6 +759,12 @@ class MTS_Jurisdiction {
 
 			case 'fiscal_year':
 				return $this->calculate_fiscal_year( $trips, $rule, $reference_date );
+
+			case 'multi_year':
+				return $this->calculate_multi_year( $trips, $rule, $reference_date );
+
+			case 'weighted_multi_year':
+				return $this->calculate_weighted_multi_year( $trips, $rule, $reference_date );
 
 			default:
 				return $this->calculate_rolling_window( $trips, $rule['windowDays'], $reference_date );
@@ -759,6 +868,96 @@ class MTS_Jurisdiction {
 	private function calculate_fiscal_year( $trips, $rule, $reference_date ) {
 		// Same logic as calendar year with custom start.
 		return $this->calculate_calendar_year( $trips, $rule, $reference_date );
+	}
+
+	/**
+	 * Calculate days for multi-year rules (e.g., Ireland 183/280).
+	 *
+	 * Ireland: Resident if 183+ days in current year OR 280+ days over current + previous year.
+	 *
+	 * @param array    $trips          Trips.
+	 * @param array    $rule           Rule with ruleConfig.
+	 * @param DateTime $reference_date Reference date.
+	 * @return int Days used (returns the higher of primary or secondary test).
+	 */
+	private function calculate_multi_year( $trips, $rule, $reference_date ) {
+		// Get config for secondary test.
+		$config = isset( $rule['ruleConfig'] ) ? $rule['ruleConfig'] : array();
+		$secondary_threshold = isset( $config['secondary_threshold'] ) ? (int) $config['secondary_threshold'] : 280;
+		$secondary_years     = isset( $config['secondary_years'] ) ? (int) $config['secondary_years'] : 2;
+		$min_days_per_year   = isset( $config['min_days_per_year'] ) ? (int) $config['min_days_per_year'] : 31;
+
+		// Calculate current year days.
+		$current_year_days = $this->calculate_calendar_year( $trips, $rule, $reference_date );
+
+		// If current year exceeds threshold, return that.
+		if ( $current_year_days >= $rule['daysAllowed'] ) {
+			return $current_year_days;
+		}
+
+		// Calculate previous year days.
+		$previous_date = clone $reference_date;
+		$previous_date->modify( '-1 year' );
+		$previous_year_days = $this->calculate_calendar_year( $trips, $rule, $previous_date );
+
+		// Check if secondary test applies (Ireland: 280 days over 2 years, min 31 each).
+		$combined_days = $current_year_days + $previous_year_days;
+
+		if ( $combined_days >= $secondary_threshold &&
+			 $current_year_days >= $min_days_per_year &&
+			 $previous_year_days >= $min_days_per_year ) {
+			// Return the combined days capped at threshold for display purposes.
+			// This indicates the secondary test is triggered.
+			return min( $combined_days, $secondary_threshold );
+		}
+
+		// Return current year days if no test triggered.
+		return $current_year_days;
+	}
+
+	/**
+	 * Calculate weighted multi-year days (US Substantial Presence Test).
+	 *
+	 * SPT: Current year × 1 + Prior year × 1/3 + Second prior × 1/6 >= 183.
+	 * Also requires 31+ days in current year.
+	 *
+	 * @param array    $trips          Trips.
+	 * @param array    $rule           Rule with ruleConfig.
+	 * @param DateTime $reference_date Reference date.
+	 * @return float Weighted days used.
+	 */
+	private function calculate_weighted_multi_year( $trips, $rule, $reference_date ) {
+		// Get weights from config.
+		$config = isset( $rule['ruleConfig'] ) ? $rule['ruleConfig'] : array();
+		$current_weight      = isset( $config['current_year_weight'] ) ? (float) $config['current_year_weight'] : 1.0;
+		$prior_weight        = isset( $config['prior_year_weight'] ) ? (float) $config['prior_year_weight'] : 0.333;
+		$second_prior_weight = isset( $config['second_prior_weight'] ) ? (float) $config['second_prior_weight'] : 0.167;
+		$min_current_days    = isset( $config['min_current_year_days'] ) ? (int) $config['min_current_year_days'] : 31;
+
+		// Calculate current year days.
+		$current_year_days = $this->calculate_calendar_year( $trips, $rule, $reference_date );
+
+		// If current year doesn't meet minimum, return 0 (test doesn't apply).
+		if ( $current_year_days < $min_current_days ) {
+			return 0;
+		}
+
+		// Calculate prior year days.
+		$prior_date = clone $reference_date;
+		$prior_date->modify( '-1 year' );
+		$prior_year_days = $this->calculate_calendar_year( $trips, $rule, $prior_date );
+
+		// Calculate second prior year days.
+		$second_prior_date = clone $reference_date;
+		$second_prior_date->modify( '-2 years' );
+		$second_prior_year_days = $this->calculate_calendar_year( $trips, $rule, $second_prior_date );
+
+		// Calculate weighted total.
+		$weighted_total = ( $current_year_days * $current_weight ) +
+						  ( $prior_year_days * $prior_weight ) +
+						  ( $second_prior_year_days * $second_prior_weight );
+
+		return round( $weighted_total, 1 );
 	}
 
 	/**
