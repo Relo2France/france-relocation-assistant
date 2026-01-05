@@ -29,6 +29,12 @@ define( 'MTS_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
 // Database table prefix (shared with Member Tools for backward compatibility).
 define( 'MTS_TABLE_PREFIX', 'mts_' );
 
+// Load Composer autoloader if available (for web-push library).
+$composer_autoload = MTS_PLUGIN_DIR . 'vendor/autoload.php';
+if ( file_exists( $composer_autoload ) ) {
+	require_once $composer_autoload;
+}
+
 /**
  * Autoloader for plugin classes.
  *

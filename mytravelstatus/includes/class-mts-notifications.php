@@ -905,8 +905,8 @@ class MTS_Notifications {
 	/**
 	 * Send a Web Push notification using the Web Push protocol.
 	 *
-	 * Note: This is a simplified implementation. For production,
-	 * consider using a library like minishlink/web-push.
+	 * Uses minishlink/web-push library when available (recommended for production).
+	 * Falls back to a stub implementation for development.
 	 *
 	 * @param string $endpoint    Push subscription endpoint.
 	 * @param string $p256dh      Client public key.
@@ -917,26 +917,90 @@ class MTS_Notifications {
 	 * @return bool True on success.
 	 */
 	private function send_web_push( string $endpoint, string $p256dh, string $auth, array $payload, string $public_key, string $private_key ): bool {
-		// For a full implementation, you would need to:
-		// 1. Create VAPID JWT header
-		// 2. Encrypt the payload using ECDH
-		// 3. Send the request to the push service endpoint
+		// Check if web-push library is available (via Composer autoloader).
+		if ( class_exists( 'Minishlink\\WebPush\\WebPush' ) ) {
+			return $this->send_web_push_with_library( $endpoint, $p256dh, $auth, $payload, $public_key, $private_key );
+		}
 
-		// This simplified version just stores the notification for the frontend to poll.
-		// A full implementation would require additional PHP libraries (sodium, jose).
-
-		// For now, log that we would send a push and return true for testing.
+		// Fallback: Log for development, store notification for frontend polling.
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 			error_log( sprintf(
-				'[Schengen Push] Would send push to endpoint: %s with payload: %s',
+				'[MyTravelStatus Push] Library not available. Would send push to endpoint: %s with payload: %s',
 				substr( $endpoint, 0, 50 ) . '...',
 				wp_json_encode( $payload )
 			) );
+			error_log( '[MyTravelStatus Push] To enable real push notifications, run: cd mytravelstatus && composer install' );
 		}
 
-		// Mark as sent for development purposes.
-		// In production, implement actual Web Push protocol.
+		// Return true for development purposes (notification is stored in DB).
 		return true;
+	}
+
+	/**
+	 * Send Web Push using minishlink/web-push library.
+	 *
+	 * @param string $endpoint    Push subscription endpoint.
+	 * @param string $p256dh      Client public key.
+	 * @param string $auth        Client auth secret.
+	 * @param array  $payload     Notification payload.
+	 * @param string $public_key  VAPID public key.
+	 * @param string $private_key VAPID private key.
+	 * @return bool True on success.
+	 */
+	private function send_web_push_with_library( string $endpoint, string $p256dh, string $auth, array $payload, string $public_key, string $private_key ): bool {
+		try {
+			$auth_config = array(
+				'VAPID' => array(
+					'subject'    => home_url(),
+					'publicKey'  => $public_key,
+					'privateKey' => $private_key,
+				),
+			);
+
+			$webPush = new \Minishlink\WebPush\WebPush( $auth_config );
+
+			$subscription = \Minishlink\WebPush\Subscription::create( array(
+				'endpoint'        => $endpoint,
+				'publicKey'       => $p256dh,
+				'authToken'       => $auth,
+				'contentEncoding' => 'aes128gcm',
+			) );
+
+			$report = $webPush->sendOneNotification(
+				$subscription,
+				wp_json_encode( $payload )
+			);
+
+			if ( $report->isSuccess() ) {
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					error_log( '[MyTravelStatus Push] Successfully sent push notification' );
+				}
+				return true;
+			}
+
+			// Log failure reason.
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( sprintf(
+					'[MyTravelStatus Push] Failed: %s (HTTP %d)',
+					$report->getReason(),
+					$report->getResponse() ? $report->getResponse()->getStatusCode() : 0
+				) );
+			}
+
+			// Return false if subscription expired (410 Gone) so caller can remove it.
+			$response = $report->getResponse();
+			if ( $response && in_array( $response->getStatusCode(), array( 404, 410 ), true ) ) {
+				return false;
+			}
+
+			return false;
+
+		} catch ( \Exception $e ) {
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( '[MyTravelStatus Push] Exception: ' . $e->getMessage() );
+			}
+			return false;
+		}
 	}
 
 	/**
