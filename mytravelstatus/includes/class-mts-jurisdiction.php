@@ -630,6 +630,147 @@ class MTS_Jurisdiction {
 	}
 
 	/**
+	 * Get user's tracked jurisdiction codes (non-API method for templates).
+	 *
+	 * @since 1.8.3
+	 * @param int $user_id User ID.
+	 * @return array Array of jurisdiction codes.
+	 */
+	public function get_user_tracked_jurisdictions( $user_id ) {
+		$tracked = get_user_meta( $user_id, 'mts_tracked_jurisdictions', true );
+
+		if ( empty( $tracked ) || ! is_array( $tracked ) ) {
+			return array( 'schengen' );
+		}
+
+		return $tracked;
+	}
+
+	/**
+	 * Get all available jurisdiction rules (non-API method for templates).
+	 *
+	 * @since 1.8.3
+	 * @return array Array of formatted rules.
+	 */
+	public function get_available_rules() {
+		return $this->get_all_rules();
+	}
+
+	/**
+	 * Get compliance overview for all tracked jurisdictions.
+	 *
+	 * Returns cached overview with summaries and status counts.
+	 * Optimized for dashboard display.
+	 *
+	 * @since 1.8.3
+	 * @param int $user_id User ID.
+	 * @return array Compliance overview with summaries and counts.
+	 */
+	public function get_compliance_overview( $user_id ) {
+		// Check transient cache first.
+		$cache_key = 'mts_overview_' . $user_id . '_' . gmdate( 'Y-m-d' );
+		$cached    = get_transient( $cache_key );
+
+		if ( false !== $cached ) {
+			return $cached;
+		}
+
+		$tracked = $this->get_user_tracked_jurisdictions( $user_id );
+
+		if ( empty( $tracked ) ) {
+			return array(
+				'total_jurisdictions' => 0,
+				'critical_count'      => 0,
+				'warning_count'       => 0,
+				'ok_count'            => 0,
+				'exceeded_count'      => 0,
+				'summaries'           => array(),
+			);
+		}
+
+		$reference_date = new DateTime();
+		$summaries      = array();
+		$critical_count = 0;
+		$warning_count  = 0;
+		$ok_count       = 0;
+		$exceeded_count = 0;
+
+		// Batch load all rules first (single query).
+		$rules = array();
+		foreach ( $tracked as $code ) {
+			$rule = $this->get_rule( $code );
+			if ( $rule ) {
+				$rules[ $code ] = $rule;
+			}
+		}
+
+		// Calculate summaries for each tracked jurisdiction.
+		foreach ( $tracked as $code ) {
+			if ( ! isset( $rules[ $code ] ) ) {
+				continue;
+			}
+
+			$rule    = $rules[ $code ];
+			$summary = $this->calculate_summary( $user_id, $rule, $reference_date );
+
+			// Add jurisdiction info to summary.
+			$summary['jurisdiction_code'] = $code;
+			$summary['jurisdiction_name'] = $rule['name'];
+			$summary['flag_emoji']        = $rule['flagEmoji'] ?? '';
+			$summary['category']          = $rule['category'] ?? 'visa';
+
+			// Count by status.
+			$status = $summary['status'] ?? 'ok';
+			switch ( $status ) {
+				case 'exceeded':
+					$exceeded_count++;
+					break;
+				case 'critical':
+					$critical_count++;
+					break;
+				case 'warning':
+					$warning_count++;
+					break;
+				default:
+					$ok_count++;
+					break;
+			}
+
+			$summaries[] = $summary;
+		}
+
+		// Sort by status severity (exceeded > critical > warning > ok).
+		usort(
+			$summaries,
+			function ( $a, $b ) {
+				$severity = array(
+					'exceeded' => 0,
+					'critical' => 1,
+					'warning'  => 2,
+					'ok'       => 3,
+				);
+				$a_severity = $severity[ $a['status'] ?? 'ok' ] ?? 3;
+				$b_severity = $severity[ $b['status'] ?? 'ok' ] ?? 3;
+				return $a_severity - $b_severity;
+			}
+		);
+
+		$overview = array(
+			'total_jurisdictions' => count( $summaries ),
+			'critical_count'      => $critical_count,
+			'warning_count'       => $warning_count,
+			'ok_count'            => $ok_count,
+			'exceeded_count'      => $exceeded_count,
+			'summaries'           => $summaries,
+		);
+
+		// Cache for 5 minutes.
+		set_transient( $cache_key, $overview, self::CACHE_TTL );
+
+		return $overview;
+	}
+
+	/**
 	 * Format rule data for API response.
 	 *
 	 * @param array $rule Raw rule data.
@@ -2138,13 +2279,16 @@ class MTS_Jurisdiction {
 			}
 		}
 
-		// Clear transient cache.
-		// Generate date keys for past 7 days (common reference dates).
+		// Always clear the compliance overview cache for this user.
 		$dates = array();
 		for ( $i = 0; $i <= 7; $i++ ) {
 			$dates[] = gmdate( 'Y-m-d', strtotime( "-{$i} days" ) );
 		}
+		foreach ( $dates as $date ) {
+			delete_transient( "mts_overview_{$user_id}_{$date}" );
+		}
 
+		// Clear transient cache.
 		if ( $code ) {
 			// Clear specific jurisdiction transients.
 			foreach ( $dates as $date ) {
@@ -2175,11 +2319,13 @@ class MTS_Jurisdiction {
 		$this->summary_cache = array();
 		$this->rules_cache   = array();
 
-		// Clear all MTS transients.
+		// Clear all MTS transients (summary and overview).
 		$wpdb->query(
 			"DELETE FROM {$wpdb->options}
 			WHERE option_name LIKE '_transient_mts_summary_%'
-			OR option_name LIKE '_transient_timeout_mts_summary_%'"
+			OR option_name LIKE '_transient_timeout_mts_summary_%'
+			OR option_name LIKE '_transient_mts_overview_%'
+			OR option_name LIKE '_transient_timeout_mts_overview_%'"
 		);
 	}
 }
