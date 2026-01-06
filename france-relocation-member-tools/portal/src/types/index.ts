@@ -1195,7 +1195,7 @@ export interface TravelStatusFamilyMembersResponse {
 
 export type JurisdictionType = 'zone' | 'country' | 'state';
 export type JurisdictionCategory = 'visa' | 'tax' | 'immigration' | 'custom';
-export type CountingMethod = 'rolling' | 'calendar_year' | 'fiscal_year' | 'multi_year' | 'weighted_multi_year';
+export type CountingMethod = 'rolling' | 'calendar_year' | 'fiscal_year' | 'multi_year' | 'weighted_multi_year' | 'uk_srt';
 export type JurisdictionStatus = 'safe' | 'warning' | 'danger' | 'critical' | 'exceeded';
 
 /**
@@ -1364,6 +1364,123 @@ export interface JurisdictionSummary {
   // Breakdown data for complex rules
   weightedBreakdown?: WeightedBreakdown;
   multiYearBreakdown?: MultiYearBreakdown;
+  ukSrtBreakdown?: UKSRTBreakdown;
+}
+
+// ============================================
+// UK Statutory Residence Test (SRT) Types
+// ============================================
+
+/**
+ * UK SRT result type
+ */
+export type UKSRTResult = 'resident' | 'non_resident';
+
+/**
+ * UK SRT result reason
+ */
+export type UKSRTResultReason = 'automatic_overseas' | 'automatic_uk' | 'sufficient_ties';
+
+/**
+ * UK connection ties for SRT
+ */
+export interface UKTies {
+  id?: number;
+  family_tie: boolean;
+  family_tie_details?: string;
+  accommodation_tie: boolean;
+  accommodation_tie_details?: string;
+  work_tie: boolean;
+  work_tie_details?: string;
+  ninety_day_tie: boolean;
+  country_tie: boolean;
+  only_home_in_uk: boolean;
+  full_time_work_uk: boolean;
+  leaving_uk_permanently: boolean;
+  notes?: string;
+}
+
+/**
+ * Individual test result
+ */
+export interface UKSRTTest {
+  id: string;
+  label: string;
+  description: string;
+  passed: boolean;
+  requiresInput?: boolean;
+}
+
+/**
+ * Automatic test result (Overseas or UK)
+ */
+export interface UKSRTAutomaticTestResult {
+  passed: boolean;
+  test: string | null;
+  description: string;
+  tests: UKSRTTest[];
+}
+
+/**
+ * Tie breakdown for Sufficient Ties Test
+ */
+export interface UKSRTTieBreakdown {
+  family: boolean;
+  accommodation: boolean;
+  work: boolean;
+  ninety_day: boolean;
+  country: boolean;
+}
+
+/**
+ * Sufficient Ties Test result
+ */
+export interface UKSRTSufficientTiesResult {
+  resident: boolean;
+  tieCount: number;
+  tieBreakdown: UKSRTTieBreakdown;
+  dayThreshold: number;
+  daysInUK: number;
+  wasResidentPrior: boolean;
+  description: string;
+}
+
+/**
+ * Full UK SRT breakdown
+ */
+export interface UKSRTBreakdown {
+  taxYear: number;
+  taxYearLabel: string;
+  ukDays: number;
+  result: UKSRTResult;
+  resultReason: UKSRTResultReason;
+  testPassed?: string | null;
+  testDescription?: string;
+  tieCount: number;
+  wasResidentPrior: boolean;
+  automaticOverseas: UKSRTAutomaticTestResult;
+  automaticUK: UKSRTAutomaticTestResult;
+  sufficientTies: UKSRTSufficientTiesResult | null;
+}
+
+/**
+ * UK ties API response
+ */
+export interface UKTiesResponse {
+  success: boolean;
+  taxYear: number;
+  taxYearLabel: string;
+  ties: UKTies;
+}
+
+/**
+ * UK SRT result API response
+ */
+export interface UKSRTResultResponse {
+  success: boolean;
+  result: UKSRTBreakdown & {
+    ties: UKTies;
+  };
 }
 
 export interface MultiJurisdictionSummary {

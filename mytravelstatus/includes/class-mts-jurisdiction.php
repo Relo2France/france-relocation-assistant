@@ -215,6 +215,45 @@ class MTS_Jurisdiction {
 			)
 		);
 
+		// UK SRT ties endpoints.
+		register_rest_route(
+			$namespace,
+			'/jurisdictions/uk-srt/ties',
+			array(
+				array(
+					'methods'             => 'GET',
+					'callback'            => array( $this, 'get_uk_ties_api' ),
+					'permission_callback' => array( $this, 'check_permission' ),
+					'args'                => array(
+						'tax_year' => array(
+							'sanitize_callback' => 'absint',
+						),
+					),
+				),
+				array(
+					'methods'             => 'PUT',
+					'callback'            => array( $this, 'update_uk_ties_api' ),
+					'permission_callback' => array( $this, 'check_permission' ),
+				),
+			)
+		);
+
+		// UK SRT result endpoint.
+		register_rest_route(
+			$namespace,
+			'/jurisdictions/uk-srt/result',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( $this, 'get_uk_srt_result_api' ),
+				'permission_callback' => array( $this, 'check_permission' ),
+				'args'                => array(
+					'date' => array(
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+				),
+			)
+		);
+
 		// Legacy namespace support (fra-portal/v1/schengen/...).
 		$legacy_namespace = 'fra-portal/v1';
 
@@ -672,6 +711,11 @@ class MTS_Jurisdiction {
 
 			$window_end = clone $window_start;
 			$window_end->modify( '+1 year -1 day' );
+		} elseif ( 'uk_srt' === $rule['countingMethod'] ) {
+			// UK tax year: April 6 to April 5.
+			$window_start = $this->get_uk_tax_year_start( $reference_date );
+			$window_end   = clone $window_start;
+			$window_end->modify( '+1 year -1 day' );
 		}
 
 		// Find next expiring days (for rolling window).
@@ -708,6 +752,11 @@ class MTS_Jurisdiction {
 			$summary['breakdown'] = $this->get_weighted_breakdown( $trips, $rule, $reference_date );
 		} elseif ( 'multi_year' === $rule['countingMethod'] ) {
 			$summary['breakdown'] = $this->get_multi_year_breakdown( $trips, $rule, $reference_date );
+		} elseif ( 'uk_srt' === $rule['countingMethod'] ) {
+			$summary['ukSrtBreakdown'] = $this->get_uk_srt_breakdown( $user_id, $trips, $rule, $reference_date );
+			// For UK SRT, status is determined by the SRT result, not day count percentage.
+			$srt_result = $summary['ukSrtBreakdown']['result'];
+			$summary['status'] = ( 'resident' === $srt_result ) ? 'exceeded' : 'ok';
 		}
 
 		return $summary;
@@ -817,6 +866,9 @@ class MTS_Jurisdiction {
 
 			case 'weighted_multi_year':
 				return $this->calculate_weighted_multi_year( $trips, $rule, $reference_date );
+
+			case 'uk_srt':
+				return $this->calculate_uk_srt_days( $trips, $rule, $reference_date );
 
 			default:
 				return $this->calculate_rolling_window( $trips, $rule['windowDays'], $reference_date );
@@ -1013,6 +1065,575 @@ class MTS_Jurisdiction {
 	}
 
 	/**
+	 * Calculate days for UK Statutory Residence Test.
+	 *
+	 * The UK SRT uses midnight rule: a day counts if you're in UK at midnight.
+	 * UK tax year runs April 6 - April 5.
+	 *
+	 * @param array    $trips          Trips.
+	 * @param array    $rule           Rule with ruleConfig.
+	 * @param DateTime $reference_date Reference date.
+	 * @return int Days in UK (using midnight rule).
+	 */
+	private function calculate_uk_srt_days( $trips, $rule, $reference_date ) {
+		// UK tax year: April 6 to April 5.
+		$tax_year_start = $this->get_uk_tax_year_start( $reference_date );
+		$tax_year_end   = clone $tax_year_start;
+		$tax_year_end->modify( '+1 year -1 day' );
+
+		$days_used = 0;
+
+		foreach ( $trips as $trip ) {
+			$trip_start = new DateTime( $trip['start_date'] );
+			$trip_end   = new DateTime( $trip['end_date'] );
+
+			// Skip trips entirely outside the tax year.
+			if ( $trip_end < $tax_year_start || $trip_start > $tax_year_end ) {
+				continue;
+			}
+
+			// Clamp to tax year and reference date.
+			$effective_start = max( $trip_start, $tax_year_start );
+			$effective_end   = min( $trip_end, $reference_date, $tax_year_end );
+
+			// UK midnight rule: count nights, not days.
+			// Day of arrival doesn't count, day of departure does.
+			// So a trip from Jan 1 to Jan 3 counts as 2 days (nights of Jan 1-2, Jan 2-3).
+			$interval = $effective_start->diff( $effective_end );
+			$days_used += $interval->days; // Not +1 because of midnight rule.
+		}
+
+		return $days_used;
+	}
+
+	/**
+	 * Get UK tax year start date for a reference date.
+	 *
+	 * UK tax year runs April 6 to April 5.
+	 *
+	 * @param DateTime $reference_date Reference date.
+	 * @return DateTime Start of tax year.
+	 */
+	private function get_uk_tax_year_start( $reference_date ) {
+		$year = (int) $reference_date->format( 'Y' );
+		$tax_year_start = new DateTime();
+		$tax_year_start->setDate( $year, 4, 6 ); // April 6.
+		$tax_year_start->setTime( 0, 0, 0 );
+
+		// If reference date is before April 6, use previous year.
+		if ( $reference_date < $tax_year_start ) {
+			$tax_year_start->modify( '-1 year' );
+		}
+
+		return $tax_year_start;
+	}
+
+	/**
+	 * Get UK tax year from a reference date.
+	 *
+	 * Returns the tax year in format "2024/25" for April 6 2024 - April 5 2025.
+	 *
+	 * @param DateTime $reference_date Reference date.
+	 * @return int The starting year of the tax year.
+	 */
+	private function get_uk_tax_year( $reference_date ) {
+		$tax_year_start = $this->get_uk_tax_year_start( $reference_date );
+		return (int) $tax_year_start->format( 'Y' );
+	}
+
+	/**
+	 * Calculate full UK SRT result for a user and tax year.
+	 *
+	 * This evaluates:
+	 * 1. Automatic Overseas Tests (if any pass -> non-resident)
+	 * 2. Automatic UK Tests (if any pass -> resident)
+	 * 3. Sufficient Ties Test (day count vs. number of ties)
+	 *
+	 * @param int      $user_id        User ID.
+	 * @param array    $trips          Trips for UK jurisdiction.
+	 * @param array    $rule           Jurisdiction rule.
+	 * @param DateTime $reference_date Reference date.
+	 * @return array Full SRT result.
+	 */
+	public function calculate_uk_srt_result( $user_id, $trips, $rule, $reference_date ) {
+		$tax_year = $this->get_uk_tax_year( $reference_date );
+		$uk_days  = $this->calculate_uk_srt_days( $trips, $rule, $reference_date );
+
+		// Get UK ties for this tax year.
+		$ties = $this->get_uk_ties( $user_id, $tax_year );
+
+		// Get prior year residency status.
+		$was_resident_prior_year = $this->was_uk_resident_prior_years( $user_id, $reference_date );
+
+		// Parse rule config.
+		$config = isset( $rule['ruleConfig'] ) ? $rule['ruleConfig'] : array();
+
+		// Test 1: Automatic Overseas Tests (if any pass -> definitely non-resident).
+		$overseas_result = $this->test_automatic_overseas( $uk_days, $ties, $was_resident_prior_year, $config );
+		if ( $overseas_result['passed'] ) {
+			return array(
+				'taxYear'           => $tax_year,
+				'taxYearLabel'      => $tax_year . '/' . substr( $tax_year + 1, 2 ),
+				'ukDays'            => $uk_days,
+				'result'            => 'non_resident',
+				'resultReason'      => 'automatic_overseas',
+				'testPassed'        => $overseas_result['test'],
+				'testDescription'   => $overseas_result['description'],
+				'ties'              => $ties,
+				'tieCount'          => $this->count_uk_ties( $ties ),
+				'wasResidentPrior'  => $was_resident_prior_year,
+				'automaticOverseas' => $overseas_result,
+				'automaticUK'       => array( 'passed' => false, 'tests' => array() ),
+				'sufficientTies'    => null,
+			);
+		}
+
+		// Test 2: Automatic UK Tests (if any pass -> definitely resident).
+		$uk_result = $this->test_automatic_uk( $uk_days, $ties, $config );
+		if ( $uk_result['passed'] ) {
+			return array(
+				'taxYear'           => $tax_year,
+				'taxYearLabel'      => $tax_year . '/' . substr( $tax_year + 1, 2 ),
+				'ukDays'            => $uk_days,
+				'result'            => 'resident',
+				'resultReason'      => 'automatic_uk',
+				'testPassed'        => $uk_result['test'],
+				'testDescription'   => $uk_result['description'],
+				'ties'              => $ties,
+				'tieCount'          => $this->count_uk_ties( $ties ),
+				'wasResidentPrior'  => $was_resident_prior_year,
+				'automaticOverseas' => $overseas_result,
+				'automaticUK'       => $uk_result,
+				'sufficientTies'    => null,
+			);
+		}
+
+		// Test 3: Sufficient Ties Test (compare days vs. ties).
+		$ties_result = $this->test_sufficient_ties( $uk_days, $ties, $was_resident_prior_year, $config );
+
+		return array(
+			'taxYear'           => $tax_year,
+			'taxYearLabel'      => $tax_year . '/' . substr( $tax_year + 1, 2 ),
+			'ukDays'            => $uk_days,
+			'result'            => $ties_result['resident'] ? 'resident' : 'non_resident',
+			'resultReason'      => 'sufficient_ties',
+			'testPassed'        => null,
+			'testDescription'   => $ties_result['description'],
+			'ties'              => $ties,
+			'tieCount'          => $this->count_uk_ties( $ties ),
+			'wasResidentPrior'  => $was_resident_prior_year,
+			'automaticOverseas' => $overseas_result,
+			'automaticUK'       => $uk_result,
+			'sufficientTies'    => $ties_result,
+		);
+	}
+
+	/**
+	 * Test Automatic Overseas Tests.
+	 *
+	 * If ANY of these tests pass, the person is automatically non-resident.
+	 *
+	 * @param int   $uk_days               Days in UK.
+	 * @param array $ties                  UK ties data.
+	 * @param bool  $was_resident_prior    Was UK resident in any of prior 3 years.
+	 * @param array $config                Rule configuration.
+	 * @return array Test result.
+	 */
+	private function test_automatic_overseas( $uk_days, $ties, $was_resident_prior, $config ) {
+		$tests = array();
+
+		// Test 1: Resident in UK for 1+ of 3 prior years AND <16 days in UK.
+		$test1_passed = $was_resident_prior && $uk_days < 16;
+		$tests[] = array(
+			'id'          => 'resident_3yr_under_16',
+			'label'       => 'Resident prior + <16 days',
+			'description' => 'Resident in UK for 1+ of 3 prior years AND <16 days in UK this year.',
+			'passed'      => $test1_passed,
+		);
+
+		// Test 2: Not resident in UK for any of 3 prior years AND <46 days in UK.
+		$test2_passed = ! $was_resident_prior && $uk_days < 46;
+		$tests[] = array(
+			'id'          => 'not_resident_3yr_under_46',
+			'label'       => 'Not resident prior + <46 days',
+			'description' => 'Not resident in UK for any of 3 prior years AND <46 days in UK this year.',
+			'passed'      => $test2_passed,
+		);
+
+		// Test 3: Leaving UK permanently during year AND <16 days in UK after departure date.
+		// This requires user input about leaving permanently.
+		$leaving_uk = isset( $ties['leaving_uk_permanently'] ) && $ties['leaving_uk_permanently'];
+		$test3_passed = $leaving_uk && $uk_days < 16;
+		$tests[] = array(
+			'id'          => 'leaving_uk_under_16',
+			'label'       => 'Leaving UK + <16 days',
+			'description' => 'Leaving UK permanently during year AND <16 days in UK after departure date.',
+			'passed'      => $test3_passed,
+			'requiresInput' => true,
+		);
+
+		// Check if any test passed.
+		$passed = $test1_passed || $test2_passed || $test3_passed;
+		$passed_test = null;
+		$description = 'No automatic overseas test conditions met.';
+
+		foreach ( $tests as $test ) {
+			if ( $test['passed'] ) {
+				$passed_test = $test['id'];
+				$description = $test['description'];
+				break;
+			}
+		}
+
+		return array(
+			'passed'      => $passed,
+			'test'        => $passed_test,
+			'description' => $description,
+			'tests'       => $tests,
+		);
+	}
+
+	/**
+	 * Test Automatic UK Tests.
+	 *
+	 * If ANY of these tests pass, the person is automatically UK resident.
+	 *
+	 * @param int   $uk_days Days in UK.
+	 * @param array $ties    UK ties data.
+	 * @param array $config  Rule configuration.
+	 * @return array Test result.
+	 */
+	private function test_automatic_uk( $uk_days, $ties, $config ) {
+		$tests = array();
+
+		// Test 1: 183+ days in UK (midnight rule applies).
+		$test1_passed = $uk_days >= 183;
+		$tests[] = array(
+			'id'          => '183_days',
+			'label'       => '183+ days in UK',
+			'description' => 'Present in UK for 183+ days (midnight rule).',
+			'passed'      => $test1_passed,
+		);
+
+		// Test 2: Only home is in UK AND present for 30+ days.
+		$only_home = isset( $ties['only_home_in_uk'] ) && $ties['only_home_in_uk'];
+		$test2_passed = $only_home && $uk_days >= 30;
+		$tests[] = array(
+			'id'          => 'only_home',
+			'label'       => 'Only home in UK',
+			'description' => 'Only home is in UK AND present for 30+ days.',
+			'passed'      => $test2_passed,
+			'requiresInput' => true,
+		);
+
+		// Test 3: Full-time work in UK (35+ hours/week for 365 days).
+		$full_time_work = isset( $ties['full_time_work_uk'] ) && $ties['full_time_work_uk'];
+		$tests[] = array(
+			'id'          => 'full_time_work',
+			'label'       => 'Full-time work in UK',
+			'description' => 'Full-time work in UK (35+ hours/week for 365 days with no significant break).',
+			'passed'      => $full_time_work,
+			'requiresInput' => true,
+		);
+
+		// Check if any test passed.
+		$passed = $test1_passed || $test2_passed || $full_time_work;
+		$passed_test = null;
+		$description = 'No automatic UK test conditions met.';
+
+		foreach ( $tests as $test ) {
+			if ( $test['passed'] ) {
+				$passed_test = $test['id'];
+				$description = $test['description'];
+				break;
+			}
+		}
+
+		return array(
+			'passed'      => $passed,
+			'test'        => $passed_test,
+			'description' => $description,
+			'tests'       => $tests,
+		);
+	}
+
+	/**
+	 * Test Sufficient Ties Test.
+	 *
+	 * Compare number of UK ties against day count thresholds.
+	 * Thresholds differ based on whether person was UK resident in prior 3 years.
+	 *
+	 * @param int   $uk_days              Days in UK.
+	 * @param array $ties                 UK ties data.
+	 * @param bool  $was_resident_prior   Was UK resident in any of prior 3 years.
+	 * @param array $config               Rule configuration.
+	 * @return array Test result.
+	 */
+	private function test_sufficient_ties( $uk_days, $ties, $was_resident_prior, $config ) {
+		$tie_count = $this->count_uk_ties( $ties );
+
+		// Sufficient Ties Test thresholds.
+		// If was_resident_prior: fewer days needed to be resident (stricter).
+		// If not resident prior: more days needed to be resident (more lenient).
+		$thresholds = isset( $config['tie_thresholds'] ) ? $config['tie_thresholds'] : array(
+			'0' => array( 'not_resident_prior' => 183, 'resident_prior' => 183 ), // Handled by automatic test.
+			'1' => array( 'not_resident_prior' => 121, 'resident_prior' => 91 ),
+			'2' => array( 'not_resident_prior' => 91, 'resident_prior' => 61 ),
+			'3' => array( 'not_resident_prior' => 46, 'resident_prior' => 46 ),
+			'4' => array( 'not_resident_prior' => 16, 'resident_prior' => 16 ),
+			'5' => array( 'not_resident_prior' => 16, 'resident_prior' => 16 ), // Country tie only for arrivers.
+		);
+
+		// Get the threshold for this tie count.
+		$tie_key   = min( (string) $tie_count, '5' );
+		$threshold = $thresholds[ $tie_key ];
+		$day_threshold = $was_resident_prior ? $threshold['resident_prior'] : $threshold['not_resident_prior'];
+
+		// Resident if days >= threshold.
+		$is_resident = $uk_days >= $day_threshold;
+
+		// Build tie breakdown.
+		$tie_breakdown = array(
+			'family'        => isset( $ties['family_tie'] ) && $ties['family_tie'],
+			'accommodation' => isset( $ties['accommodation_tie'] ) && $ties['accommodation_tie'],
+			'work'          => isset( $ties['work_tie'] ) && $ties['work_tie'],
+			'ninety_day'    => isset( $ties['ninety_day_tie'] ) && $ties['ninety_day_tie'],
+			'country'       => isset( $ties['country_tie'] ) && $ties['country_tie'],
+		);
+
+		$description = sprintf(
+			'With %d UK %s and %d days in UK%s, you %s the %d-day threshold.',
+			$tie_count,
+			$tie_count === 1 ? 'tie' : 'ties',
+			$uk_days,
+			$was_resident_prior ? ' (was resident in prior years)' : ' (not resident in prior years)',
+			$is_resident ? 'meet or exceed' : 'are below',
+			$day_threshold
+		);
+
+		return array(
+			'resident'      => $is_resident,
+			'tieCount'      => $tie_count,
+			'tieBreakdown'  => $tie_breakdown,
+			'dayThreshold'  => $day_threshold,
+			'daysInUK'      => $uk_days,
+			'wasResidentPrior' => $was_resident_prior,
+			'description'   => $description,
+		);
+	}
+
+	/**
+	 * Count number of UK ties that are active.
+	 *
+	 * @param array $ties UK ties data.
+	 * @return int Number of ties.
+	 */
+	private function count_uk_ties( $ties ) {
+		$count = 0;
+
+		if ( isset( $ties['family_tie'] ) && $ties['family_tie'] ) {
+			$count++;
+		}
+		if ( isset( $ties['accommodation_tie'] ) && $ties['accommodation_tie'] ) {
+			$count++;
+		}
+		if ( isset( $ties['work_tie'] ) && $ties['work_tie'] ) {
+			$count++;
+		}
+		if ( isset( $ties['ninety_day_tie'] ) && $ties['ninety_day_tie'] ) {
+			$count++;
+		}
+		if ( isset( $ties['country_tie'] ) && $ties['country_tie'] ) {
+			$count++;
+		}
+
+		return $count;
+	}
+
+	/**
+	 * Get UK ties for a user and tax year.
+	 *
+	 * @param int $user_id  User ID.
+	 * @param int $tax_year Tax year (starting year).
+	 * @return array UK ties data.
+	 */
+	public function get_uk_ties( $user_id, $tax_year ) {
+		global $wpdb;
+
+		$table = MTS_Schema::get_table( 'uk_ties' );
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$row = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM $table WHERE user_id = %d AND tax_year = %d",
+				$user_id,
+				$tax_year
+			),
+			ARRAY_A
+		);
+
+		if ( ! $row ) {
+			// Return default values.
+			return array(
+				'family_tie'              => false,
+				'family_tie_details'      => '',
+				'accommodation_tie'       => false,
+				'accommodation_tie_details' => '',
+				'work_tie'                => false,
+				'work_tie_details'        => '',
+				'ninety_day_tie'          => false,
+				'country_tie'             => false,
+				'only_home_in_uk'         => false,
+				'full_time_work_uk'       => false,
+				'leaving_uk_permanently'  => false,
+				'notes'                   => '',
+			);
+		}
+
+		return array(
+			'id'                       => (int) $row['id'],
+			'family_tie'               => (bool) $row['family_tie'],
+			'family_tie_details'       => $row['family_tie_details'] ?? '',
+			'accommodation_tie'        => (bool) $row['accommodation_tie'],
+			'accommodation_tie_details' => $row['accommodation_tie_details'] ?? '',
+			'work_tie'                 => (bool) $row['work_tie'],
+			'work_tie_details'         => $row['work_tie_details'] ?? '',
+			'ninety_day_tie'           => (bool) $row['ninety_day_tie'],
+			'country_tie'              => (bool) $row['country_tie'],
+			'only_home_in_uk'          => (bool) $row['only_home_in_uk'],
+			'full_time_work_uk'        => (bool) $row['full_time_work_uk'],
+			'leaving_uk_permanently'   => (bool) $row['leaving_uk_permanently'],
+			'notes'                    => $row['notes'] ?? '',
+		);
+	}
+
+	/**
+	 * Update UK ties for a user and tax year.
+	 *
+	 * @param int   $user_id  User ID.
+	 * @param int   $tax_year Tax year (starting year).
+	 * @param array $ties     UK ties data.
+	 * @return bool Success.
+	 */
+	public function update_uk_ties( $user_id, $tax_year, $ties ) {
+		global $wpdb;
+
+		$table = MTS_Schema::get_table( 'uk_ties' );
+
+		// Check if record exists.
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$exists = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT id FROM $table WHERE user_id = %d AND tax_year = %d",
+				$user_id,
+				$tax_year
+			)
+		);
+
+		$data = array(
+			'family_tie'               => isset( $ties['family_tie'] ) ? (int) $ties['family_tie'] : 0,
+			'family_tie_details'       => isset( $ties['family_tie_details'] ) ? sanitize_textarea_field( $ties['family_tie_details'] ) : null,
+			'accommodation_tie'        => isset( $ties['accommodation_tie'] ) ? (int) $ties['accommodation_tie'] : 0,
+			'accommodation_tie_details' => isset( $ties['accommodation_tie_details'] ) ? sanitize_textarea_field( $ties['accommodation_tie_details'] ) : null,
+			'work_tie'                 => isset( $ties['work_tie'] ) ? (int) $ties['work_tie'] : 0,
+			'work_tie_details'         => isset( $ties['work_tie_details'] ) ? sanitize_textarea_field( $ties['work_tie_details'] ) : null,
+			'ninety_day_tie'           => isset( $ties['ninety_day_tie'] ) ? (int) $ties['ninety_day_tie'] : 0,
+			'country_tie'              => isset( $ties['country_tie'] ) ? (int) $ties['country_tie'] : 0,
+			'only_home_in_uk'          => isset( $ties['only_home_in_uk'] ) ? (int) $ties['only_home_in_uk'] : 0,
+			'full_time_work_uk'        => isset( $ties['full_time_work_uk'] ) ? (int) $ties['full_time_work_uk'] : 0,
+			'leaving_uk_permanently'   => isset( $ties['leaving_uk_permanently'] ) ? (int) $ties['leaving_uk_permanently'] : 0,
+			'notes'                    => isset( $ties['notes'] ) ? sanitize_textarea_field( $ties['notes'] ) : null,
+		);
+
+		$format = array( '%d', '%s', '%d', '%s', '%d', '%s', '%d', '%d', '%d', '%d', '%d', '%s' );
+
+		if ( $exists ) {
+			return false !== $wpdb->update(
+				$table,
+				$data,
+				array(
+					'user_id'  => $user_id,
+					'tax_year' => $tax_year,
+				),
+				$format,
+				array( '%d', '%d' )
+			);
+		}
+
+		$data['user_id']  = $user_id;
+		$data['tax_year'] = $tax_year;
+		$format[] = '%d';
+		$format[] = '%d';
+
+		return false !== $wpdb->insert( $table, $data, $format );
+	}
+
+	/**
+	 * Check if user was UK resident in any of the prior 3 years.
+	 *
+	 * @param int      $user_id        User ID.
+	 * @param DateTime $reference_date Reference date.
+	 * @return bool Was UK resident in prior years.
+	 */
+	private function was_uk_resident_prior_years( $user_id, $reference_date ) {
+		// Check stored SRT results for prior 3 years.
+		global $wpdb;
+
+		$table = MTS_Schema::get_table( 'uk_ties' );
+		$current_tax_year = $this->get_uk_tax_year( $reference_date );
+
+		// Check the prior 3 tax years.
+		$prior_years = array(
+			$current_tax_year - 1,
+			$current_tax_year - 2,
+			$current_tax_year - 3,
+		);
+
+		foreach ( $prior_years as $year ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$result = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT srt_result FROM $table WHERE user_id = %d AND tax_year = %d",
+					$user_id,
+					$year
+				)
+			);
+
+			if ( 'resident' === $result ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Get UK SRT breakdown for summary display.
+	 *
+	 * @param int      $user_id        User ID.
+	 * @param array    $trips          Trips.
+	 * @param array    $rule           Rule.
+	 * @param DateTime $reference_date Reference date.
+	 * @return array UK SRT breakdown.
+	 */
+	private function get_uk_srt_breakdown( $user_id, $trips, $rule, $reference_date ) {
+		$result = $this->calculate_uk_srt_result( $user_id, $trips, $rule, $reference_date );
+
+		return array(
+			'taxYear'           => $result['taxYear'],
+			'taxYearLabel'      => $result['taxYearLabel'],
+			'ukDays'            => $result['ukDays'],
+			'result'            => $result['result'],
+			'resultReason'      => $result['resultReason'],
+			'tieCount'          => $result['tieCount'],
+			'wasResidentPrior'  => $result['wasResidentPrior'],
+			'automaticOverseas' => $result['automaticOverseas'],
+			'automaticUK'       => $result['automaticUK'],
+			'sufficientTies'    => $result['sufficientTies'],
+		);
+	}
+
+	/**
 	 * Calculate next expiring days for rolling window.
 	 *
 	 * @param array    $trips          Trips.
@@ -1206,6 +1827,115 @@ class MTS_Jurisdiction {
 				'success'   => true,
 				'code'      => $code,
 				'responses' => $sanitized,
+			)
+		);
+	}
+
+	/**
+	 * Get UK ties for API.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function get_uk_ties_api( $request ) {
+		$user_id  = get_current_user_id();
+		$tax_year = $request->get_param( 'tax_year' );
+
+		// If no tax year provided, use current.
+		if ( ! $tax_year ) {
+			$tax_year = $this->get_uk_tax_year( new DateTime() );
+		}
+
+		$ties = $this->get_uk_ties( $user_id, (int) $tax_year );
+
+		return rest_ensure_response(
+			array(
+				'success' => true,
+				'taxYear' => (int) $tax_year,
+				'taxYearLabel' => $tax_year . '/' . substr( $tax_year + 1, 2 ),
+				'ties'    => $ties,
+			)
+		);
+	}
+
+	/**
+	 * Update UK ties via API.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function update_uk_ties_api( $request ) {
+		$user_id = get_current_user_id();
+		$params  = $request->get_json_params();
+
+		$tax_year = isset( $params['tax_year'] ) ? (int) $params['tax_year'] : $this->get_uk_tax_year( new DateTime() );
+		$ties     = isset( $params['ties'] ) ? $params['ties'] : $params;
+
+		// Validate tax year.
+		$current_year = (int) gmdate( 'Y' );
+		if ( $tax_year < 2013 || $tax_year > $current_year + 1 ) {
+			return new WP_Error(
+				'invalid_tax_year',
+				__( 'Invalid tax year.', 'mytravelstatus' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		$success = $this->update_uk_ties( $user_id, $tax_year, $ties );
+
+		if ( ! $success ) {
+			return new WP_Error(
+				'update_failed',
+				__( 'Failed to update UK ties.', 'mytravelstatus' ),
+				array( 'status' => 500 )
+			);
+		}
+
+		// Re-fetch to return updated data.
+		$updated_ties = $this->get_uk_ties( $user_id, $tax_year );
+
+		return rest_ensure_response(
+			array(
+				'success' => true,
+				'taxYear' => $tax_year,
+				'taxYearLabel' => $tax_year . '/' . substr( $tax_year + 1, 2 ),
+				'ties'    => $updated_ties,
+			)
+		);
+	}
+
+	/**
+	 * Get UK SRT result via API.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function get_uk_srt_result_api( $request ) {
+		$user_id = get_current_user_id();
+		$date    = $request->get_param( 'date' );
+
+		$reference_date = $date ? new DateTime( $date ) : new DateTime();
+
+		// Get the UK SRT rule.
+		$rule = $this->get_rule( 'uk_srt' );
+		if ( ! $rule ) {
+			return new WP_Error(
+				'not_found',
+				__( 'UK SRT jurisdiction not found.', 'mytravelstatus' ),
+				array( 'status' => 404 )
+			);
+		}
+
+		// Get trips for UK.
+		$trips = $this->get_trips_for_jurisdiction( $user_id, 'uk_srt' );
+
+		// Calculate full SRT result.
+		$result = $this->calculate_uk_srt_result( $user_id, $trips, $rule, $reference_date );
+
+		return rest_ensure_response(
+			array(
+				'success' => true,
+				'result'  => $result,
 			)
 		);
 	}
