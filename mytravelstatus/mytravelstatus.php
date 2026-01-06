@@ -66,6 +66,9 @@ function mts_init() {
 	// Initialize core.
 	MTS_Core::get_instance();
 
+	// Initialize test integration (creates test page and enables access).
+	MTS_Test_Integration::get_instance();
+
 	// Hook cache invalidation to trip modifications.
 	add_action( 'mts_trip_created', 'mts_invalidate_user_cache', 10, 2 );
 	add_action( 'mts_trip_updated', 'mts_invalidate_user_cache', 10, 2 );
@@ -103,6 +106,10 @@ function mts_activate() {
 	// Set default options.
 	add_option( 'mts_version', MTS_VERSION );
 	add_option( 'mts_global_enabled', '0' ); // Default OFF for standalone.
+
+	// Enable test mode for development/testing.
+	require_once MTS_PLUGIN_DIR . 'includes/class-mts-test-integration.php';
+	MTS_Test_Integration::activate_test_mode();
 
 	// Flush rewrite rules.
 	flush_rewrite_rules();
