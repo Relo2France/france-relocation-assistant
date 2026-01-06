@@ -255,3 +255,203 @@ data class ApiError(
     val message: String,
     val data: Map<String, String>? = null
 )
+
+// ===================================
+// Multi-Jurisdiction Models
+// ===================================
+
+/**
+ * Jurisdiction type enumeration
+ */
+@Serializable
+enum class JurisdictionType {
+    @SerialName("zone") ZONE,
+    @SerialName("country") COUNTRY,
+    @SerialName("state") STATE
+}
+
+/**
+ * Jurisdiction category enumeration
+ */
+@Serializable
+enum class JurisdictionCategory {
+    @SerialName("visa") VISA,
+    @SerialName("tax") TAX,
+    @SerialName("residency") RESIDENCY
+}
+
+/**
+ * Counting method for day calculations
+ */
+@Serializable
+enum class CountingMethod {
+    @SerialName("rolling") ROLLING,
+    @SerialName("calendar_year") CALENDAR_YEAR,
+    @SerialName("fiscal_year") FISCAL_YEAR,
+    @SerialName("multi_year") MULTI_YEAR,
+    @SerialName("weighted_multi_year") WEIGHTED_MULTI_YEAR,
+    @SerialName("uk_srt") UK_SRT
+}
+
+/**
+ * Jurisdiction rule definition
+ */
+@Serializable
+data class JurisdictionRule(
+    val id: Int? = null,
+    val code: String,
+    val name: String,
+    val type: JurisdictionType,
+    val category: JurisdictionCategory,
+    @SerialName("days_allowed") val daysAllowed: Int,
+    @SerialName("window_days") val windowDays: Int,
+    @SerialName("counting_method") val countingMethod: CountingMethod,
+    @SerialName("reset_month") val resetMonth: Int? = null,
+    @SerialName("reset_day") val resetDay: Int? = null,
+    val description: String? = null,
+    val notes: String? = null,
+    @SerialName("rule_config") val ruleConfig: Map<String, String>? = null,
+    @SerialName("country_code") val countryCode: String? = null,
+    @SerialName("flag_emoji") val flagEmoji: String? = null,
+    @SerialName("is_system") val isSystem: Boolean = false,
+    @SerialName("is_active") val isActive: Boolean = true,
+    @SerialName("display_order") val displayOrder: Int = 0
+)
+
+/**
+ * Jurisdiction compliance summary
+ */
+@Serializable
+data class JurisdictionSummary(
+    @SerialName("jurisdiction_code") val jurisdictionCode: String,
+    @SerialName("jurisdiction_name") val jurisdictionName: String,
+    val category: String? = null,
+    @SerialName("flag_emoji") val flagEmoji: String? = null,
+    @SerialName("days_used") val daysUsed: Int,
+    @SerialName("days_allowed") val daysAllowed: Int,
+    @SerialName("days_remaining") val daysRemaining: Int,
+    val percentage: Double,
+    val status: String,
+    @SerialName("window_start") val windowStart: String,
+    @SerialName("window_end") val windowEnd: String,
+    @SerialName("reference_date") val referenceDate: String,
+    @SerialName("counting_method") val countingMethod: String,
+    @SerialName("next_expiring_date") val nextExpiringDate: String? = null,
+    @SerialName("next_expiring_days") val nextExpiringDays: Int? = null,
+    @SerialName("trip_count") val tripCount: Int,
+
+    // Optional breakdowns
+    @SerialName("weighted_breakdown") val weightedBreakdown: WeightedBreakdown? = null,
+    @SerialName("multi_year_breakdown") val multiYearBreakdown: MultiYearBreakdown? = null,
+    @SerialName("uk_srt_breakdown") val ukSrtBreakdown: UKSRTBreakdown? = null
+) {
+    fun isOk(): Boolean = status == "ok"
+    fun isWarning(): Boolean = status == "warning"
+    fun isCritical(): Boolean = status == "critical"
+    fun isExceeded(): Boolean = status == "exceeded"
+}
+
+/**
+ * US SPT weighted breakdown
+ */
+@Serializable
+data class WeightedBreakdown(
+    val years: List<YearBreakdown>,
+    @SerialName("total_weighted") val totalWeighted: Double,
+    val threshold: Int,
+    @SerialName("meets_threshold") val meetsThreshold: Boolean,
+    @SerialName("meets_current_year_minimum") val meetsCurrentYearMinimum: Boolean
+)
+
+@Serializable
+data class YearBreakdown(
+    val year: Int,
+    @SerialName("actual_days") val actualDays: Int,
+    val weight: Double,
+    @SerialName("weighted_days") val weightedDays: Double
+)
+
+/**
+ * Ireland multi-year breakdown
+ */
+@Serializable
+data class MultiYearBreakdown(
+    @SerialName("current_year") val currentYear: YearDays,
+    @SerialName("prior_year") val priorYear: YearDays,
+    @SerialName("combined_days") val combinedDays: Int,
+    @SerialName("primary_threshold") val primaryThreshold: Int,
+    @SerialName("secondary_threshold") val secondaryThreshold: Int,
+    @SerialName("meets_primary") val meetsPrimary: Boolean,
+    @SerialName("meets_secondary") val meetsSecondary: Boolean
+)
+
+@Serializable
+data class YearDays(
+    val year: Int,
+    val days: Int
+)
+
+/**
+ * UK SRT breakdown
+ */
+@Serializable
+data class UKSRTBreakdown(
+    val result: String,
+    @SerialName("days_in_uk") val daysInUK: Int,
+    @SerialName("auto_overseas") val autoOverseas: AutoTestResult? = null,
+    @SerialName("auto_uk") val autoUK: AutoTestResult? = null,
+    @SerialName("sufficient_ties") val sufficientTies: SufficientTiesResult? = null,
+    val explanation: String? = null
+) {
+    fun isResident(): Boolean = result == "resident"
+    fun isNonResident(): Boolean = result == "non_resident"
+}
+
+@Serializable
+data class AutoTestResult(
+    val passed: Boolean,
+    val test: String? = null,
+    val description: String? = null
+)
+
+@Serializable
+data class SufficientTiesResult(
+    val resident: Boolean,
+    @SerialName("tie_count") val tieCount: Int,
+    @SerialName("tie_breakdown") val tieBreakdown: TieBreakdown,
+    @SerialName("day_threshold") val dayThreshold: Int,
+    @SerialName("days_in_uk") val daysInUK: Int
+)
+
+@Serializable
+data class TieBreakdown(
+    val family: Boolean,
+    val accommodation: Boolean,
+    val work: Boolean,
+    @SerialName("ninety_day") val ninetyDay: Boolean,
+    val country: Boolean
+)
+
+/**
+ * Compliance overview across all jurisdictions
+ */
+@Serializable
+data class ComplianceOverview(
+    @SerialName("total_jurisdictions") val totalJurisdictions: Int,
+    @SerialName("critical_count") val criticalCount: Int,
+    @SerialName("warning_count") val warningCount: Int,
+    @SerialName("ok_count") val okCount: Int,
+    @SerialName("exceeded_count") val exceededCount: Int,
+    val summaries: List<JurisdictionSummary>
+) {
+    fun hasCriticalIssues(): Boolean = criticalCount > 0 || exceededCount > 0
+    fun needsAttention(): Boolean = warningCount > 0
+}
+
+/**
+ * Tracked jurisdictions response
+ */
+@Serializable
+data class TrackedJurisdictionsResponse(
+    val jurisdictions: List<String>
+)

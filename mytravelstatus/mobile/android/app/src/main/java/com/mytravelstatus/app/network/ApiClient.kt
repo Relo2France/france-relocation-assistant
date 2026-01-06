@@ -189,6 +189,58 @@ class ApiClient private constructor(private val context: android.content.Context
         return post("/device/unregister", mapOf("device_id" to deviceId))
     }
 
+    // MARK: - Multi-Jurisdiction
+
+    /**
+     * Get all tracked jurisdictions with summaries
+     */
+    suspend fun getMultiJurisdictionSummary(): Result<Map<String, JurisdictionSummary>> {
+        return get("/jurisdictions/summary")
+    }
+
+    /**
+     * Get compliance overview (aggregate status across jurisdictions)
+     */
+    suspend fun getComplianceOverview(): Result<ComplianceOverview> {
+        return get("/jurisdictions/overview")
+    }
+
+    /**
+     * Get all available jurisdiction rules
+     */
+    suspend fun getJurisdictionRules(
+        type: String? = null,
+        category: String? = null
+    ): Result<List<JurisdictionRule>> {
+        val params = buildList {
+            type?.let { add("type=$it") }
+            category?.let { add("category=$it") }
+        }
+        val queryString = if (params.isNotEmpty()) "?${params.joinToString("&")}" else ""
+        return get("/jurisdictions/rules$queryString")
+    }
+
+    /**
+     * Get user's tracked jurisdictions
+     */
+    suspend fun getTrackedJurisdictions(): Result<TrackedJurisdictionsResponse> {
+        return get("/jurisdictions/tracked")
+    }
+
+    /**
+     * Update user's tracked jurisdictions
+     */
+    suspend fun updateTrackedJurisdictions(codes: List<String>): Result<Unit> {
+        return put("/jurisdictions/tracked", mapOf("jurisdictions" to codes))
+    }
+
+    /**
+     * Get summary for a specific jurisdiction
+     */
+    suspend fun getJurisdictionSummary(code: String): Result<JurisdictionSummary> {
+        return get("/jurisdictions/$code/summary")
+    }
+
     // MARK: - HTTP Methods
 
     private suspend inline fun <reified T> get(endpoint: String): Result<T> {
