@@ -69,6 +69,11 @@ function mts_init() {
 	// Initialize test integration (creates test page and enables access).
 	MTS_Test_Integration::get_instance();
 
+	// Initialize admin test runner (for running tests from WordPress admin).
+	if ( is_admin() ) {
+		MTS_Admin_Test_Runner::get_instance();
+	}
+
 	// Hook cache invalidation to trip modifications.
 	add_action( 'mts_trip_created', 'mts_invalidate_user_cache', 10, 2 );
 	add_action( 'mts_trip_updated', 'mts_invalidate_user_cache', 10, 2 );
