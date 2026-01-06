@@ -141,44 +141,56 @@ export default function MultiFactorIndicators({
     );
   }
 
+  const HeaderContent = () => (
+    <>
+      <StatusIcon className="w-5 h-5 flex-shrink-0" aria-hidden="true" />
+      <div className="flex-1 text-left">
+        <h4 className="font-medium">Residency Factors</h4>
+        <p className="text-sm opacity-75">
+          {factorLogic === 'any'
+            ? 'Any factor may trigger tax residency'
+            : factorLogic === 'all'
+            ? 'All factors required for residency'
+            : 'Weighted assessment of factors'}
+        </p>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-medium">
+          {activeFactorCount}/{totalFactors}
+        </span>
+        {compact && (
+          isExpanded ? (
+            <ChevronUp className="w-4 h-4" aria-hidden="true" />
+          ) : (
+            <ChevronDown className="w-4 h-4" aria-hidden="true" />
+          )
+        )}
+      </div>
+    </>
+  );
+
   return (
     <div className={clsx('rounded-lg border', statusColors[overallStatus], className)}>
-      {/* Header */}
-      <div
-        className={clsx(
-          'flex items-center gap-3 px-4 py-3',
-          compact && 'cursor-pointer'
-        )}
-        onClick={compact ? () => setIsExpanded(!isExpanded) : undefined}
-      >
-        <StatusIcon className="w-5 h-5 flex-shrink-0" aria-hidden="true" />
-        <div className="flex-1">
-          <h4 className="font-medium">Residency Factors</h4>
-          <p className="text-sm opacity-75">
-            {factorLogic === 'any'
-              ? 'Any factor may trigger tax residency'
-              : factorLogic === 'all'
-              ? 'All factors required for residency'
-              : 'Weighted assessment of factors'}
-          </p>
+      {/* Header - button when compact for accessibility */}
+      {compact ? (
+        <button
+          type="button"
+          className="w-full flex items-center gap-3 px-4 py-3 cursor-pointer"
+          onClick={() => setIsExpanded(!isExpanded)}
+          aria-expanded={isExpanded}
+          aria-controls="factor-list"
+        >
+          <HeaderContent />
+        </button>
+      ) : (
+        <div className="flex items-center gap-3 px-4 py-3">
+          <HeaderContent />
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">
-            {activeFactorCount}/{totalFactors}
-          </span>
-          {compact && (
-            isExpanded ? (
-              <ChevronUp className="w-4 h-4" aria-hidden="true" />
-            ) : (
-              <ChevronDown className="w-4 h-4" aria-hidden="true" />
-            )
-          )}
-        </div>
-      </div>
+      )}
 
       {/* Factor List */}
       {isExpanded && (
-        <div className="border-t border-current/20 px-4 py-3 space-y-3">
+        <div id="factor-list" className="border-t border-current/20 px-4 py-3 space-y-3">
           {factors.map((factor: ResidencyFactor) => (
             <FactorItem
               key={factor.id}

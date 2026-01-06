@@ -68,7 +68,8 @@
 - Multi-jurisdiction expansion (see Appendix C for detailed 6-phase plan)
   - Phase 1: Foundation + France tax - **Complete**
   - Phase 2: Top Schengen EU Countries (multi-factor) - **Complete**
-  - Phase 3-5: 15+ jurisdictions, PDF reports, native sync
+  - Phase 3: UK SRT, US SPT, Canada, Mexico - **Complete**
+  - Phase 4-5: Ireland, Japan, Singapore, NZ, Australia, PDF reports, native sync
   - Phase 6: Other relo sites (Relo2Spain, Relo2Portugal, etc.)
 
 ### Recently Completed
@@ -91,7 +92,7 @@
 | Member Tools Plugin | v2.1.0 | Active |
 | React Portal | v2.1.0 | Active |
 | Theme | v1.2.4 | Active |
-| **MyTravelStatus Plugin** | **v1.7.1** | **Active** |
+| **MyTravelStatus Plugin** | **v1.8.1** | **Active** |
 | MyTravelStatus iOS | v1.0.0 | In Development |
 | MyTravelStatus Android | v1.0.0 | In Development |
 
@@ -667,6 +668,31 @@ The WordPress theme defines global `.btn-primary` with navy color. Portal button
 
 ## 13. Session History
 
+### January 6, 2026 (Session 7)
+- **Multi-Jurisdiction Expansion Phase 3 Completion** - UK + Americas:
+  - **UK SRT** (completed in previous session):
+    - Full Statutory Residence Test with Automatic Overseas/UK tests
+    - Sufficient Ties test with 5 connection ties + prior residency tracking
+    - UK tax year support (April 6 - April 5)
+    - UKTiesQuestionnaire and UKSRTStatus components
+  - **US SPT Verification:**
+    - Fixed API key mismatch: `breakdown` → `weightedBreakdown`
+    - Added missing fields to get_weighted_breakdown: totalWeighted, threshold, meetsThreshold, meetsCurrentYearMinimum
+    - Frontend properly displays 3-year weighted breakdown
+  - **Canada Multi-Factor Implementation (v1.8.1):**
+    - Added 5 significant residential ties (dwelling, spouse/partner, dependents, personal property, social/economic ties)
+    - Primary ties (weight 1.0), secondary ties (weight 0.5)
+    - factor_logic: 'any' with day_threshold_applies: true
+    - Database migration for existing installations
+  - **Mexico:** Already functional (simple 183-day calendar year from Phase 1)
+  - **Cross-Jurisdiction Test Suite:**
+    - Created `tests/test-jurisdiction-calculators.php`
+    - 25 test cases covering US SPT, UK SRT, Ireland, Canada, Schengen, Mexico, Germany
+    - All tests passing
+  - **Accessibility Fix:**
+    - Converted clickable div to button in MultiFactorIndicators for keyboard accessibility
+  - **Version:** v1.8.1 (DB_VERSION 1.8.1)
+
 ### January 6, 2026 (Session 6)
 - **Multi-Jurisdiction Expansion Phase 2 Implementation** - EU Multi-Factor Rules:
   - **Database Schema v1.7.1:**
@@ -837,8 +863,8 @@ The WordPress theme defines global `.btn-primary` with navy color. Portal button
   - Compliance Quick View UI
 
 ### Medium Term (Phases 2-5)
-- [ ] **Phase 2**: Spain, Portugal, Germany, Italy, Netherlands
-- [ ] **Phase 3**: UK SRT, US SPT, Canada, Mexico
+- [x] **Phase 2**: Spain, Portugal, Germany, Italy, Netherlands
+- [x] **Phase 3**: UK SRT, US SPT, Canada, Mexico
 - [ ] **Phase 4**: Ireland, Japan, Singapore, NZ, Australia + PDF Reports
 - [ ] **Phase 5**: Native app sync, widgets, polish
 - [ ] Family sync in native apps
@@ -1110,14 +1136,15 @@ Blockers resolved:
 
 **Deliverables:**
 - [x] UK SRT fully implemented with ties questionnaire
-- [ ] US SPT with 3-year rolling calculation
-- [ ] Canada with ties indicator
-- [ ] Mexico simple day count
+- [x] US SPT with 3-year rolling calculation
+- [x] Canada with ties indicator (multi-factor significant residential ties)
+- [x] Mexico simple day count
 
 **Development Notes (Phase 3):**
 ```
 Started: 2026-01-06
 UK SRT Completed: 2026-01-06
+Phase 3 Completed: 2026-01-06
 
 UK SRT Implementation Details:
 - Database: Added wp_fra_uk_ties table (uk_srt counting method)
@@ -1126,15 +1153,40 @@ UK SRT Implementation Details:
 - Frontend: UKTiesQuestionnaire (5 ties + automatic conditions), UKSRTStatus (full result display)
 - Integrated into JurisdictionOverview with expandable SRT details
 
-Features:
+UK SRT Features:
 - Midnight rule for day counting (UK tax year April 6 - April 5)
 - 5 connection ties: family, accommodation, work, 90-day, country
 - Automatic test conditions: only home in UK, full-time work, leaving UK permanently
 - Prior year residency tracking for tie thresholds
 - Complete test breakdown with pass/fail indicators
 
+US SPT Implementation (completed during Phase 1, verified Phase 3):
+- weighted_multi_year counting method with formula: Current×1.0 + Prior×⅓ + 2nd Prior×⅙
+- 31-day minimum current year requirement enforced
+- weightedBreakdown returned in API with totalWeighted, threshold, meetsThreshold
+- Frontend displays year-by-year breakdown with calculated weighted days
+
+Canada Implementation (v1.8.1):
+- Added multi-factor rule_config with 5 significant residential ties:
+  - Primary ties (weight 1.0): dwelling, spouse/partner, dependents
+  - Secondary ties (weight 0.5): personal property, social/economic ties
+- factor_logic: 'any' - any primary tie can indicate residency
+- day_threshold_applies: true - 183+ days = deemed resident regardless of ties
+- Database migration in v1.8.1 for existing installations
+
+Mexico Implementation:
+- Simple 183-day calendar year (mx_tax) - already in system from Phase 1
+
+Cross-Jurisdiction Test Suite:
+- Created tests/test-jurisdiction-calculators.php
+- 25 test cases covering: US SPT, UK SRT, Ireland, Canada, Schengen, Mexico, Germany
+- All tests passing
+
+Version: v1.8.1 (DB_VERSION 1.8.1)
+
 Issues encountered:
-- None significant
+- Backend returned 'breakdown' but frontend expected 'weightedBreakdown' - fixed key name
+- get_weighted_breakdown was missing totalWeighted, threshold fields - added
 
 Blockers resolved:
 - None
@@ -1621,10 +1673,10 @@ GET    /reports/{id}/verify              # Verify report integrity
 - [x] UK SRT engine complete
 - [x] UK ties questionnaire UI
 - [x] UK SRT result display with explanation
-- [ ] US SPT calculator with 3-year lookback
-- [ ] Canada 183 + ties
-- [ ] Mexico 183-day
-- [ ] Cross-jurisdiction tests passing
+- [x] US SPT calculator with 3-year lookback
+- [x] Canada 183 + ties (multi-factor with significant residential ties)
+- [x] Mexico 183-day (simple calendar year)
+- [x] Cross-jurisdiction tests passing (25/25 tests)
 
 #### Phase 4 Checklist
 - [ ] Ireland 183/280 rule
