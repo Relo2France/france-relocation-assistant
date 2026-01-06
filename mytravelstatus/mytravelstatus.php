@@ -3,7 +3,7 @@
  * Plugin Name: MyTravelStatus
  * Plugin URI: https://mytravelstatus.com
  * Description: Track visa, tax, and residency days worldwide. Supports Schengen 90/180, UK SRT, US SPT, and 183-day rules. Calendar sync, alerts, and professional reports included.
- * Version: 1.8.1
+ * Version: 1.8.2
  * Author: MyTravelStatus
  * Author URI: https://mytravelstatus.com
  * License: GPL-2.0+

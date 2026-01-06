@@ -25,7 +25,7 @@ class MTS_Schema {
 	 *
 	 * @var string
 	 */
-	const DB_VERSION = '1.8.1';
+	const DB_VERSION = '1.8.2';
 
 	/**
 	 * Table definitions.
@@ -527,6 +527,11 @@ class MTS_Schema {
 		if ( version_compare( $current_version, '1.8.1', '<' ) ) {
 			self::maybe_update_canada_multi_factor();
 		}
+
+		// Migration from 1.8.1 to 1.8.2: Add multi-factor rule_config to Australia.
+		if ( version_compare( $current_version, '1.8.2', '<' ) ) {
+			self::maybe_update_australia_multi_factor();
+		}
 	}
 
 	/**
@@ -694,6 +699,58 @@ class MTS_Schema {
 			$table,
 			array( 'rule_config' => $ca_config ),
 			array( 'code' => 'ca_tax' ),
+			array( '%s' ),
+			array( '%s' )
+		);
+	}
+
+	/**
+	 * Update Australia rule with multi-factor domicile configuration (v1.8.2).
+	 * Australian tax residency tests: resides, domicile, 183-day, superannuation.
+	 */
+	private static function maybe_update_australia_multi_factor() {
+		global $wpdb;
+
+		$table = self::get_table( 'jurisdiction_rules' );
+
+		// Australia multi-factor config with domicile tests.
+		$au_config = wp_json_encode( array(
+			'multi_factor'          => true,
+			'factors'               => array(
+				array(
+					'id'          => 'resides_test',
+					'label'       => 'Resides in Australia',
+					'description' => 'Do you reside in Australia? This considers where you live, your family ties, business/employment, assets, and social ties.',
+					'weight'      => 1,
+				),
+				array(
+					'id'          => 'domicile_test',
+					'label'       => 'Australian Domicile',
+					'description' => 'Is your domicile in Australia and you do NOT have a permanent place of abode overseas?',
+					'weight'      => 1,
+				),
+				array(
+					'id'          => '183_day_intent',
+					'label'       => '183-Day + Intent to Stay',
+					'description' => 'Are you in Australia 183+ days AND (intending to take up residence OR have no usual residence elsewhere)?',
+					'weight'      => 1,
+				),
+				array(
+					'id'          => 'superannuation',
+					'label'       => 'Commonwealth Superannuation',
+					'description' => 'Are you a member of a Commonwealth government superannuation fund (PSS, CSS)?',
+					'weight'      => 1,
+				),
+			),
+			'factor_logic'          => 'any',
+			'day_threshold_applies' => false,
+		) );
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$wpdb->update(
+			$table,
+			array( 'rule_config' => $au_config ),
+			array( 'code' => 'au_tax' ),
 			array( '%s' ),
 			array( '%s' )
 		);
@@ -1085,7 +1142,7 @@ class MTS_Schema {
 				'is_system'       => 1,
 				'display_order'   => 113,
 			),
-			// Australia 183-day tax residency.
+			// Australia 183-day tax residency with multi-factor domicile test.
 			array(
 				'code'            => 'au_tax',
 				'name'            => 'Australia Tax Residency',
@@ -1098,6 +1155,7 @@ class MTS_Schema {
 				'reset_day'       => 1,
 				'description'     => 'Australian tax residency (fiscal year July-June).',
 				'notes'           => 'Residency determined by: resides test, domicile test, 183-day test, or superannuation test. Complex multi-factor assessment.',
+				'rule_config'     => '{"multi_factor":true,"factors":[{"id":"resides_test","label":"Resides in Australia","description":"Do you reside in Australia? This considers where you live, your family ties, business/employment, assets, and social ties.","weight":1},{"id":"domicile_test","label":"Australian Domicile","description":"Is your domicile in Australia and you do NOT have a permanent place of abode overseas?","weight":1},{"id":"183_day_intent","label":"183-Day + Intent to Stay","description":"Are you in Australia 183+ days AND (intending to take up residence OR have no usual residence elsewhere)?","weight":1},{"id":"superannuation","label":"Commonwealth Superannuation","description":"Are you a member of a Commonwealth government superannuation fund (PSS, CSS)?","weight":1}],"factor_logic":"any","day_threshold_applies":false}',
 				'country_code'    => 'AU',
 				'flag_emoji'      => '🇦🇺',
 				'is_system'       => 1,

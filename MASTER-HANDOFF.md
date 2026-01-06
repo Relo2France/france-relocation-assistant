@@ -92,7 +92,7 @@
 | Member Tools Plugin | v2.1.0 | Active |
 | React Portal | v2.1.0 | Active |
 | Theme | v1.2.4 | Active |
-| **MyTravelStatus Plugin** | **v1.8.1** | **Active** |
+| **MyTravelStatus Plugin** | **v1.8.2** | **Active** |
 | MyTravelStatus iOS | v1.0.0 | In Development |
 | MyTravelStatus Android | v1.0.0 | In Development |
 
@@ -668,6 +668,46 @@ The WordPress theme defines global `.btn-primary` with navy color. Portal button
 
 ## 13. Session History
 
+### January 6, 2026 (Session 8)
+- **Multi-Jurisdiction Expansion Phase 4 Completion** - Rest of World + PDF Reports:
+  - **Ireland 183/280 Rule:**
+    - Fixed multi-year breakdown API: `combined` → `combinedDays`
+    - Added missing fields: primaryThreshold, meetsPrimary, meetsSecondary
+    - Frontend now displays correct two-year breakdown
+  - **Japan, Singapore (183-day calendar year):**
+    - Already implemented in Phase 1 schema
+    - Added test cases to verify functionality
+  - **New Zealand (183-day rolling 12-month):**
+    - Already implemented in Phase 1 schema with rolling counting method
+    - Added test cases to verify functionality
+  - **Australia Multi-Factor Domicile Test (v1.8.2):**
+    - Added 4 residency tests: resides, domicile, 183-day+intent, superannuation
+    - All factors weight 1.0 with factor_logic: 'any'
+    - Database migration for existing installations
+  - **PDF Report Generator:**
+    - New class: `class-mts-pdf-report.php` using TCPDF library
+    - Professional audit-ready reports with:
+      - Report header with branding and metadata
+      - Compliance summary table (all jurisdictions)
+      - Per-jurisdiction detailed analysis with rule descriptions
+      - Weighted/multi-year breakdown displays
+      - Complete trip log with data sources
+      - Calculation methodology section
+      - Legal disclaimer
+      - QR code verification
+    - SHA-256 hash for integrity verification
+    - Report metadata stored in database
+  - **API Endpoints:**
+    - POST `/schengen/reports/generate` - Generate PDF
+    - GET `/schengen/reports/{id}/download` - Download PDF
+    - GET `/schengen/reports/{id}/verify` - Public verification
+  - **TypeScript Types & API Client:**
+    - Added PDFReportRequest, PDFReportResponse, PDFReportDownload, PDFReportVerification
+    - Added API functions: generatePDFReport, downloadPDFReport, verifyPDFReport
+  - **Test Suite:**
+    - Expanded to 36 test cases (added Japan, Singapore, NZ, Australia)
+  - **Version:** v1.8.2 (DB_VERSION 1.8.2)
+
 ### January 6, 2026 (Session 7)
 - **Multi-Jurisdiction Expansion Phase 3 Completion** - UK + Americas:
   - **UK SRT** (completed in previous session):
@@ -865,7 +905,7 @@ The WordPress theme defines global `.btn-primary` with navy color. Portal button
 ### Medium Term (Phases 2-5)
 - [x] **Phase 2**: Spain, Portugal, Germany, Italy, Netherlands
 - [x] **Phase 3**: UK SRT, US SPT, Canada, Mexico
-- [ ] **Phase 4**: Ireland, Japan, Singapore, NZ, Australia + PDF Reports
+- [x] **Phase 4**: Ireland, Japan, Singapore, NZ, Australia + PDF Reports
 - [ ] **Phase 5**: Native app sync, widgets, polish
 - [ ] Family sync in native apps
 - [ ] AI suggestions in native apps
@@ -1679,14 +1719,14 @@ GET    /reports/{id}/verify              # Verify report integrity
 - [x] Cross-jurisdiction tests passing (25/25 tests)
 
 #### Phase 4 Checklist
-- [ ] Ireland 183/280 rule
-- [ ] Japan 183-day
-- [ ] Singapore 183-day
-- [ ] New Zealand 183/12mo rolling
-- [ ] Australia domicile test
-- [ ] PDF report generator
-- [ ] Report templates per jurisdiction
-- [ ] QR verification functional
+- [x] Ireland 183/280 rule (fixed multi-year breakdown API keys)
+- [x] Japan 183-day (calendar_year already in schema)
+- [x] Singapore 183-day (calendar_year already in schema)
+- [x] New Zealand 183/12mo rolling (rolling already in schema)
+- [x] Australia domicile test (multi-factor rule_config added)
+- [x] PDF report generator (MTS_PDF_Report class with TCPDF)
+- [x] Report templates per jurisdiction (built into generator)
+- [x] QR verification functional (verification endpoint + hash)
 
 #### Phase 5 Checklist
 - [ ] Performance optimized

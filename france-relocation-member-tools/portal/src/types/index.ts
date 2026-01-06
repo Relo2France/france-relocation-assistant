@@ -1694,6 +1694,59 @@ export interface AnalyticsData {
   categoryBreakdown: CategoryBreakdown[];
 }
 
+// ==========================================
+// PDF Report Types
+// ==========================================
+
+/**
+ * PDF Report generation request
+ */
+export interface PDFReportRequest {
+  period_start?: string;
+  period_end?: string;
+  jurisdictions?: string[];
+  include_trips?: boolean;
+  include_qr?: boolean;
+}
+
+/**
+ * PDF Report generation response
+ */
+export interface PDFReportResponse {
+  report_id: string;
+  file_path: string;
+  file_url: string;
+  hash: string;
+  generated: string;
+  period: {
+    start: string;
+    end: string;
+  };
+}
+
+/**
+ * PDF Report download response
+ */
+export interface PDFReportDownload {
+  report_id: string;
+  file_url: string;
+  filename: string;
+}
+
+/**
+ * PDF Report verification response
+ */
+export interface PDFReportVerification {
+  report_id: string;
+  user_id: number;
+  period_start: string;
+  period_end: string;
+  created_at: string;
+  file_exists: boolean;
+  hash_valid: boolean;
+  verified: boolean;
+}
+
 // WordPress global types
 declare global {
   interface Window {
