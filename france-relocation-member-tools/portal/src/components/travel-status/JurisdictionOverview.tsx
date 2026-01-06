@@ -33,9 +33,11 @@ import type {
   JurisdictionRule,
   JurisdictionSummary,
   JurisdictionType,
+  MultiFactorRuleConfig,
 } from '@/types';
 import DayCounter from './DayCounter';
 import StatusBadge from './StatusBadge';
+import MultiFactorIndicators from './MultiFactorIndicators';
 
 interface JurisdictionOverviewProps {
   className?: string;
@@ -617,6 +619,17 @@ function JurisdictionCard({
               )}
             </>
           )}
+
+          {/* Multi-factor indicators for DE, IT, NL tax rules */}
+          {jurisdiction.ruleConfig && 'multi_factor' in jurisdiction.ruleConfig && (
+            <MultiFactorIndicators
+              jurisdictionCode={jurisdiction.code}
+              ruleConfig={jurisdiction.ruleConfig as MultiFactorRuleConfig}
+              compact
+              className="mt-3"
+            />
+          )}
+
           {jurisdiction.description && (
             <p className="text-xs text-gray-500 italic">{jurisdiction.description}</p>
           )}

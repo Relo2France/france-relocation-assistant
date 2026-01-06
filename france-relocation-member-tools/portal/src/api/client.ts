@@ -83,11 +83,14 @@ import type {
   UpdateUserJurisdictionRequest,
   UpgradeOption,
   User,
+  UserFactorResponses,
   UserJurisdiction,
   UserJurisdictionsResponse,
   UserSettings,
   VerificationRequest,
   VerificationResult,
+  EUTaxJurisdictionsResponse,
+  BulkUpdateJurisdictionsResponse,
 } from '@/types';
 
 /**
@@ -1078,6 +1081,35 @@ export const travelStatusApi = {
         ? `/schengen/compliance/history/${code}?days=${days}`
         : `/schengen/compliance/history/${code}`
     ),
+
+  // ============================================
+  // Multi-Factor API (Phase 2 - EU Countries)
+  // ============================================
+
+  // Get user's multi-factor responses for a jurisdiction
+  getUserFactors: (code: string) =>
+    apiFetch<UserFactorResponses>(`/schengen/jurisdictions/user/${code}/factors`),
+
+  // Update user's multi-factor responses for a jurisdiction
+  updateUserFactors: (code: string, responses: Record<string, boolean>) =>
+    apiFetch<{ success: boolean; code: string; responses: Record<string, boolean> }>(
+      `/schengen/jurisdictions/user/${code}/factors`,
+      {
+        method: 'PUT',
+        body: JSON.stringify(responses),
+      }
+    ),
+
+  // Get all EU tax jurisdictions
+  getEUTaxJurisdictions: () =>
+    apiFetch<EUTaxJurisdictionsResponse>('/schengen/jurisdictions/eu-tax'),
+
+  // Bulk enable/disable jurisdictions
+  bulkUpdateJurisdictions: (action: 'enable' | 'disable', codes: string[]) =>
+    apiFetch<BulkUpdateJurisdictionsResponse>('/schengen/jurisdictions/bulk', {
+      method: 'POST',
+      body: JSON.stringify({ action, codes }),
+    }),
 
   // ============================================
   // Notifications API (Phase 5)

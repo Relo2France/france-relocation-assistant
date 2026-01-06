@@ -25,7 +25,7 @@ class MTS_Schema {
 	 *
 	 * @var string
 	 */
-	const DB_VERSION = '1.7.0';
+	const DB_VERSION = '1.7.1';
 
 	/**
 	 * Table definitions.
@@ -488,6 +488,123 @@ class MTS_Schema {
 			// Add tax residency rules.
 			self::maybe_populate_tax_residency_rules();
 		}
+
+		// Migration from 1.7.0 to 1.7.1: Add multi-factor rule_config to DE, IT, NL.
+		if ( version_compare( $current_version, '1.7.1', '<' ) ) {
+			self::maybe_update_multi_factor_rules();
+		}
+	}
+
+	/**
+	 * Update existing rules with multi-factor configurations (v1.7.1).
+	 * For Germany, Italy, Netherlands.
+	 */
+	private static function maybe_update_multi_factor_rules() {
+		global $wpdb;
+
+		$table = self::get_table( 'jurisdiction_rules' );
+
+		// Germany multi-factor config.
+		$de_config = wp_json_encode( array(
+			'multi_factor'         => true,
+			'factors'              => array(
+				array(
+					'id'          => 'permanent_home',
+					'label'       => 'Permanent Home in Germany',
+					'description' => 'Do you maintain a permanent home (Wohnung) in Germany that is available for your use?',
+					'weight'      => 1,
+				),
+				array(
+					'id'          => 'habitual_abode',
+					'label'       => 'Habitual Abode',
+					'description' => 'Have you stayed in Germany for more than 6 consecutive months (habitual abode)?',
+					'weight'      => 1,
+				),
+			),
+			'factor_logic'         => 'any',
+			'day_threshold_applies' => false,
+		) );
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$wpdb->update(
+			$table,
+			array( 'rule_config' => $de_config ),
+			array( 'code' => 'de_tax' ),
+			array( '%s' ),
+			array( '%s' )
+		);
+
+		// Italy multi-factor config.
+		$it_config = wp_json_encode( array(
+			'multi_factor'         => true,
+			'factors'              => array(
+				array(
+					'id'          => 'registered_residence',
+					'label'       => 'Registered Residence (Anagrafe)',
+					'description' => 'Are you registered in the Italian civil registry (Anagrafe) as a resident?',
+					'weight'      => 1,
+				),
+				array(
+					'id'          => 'domicile',
+					'label'       => 'Domicile in Italy',
+					'description' => 'Is Italy the center of your vital interests (family, economic, social)?',
+					'weight'      => 1,
+				),
+				array(
+					'id'          => 'presence_183',
+					'label'       => '183+ Days Presence',
+					'description' => 'Have you been physically present in Italy for 183+ days this calendar year?',
+					'weight'      => 1,
+				),
+			),
+			'factor_logic'         => 'any',
+			'day_threshold_applies' => true,
+		) );
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$wpdb->update(
+			$table,
+			array( 'rule_config' => $it_config ),
+			array( 'code' => 'it_tax' ),
+			array( '%s' ),
+			array( '%s' )
+		);
+
+		// Netherlands multi-factor config.
+		$nl_config = wp_json_encode( array(
+			'multi_factor'         => true,
+			'factors'              => array(
+				array(
+					'id'          => 'permanent_home',
+					'label'       => 'Permanent Home',
+					'description' => 'Do you have a permanent home (duurzaam tehuis) available in the Netherlands?',
+					'weight'      => 1,
+				),
+				array(
+					'id'          => 'vital_interests',
+					'label'       => 'Center of Vital Interests',
+					'description' => 'Are your personal and economic ties (family, work, investments) centered in the Netherlands?',
+					'weight'      => 1,
+				),
+				array(
+					'id'          => 'habitual_abode',
+					'label'       => 'Habitual Abode',
+					'description' => 'Is the Netherlands where you habitually live (gewoonlijke verblijfplaats)?',
+					'weight'      => 1,
+				),
+			),
+			'factor_logic'         => 'weighted',
+			'day_threshold_applies' => false,
+		) );
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$wpdb->update(
+			$table,
+			array( 'rule_config' => $nl_config ),
+			array( 'code' => 'nl_tax' ),
+			array( '%s' ),
+			array( '%s' )
+		);
 	}
 
 	/**
@@ -727,7 +844,7 @@ class MTS_Schema {
 				'is_system'       => 1,
 				'display_order'   => 102,
 			),
-			// Germany 183-day tax residency.
+			// Germany 183-day tax residency (multi-factor).
 			array(
 				'code'            => 'de_tax',
 				'name'            => 'Germany Tax Residency',
@@ -740,12 +857,13 @@ class MTS_Schema {
 				'reset_day'       => 1,
 				'description'     => 'German tax residency threshold.',
 				'notes'           => 'Residency primarily determined by habitual abode (more than 6 months) or permanent home in Germany.',
+				'rule_config'     => '{"multi_factor":true,"factors":[{"id":"permanent_home","label":"Permanent Home in Germany","description":"Do you maintain a permanent home (Wohnung) in Germany that is available for your use?","weight":1},{"id":"habitual_abode","label":"Habitual Abode","description":"Have you stayed in Germany for more than 6 consecutive months (habitual abode)?","weight":1}],"factor_logic":"any","day_threshold_applies":false}',
 				'country_code'    => 'DE',
 				'flag_emoji'      => '🇩🇪',
 				'is_system'       => 1,
 				'display_order'   => 103,
 			),
-			// Italy 183-day tax residency.
+			// Italy 183-day tax residency (multi-factor).
 			array(
 				'code'            => 'it_tax',
 				'name'            => 'Italy Tax Residency',
@@ -758,12 +876,13 @@ class MTS_Schema {
 				'reset_day'       => 1,
 				'description'     => 'Italian tax residency threshold.',
 				'notes'           => 'Tax residency triggered by: registered residence in Italy, domicile (center of interests), OR 183+ days presence.',
+				'rule_config'     => '{"multi_factor":true,"factors":[{"id":"registered_residence","label":"Registered Residence (Anagrafe)","description":"Are you registered in the Italian civil registry (Anagrafe) as a resident?","weight":1},{"id":"domicile","label":"Domicile in Italy","description":"Is Italy the center of your vital interests (family, economic, social)?","weight":1},{"id":"presence_183","label":"183+ Days Presence","description":"Have you been physically present in Italy for 183+ days this calendar year?","weight":1}],"factor_logic":"any","day_threshold_applies":true}',
 				'country_code'    => 'IT',
 				'flag_emoji'      => '🇮🇹',
 				'is_system'       => 1,
 				'display_order'   => 104,
 			),
-			// Netherlands 183-day tax residency.
+			// Netherlands 183-day tax residency (multi-factor).
 			array(
 				'code'            => 'nl_tax',
 				'name'            => 'Netherlands Tax Residency',
@@ -776,6 +895,7 @@ class MTS_Schema {
 				'reset_day'       => 1,
 				'description'     => 'Dutch tax residency threshold.',
 				'notes'           => 'Residency based on permanent home, vital interests, and habitual abode. 183 days is an indicator but not determinative.',
+				'rule_config'     => '{"multi_factor":true,"factors":[{"id":"permanent_home","label":"Permanent Home","description":"Do you have a permanent home (duurzaam tehuis) available in the Netherlands?","weight":1},{"id":"vital_interests","label":"Center of Vital Interests","description":"Are your personal and economic ties (family, work, investments) centered in the Netherlands?","weight":1},{"id":"habitual_abode","label":"Habitual Abode","description":"Is the Netherlands where you habitually live (gewoonlijke verblijfplaats)?","weight":1}],"factor_logic":"weighted","day_threshold_applies":false}',
 				'country_code'    => 'NL',
 				'flag_emoji'      => '🇳🇱',
 				'is_system'       => 1,

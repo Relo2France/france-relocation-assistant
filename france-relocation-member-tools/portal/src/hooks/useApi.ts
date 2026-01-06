@@ -1430,6 +1430,71 @@ export function useComplianceHistory(code: string, options?: { days?: number }) 
 }
 
 // ============================================
+// Multi-Factor Hooks (Phase 2 - EU Countries)
+// ============================================
+
+/**
+ * Get user's multi-factor responses for a jurisdiction
+ */
+export function useUserFactors(code: string) {
+  return useQuery({
+    queryKey: ['userFactors', code] as const,
+    queryFn: () => travelStatusApi.getUserFactors(code),
+    staleTime: STALE_TIME.LONG, // 30 minutes - doesn't change often
+    throwOnError: false,
+    enabled: !!code,
+  });
+}
+
+/**
+ * Update user's multi-factor responses for a jurisdiction
+ */
+export function useUpdateUserFactors() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ code, responses }: { code: string; responses: Record<string, boolean> }) =>
+      travelStatusApi.updateUserFactors(code, responses),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['userFactors', variables.code] });
+      queryClient.invalidateQueries({ queryKey: ['jurisdictionSummary', variables.code] });
+      queryClient.invalidateQueries({ queryKey: ['multiJurisdictionSummary'] });
+      queryClient.invalidateQueries({ queryKey: ['complianceOverview'] });
+    },
+  });
+}
+
+/**
+ * Get all EU tax jurisdictions
+ */
+export function useEUTaxJurisdictions() {
+  return useQuery({
+    queryKey: ['euTaxJurisdictions'] as const,
+    queryFn: travelStatusApi.getEUTaxJurisdictions,
+    staleTime: STALE_TIME.LONG, // 30 minutes - static data
+    throwOnError: false,
+  });
+}
+
+/**
+ * Bulk enable/disable jurisdictions
+ */
+export function useBulkUpdateJurisdictions() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ action, codes }: { action: 'enable' | 'disable'; codes: string[] }) =>
+      travelStatusApi.bulkUpdateJurisdictions(action, codes),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['trackedJurisdictions'] });
+      queryClient.invalidateQueries({ queryKey: ['userJurisdictions'] });
+      queryClient.invalidateQueries({ queryKey: ['multiJurisdictionSummary'] });
+      queryClient.invalidateQueries({ queryKey: ['complianceOverview'] });
+    },
+  });
+}
+
+// ============================================
 // Notification Hooks (Phase 5)
 // ============================================
 
