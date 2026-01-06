@@ -109,6 +109,10 @@ class FRA_GitHub_Sync {
             'file' => 'relo2france-schengen-tracker/relo2france-schengen-tracker.php',
             'name' => 'Relo2France Schengen Tracker',
         ),
+        'mytravelstatus' => array(
+            'file' => 'mytravelstatus/mytravelstatus.php',
+            'name' => 'MyTravelStatus',
+        ),
     );
 
     /**
