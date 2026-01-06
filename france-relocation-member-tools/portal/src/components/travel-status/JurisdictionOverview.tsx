@@ -36,8 +36,8 @@ import type {
   MultiFactorRuleConfig,
 } from '@/types';
 import DayCounter from './DayCounter';
-import StatusBadge from './StatusBadge';
 import MultiFactorIndicators from './MultiFactorIndicators';
+import StatusBadge from './StatusBadge';
 import UKSRTStatus from './UKSRTStatus';
 import UKTiesQuestionnaire from './UKTiesQuestionnaire';
 

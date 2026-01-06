@@ -10,21 +10,21 @@
 import { useState } from 'react';
 import { clsx } from 'clsx';
 import {
-  CheckCircle2,
-  XCircle,
-  ChevronDown,
-  ChevronUp,
-  Home,
   Briefcase,
   Calendar,
-  Users,
+  CheckCircle2,
+  ChevronDown,
+  ChevronUp,
   Globe,
   HelpCircle,
+  Home,
   MapPin,
+  Users,
+  XCircle,
 } from 'lucide-react';
 import type {
-  UKSRTBreakdown,
   UKSRTAutomaticTestResult,
+  UKSRTBreakdown,
   UKSRTSufficientTiesResult,
 } from '@/types';
 

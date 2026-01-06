@@ -10,23 +10,23 @@
 import { useState } from 'react';
 import { clsx } from 'clsx';
 import {
-  Settings,
+  AlertTriangle,
+  Check,
   ChevronDown,
   ChevronUp,
-  Check,
-  X,
   Loader2,
-  AlertTriangle,
+  Settings,
+  X,
 } from 'lucide-react';
 import {
-  useTrackedJurisdictions,
   useAddTrackedJurisdiction,
-  useRemoveTrackedJurisdiction,
-  useEUTaxJurisdictions,
   useBulkUpdateJurisdictions,
+  useEUTaxJurisdictions,
   useJurisdictionsByCategory,
+  useRemoveTrackedJurisdiction,
+  useTrackedJurisdictions,
 } from '@/hooks/useApi';
-import type { JurisdictionRule, JurisdictionCategory } from '@/types';
+import type { JurisdictionCategory, JurisdictionRule } from '@/types';
 
 interface JurisdictionSettingsProps {
   onClose?: () => void;

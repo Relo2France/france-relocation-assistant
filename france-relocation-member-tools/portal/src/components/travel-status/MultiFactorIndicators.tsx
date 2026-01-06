@@ -6,20 +6,20 @@
  * residency tests beyond just day counting.
  */
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { clsx } from 'clsx';
 import {
   AlertTriangle,
   CheckCircle2,
-  XCircle,
-  HelpCircle,
   ChevronDown,
   ChevronUp,
-  Save,
+  HelpCircle,
   Loader2,
+  Save,
+  XCircle,
 } from 'lucide-react';
-import { useUserFactors, useUpdateUserFactors } from '@/hooks/useApi';
-import type { ResidencyFactor, MultiFactorRuleConfig } from '@/types';
+import { useUpdateUserFactors, useUserFactors } from '@/hooks/useApi';
+import type { MultiFactorRuleConfig, ResidencyFactor } from '@/types';
 
 interface MultiFactorIndicatorsProps {
   jurisdictionCode: string;

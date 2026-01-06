@@ -6,21 +6,21 @@
  * plus automatic test conditions (only home, full-time work, leaving UK).
  */
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { clsx } from 'clsx';
 import {
-  Users,
-  Home,
   Briefcase,
-  Calendar,
-  Globe,
   Building,
-  Plane,
-  HelpCircle,
-  Save,
-  Loader2,
+  Calendar,
   ChevronDown,
   ChevronUp,
+  Globe,
+  HelpCircle,
+  Home,
+  Loader2,
+  Plane,
+  Save,
+  Users,
 } from 'lucide-react';
 import { useUKTies, useUpdateUKTies } from '@/hooks/useApi';
 import type { UKTies } from '@/types';
