@@ -835,7 +835,9 @@ class MTS_Jurisdiction {
 	 */
 	private function get_multi_year_breakdown( $trips, $rule, $reference_date ) {
 		$config = isset( $rule['ruleConfig'] ) ? $rule['ruleConfig'] : array();
+		$primary_threshold   = isset( $rule['daysAllowed'] ) ? (int) $rule['daysAllowed'] : 183;
 		$secondary_threshold = isset( $config['secondary_threshold'] ) ? (int) $config['secondary_threshold'] : 280;
+		$min_days_per_year   = isset( $config['min_days_per_year'] ) ? (int) $config['min_days_per_year'] : 31;
 
 		$current_year = (int) $reference_date->format( 'Y' );
 		$current_days = $this->calculate_calendar_year( $trips, $rule, $reference_date );
@@ -843,6 +845,12 @@ class MTS_Jurisdiction {
 		$prior_date = clone $reference_date;
 		$prior_date->modify( '-1 year' );
 		$prior_days = $this->calculate_calendar_year( $trips, $rule, $prior_date );
+
+		$combined_days    = $current_days + $prior_days;
+		$meets_primary    = $current_days >= $primary_threshold;
+		$meets_secondary  = $combined_days >= $secondary_threshold
+			&& $current_days >= $min_days_per_year
+			&& $prior_days >= $min_days_per_year;
 
 		return array(
 			'currentYear' => array(
@@ -853,8 +861,11 @@ class MTS_Jurisdiction {
 				'year' => $current_year - 1,
 				'days' => $prior_days,
 			),
-			'combined'          => $current_days + $prior_days,
+			'combinedDays'       => $combined_days,
+			'primaryThreshold'   => $primary_threshold,
 			'secondaryThreshold' => $secondary_threshold,
+			'meetsPrimary'       => $meets_primary,
+			'meetsSecondary'     => $meets_secondary,
 		);
 	}
 

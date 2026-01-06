@@ -58,7 +58,7 @@ $test_failed = 0;
 
 echo "\n========================================\n";
 echo "Cross-Jurisdiction Calculator Tests\n";
-echo "MyTravelStatus v1.8.1\n";
+echo "MyTravelStatus v1.8.2\n";
 echo "========================================\n\n";
 
 // ============================================
@@ -335,6 +335,109 @@ function test_germany_multi_factor() {
 }
 
 test_germany_multi_factor();
+
+// ============================================
+// Test 8: Japan 183-Day Calendar Year
+// ============================================
+echo "\n--- Japan 183-Day Calendar Year ---\n";
+
+/**
+ * Test Japan simple 183-day rule.
+ */
+function test_japan_calendar_year() {
+	// Under threshold
+	$days_in_japan = 150;
+	$is_resident   = $days_in_japan >= 183;
+	test_assert( $is_resident === false, 'Japan: 150 days = not resident' );
+
+	// At threshold
+	$days_in_japan = 183;
+	$is_resident   = $days_in_japan >= 183;
+	test_assert( $is_resident === true, 'Japan: 183 days = resident' );
+
+	// Over threshold
+	$days_in_japan = 200;
+	$is_resident   = $days_in_japan >= 183;
+	test_assert( $is_resident === true, 'Japan: 200 days = resident' );
+}
+
+test_japan_calendar_year();
+
+// ============================================
+// Test 9: Singapore 183-Day Calendar Year
+// ============================================
+echo "\n--- Singapore 183-Day Calendar Year ---\n";
+
+/**
+ * Test Singapore simple 183-day rule.
+ */
+function test_singapore_calendar_year() {
+	// Under threshold
+	$days_in_sg  = 90;
+	$is_resident = $days_in_sg >= 183;
+	test_assert( $is_resident === false, 'Singapore: 90 days (visa-free limit) = not resident' );
+
+	// At threshold
+	$days_in_sg  = 183;
+	$is_resident = $days_in_sg >= 183;
+	test_assert( $is_resident === true, 'Singapore: 183 days = resident' );
+}
+
+test_singapore_calendar_year();
+
+// ============================================
+// Test 10: New Zealand 183-Day Rolling Window
+// ============================================
+echo "\n--- New Zealand 183-Day Rolling 12-Month ---\n";
+
+/**
+ * Test New Zealand 183-day rolling 12-month window.
+ */
+function test_nz_rolling_window() {
+	// Under threshold in rolling window
+	$days_in_nz  = 100;
+	$is_resident = $days_in_nz >= 183;
+	test_assert( $is_resident === false, 'NZ: 100 days in 12-month window = not resident' );
+
+	// At threshold
+	$days_in_nz  = 183;
+	$is_resident = $days_in_nz >= 183;
+	test_assert( $is_resident === true, 'NZ: 183 days in any 12-month period = resident' );
+
+	// Rolling window: 90 days 8 months ago + 100 days recently = 190 total in 12 months
+	$total_days_in_window = 90 + 100;
+	$is_resident          = $total_days_in_window >= 183;
+	test_assert( $is_resident === true, 'NZ: 90 + 100 = 190 days in 12-month window = resident' );
+}
+
+test_nz_rolling_window();
+
+// ============================================
+// Test 11: Australia Fiscal Year (July-June)
+// ============================================
+echo "\n--- Australia Fiscal Year (July-June) ---\n";
+
+/**
+ * Test Australia 183-day fiscal year rule.
+ */
+function test_australia_fiscal_year() {
+	// Under threshold in fiscal year
+	$days_in_au  = 120;
+	$is_resident = $days_in_au >= 183;
+	test_assert( $is_resident === false, 'Australia: 120 days in fiscal year = not resident' );
+
+	// At threshold
+	$days_in_au  = 183;
+	$is_resident = $days_in_au >= 183;
+	test_assert( $is_resident === true, 'Australia: 183 days in fiscal year (Jul-Jun) = resident' );
+
+	// Over threshold
+	$days_in_au  = 250;
+	$is_resident = $days_in_au >= 183;
+	test_assert( $is_resident === true, 'Australia: 250 days = resident' );
+}
+
+test_australia_fiscal_year();
 
 // ============================================
 // Print Summary

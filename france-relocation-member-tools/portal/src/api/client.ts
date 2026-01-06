@@ -52,6 +52,10 @@ import type {
   NoteVisibility,
   NotificationItem,
   NotificationPreferences,
+  PDFReportDownload,
+  PDFReportRequest,
+  PDFReportResponse,
+  PDFReportVerification,
   Payment,
   PersonalizedGuide,
   PortalFile,
@@ -828,8 +832,23 @@ export const travelStatusApi = {
       }),
     }),
 
-  // Generate PDF report (premium feature)
+  // Generate HTML report preview (legacy)
   generateReport: () => apiFetch<TravelStatusReportResponse>('/schengen/report'),
+
+  // Generate PDF compliance report (premium feature)
+  generatePDFReport: (params?: PDFReportRequest) =>
+    apiFetch<PDFReportResponse>('/schengen/reports/generate', {
+      method: 'POST',
+      body: JSON.stringify(params || {}),
+    }),
+
+  // Download PDF report
+  downloadPDFReport: (reportId: string) =>
+    apiFetch<PDFReportDownload>(`/schengen/reports/${reportId}/download`),
+
+  // Verify PDF report (public)
+  verifyPDFReport: (reportId: string) =>
+    apiFetch<PDFReportVerification>(`/schengen/reports/${reportId}/verify`),
 
   // Test email alert (sends a test alert to current user)
   testAlert: () =>

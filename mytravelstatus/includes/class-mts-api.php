@@ -214,7 +214,7 @@ class MTS_API {
 			)
 		);
 
-		// Generate PDF report (premium feature).
+		// Generate HTML report preview (legacy).
 		register_rest_route(
 			$namespace,
 			$prefix . '/report',
@@ -222,6 +222,39 @@ class MTS_API {
 				'methods'             => 'GET',
 				'callback'            => array( $this, 'generate_report' ),
 				'permission_callback' => array( $this, 'check_premium_permission' ),
+			)
+		);
+
+		// Generate PDF report (premium feature).
+		register_rest_route(
+			$namespace,
+			$prefix . '/reports/generate',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( $this, 'generate_pdf_report' ),
+				'permission_callback' => array( $this, 'check_premium_permission' ),
+			)
+		);
+
+		// Download PDF report.
+		register_rest_route(
+			$namespace,
+			$prefix . '/reports/(?P<report_id>[A-Z0-9-]+)/download',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( $this, 'download_pdf_report' ),
+				'permission_callback' => array( $this, 'check_premium_permission' ),
+			)
+		);
+
+		// Verify PDF report (public endpoint).
+		register_rest_route(
+			$namespace,
+			$prefix . '/reports/(?P<report_id>[A-Z0-9-]+)/verify',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( $this, 'verify_pdf_report' ),
+				'permission_callback' => '__return_true',
 			)
 		);
 
@@ -930,6 +963,124 @@ class MTS_API {
 				'tripCount'     => count( $trips ),
 			),
 		) );
+	}
+
+	/**
+	 * Generate PDF compliance report.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function generate_pdf_report( WP_REST_Request $request ) {
+		$user_id = get_current_user_id();
+
+		// Parse request parameters.
+		$period_start   = $request->get_param( 'period_start' );
+		$period_end     = $request->get_param( 'period_end' );
+		$jurisdictions  = $request->get_param( 'jurisdictions' );
+		$include_trips  = $request->get_param( 'include_trips' ) !== false;
+		$include_qr     = $request->get_param( 'include_qr' ) !== false;
+
+		// Default to last 12 months if not specified.
+		if ( empty( $period_start ) ) {
+			$period_start = gmdate( 'Y-m-d', strtotime( '-12 months' ) );
+		}
+		if ( empty( $period_end ) ) {
+			$period_end = gmdate( 'Y-m-d' );
+		}
+
+		// Load the PDF report class.
+		if ( ! class_exists( 'MTS_PDF_Report' ) ) {
+			require_once MTS_PLUGIN_DIR . 'includes/class-mts-pdf-report.php';
+		}
+
+		$report = new MTS_PDF_Report( $user_id, $period_start, $period_end );
+
+		$options = array(
+			'jurisdictions' => is_array( $jurisdictions ) ? $jurisdictions : array(),
+			'include_trips' => $include_trips,
+			'include_qr'    => $include_qr,
+		);
+
+		$result = $report->generate( $options );
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		return rest_ensure_response( $result );
+	}
+
+	/**
+	 * Download PDF report.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function download_pdf_report( WP_REST_Request $request ) {
+		global $wpdb;
+
+		$user_id   = get_current_user_id();
+		$report_id = $request->get_param( 'report_id' );
+
+		$table  = $wpdb->prefix . 'mts_reports';
+		$report = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM {$table} WHERE report_id = %s AND user_id = %d",
+				$report_id,
+				$user_id
+			),
+			ARRAY_A
+		);
+
+		if ( ! $report ) {
+			return new WP_Error(
+				'report_not_found',
+				'Report not found or access denied.',
+				array( 'status' => 404 )
+			);
+		}
+
+		if ( ! file_exists( $report['file_path'] ) ) {
+			return new WP_Error(
+				'file_not_found',
+				'Report file not found.',
+				array( 'status' => 404 )
+			);
+		}
+
+		// Return file URL for download.
+		$upload_dir = wp_upload_dir();
+		$file_url   = str_replace( $upload_dir['basedir'], $upload_dir['baseurl'], $report['file_path'] );
+
+		return rest_ensure_response( array(
+			'report_id' => $report_id,
+			'file_url'  => $file_url,
+			'filename'  => basename( $report['file_path'] ),
+		) );
+	}
+
+	/**
+	 * Verify PDF report (public endpoint).
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function verify_pdf_report( WP_REST_Request $request ) {
+		$report_id = $request->get_param( 'report_id' );
+
+		// Load the PDF report class.
+		if ( ! class_exists( 'MTS_PDF_Report' ) ) {
+			require_once MTS_PLUGIN_DIR . 'includes/class-mts-pdf-report.php';
+		}
+
+		$result = MTS_PDF_Report::verify_report( $report_id );
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		return rest_ensure_response( $result );
 	}
 
 	// ========================================
