@@ -25,7 +25,7 @@ class MTS_Schema {
 	 *
 	 * @var string
 	 */
-	const DB_VERSION = '1.8.0';
+	const DB_VERSION = '1.8.1';
 
 	/**
 	 * Table definitions.
@@ -522,6 +522,11 @@ class MTS_Schema {
 		if ( version_compare( $current_version, '1.7.1', '<' ) ) {
 			self::maybe_update_multi_factor_rules();
 		}
+
+		// Migration from 1.8.0 to 1.8.1: Add multi-factor rule_config to Canada.
+		if ( version_compare( $current_version, '1.8.1', '<' ) ) {
+			self::maybe_update_canada_multi_factor();
+		}
 	}
 
 	/**
@@ -631,6 +636,64 @@ class MTS_Schema {
 			$table,
 			array( 'rule_config' => $nl_config ),
 			array( 'code' => 'nl_tax' ),
+			array( '%s' ),
+			array( '%s' )
+		);
+	}
+
+	/**
+	 * Update Canada rule with multi-factor configuration (v1.8.1).
+	 * Canadian significant residential ties for tax residency.
+	 */
+	private static function maybe_update_canada_multi_factor() {
+		global $wpdb;
+
+		$table = self::get_table( 'jurisdiction_rules' );
+
+		// Canada multi-factor config with significant residential ties.
+		$ca_config = wp_json_encode( array(
+			'multi_factor'          => true,
+			'factors'               => array(
+				array(
+					'id'          => 'dwelling',
+					'label'       => 'Home in Canada',
+					'description' => 'Do you maintain a dwelling (house, apartment, leased accommodation) available for your use in Canada?',
+					'weight'      => 1,
+				),
+				array(
+					'id'          => 'spouse_partner',
+					'label'       => 'Spouse/Partner in Canada',
+					'description' => 'Does your spouse or common-law partner reside in Canada?',
+					'weight'      => 1,
+				),
+				array(
+					'id'          => 'dependents',
+					'label'       => 'Dependents in Canada',
+					'description' => 'Do you have dependents (minor children) residing in Canada?',
+					'weight'      => 1,
+				),
+				array(
+					'id'          => 'personal_property',
+					'label'       => 'Personal Property',
+					'description' => 'Do you have substantial personal property in Canada (furniture, vehicle, etc.)?',
+					'weight'      => 0.5,
+				),
+				array(
+					'id'          => 'social_ties',
+					'label'       => 'Social/Economic Ties',
+					'description' => 'Do you have significant social ties (memberships, clubs) or economic ties (bank accounts, business interests) in Canada?',
+					'weight'      => 0.5,
+				),
+			),
+			'factor_logic'          => 'any',
+			'day_threshold_applies' => true,
+		) );
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$wpdb->update(
+			$table,
+			array( 'rule_config' => $ca_config ),
+			array( 'code' => 'ca_tax' ),
 			array( '%s' ),
 			array( '%s' )
 		);
@@ -1056,7 +1119,7 @@ class MTS_Schema {
 				'is_system'       => 1,
 				'display_order'   => 115,
 			),
-			// Canada 183-day tax residency.
+			// Canada 183-day tax residency (multi-factor with significant ties).
 			array(
 				'code'            => 'ca_tax',
 				'name'            => 'Canada Tax Residency',
@@ -1068,7 +1131,8 @@ class MTS_Schema {
 				'reset_month'     => 1,
 				'reset_day'       => 1,
 				'description'     => 'Canadian tax residency threshold.',
-				'notes'           => 'Residency based on significant ties (home, spouse, dependents). 183+ days creates deemed residency for that year.',
+				'notes'           => 'Residency determined by significant residential ties (home, spouse, dependents). 183+ days creates deemed residency for that year regardless of ties.',
+				'rule_config'     => '{"multi_factor":true,"factors":[{"id":"dwelling","label":"Home in Canada","description":"Do you maintain a dwelling (house, apartment, leased accommodation) available for your use in Canada?","weight":1},{"id":"spouse_partner","label":"Spouse/Partner in Canada","description":"Does your spouse or common-law partner reside in Canada?","weight":1},{"id":"dependents","label":"Dependents in Canada","description":"Do you have dependents (minor children) residing in Canada?","weight":1},{"id":"personal_property","label":"Personal Property","description":"Do you have substantial personal property in Canada (furniture, vehicle, etc.)?","weight":0.5},{"id":"social_ties","label":"Social/Economic Ties","description":"Do you have significant social ties (memberships, clubs) or economic ties (bank accounts, business interests) in Canada?","weight":0.5}],"factor_logic":"any","day_threshold_applies":true}',
 				'country_code'    => 'CA',
 				'flag_emoji'      => '🇨🇦',
 				'is_system'       => 1,

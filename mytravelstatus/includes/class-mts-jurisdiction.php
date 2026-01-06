@@ -749,9 +749,9 @@ class MTS_Jurisdiction {
 
 		// Add breakdown for multi-year calculations.
 		if ( 'weighted_multi_year' === $rule['countingMethod'] ) {
-			$summary['breakdown'] = $this->get_weighted_breakdown( $trips, $rule, $reference_date );
+			$summary['weightedBreakdown'] = $this->get_weighted_breakdown( $trips, $rule, $reference_date );
 		} elseif ( 'multi_year' === $rule['countingMethod'] ) {
-			$summary['breakdown'] = $this->get_multi_year_breakdown( $trips, $rule, $reference_date );
+			$summary['multiYearBreakdown'] = $this->get_multi_year_breakdown( $trips, $rule, $reference_date );
 		} elseif ( 'uk_srt' === $rule['countingMethod'] ) {
 			$summary['ukSrtBreakdown'] = $this->get_uk_srt_breakdown( $user_id, $trips, $rule, $reference_date );
 			// For UK SRT, status is determined by the SRT result, not day count percentage.
@@ -775,6 +775,8 @@ class MTS_Jurisdiction {
 		$current_weight      = isset( $config['current_year_weight'] ) ? (float) $config['current_year_weight'] : 1.0;
 		$prior_weight        = isset( $config['prior_year_weight'] ) ? (float) $config['prior_year_weight'] : 0.333;
 		$second_prior_weight = isset( $config['second_prior_weight'] ) ? (float) $config['second_prior_weight'] : 0.167;
+		$min_current_days    = isset( $config['min_current_year_days'] ) ? (int) $config['min_current_year_days'] : 31;
+		$threshold           = isset( $rule['daysAllowed'] ) ? (int) $rule['daysAllowed'] : 183;
 
 		$current_year = (int) $reference_date->format( 'Y' );
 		$current_days = $this->calculate_calendar_year( $trips, $rule, $reference_date );
@@ -787,25 +789,39 @@ class MTS_Jurisdiction {
 		$second_prior_date->modify( '-2 years' );
 		$second_prior_days = $this->calculate_calendar_year( $trips, $rule, $second_prior_date );
 
+		// Calculate weighted totals.
+		$current_weighted      = round( $current_days * $current_weight, 1 );
+		$prior_weighted        = round( $prior_days * $prior_weight, 1 );
+		$second_prior_weighted = round( $second_prior_days * $second_prior_weight, 1 );
+		$total_weighted        = $current_weighted + $prior_weighted + $second_prior_weighted;
+
+		// Check if tests are met.
+		$meets_current_year_minimum = $current_days >= $min_current_days;
+		$meets_threshold            = $meets_current_year_minimum && $total_weighted >= $threshold;
+
 		return array(
 			'currentYear' => array(
 				'year'     => $current_year,
 				'days'     => $current_days,
 				'weight'   => $current_weight,
-				'weighted' => round( $current_days * $current_weight, 1 ),
+				'weighted' => $current_weighted,
 			),
 			'priorYear' => array(
 				'year'     => $current_year - 1,
 				'days'     => $prior_days,
 				'weight'   => $prior_weight,
-				'weighted' => round( $prior_days * $prior_weight, 1 ),
+				'weighted' => $prior_weighted,
 			),
 			'secondPriorYear' => array(
 				'year'     => $current_year - 2,
 				'days'     => $second_prior_days,
 				'weight'   => $second_prior_weight,
-				'weighted' => round( $second_prior_days * $second_prior_weight, 1 ),
+				'weighted' => $second_prior_weighted,
 			),
+			'totalWeighted'            => round( $total_weighted, 1 ),
+			'threshold'                => $threshold,
+			'meetsThreshold'           => $meets_threshold,
+			'meetsCurrentYearMinimum'  => $meets_current_year_minimum,
 		);
 	}
 
