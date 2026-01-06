@@ -31,7 +31,7 @@ Check app version requirements and maintenance status.
     "photo_import": true,
     "calendar_sync": true,
     "family_tracking": true,
-    "multi_jurisdiction": false
+    "multi_jurisdiction": true
   }
 }
 ```
@@ -320,8 +320,256 @@ All endpoints may return errors in this format:
 
 ---
 
+## Multi-Jurisdiction (v1.8.2+)
+
+### GET `/jurisdictions/rules`
+
+Get all available jurisdiction rules.
+
+**Parameters** (query):
+- `type` (optional): `zone`, `country`, or `state`
+- `category` (optional): `visa`, `tax`, or `residency`
+
+**Response**:
+```json
+[
+  {
+    "id": 1,
+    "code": "schengen_visa",
+    "name": "Schengen 90/180",
+    "type": "zone",
+    "category": "visa",
+    "days_allowed": 90,
+    "window_days": 180,
+    "counting_method": "rolling",
+    "flag_emoji": "🇪🇺",
+    "description": "Non-EU nationals can stay up to 90 days in any 180-day period.",
+    "is_system": true,
+    "is_active": true
+  },
+  {
+    "id": 2,
+    "code": "uk_srt",
+    "name": "UK Statutory Residence Test",
+    "type": "country",
+    "category": "tax",
+    "days_allowed": 183,
+    "window_days": 365,
+    "counting_method": "uk_srt",
+    "flag_emoji": "🇬🇧",
+    "rule_config": {
+      "auto_overseas_days": 16,
+      "auto_uk_days": 183,
+      "tie_thresholds": { ... }
+    }
+  }
+]
+```
+
+### GET `/jurisdictions/tracked`
+
+Get user's tracked jurisdictions.
+
+**Response**:
+```json
+{
+  "jurisdictions": ["schengen_visa", "uk_srt", "us_spt"]
+}
+```
+
+### PUT `/jurisdictions/tracked`
+
+Update user's tracked jurisdictions.
+
+**Request Body**:
+```json
+{
+  "jurisdictions": ["schengen_visa", "uk_srt", "ireland_183"]
+}
+```
+
+**Response**:
+```json
+{
+  "success": true,
+  "jurisdictions": ["schengen_visa", "uk_srt", "ireland_183"]
+}
+```
+
+### GET `/jurisdictions/summary`
+
+Get summaries for all tracked jurisdictions.
+
+**Response**:
+```json
+{
+  "schengen_visa": {
+    "jurisdiction_code": "schengen_visa",
+    "jurisdiction_name": "Schengen 90/180",
+    "flag_emoji": "🇪🇺",
+    "days_used": 45,
+    "days_allowed": 90,
+    "days_remaining": 45,
+    "percentage": 50.0,
+    "status": "ok",
+    "window_start": "2025-06-15",
+    "window_end": "2025-12-12",
+    "counting_method": "rolling",
+    "trip_count": 3
+  },
+  "uk_srt": {
+    "jurisdiction_code": "uk_srt",
+    "jurisdiction_name": "UK Statutory Residence Test",
+    "flag_emoji": "🇬🇧",
+    "days_used": 120,
+    "days_allowed": 183,
+    "days_remaining": 63,
+    "percentage": 65.6,
+    "status": "warning",
+    "window_start": "2025-01-01",
+    "window_end": "2025-12-31",
+    "counting_method": "uk_srt",
+    "trip_count": 8,
+    "uk_srt_breakdown": {
+      "result": "non_resident",
+      "days_in_uk": 120,
+      "auto_overseas": { "passed": false },
+      "auto_uk": { "passed": false },
+      "sufficient_ties": {
+        "resident": false,
+        "tie_count": 2,
+        "tie_breakdown": {
+          "family": false,
+          "accommodation": true,
+          "work": false,
+          "ninety_day": true,
+          "country": false
+        },
+        "day_threshold": 120
+      }
+    }
+  }
+}
+```
+
+### GET `/jurisdictions/overview`
+
+Get compliance overview across all tracked jurisdictions.
+
+**Response**:
+```json
+{
+  "total_jurisdictions": 4,
+  "critical_count": 0,
+  "warning_count": 1,
+  "ok_count": 3,
+  "exceeded_count": 0,
+  "summaries": [
+    { ... jurisdiction summary objects ... }
+  ]
+}
+```
+
+### GET `/jurisdictions/{code}/summary`
+
+Get summary for a specific jurisdiction.
+
+**Response**: Same as individual summary in `/jurisdictions/summary`.
+
+---
+
+## PDF Reports (v1.8.2+)
+
+### POST `/schengen/reports/generate`
+
+Generate a PDF compliance report.
+
+**Request Body**:
+```json
+{
+  "period_start": "2025-01-01",
+  "period_end": "2025-12-31",
+  "jurisdictions": ["schengen_visa", "uk_srt"],
+  "include_trips": true,
+  "include_qr": true
+}
+```
+
+**Response**:
+```json
+{
+  "report_id": "MTS-2025-ABC123",
+  "file_path": "/uploads/mts-reports/...",
+  "file_url": "https://site.com/wp-content/uploads/...",
+  "hash": "sha256:abc123...",
+  "generated": "2025-12-29T12:00:00+00:00",
+  "period": {
+    "start": "2025-01-01",
+    "end": "2025-12-31"
+  }
+}
+```
+
+### GET `/schengen/reports/{report_id}/download`
+
+Get download URL for a report.
+
+**Response**:
+```json
+{
+  "report_id": "MTS-2025-ABC123",
+  "file_url": "https://site.com/wp-content/uploads/...",
+  "filename": "MTS-2025-ABC123.pdf"
+}
+```
+
+### GET `/schengen/reports/{report_id}/verify` (Public)
+
+Verify report authenticity using QR code.
+
+**Response**:
+```json
+{
+  "report_id": "MTS-2025-ABC123",
+  "user_id": 123,
+  "period_start": "2025-01-01",
+  "period_end": "2025-12-31",
+  "created_at": "2025-12-29T12:00:00+00:00",
+  "file_exists": true,
+  "hash_valid": true,
+  "verified": true
+}
+```
+
+---
+
+## Counting Methods
+
+| Method | Description |
+|--------|-------------|
+| `rolling` | Rolling window (e.g., Schengen 90/180) |
+| `calendar_year` | Reset January 1st (e.g., 183-day tax rules) |
+| `fiscal_year` | Reset on fiscal year boundary |
+| `multi_year` | Multi-year combined test (e.g., Ireland) |
+| `weighted_multi_year` | US Substantial Presence Test |
+| `uk_srt` | UK Statutory Residence Test |
+
+---
+
+## Status Values
+
+| Status | Percentage | Description |
+|--------|------------|-------------|
+| `ok` | < 70% | Safe, plenty of days remaining |
+| `warning` | 70-84% | Approaching threshold |
+| `critical` | 85-99% | Very close to limit |
+| `exceeded` | 100%+ | Over the limit |
+
+---
+
 ## Rate Limits
 
 - Standard rate limit: 60 requests/minute
 - Sync endpoint: 10 requests/minute
 - Location batch: 30 requests/minute
+- PDF generation: 5 requests/minute
