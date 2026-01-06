@@ -440,6 +440,249 @@ function test_australia_fiscal_year() {
 test_australia_fiscal_year();
 
 // ============================================
+// Test 12: Status Thresholds
+// ============================================
+echo "\n--- Status Threshold Calculation ---\n";
+
+/**
+ * Test status thresholds based on percentage.
+ */
+function test_status_thresholds() {
+	$get_status = function( $days_used, $days_allowed ) {
+		$percentage = ( $days_used / $days_allowed ) * 100;
+		if ( $percentage >= 100 ) {
+			return 'exceeded';
+		}
+		if ( $percentage >= 85 ) {
+			return 'critical';
+		}
+		if ( $percentage >= 70 ) {
+			return 'warning';
+		}
+		return 'ok';
+	};
+
+	// OK status (under 70%)
+	$status = $get_status( 60, 90 );
+	test_equals( 'ok', $status, 'Status: 60/90 (67%) = ok' );
+
+	// Warning status (70-84%)
+	$status = $get_status( 70, 90 );
+	test_equals( 'warning', $status, 'Status: 70/90 (78%) = warning' );
+
+	// Critical status (85-99%)
+	$status = $get_status( 85, 90 );
+	test_equals( 'critical', $status, 'Status: 85/90 (94%) = critical' );
+
+	// Exceeded status (100%+)
+	$status = $get_status( 95, 90 );
+	test_equals( 'exceeded', $status, 'Status: 95/90 (106%) = exceeded' );
+
+	// Boundary test: just under 70%
+	$status = $get_status( 62, 90 );
+	test_equals( 'ok', $status, 'Status: 62/90 (68.9%) = ok (under 70%)' );
+
+	// Boundary test: just under 85%
+	$status = $get_status( 76, 90 );
+	test_equals( 'warning', $status, 'Status: 76/90 (84.4%) = warning (under 85%)' );
+}
+
+test_status_thresholds();
+
+// ============================================
+// Test 13: Multi-Jurisdiction Summary Aggregation
+// ============================================
+echo "\n--- Multi-Jurisdiction Summary Aggregation ---\n";
+
+/**
+ * Test compliance overview aggregation.
+ */
+function test_compliance_overview_aggregation() {
+	// Mock summaries from multiple jurisdictions
+	$summaries = array(
+		array( 'status' => 'ok', 'jurisdiction_code' => 'schengen_visa' ),
+		array( 'status' => 'warning', 'jurisdiction_code' => 'uk_srt' ),
+		array( 'status' => 'ok', 'jurisdiction_code' => 'ireland_183' ),
+		array( 'status' => 'critical', 'jurisdiction_code' => 'us_spt' ),
+		array( 'status' => 'ok', 'jurisdiction_code' => 'canada_183' ),
+	);
+
+	$counts = array(
+		'ok'       => 0,
+		'warning'  => 0,
+		'critical' => 0,
+		'exceeded' => 0,
+	);
+
+	foreach ( $summaries as $summary ) {
+		$status = $summary['status'];
+		if ( isset( $counts[ $status ] ) ) {
+			$counts[ $status ]++;
+		}
+	}
+
+	test_equals( 3, $counts['ok'], 'Overview: 3 jurisdictions at OK status' );
+	test_equals( 1, $counts['warning'], 'Overview: 1 jurisdiction at WARNING status' );
+	test_equals( 1, $counts['critical'], 'Overview: 1 jurisdiction at CRITICAL status' );
+	test_equals( 0, $counts['exceeded'], 'Overview: 0 jurisdictions EXCEEDED' );
+
+	$has_critical = $counts['critical'] > 0 || $counts['exceeded'] > 0;
+	test_assert( $has_critical === true, 'Overview: hasCriticalIssues = true when critical > 0' );
+
+	$needs_attention = $counts['warning'] > 0;
+	test_assert( $needs_attention === true, 'Overview: needsAttention = true when warning > 0' );
+}
+
+test_compliance_overview_aggregation();
+
+// ============================================
+// Test 14: Alert Level Determination
+// ============================================
+echo "\n--- Alert Level Determination ---\n";
+
+/**
+ * Test alert level based on percentage.
+ */
+function test_alert_levels() {
+	$get_alert_level = function( $percentage, $status ) {
+		if ( $percentage >= 95 || 'exceeded' === $status ) {
+			return 'urgent';
+		}
+		if ( $percentage >= 85 || 'critical' === $status ) {
+			return 'danger';
+		}
+		if ( $percentage >= 70 || 'warning' === $status ) {
+			return 'warning';
+		}
+		return null;
+	};
+
+	// No alert for OK status
+	$level = $get_alert_level( 50, 'ok' );
+	test_assert( $level === null, 'Alert: 50% ok = no alert' );
+
+	// Warning alert
+	$level = $get_alert_level( 75, 'warning' );
+	test_equals( 'warning', $level, 'Alert: 75% warning = warning level' );
+
+	// Danger alert
+	$level = $get_alert_level( 90, 'critical' );
+	test_equals( 'danger', $level, 'Alert: 90% critical = danger level' );
+
+	// Urgent alert
+	$level = $get_alert_level( 98, 'critical' );
+	test_equals( 'urgent', $level, 'Alert: 98% = urgent level' );
+
+	// Exceeded triggers urgent
+	$level = $get_alert_level( 110, 'exceeded' );
+	test_equals( 'urgent', $level, 'Alert: exceeded status = urgent level' );
+}
+
+test_alert_levels();
+
+// ============================================
+// Test 15: Days Remaining Calculation
+// ============================================
+echo "\n--- Days Remaining Calculation ---\n";
+
+/**
+ * Test days remaining never goes negative.
+ */
+function test_days_remaining() {
+	$calculate_remaining = function( $days_used, $days_allowed ) {
+		return max( 0, $days_allowed - $days_used );
+	};
+
+	// Normal case
+	$remaining = $calculate_remaining( 60, 90 );
+	test_equals( 30, $remaining, 'Remaining: 60 used of 90 = 30 remaining' );
+
+	// At limit
+	$remaining = $calculate_remaining( 90, 90 );
+	test_equals( 0, $remaining, 'Remaining: 90 used of 90 = 0 remaining' );
+
+	// Over limit (never negative)
+	$remaining = $calculate_remaining( 100, 90 );
+	test_equals( 0, $remaining, 'Remaining: 100 used of 90 = 0 remaining (not -10)' );
+
+	// UK SRT with 183 threshold
+	$remaining = $calculate_remaining( 120, 183 );
+	test_equals( 63, $remaining, 'Remaining: 120 used of 183 = 63 remaining' );
+}
+
+test_days_remaining();
+
+// ============================================
+// Test 16: Window Date Calculation
+// ============================================
+echo "\n--- Window Date Calculation ---\n";
+
+/**
+ * Test window start/end calculation for different methods.
+ */
+function test_window_dates() {
+	$today = new DateTime( '2025-06-15' );
+
+	// Rolling window (180 days back)
+	$window_start = ( clone $today )->modify( '-179 days' );
+	$expected = '2024-12-18';
+	test_equals( $expected, $window_start->format( 'Y-m-d' ), 'Rolling: 180-day window starts 179 days ago' );
+
+	// Calendar year
+	$year_start = new DateTime( '2025-01-01' );
+	$year_end   = new DateTime( '2025-12-31' );
+	test_equals( '2025-01-01', $year_start->format( 'Y-m-d' ), 'Calendar: Year starts Jan 1' );
+	test_equals( '2025-12-31', $year_end->format( 'Y-m-d' ), 'Calendar: Year ends Dec 31' );
+
+	// UK Tax Year (April 6 - April 5)
+	$uk_tax_year = 2025;
+	$uk_start    = new DateTime( ( $uk_tax_year - 1 ) . '-04-06' );
+	$uk_end      = new DateTime( $uk_tax_year . '-04-05' );
+	test_equals( '2024-04-06', $uk_start->format( 'Y-m-d' ), 'UK Tax: 2025 year starts Apr 6, 2024' );
+	test_equals( '2025-04-05', $uk_end->format( 'Y-m-d' ), 'UK Tax: 2025 year ends Apr 5, 2025' );
+
+	// Australia Fiscal Year (July 1 - June 30)
+	$au_fiscal_year = 2025;
+	$au_start       = new DateTime( ( $au_fiscal_year - 1 ) . '-07-01' );
+	$au_end         = new DateTime( $au_fiscal_year . '-06-30' );
+	test_equals( '2024-07-01', $au_start->format( 'Y-m-d' ), 'AU Fiscal: 2024-25 year starts Jul 1, 2024' );
+	test_equals( '2025-06-30', $au_end->format( 'Y-m-d' ), 'AU Fiscal: 2024-25 year ends Jun 30, 2025' );
+}
+
+test_window_dates();
+
+// ============================================
+// Test 17: Cache Key Generation
+// ============================================
+echo "\n--- Cache Key Generation ---\n";
+
+/**
+ * Test cache key uniqueness for different users/jurisdictions.
+ */
+function test_cache_keys() {
+	$generate_key = function( $user_id, $code, $date ) {
+		return "mts_summary_{$user_id}_{$code}_{$date}";
+	};
+
+	// Different users should have different keys
+	$key1 = $generate_key( 1, 'schengen_visa', '2025-06-15' );
+	$key2 = $generate_key( 2, 'schengen_visa', '2025-06-15' );
+	test_assert( $key1 !== $key2, 'Cache: Different users have different keys' );
+
+	// Different jurisdictions should have different keys
+	$key1 = $generate_key( 1, 'schengen_visa', '2025-06-15' );
+	$key2 = $generate_key( 1, 'uk_srt', '2025-06-15' );
+	test_assert( $key1 !== $key2, 'Cache: Different jurisdictions have different keys' );
+
+	// Same parameters should generate same key
+	$key1 = $generate_key( 1, 'schengen_visa', '2025-06-15' );
+	$key2 = $generate_key( 1, 'schengen_visa', '2025-06-15' );
+	test_equals( $key1, $key2, 'Cache: Same parameters generate same key' );
+}
+
+test_cache_keys();
+
+// ============================================
 // Print Summary
 // ============================================
 echo "\n========================================\n";

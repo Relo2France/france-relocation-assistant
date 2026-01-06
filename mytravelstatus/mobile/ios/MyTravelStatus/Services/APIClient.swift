@@ -229,6 +229,88 @@ actor APIClient {
         return try decoder.decode(JurisdictionSummary.self, from: data)
     }
 
+    // MARK: - Multi-Jurisdiction
+
+    /// Get all tracked jurisdictions with summaries
+    func getMultiJurisdictionSummary() async throws -> [String: JurisdictionSummary] {
+        let request = try authenticatedRequest(path: "jurisdictions/summary", method: "GET")
+        let (data, response) = try await session.data(for: request)
+        try validateResponse(response)
+
+        return try decoder.decode([String: JurisdictionSummary].self, from: data)
+    }
+
+    /// Get compliance overview (aggregate status across jurisdictions)
+    func getComplianceOverview() async throws -> ComplianceOverview {
+        let request = try authenticatedRequest(path: "jurisdictions/overview", method: "GET")
+        let (data, response) = try await session.data(for: request)
+        try validateResponse(response)
+
+        return try decoder.decode(ComplianceOverview.self, from: data)
+    }
+
+    /// Get all available jurisdiction rules
+    func getJurisdictionRules(type: String? = nil, category: String? = nil) async throws -> [JurisdictionRule] {
+        var components = URLComponents(url: baseURL.appendingPathComponent("jurisdictions/rules"), resolvingAgainstBaseURL: true)!
+        var queryItems: [URLQueryItem] = []
+
+        if let type = type {
+            queryItems.append(URLQueryItem(name: "type", value: type))
+        }
+        if let category = category {
+            queryItems.append(URLQueryItem(name: "category", value: category))
+        }
+
+        if !queryItems.isEmpty {
+            components.queryItems = queryItems
+        }
+
+        var request = URLRequest(url: components.url!)
+        try addAuthHeader(to: &request)
+
+        let (data, response) = try await session.data(for: request)
+        try validateResponse(response)
+
+        return try decoder.decode([JurisdictionRule].self, from: data)
+    }
+
+    /// Get user's tracked jurisdictions
+    func getTrackedJurisdictions() async throws -> [String] {
+        let request = try authenticatedRequest(path: "jurisdictions/tracked", method: "GET")
+        let (data, response) = try await session.data(for: request)
+        try validateResponse(response)
+
+        struct TrackedResponse: Decodable {
+            let jurisdictions: [String]
+        }
+
+        let tracked = try decoder.decode(TrackedResponse.self, from: data)
+        return tracked.jurisdictions
+    }
+
+    /// Update user's tracked jurisdictions
+    func updateTrackedJurisdictions(_ codes: [String]) async throws {
+        var request = try authenticatedRequest(path: "jurisdictions/tracked", method: "PUT")
+
+        struct UpdateRequest: Encodable {
+            let jurisdictions: [String]
+        }
+
+        request.httpBody = try encoder.encode(UpdateRequest(jurisdictions: codes))
+
+        let (_, response) = try await session.data(for: request)
+        try validateResponse(response)
+    }
+
+    /// Get summary for a specific jurisdiction
+    func getJurisdictionSummary(code: String) async throws -> JurisdictionSummary {
+        let request = try authenticatedRequest(path: "jurisdictions/\(code)/summary", method: "GET")
+        let (data, response) = try await session.data(for: request)
+        try validateResponse(response)
+
+        return try decoder.decode(JurisdictionSummary.self, from: data)
+    }
+
     // MARK: - Family
 
     func getFamilyMembers() async throws -> [FamilyMember] {

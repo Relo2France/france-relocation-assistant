@@ -240,19 +240,154 @@ struct FamilyMember: Codable, Identifiable {
     let displayOrder: Int
 }
 
-// MARK: - Summary
+// MARK: - Jurisdiction
+
+struct JurisdictionRule: Codable, Identifiable {
+    let id: Int?
+    let code: String
+    let name: String
+    let type: JurisdictionType
+    let category: JurisdictionCategory
+    let daysAllowed: Int
+    let windowDays: Int
+    let countingMethod: CountingMethod
+    let resetMonth: Int?
+    let resetDay: Int?
+    let description: String?
+    let notes: String?
+    let ruleConfig: [String: AnyCodable]?
+    let countryCode: String?
+    let flagEmoji: String?
+    let isSystem: Bool
+    let isActive: Bool
+    let displayOrder: Int
+
+    var identifier: String { code }
+}
+
+enum JurisdictionType: String, Codable {
+    case zone
+    case country
+    case state
+}
+
+enum JurisdictionCategory: String, Codable {
+    case visa
+    case tax
+    case residency
+}
+
+enum CountingMethod: String, Codable {
+    case rolling
+    case calendarYear = "calendar_year"
+    case fiscalYear = "fiscal_year"
+    case multiYear = "multi_year"
+    case weightedMultiYear = "weighted_multi_year"
+    case ukSrt = "uk_srt"
+}
+
+// MARK: - Jurisdiction Summary
 
 struct JurisdictionSummary: Decodable {
-    let jurisdictionId: String
+    let jurisdictionCode: String
     let jurisdictionName: String
+    let category: String?
+    let flagEmoji: String?
     let daysUsed: Int
     let daysAllowed: Int
     let daysRemaining: Int
-    let status: StatusLevel
-    let periodStart: Date
-    let periodEnd: Date
-    let lastUpdated: Date
-    let notes: String?
+    let percentage: Double
+    let status: String
+    let windowStart: String
+    let windowEnd: String
+    let referenceDate: String
+    let countingMethod: String
+    let nextExpiringDate: String?
+    let nextExpiringDays: Int?
+    let tripCount: Int
+
+    // Optional breakdowns
+    let weightedBreakdown: WeightedBreakdown?
+    let multiYearBreakdown: MultiYearBreakdown?
+    let ukSrtBreakdown: UKSRTBreakdown?
+}
+
+struct WeightedBreakdown: Decodable {
+    let years: [YearBreakdown]
+    let totalWeighted: Double
+    let threshold: Int
+    let meetsThreshold: Bool
+    let meetsCurrentYearMinimum: Bool
+}
+
+struct YearBreakdown: Decodable {
+    let year: Int
+    let actualDays: Int
+    let weight: Double
+    let weightedDays: Double
+}
+
+struct MultiYearBreakdown: Decodable {
+    let currentYear: YearDays
+    let priorYear: YearDays
+    let combinedDays: Int
+    let primaryThreshold: Int
+    let secondaryThreshold: Int
+    let meetsPrimary: Bool
+    let meetsSecondary: Bool
+}
+
+struct YearDays: Decodable {
+    let year: Int
+    let days: Int
+}
+
+struct UKSRTBreakdown: Decodable {
+    let result: String
+    let daysInUK: Int
+    let autoOverseas: AutoTestResult?
+    let autoUK: AutoTestResult?
+    let sufficientTies: SufficientTiesResult?
+    let explanation: String?
+}
+
+struct AutoTestResult: Decodable {
+    let passed: Bool
+    let test: String?
+    let description: String?
+}
+
+struct SufficientTiesResult: Decodable {
+    let resident: Bool
+    let tieCount: Int
+    let tieBreakdown: TieBreakdown
+    let dayThreshold: Int
+    let daysInUK: Int
+}
+
+struct TieBreakdown: Decodable {
+    let family: Bool
+    let accommodation: Bool
+    let work: Bool
+    let ninety_day: Bool
+    let country: Bool
+}
+
+// MARK: - Multi-Jurisdiction Response
+
+struct MultiJurisdictionResponse: Decodable {
+    let jurisdictions: [String: JurisdictionSummary]
+}
+
+// MARK: - Compliance Overview
+
+struct ComplianceOverview: Decodable {
+    let totalJurisdictions: Int
+    let criticalCount: Int
+    let warningCount: Int
+    let okCount: Int
+    let exceededCount: Int
+    let summaries: [JurisdictionSummary]
 }
 
 // MARK: - AnyCodable Helper

@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Plugin constants.
-define( 'MTS_VERSION', '1.8.1' );
+define( 'MTS_VERSION', '1.8.2' );
 define( 'MTS_PLUGIN_FILE', __FILE__ );
 define( 'MTS_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'MTS_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -65,8 +65,24 @@ function mts_init() {
 
 	// Initialize core.
 	MTS_Core::get_instance();
+
+	// Hook cache invalidation to trip modifications.
+	add_action( 'mts_trip_created', 'mts_invalidate_user_cache', 10, 2 );
+	add_action( 'mts_trip_updated', 'mts_invalidate_user_cache', 10, 2 );
+	add_action( 'mts_trip_deleted', 'mts_invalidate_user_cache', 10, 2 );
 }
 add_action( 'plugins_loaded', 'mts_init', 20 );
+
+/**
+ * Invalidate user's jurisdiction summary cache when trips change.
+ *
+ * @param int        $user_id   User ID.
+ * @param array|null $trip_data Trip data (for created/updated) or trip ID (for deleted).
+ */
+function mts_invalidate_user_cache( $user_id, $trip_data = null ) {
+	$jurisdiction = MTS_Jurisdiction::get_instance();
+	$jurisdiction->invalidate_cache( $user_id );
+}
 
 /**
  * Plugin activation hook.

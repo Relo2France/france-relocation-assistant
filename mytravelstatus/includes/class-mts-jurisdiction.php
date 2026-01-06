@@ -36,6 +36,20 @@ class MTS_Jurisdiction {
 	private $rules_cache = array();
 
 	/**
+	 * Cached summaries (per-request).
+	 *
+	 * @var array
+	 */
+	private $summary_cache = array();
+
+	/**
+	 * Cache TTL in seconds (5 minutes).
+	 *
+	 * @var int
+	 */
+	const CACHE_TTL = 300;
+
+	/**
 	 * Get singleton instance.
 	 *
 	 * @return MTS_Jurisdiction
@@ -661,6 +675,22 @@ class MTS_Jurisdiction {
 	 * @return array Summary data.
 	 */
 	public function calculate_summary( $user_id, $rule, $reference_date ) {
+		// Generate cache key.
+		$date_key  = $reference_date->format( 'Y-m-d' );
+		$cache_key = "mts_summary_{$user_id}_{$rule['code']}_{$date_key}";
+
+		// Check per-request cache first.
+		if ( isset( $this->summary_cache[ $cache_key ] ) ) {
+			return $this->summary_cache[ $cache_key ];
+		}
+
+		// Check transient cache.
+		$cached = get_transient( $cache_key );
+		if ( false !== $cached ) {
+			$this->summary_cache[ $cache_key ] = $cached;
+			return $cached;
+		}
+
 		$trips = $this->get_trips_for_jurisdiction( $user_id, $rule['code'] );
 
 		$days_used = $this->calculate_days_used(
@@ -758,6 +788,12 @@ class MTS_Jurisdiction {
 			$srt_result = $summary['ukSrtBreakdown']['result'];
 			$summary['status'] = ( 'resident' === $srt_result ) ? 'exceeded' : 'ok';
 		}
+
+		// Store in per-request cache.
+		$this->summary_cache[ $cache_key ] = $summary;
+
+		// Store in transient cache (5 minutes).
+		set_transient( $cache_key, $summary, self::CACHE_TTL );
 
 		return $summary;
 	}
@@ -2071,6 +2107,79 @@ class MTS_Jurisdiction {
 				'jurisdictions' => $eu_tax_jurisdictions,
 				'codes'         => array_column( $eu_tax_jurisdictions, 'code' ),
 			)
+		);
+	}
+
+	/**
+	 * Invalidate summary cache for a user.
+	 *
+	 * Call this when trips are created, updated, or deleted.
+	 *
+	 * @param int         $user_id User ID.
+	 * @param string|null $code    Optional jurisdiction code to invalidate, or null for all.
+	 */
+	public function invalidate_cache( $user_id, $code = null ) {
+		global $wpdb;
+
+		// Clear per-request cache.
+		if ( $code ) {
+			// Clear specific jurisdiction cache.
+			foreach ( $this->summary_cache as $key => $value ) {
+				if ( strpos( $key, "mts_summary_{$user_id}_{$code}_" ) === 0 ) {
+					unset( $this->summary_cache[ $key ] );
+				}
+			}
+		} else {
+			// Clear all user cache.
+			foreach ( $this->summary_cache as $key => $value ) {
+				if ( strpos( $key, "mts_summary_{$user_id}_" ) === 0 ) {
+					unset( $this->summary_cache[ $key ] );
+				}
+			}
+		}
+
+		// Clear transient cache.
+		// Generate date keys for past 7 days (common reference dates).
+		$dates = array();
+		for ( $i = 0; $i <= 7; $i++ ) {
+			$dates[] = gmdate( 'Y-m-d', strtotime( "-{$i} days" ) );
+		}
+
+		if ( $code ) {
+			// Clear specific jurisdiction transients.
+			foreach ( $dates as $date ) {
+				delete_transient( "mts_summary_{$user_id}_{$code}_{$date}" );
+			}
+		} else {
+			// Clear all jurisdictions for user.
+			$tracked = get_user_meta( $user_id, 'mts_tracked_jurisdictions', true );
+			if ( empty( $tracked ) ) {
+				$tracked = array( 'schengen' );
+			}
+
+			foreach ( $tracked as $jurisdiction_code ) {
+				foreach ( $dates as $date ) {
+					delete_transient( "mts_summary_{$user_id}_{$jurisdiction_code}_{$date}" );
+				}
+			}
+		}
+	}
+
+	/**
+	 * Clear all caches (for admin use).
+	 */
+	public function clear_all_caches() {
+		global $wpdb;
+
+		// Clear per-request cache.
+		$this->summary_cache = array();
+		$this->rules_cache   = array();
+
+		// Clear all MTS transients.
+		$wpdb->query(
+			"DELETE FROM {$wpdb->options}
+			WHERE option_name LIKE '_transient_mts_summary_%'
+			OR option_name LIKE '_transient_timeout_mts_summary_%'"
 		);
 	}
 }
