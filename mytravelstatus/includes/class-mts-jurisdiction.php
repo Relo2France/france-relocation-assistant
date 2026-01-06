@@ -163,6 +163,58 @@ class MTS_Jurisdiction {
 			)
 		);
 
+		// User jurisdiction settings with multi-factor responses.
+		register_rest_route(
+			$namespace,
+			'/jurisdictions/user/(?P<code>[a-z0-9_]+)/factors',
+			array(
+				array(
+					'methods'             => 'GET',
+					'callback'            => array( $this, 'get_user_factors' ),
+					'permission_callback' => array( $this, 'check_permission' ),
+					'args'                => array(
+						'code' => array(
+							'required'          => true,
+							'sanitize_callback' => 'sanitize_text_field',
+						),
+					),
+				),
+				array(
+					'methods'             => 'PUT',
+					'callback'            => array( $this, 'update_user_factors' ),
+					'permission_callback' => array( $this, 'check_permission' ),
+					'args'                => array(
+						'code' => array(
+							'required'          => true,
+							'sanitize_callback' => 'sanitize_text_field',
+						),
+					),
+				),
+			)
+		);
+
+		// Bulk enable/disable jurisdictions.
+		register_rest_route(
+			$namespace,
+			'/jurisdictions/bulk',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( $this, 'bulk_update_jurisdictions' ),
+				'permission_callback' => array( $this, 'check_permission' ),
+			)
+		);
+
+		// Get EU tax jurisdictions for bulk operations.
+		register_rest_route(
+			$namespace,
+			'/jurisdictions/eu-tax',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( $this, 'get_eu_tax_jurisdictions' ),
+				'permission_callback' => array( $this, 'check_permission' ),
+			)
+		);
+
 		// Legacy namespace support (fra-portal/v1/schengen/...).
 		$legacy_namespace = 'fra-portal/v1';
 
@@ -1057,6 +1109,211 @@ class MTS_Jurisdiction {
 			function ( $trip ) use ( $jurisdiction_code ) {
 				return $trip['jurisdiction_code'] === $jurisdiction_code;
 			}
+		);
+	}
+
+	/**
+	 * Get user's multi-factor responses for a jurisdiction.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function get_user_factors( $request ) {
+		$user_id = get_current_user_id();
+		$code    = $request->get_param( 'code' );
+
+		$rule = $this->get_rule( $code );
+		if ( ! $rule ) {
+			return new WP_Error(
+				'not_found',
+				__( 'Jurisdiction not found.', 'mytravelstatus' ),
+				array( 'status' => 404 )
+			);
+		}
+
+		// Check if rule has multi-factor config.
+		if ( empty( $rule['ruleConfig']['multi_factor'] ) ) {
+			return rest_ensure_response(
+				array(
+					'code'       => $code,
+					'hasFactors' => false,
+					'factors'    => array(),
+					'responses'  => array(),
+				)
+			);
+		}
+
+		$factors   = $rule['ruleConfig']['factors'] ?? array();
+		$responses = get_user_meta( $user_id, 'mts_factors_' . $code, true );
+
+		if ( ! is_array( $responses ) ) {
+			$responses = array();
+		}
+
+		return rest_ensure_response(
+			array(
+				'code'        => $code,
+				'hasFactors'  => true,
+				'factors'     => $factors,
+				'responses'   => $responses,
+				'factorLogic' => $rule['ruleConfig']['factor_logic'] ?? 'any',
+			)
+		);
+	}
+
+	/**
+	 * Update user's multi-factor responses for a jurisdiction.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function update_user_factors( $request ) {
+		$user_id   = get_current_user_id();
+		$code      = $request->get_param( 'code' );
+		$responses = $request->get_json_params();
+
+		$rule = $this->get_rule( $code );
+		if ( ! $rule ) {
+			return new WP_Error(
+				'not_found',
+				__( 'Jurisdiction not found.', 'mytravelstatus' ),
+				array( 'status' => 404 )
+			);
+		}
+
+		// Validate responses against defined factors.
+		if ( empty( $rule['ruleConfig']['multi_factor'] ) ) {
+			return new WP_Error(
+				'no_factors',
+				__( 'This jurisdiction does not have multi-factor configuration.', 'mytravelstatus' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		$allowed_factor_ids = array_column( $rule['ruleConfig']['factors'] ?? array(), 'id' );
+		$sanitized          = array();
+
+		foreach ( $responses as $factor_id => $value ) {
+			if ( in_array( $factor_id, $allowed_factor_ids, true ) ) {
+				$sanitized[ sanitize_key( $factor_id ) ] = (bool) $value;
+			}
+		}
+
+		update_user_meta( $user_id, 'mts_factors_' . $code, $sanitized );
+
+		return rest_ensure_response(
+			array(
+				'success'   => true,
+				'code'      => $code,
+				'responses' => $sanitized,
+			)
+		);
+	}
+
+	/**
+	 * Bulk enable/disable jurisdictions.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function bulk_update_jurisdictions( $request ) {
+		$user_id = get_current_user_id();
+		$params  = $request->get_json_params();
+		$action  = isset( $params['action'] ) ? sanitize_text_field( $params['action'] ) : '';
+		$codes   = isset( $params['codes'] ) ? array_map( 'sanitize_text_field', $params['codes'] ) : array();
+
+		if ( empty( $action ) || ! in_array( $action, array( 'enable', 'disable' ), true ) ) {
+			return new WP_Error(
+				'invalid_action',
+				__( 'Action must be "enable" or "disable".', 'mytravelstatus' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		if ( empty( $codes ) ) {
+			return new WP_Error(
+				'no_codes',
+				__( 'No jurisdiction codes provided.', 'mytravelstatus' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		$tracked = get_user_meta( $user_id, 'mts_tracked_jurisdictions', true );
+		if ( ! is_array( $tracked ) ) {
+			$tracked = array( 'schengen' );
+		}
+
+		if ( 'enable' === $action ) {
+			// Verify each code exists.
+			foreach ( $codes as $code ) {
+				$rule = $this->get_rule( $code );
+				if ( $rule && ! in_array( $code, $tracked, true ) ) {
+					$tracked[] = $code;
+				}
+			}
+		} else {
+			// Disable - remove from tracked (except schengen).
+			$tracked = array_filter(
+				$tracked,
+				function ( $code ) use ( $codes ) {
+					return 'schengen' === $code || ! in_array( $code, $codes, true );
+				}
+			);
+			$tracked = array_values( $tracked );
+		}
+
+		update_user_meta( $user_id, 'mts_tracked_jurisdictions', $tracked );
+
+		return rest_ensure_response(
+			array(
+				'success' => true,
+				'action'  => $action,
+				'count'   => count( $codes ),
+				'tracked' => $tracked,
+			)
+		);
+	}
+
+	/**
+	 * Get EU tax jurisdictions for bulk enable.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response
+	 */
+	public function get_eu_tax_jurisdictions( $request ) {
+		$all_rules = $this->get_all_rules();
+
+		// EU country codes (current EU members).
+		$eu_codes = array(
+			'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR',
+			'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL',
+			'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE',
+		);
+
+		$eu_tax_jurisdictions = array();
+
+		foreach ( $all_rules as $rule ) {
+			// Match rules that are tax category and have EU country code.
+			if ( 'tax' === $rule['category'] && ! empty( $rule['countryCode'] ) ) {
+				if ( in_array( $rule['countryCode'], $eu_codes, true ) ) {
+					$eu_tax_jurisdictions[] = $rule;
+				}
+			}
+		}
+
+		// Sort by name.
+		usort(
+			$eu_tax_jurisdictions,
+			function ( $a, $b ) {
+				return strcmp( $a['name'], $b['name'] );
+			}
+		);
+
+		return rest_ensure_response(
+			array(
+				'jurisdictions' => $eu_tax_jurisdictions,
+				'codes'         => array_column( $eu_tax_jurisdictions, 'code' ),
+			)
 		);
 	}
 }

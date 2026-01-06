@@ -1218,7 +1218,64 @@ export interface WeightedMultiYearRuleConfig {
   currentYearMinimum?: number; // 31 days minimum in current year for US
 }
 
-export type JurisdictionRuleConfig = MultiYearRuleConfig | WeightedMultiYearRuleConfig;
+export type JurisdictionRuleConfig = MultiYearRuleConfig | WeightedMultiYearRuleConfig | MultiFactorRuleConfig;
+
+/**
+ * Single factor in a multi-factor residency test
+ */
+export interface ResidencyFactor {
+  id: string;
+  label: string;
+  description: string;
+  weight: number;
+}
+
+/**
+ * Configuration for multi-factor residency rules (e.g., Germany, Italy, Netherlands)
+ */
+export interface MultiFactorRuleConfig {
+  multi_factor: true;
+  factors: ResidencyFactor[];
+  factor_logic: 'any' | 'all' | 'weighted';  // any = OR, all = AND, weighted = point system
+  day_threshold_applies: boolean;  // whether 183-day threshold also applies
+}
+
+/**
+ * User's responses to multi-factor questions
+ */
+export interface UserFactorResponses {
+  code: string;
+  hasFactors: boolean;
+  factors: ResidencyFactor[];
+  responses: Record<string, boolean>;
+  factorLogic: 'any' | 'all' | 'weighted';
+}
+
+/**
+ * EU tax jurisdictions response
+ */
+export interface EUTaxJurisdictionsResponse {
+  jurisdictions: JurisdictionRule[];
+  codes: string[];
+}
+
+/**
+ * Bulk update jurisdictions request
+ */
+export interface BulkUpdateJurisdictionsRequest {
+  action: 'enable' | 'disable';
+  codes: string[];
+}
+
+/**
+ * Bulk update jurisdictions response
+ */
+export interface BulkUpdateJurisdictionsResponse {
+  success: boolean;
+  action: 'enable' | 'disable';
+  count: number;
+  tracked: string[];
+}
 
 export interface JurisdictionRule {
   id: number;

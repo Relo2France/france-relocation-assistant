@@ -1,6 +1,6 @@
 # Relo2France Master Handoff Document
 
-**Last Updated:** January 5, 2026
+**Last Updated:** January 6, 2026
 **Repository:** Relo2France/france-relocation-assistant
 **Active Branch:** `claude/review-redesign-handoff-IANoS`
 
@@ -66,8 +66,9 @@
 ### What's In Progress
 - Native app widgets (iOS/Android)
 - Multi-jurisdiction expansion (see Appendix C for detailed 6-phase plan)
-  - Phase 1: Foundation + France tax - **Backend + Frontend core complete**
-  - Phase 2-5: 15+ jurisdictions, PDF reports, native sync
+  - Phase 1: Foundation + France tax - **Complete**
+  - Phase 2: Top Schengen EU Countries (multi-factor) - **Complete**
+  - Phase 3-5: 15+ jurisdictions, PDF reports, native sync
   - Phase 6: Other relo sites (Relo2Spain, Relo2Portugal, etc.)
 
 ### Recently Completed
@@ -90,7 +91,7 @@
 | Member Tools Plugin | v2.1.0 | Active |
 | React Portal | v2.1.0 | Active |
 | Theme | v1.2.4 | Active |
-| **MyTravelStatus Plugin** | **v1.7.0** | **Active** |
+| **MyTravelStatus Plugin** | **v1.7.1** | **Active** |
 | MyTravelStatus iOS | v1.0.0 | In Development |
 | MyTravelStatus Android | v1.0.0 | In Development |
 
@@ -665,6 +666,33 @@ The WordPress theme defines global `.btn-primary` with navy color. Portal button
 ---
 
 ## 13. Session History
+
+### January 6, 2026 (Session 6)
+- **Multi-Jurisdiction Expansion Phase 2 Implementation** - EU Multi-Factor Rules:
+  - **Database Schema v1.7.1:**
+    - Added multi-factor `rule_config` for Germany, Italy, Netherlands tax rules
+    - Migration function to update existing installations
+  - **Multi-Factor Configurations:**
+    - **Germany (de_tax):** Permanent home + habitual abode (any = residency trigger)
+    - **Italy (it_tax):** Registered residence (Anagrafe) + domicile + 183-day presence (any = residency trigger)
+    - **Netherlands (nl_tax):** Permanent home + vital interests + habitual abode (weighted assessment)
+  - **New API Endpoints:**
+    - `GET/PUT /jurisdictions/user/{code}/factors` - User multi-factor responses
+    - `POST /jurisdictions/bulk` - Bulk enable/disable jurisdictions
+    - `GET /jurisdictions/eu-tax` - Get all EU tax jurisdictions
+  - **TypeScript Types:**
+    - Added `ResidencyFactor`, `MultiFactorRuleConfig` interfaces
+    - Added `UserFactorResponses`, `EUTaxJurisdictionsResponse` types
+    - Added `BulkUpdateJurisdictionsRequest/Response` types
+  - **React Hooks:**
+    - Added `useUserFactors()` for multi-factor responses
+    - Added `useUpdateUserFactors()` mutation
+    - Added `useEUTaxJurisdictions()` for bulk operations
+    - Added `useBulkUpdateJurisdictions()` mutation
+  - **React Components:**
+    - Created `MultiFactorIndicators.tsx` - Toggle UI for residency factors with save
+    - Created `JurisdictionSettings.tsx` - Full settings panel with EU bulk toggle
+    - Integrated `MultiFactorIndicators` into `JurisdictionCard` expanded view
 
 ### January 5, 2026 (Session 5)
 - **Multi-Jurisdiction Expansion Phase 1 Implementation** - Backend + Frontend:

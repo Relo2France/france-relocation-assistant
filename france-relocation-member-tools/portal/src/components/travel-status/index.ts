@@ -14,5 +14,7 @@ export { default as CalendarView } from './CalendarView';
 export { default as ReportExport } from './ReportExport';
 export { default as JurisdictionOverview } from './JurisdictionOverview';
 export { default as ComplianceQuickView } from './ComplianceQuickView';
+export { default as MultiFactorIndicators } from './MultiFactorIndicators';
+export { default as JurisdictionSettings } from './JurisdictionSettings';
 export { useTravelStatusStore } from './useTravelStatusStore';
 export * from './travelStatusUtils';
