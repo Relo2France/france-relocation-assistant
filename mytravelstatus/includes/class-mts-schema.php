@@ -25,7 +25,7 @@ class MTS_Schema {
 	 *
 	 * @var string
 	 */
-	const DB_VERSION = '1.7.1';
+	const DB_VERSION = '1.8.0';
 
 	/**
 	 * Table definitions.
@@ -41,6 +41,7 @@ class MTS_Schema {
 		'jurisdiction_rules'    => 'mts_jurisdiction_rules',
 		'user_jurisdictions'    => 'mts_user_jurisdictions', // Added in v1.7.0 for user jurisdiction settings.
 		'compliance_snapshots'  => 'mts_compliance_snapshots', // Added in v1.7.0 for compliance history.
+		'uk_ties'               => 'mts_uk_ties', // Added in v1.8.0 for UK SRT ties tracking.
 		'push_subscriptions'    => 'mts_push_subscriptions',
 		'notifications'         => 'mts_notifications',
 		'family_members'        => 'mts_family_members',
@@ -334,6 +335,34 @@ class MTS_Schema {
 		) $charset_collate;";
 
 		dbDelta( $sql_compliance_snapshots );
+
+		// UK Ties table (added in v1.8.0 for UK SRT tracking).
+		$table_uk_ties = self::get_table( 'uk_ties' );
+		$sql_uk_ties = "CREATE TABLE $table_uk_ties (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			user_id bigint(20) unsigned NOT NULL,
+			tax_year int(4) NOT NULL,
+			family_tie tinyint(1) NOT NULL DEFAULT 0,
+			family_tie_details text DEFAULT NULL,
+			accommodation_tie tinyint(1) NOT NULL DEFAULT 0,
+			accommodation_tie_details text DEFAULT NULL,
+			work_tie tinyint(1) NOT NULL DEFAULT 0,
+			work_tie_details text DEFAULT NULL,
+			ninety_day_tie tinyint(1) NOT NULL DEFAULT 0,
+			country_tie tinyint(1) NOT NULL DEFAULT 0,
+			only_home_in_uk tinyint(1) NOT NULL DEFAULT 0,
+			full_time_work_uk tinyint(1) NOT NULL DEFAULT 0,
+			leaving_uk_permanently tinyint(1) NOT NULL DEFAULT 0,
+			srt_result varchar(50) DEFAULT NULL,
+			notes text DEFAULT NULL,
+			created_at datetime DEFAULT CURRENT_TIMESTAMP,
+			updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+			PRIMARY KEY (id),
+			UNIQUE KEY idx_user_tax_year (user_id, tax_year),
+			KEY idx_user_id (user_id)
+		) $charset_collate;";
+
+		dbDelta( $sql_uk_ties );
 
 		// Populate default jurisdiction rules if table is empty.
 		self::maybe_populate_default_rules();
@@ -1044,6 +1073,25 @@ class MTS_Schema {
 				'flag_emoji'      => '🇨🇦',
 				'is_system'       => 1,
 				'display_order'   => 116,
+			),
+			// UK Statutory Residence Test.
+			array(
+				'code'            => 'uk_srt',
+				'name'            => 'UK Statutory Residence Test',
+				'type'            => 'country',
+				'category'        => 'tax',
+				'days_allowed'    => 183,
+				'window_days'     => 365,
+				'counting_method' => 'uk_srt',
+				'reset_month'     => 4,
+				'reset_day'       => 6,
+				'description'     => 'UK Statutory Residence Test (SRT) for tax residency.',
+				'notes'           => 'Complex three-part test: Automatic Overseas Test (non-resident), Automatic UK Test (resident), Sufficient Ties Test (day count vs ties). UK tax year runs April 6 - April 5.',
+				'rule_config'     => '{"uk_srt":true,"automatic_overseas_tests":[{"id":"resident_3yr_under_16","description":"Resident in UK for 1+ of 3 prior years AND <16 days in UK"},{"id":"not_resident_3yr_under_46","description":"Not resident in UK for any of 3 prior years AND <46 days in UK"},{"id":"leaving_uk_under_16","description":"Leaving UK permanently during year AND <16 days in UK after departure date"}],"automatic_uk_tests":[{"id":"183_days","description":"183+ days in UK (midnight rule applies)"},{"id":"only_home","description":"Only home is in UK AND present for 30+ days"},{"id":"full_time_work","description":"Full-time work in UK (35+ hours/week for 365 days with no significant break)"},{"id":"deceased_183","description":"Deceased, and would have had 183+ days if lived"}],"ties":["family","accommodation","work","90_day","country"],"tie_thresholds":{"0":{"not_resident_prior":183,"resident_prior":183},"1":{"not_resident_prior":121,"resident_prior":91},"2":{"not_resident_prior":91,"resident_prior":61},"3":{"not_resident_prior":46,"resident_prior":46},"4":{"not_resident_prior":16,"resident_prior":16},"5":{"not_resident_prior":16,"resident_prior":16}}}',
+				'country_code'    => 'GB',
+				'flag_emoji'      => '🇬🇧',
+				'is_system'       => 1,
+				'display_order'   => 107,
 			),
 		);
 

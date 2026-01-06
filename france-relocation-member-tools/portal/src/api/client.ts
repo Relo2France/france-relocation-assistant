@@ -79,6 +79,9 @@ import type {
   TravelStatusSummary,
   TravelStatusTestAlertResult,
   TravelStatusTrip,
+  UKSRTResultResponse,
+  UKTies,
+  UKTiesResponse,
   UpdateProfileData,
   UpdateUserJurisdictionRequest,
   UpgradeOption,
@@ -1110,6 +1113,29 @@ export const travelStatusApi = {
       method: 'POST',
       body: JSON.stringify({ action, codes }),
     }),
+
+  // ============================================
+  // UK SRT API (Phase 3)
+  // ============================================
+
+  // Get UK ties for a tax year
+  getUKTies: (taxYear?: number) =>
+    apiFetch<UKTiesResponse>(
+      taxYear ? `/schengen/jurisdictions/uk-srt/ties?tax_year=${taxYear}` : '/schengen/jurisdictions/uk-srt/ties'
+    ),
+
+  // Update UK ties for a tax year
+  updateUKTies: (taxYear: number, ties: Partial<UKTies>) =>
+    apiFetch<UKTiesResponse>('/schengen/jurisdictions/uk-srt/ties', {
+      method: 'PUT',
+      body: JSON.stringify({ tax_year: taxYear, ties }),
+    }),
+
+  // Get UK SRT result
+  getUKSRTResult: (date?: string) =>
+    apiFetch<UKSRTResultResponse>(
+      date ? `/schengen/jurisdictions/uk-srt/result?date=${date}` : '/schengen/jurisdictions/uk-srt/result'
+    ),
 
   // ============================================
   // Notifications API (Phase 5)

@@ -1109,23 +1109,35 @@ Blockers resolved:
 | Americas Integration Tests | 1 | Cross-jurisdiction test suite |
 
 **Deliverables:**
-- [ ] UK SRT fully implemented with ties questionnaire
+- [x] UK SRT fully implemented with ties questionnaire
 - [ ] US SPT with 3-year rolling calculation
 - [ ] Canada with ties indicator
 - [ ] Mexico simple day count
 
 **Development Notes (Phase 3):**
 ```
-Started: ___________
-Completed: ___________
+Started: 2026-01-06
+UK SRT Completed: 2026-01-06
+
+UK SRT Implementation Details:
+- Database: Added wp_fra_uk_ties table (uk_srt counting method)
+- Backend: Full SRT engine with Automatic Overseas, Automatic UK, and Sufficient Ties tests
+- API: GET/PUT /jurisdictions/uk-srt/ties, GET /jurisdictions/uk-srt/result
+- Frontend: UKTiesQuestionnaire (5 ties + automatic conditions), UKSRTStatus (full result display)
+- Integrated into JurisdictionOverview with expandable SRT details
+
+Features:
+- Midnight rule for day counting (UK tax year April 6 - April 5)
+- 5 connection ties: family, accommodation, work, 90-day, country
+- Automatic test conditions: only home in UK, full-time work, leaving UK permanently
+- Prior year residency tracking for tie thresholds
+- Complete test breakdown with pass/fail indicators
+
 Issues encountered:
--
--
--
+- None significant
 
 Blockers resolved:
--
--
+- None
 ```
 
 ---
@@ -1586,29 +1598,29 @@ GET    /reports/{id}/verify              # Verify report integrity
 ### C.8 Development Checklist by Phase
 
 #### Phase 1 Checklist
-- [ ] Jurisdiction configuration schema designed
-- [ ] Multi-jurisdiction calculator engine built
-- [ ] France 183-day rule implemented
-- [ ] Jurisdiction selection UI created
-- [ ] Compliance Quick View UI implemented
-- [ ] Database tables created
-- [ ] API endpoints functional
-- [ ] Unit tests passing
-- [ ] Integration tested with existing Schengen tracker
+- [x] Jurisdiction configuration schema designed
+- [x] Multi-jurisdiction calculator engine built
+- [x] France 183-day rule implemented
+- [x] Jurisdiction selection UI created
+- [x] Compliance Quick View UI implemented
+- [x] Database tables created
+- [x] API endpoints functional
+- [x] Unit tests passing
+- [x] Integration tested with existing Schengen tracker
 
 #### Phase 2 Checklist
-- [ ] Spain 183-day rule
-- [ ] Portugal 183-day rule
-- [ ] Germany 183-day rule (+ permanent home indicator)
-- [ ] Italy multi-factor
-- [ ] Netherlands multi-factor
-- [ ] Bulk enable/disable UI
-- [ ] Settings UI per jurisdiction
+- [x] Spain 183-day rule
+- [x] Portugal 183-day rule
+- [x] Germany 183-day rule (+ permanent home indicator)
+- [x] Italy multi-factor
+- [x] Netherlands multi-factor
+- [x] Bulk enable/disable UI
+- [x] Settings UI per jurisdiction
 
 #### Phase 3 Checklist
-- [ ] UK SRT engine complete
-- [ ] UK ties questionnaire UI
-- [ ] UK SRT result display with explanation
+- [x] UK SRT engine complete
+- [x] UK ties questionnaire UI
+- [x] UK SRT result display with explanation
 - [ ] US SPT calculator with 3-year lookback
 - [ ] Canada 183 + ties
 - [ ] Mexico 183-day

@@ -38,6 +38,8 @@ import type {
 import DayCounter from './DayCounter';
 import StatusBadge from './StatusBadge';
 import MultiFactorIndicators from './MultiFactorIndicators';
+import UKSRTStatus from './UKSRTStatus';
+import UKTiesQuestionnaire from './UKTiesQuestionnaire';
 
 interface JurisdictionOverviewProps {
   className?: string;
@@ -424,6 +426,7 @@ function JurisdictionCard({
   const percentage = summary?.percentage ?? 0;
   const isWeighted = jurisdiction.countingMethod === 'weighted_multi_year';
   const isMultiYear = jurisdiction.countingMethod === 'multi_year';
+  const isUKSRT = jurisdiction.countingMethod === 'uk_srt';
 
   // Format date for display
   const formatDate = (dateStr: string) => {
@@ -439,6 +442,7 @@ function JurisdictionCard({
       case 'fiscal_year': return 'Fiscal Year';
       case 'multi_year': return 'Multi-Year';
       case 'weighted_multi_year': return 'Weighted Multi-Year';
+      case 'uk_srt': return 'UK Statutory Residence Test';
       default: return jurisdiction.countingMethod;
     }
   };
@@ -481,8 +485,28 @@ function JurisdictionCard({
         </button>
       </div>
 
-      {/* Day counter - different display for weighted rules */}
-      {isWeighted && summary?.weightedBreakdown ? (
+      {/* Day counter - different display for weighted rules and UK SRT */}
+      {isUKSRT && summary?.ukSrtBreakdown ? (
+        <div className="mb-3">
+          <div className="flex items-center justify-between mb-2">
+            <div>
+              <span className={clsx(
+                'text-sm font-medium',
+                summary.ukSrtBreakdown.result === 'resident' ? 'text-red-600' : 'text-green-600'
+              )}>
+                {summary.ukSrtBreakdown.result === 'resident' ? 'UK Tax Resident' : 'Not UK Tax Resident'}
+              </span>
+              <p className="text-xs text-gray-500">
+                {summary.ukSrtBreakdown.ukDays} days in UK | {summary.ukSrtBreakdown.tieCount} ties
+              </p>
+            </div>
+            <StatusBadge status={status} size="sm" />
+          </div>
+          <p className="text-xs text-gray-500">
+            Tax Year: {summary.ukSrtBreakdown.taxYearLabel}
+          </p>
+        </div>
+      ) : isWeighted && summary?.weightedBreakdown ? (
         <div className="mb-3">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-gray-700">
@@ -615,6 +639,24 @@ function JurisdictionCard({
                       <span className="text-red-600 ml-1">(exceeds 280)</span>
                     )}
                   </p>
+                </div>
+              )}
+
+              {/* UK SRT breakdown */}
+              {isUKSRT && summary.ukSrtBreakdown && (
+                <div className="mt-3 space-y-3">
+                  <UKSRTStatus breakdown={summary.ukSrtBreakdown} />
+                  <details className="text-sm">
+                    <summary className="cursor-pointer text-gray-600 hover:text-gray-800 font-medium">
+                      Edit UK Ties
+                    </summary>
+                    <div className="mt-3 pt-3 border-t border-gray-200">
+                      <UKTiesQuestionnaire
+                        taxYear={summary.ukSrtBreakdown.taxYear}
+                        compact
+                      />
+                    </div>
+                  </details>
                 </div>
               )}
             </>

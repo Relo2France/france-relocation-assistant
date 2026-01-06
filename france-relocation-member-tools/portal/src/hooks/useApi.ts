@@ -40,6 +40,7 @@ import type {
   TaskStatus,
   TravelStatusAlertSettings,
   TravelStatusTrip,
+  UKTies,
   UpdateProfileData,
   UpdateUserJurisdictionRequest,
   UserSettings,
@@ -1491,6 +1492,53 @@ export function useBulkUpdateJurisdictions() {
       queryClient.invalidateQueries({ queryKey: ['multiJurisdictionSummary'] });
       queryClient.invalidateQueries({ queryKey: ['complianceOverview'] });
     },
+  });
+}
+
+// ============================================
+// UK SRT Hooks (Phase 3)
+// ============================================
+
+/**
+ * Get UK ties for a tax year
+ */
+export function useUKTies(taxYear?: number) {
+  return useQuery({
+    queryKey: ['ukTies', taxYear] as const,
+    queryFn: () => travelStatusApi.getUKTies(taxYear),
+    staleTime: STALE_TIME.LONG, // 30 minutes - doesn't change often
+    throwOnError: false,
+  });
+}
+
+/**
+ * Update UK ties for a tax year
+ */
+export function useUpdateUKTies() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ taxYear, ties }: { taxYear: number; ties: Partial<UKTies> }) =>
+      travelStatusApi.updateUKTies(taxYear, ties),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['ukTies', variables.taxYear] });
+      queryClient.invalidateQueries({ queryKey: ['ukSrtResult'] });
+      queryClient.invalidateQueries({ queryKey: ['jurisdictionSummary', 'uk_srt'] });
+      queryClient.invalidateQueries({ queryKey: ['multiJurisdictionSummary'] });
+      queryClient.invalidateQueries({ queryKey: ['complianceOverview'] });
+    },
+  });
+}
+
+/**
+ * Get UK SRT result
+ */
+export function useUKSRTResult(date?: string) {
+  return useQuery({
+    queryKey: ['ukSrtResult', date] as const,
+    queryFn: () => travelStatusApi.getUKSRTResult(date),
+    staleTime: STALE_TIME.DEFAULT, // 30 seconds
+    throwOnError: false,
   });
 }
 
