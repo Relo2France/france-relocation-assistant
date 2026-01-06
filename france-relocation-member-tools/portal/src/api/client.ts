@@ -1,8 +1,7 @@
 import type {
   Activity,
   AnalyticsData,
-  ComplianceOverview,
-  ComplianceSnapshot,
+  BulkUpdateJurisdictionsResponse,
   CSVExportResult,
   CSVImportResult,
   CalendarConnection,
@@ -18,10 +17,13 @@ import type {
   Checklist,
   ChecklistItem,
   ChecklistItemStatus,
+  ComplianceOverview,
+  ComplianceSnapshot,
   CreateTicketRequest,
   DashboardData,
   DocumentGenerationRequest,
   DocumentGenerationResponse,
+  EUTaxJurisdictionsResponse,
   FamilyFeatureStatus,
   FamilyMember,
   FamilyMembersResponse,
@@ -92,8 +94,6 @@ import type {
   UserSettings,
   VerificationRequest,
   VerificationResult,
-  EUTaxJurisdictionsResponse,
-  BulkUpdateJurisdictionsResponse,
 } from '@/types';
 
 /**

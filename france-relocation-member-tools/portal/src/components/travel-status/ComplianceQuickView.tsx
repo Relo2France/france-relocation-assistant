@@ -17,7 +17,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import { useComplianceOverview } from '@/hooks/useApi';
-import type { JurisdictionSummary, ComplianceAlert } from '@/types';
+import type { ComplianceAlert, JurisdictionSummary } from '@/types';
 
 interface ComplianceQuickViewProps {
   className?: string;
