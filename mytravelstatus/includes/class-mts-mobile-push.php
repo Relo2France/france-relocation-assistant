@@ -95,6 +95,9 @@ class MTS_Mobile_Push {
 	private function __construct() {
 		// Listen for notification creation to send mobile pushes.
 		add_action( 'mts_notification_created', array( $this, 'on_notification_created' ), 10, 4 );
+
+		// Listen for multi-jurisdiction alerts to send push notifications.
+		add_action( 'mts_jurisdiction_alert_sent', array( $this, 'on_jurisdiction_alert' ), 10, 3 );
 	}
 
 	/**
@@ -588,6 +591,105 @@ class MTS_Mobile_Push {
 
 		// Send to mobile devices.
 		$this->send_to_user( $user_id, $payload );
+	}
+
+	/**
+	 * Handle jurisdiction alert - send mobile push notification.
+	 *
+	 * @since 1.8.3
+	 * @param int    $user_id     User ID.
+	 * @param array  $summary     Jurisdiction summary.
+	 * @param string $alert_level Alert level (warning, danger, urgent).
+	 */
+	public function on_jurisdiction_alert( int $user_id, array $summary, string $alert_level ): void {
+		// Check if user has mobile push enabled.
+		$prefs = get_user_meta( $user_id, 'mts_notification_prefs', true );
+		if ( isset( $prefs['mobile_push_enabled'] ) && false === $prefs['mobile_push_enabled'] ) {
+			return;
+		}
+
+		// Build push notification content based on alert level.
+		$flag = ! empty( $summary['flag_emoji'] ) ? $summary['flag_emoji'] . ' ' : '';
+		$name = $summary['jurisdiction_name'] ?? 'Unknown Rule';
+		$days_remaining = $summary['days_remaining'] ?? 0;
+		$days_used = $summary['days_used'] ?? 0;
+		$days_allowed = $summary['days_allowed'] ?? 0;
+
+		switch ( $alert_level ) {
+			case 'urgent':
+				$title = sprintf(
+					/* translators: 1: flag emoji + jurisdiction name */
+					__( 'URGENT: %s', 'mytravelstatus' ),
+					$flag . $name
+				);
+				$body = sprintf(
+					/* translators: 1: days remaining, 2: days used, 3: days allowed */
+					__( 'Only %1$d days remaining! You have used %2$d of %3$d days.', 'mytravelstatus' ),
+					$days_remaining,
+					$days_used,
+					$days_allowed
+				);
+				break;
+
+			case 'danger':
+				$title = sprintf(
+					/* translators: 1: flag emoji + jurisdiction name */
+					__( 'Warning: %s', 'mytravelstatus' ),
+					$flag . $name
+				);
+				$body = sprintf(
+					/* translators: 1: days remaining, 2: days used, 3: days allowed */
+					__( '%1$d days remaining. %2$d of %3$d days used.', 'mytravelstatus' ),
+					$days_remaining,
+					$days_used,
+					$days_allowed
+				);
+				break;
+
+			case 'warning':
+			default:
+				$title = sprintf(
+					/* translators: 1: flag emoji + jurisdiction name */
+					__( 'Travel Update: %s', 'mytravelstatus' ),
+					$flag . $name
+				);
+				$body = sprintf(
+					/* translators: 1: days remaining, 2: days used, 3: days allowed */
+					__( 'You have used %2$d of %3$d days. %1$d days remaining.', 'mytravelstatus' ),
+					$days_remaining,
+					$days_used,
+					$days_allowed
+				);
+				break;
+		}
+
+		$payload = array(
+			'title' => $title,
+			'body'  => $body,
+			'sound' => 'urgent' === $alert_level ? 'urgent' : 'default',
+			'data'  => array(
+				'type'             => 'jurisdiction_alert',
+				'jurisdiction'     => $summary['jurisdiction_code'] ?? '',
+				'alert_level'      => $alert_level,
+				'days_used'        => (string) $days_used,
+				'days_allowed'     => (string) $days_allowed,
+				'days_remaining'   => (string) $days_remaining,
+			),
+		);
+
+		// Send to mobile devices.
+		$result = $this->send_to_user( $user_id, $payload );
+
+		$this->log( sprintf(
+			'Jurisdiction alert push sent for user %d, jurisdiction %s, level %s: iOS(%d/%d), Android(%d/%d)',
+			$user_id,
+			$summary['jurisdiction_code'] ?? 'unknown',
+			$alert_level,
+			$result['ios_sent'],
+			$result['ios_failed'],
+			$result['android_sent'],
+			$result['android_failed']
+		) );
 	}
 
 	/**
