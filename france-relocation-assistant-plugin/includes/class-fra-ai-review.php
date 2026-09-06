@@ -1073,6 +1073,21 @@ For example, for Visitor Visa:
         $category = $review['category'];
         $topic = $review['topic'];
         
+        // Gap detection can propose a topic that does not exist yet. Creating
+        // one is gated on an explicit flag, so an ordinary review can never
+        // conjure a topic through a mistyped key.
+        if (!isset($knowledge_base[$category][$topic])
+            && !empty($review['is_new_topic'])
+            && isset($knowledge_base[$category])
+            && is_array($knowledge_base[$category])) {
+            $knowledge_base[$category][$topic] = array(
+                'title'    => isset($review['topic_name']) ? $review['topic_name'] : ucfirst(str_replace('_', ' ', $topic)),
+                'content'  => '',
+                'keywords' => array(),
+                'sources'  => array(),
+            );
+        }
+
         if (!isset($knowledge_base[$category][$topic])) {
             return false;
         }

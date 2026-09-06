@@ -4196,6 +4196,7 @@ Signature:
             $sources = $last_assistant['sources'] ?? array();
         } else {
             // Initial question: Search KB first, then enhance with AI + web search
+            $web_sources   = array();
             $kb_results    = $this->search_knowledge_base( $message, $context );
             $response_text = $this->generate_kb_enhanced_response( $message, $context, $include_practice, $kb_results, $user_context );
 
@@ -4207,6 +4208,18 @@ Signature:
                 $web_results = $this->search_web_for_info( $message, $context );
                 $web_sources = $this->format_web_sources( $web_results );
                 $sources = array_merge( $sources, $web_sources );
+            }
+
+            // Record whether the knowledge base actually carried this answer.
+            // Everything needed is already in scope here - relevance scores and
+            // the source mix - so this costs an option write, not an API call.
+            if ( class_exists( 'FRA_KB_Gaps' ) && ! is_wp_error( $response_text ) ) {
+                FRA_KB_Gaps::record( array(
+                    'question'   => $message,
+                    'kb_results' => $kb_results,
+                    'used_web'   => ! empty( $web_sources ),
+                    'answer'     => is_string( $response_text ) ? $response_text : '',
+                ) );
             }
         }
 

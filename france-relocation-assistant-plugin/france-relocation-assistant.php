@@ -15,7 +15,7 @@
  * Plugin Name: France Relocation Assistant
  * Plugin URI:  https://relo2france.com
  * Description: AI-powered US to France relocation guidance with visa info, property guides, healthcare, taxes, and practical insights. Features weekly auto-updates, "In Practice" real-world advice, and comprehensive knowledge base.
- * Version:     3.9.0
+ * Version:     3.10.0
  * Author:      Relo2France
  * Author URI:  https://relo2france.com
  * License:     GPL v2 or later
@@ -36,7 +36,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 | Plugin Constants
 |--------------------------------------------------------------------------
 */
-define( 'FRA_VERSION', '3.9.0' );
+define( 'FRA_VERSION', '3.10.0' );
 define( 'FRA_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FRA_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'FRA_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
@@ -866,6 +866,16 @@ class France_Relocation_Assistant {
             'france-relocation-assistant-settings',
             array($this, 'render_settings_page')
         );
+
+        // Knowledge base gaps - questions the KB answered poorly
+        add_submenu_page(
+            'france-relocation-assistant',
+            __('KB Gaps', 'france-relocation-assistant'),
+            __('KB Gaps', 'france-relocation-assistant'),
+            'manage_options',
+            'france-relocation-assistant-kb-gaps',
+            array($this, 'render_kb_gaps_page')
+        );
         
         // KB expansion submenu
         add_submenu_page(
@@ -966,6 +976,91 @@ class France_Relocation_Assistant {
     /**
      * Render settings page
      */
+    /**
+     * Render the knowledge base gaps page
+     *
+     * @return void
+     */
+    public function render_kb_gaps_page() {
+        if (!current_user_can('manage_options')) {
+            return;
+        }
+
+        if (isset($_POST['fra_dismiss_gap']) && check_admin_referer('fra_kb_gaps')) {
+            FRA_KB_Gaps::dismiss(sanitize_text_field(wp_unslash($_POST['fra_dismiss_gap'])));
+            echo '<div class="notice notice-success is-dismissible"><p>'
+                . esc_html__('Gap dismissed.', 'france-relocation-assistant') . '</p></div>';
+        }
+
+        $gaps  = FRA_KB_Gaps::get_all();
+        $ready = FRA_KB_Gaps::get_ready();
+        ?>
+        <div class="wrap">
+            <h1><?php esc_html_e('Knowledge Base Gaps', 'france-relocation-assistant'); ?></h1>
+            <p class="description" style="max-width:70ch;">
+                <?php esc_html_e('Questions the knowledge base answered poorly. A COVERAGE gap means nothing matched. A DEPTH gap means a topic matched well but the answer still needed outside sources - so that topic is missing something. Gaps that recur are drafted into the AI Review approval queue; nothing is published without your approval.', 'france-relocation-assistant'); ?>
+            </p>
+
+            <?php if (empty($gaps)) : ?>
+                <p><?php esc_html_e('No gaps recorded yet.', 'france-relocation-assistant'); ?></p>
+            <?php else : ?>
+                <p>
+                    <strong><?php echo count($gaps); ?></strong> <?php esc_html_e('recorded', 'france-relocation-assistant'); ?>
+                    &middot; <strong><?php echo count($ready); ?></strong> <?php esc_html_e('awaiting drafting', 'france-relocation-assistant'); ?>
+                </p>
+                <table class="wp-list-table widefat striped">
+                    <thead>
+                        <tr>
+                            <th style="width:90px;"><?php esc_html_e('Type', 'france-relocation-assistant'); ?></th>
+                            <th style="width:60px;"><?php esc_html_e('Seen', 'france-relocation-assistant'); ?></th>
+                            <th><?php esc_html_e('Questions', 'france-relocation-assistant'); ?></th>
+                            <th style="width:200px;"><?php esc_html_e('Matched topic', 'france-relocation-assistant'); ?></th>
+                            <th style="width:110px;"><?php esc_html_e('Status', 'france-relocation-assistant'); ?></th>
+                            <th style="width:90px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <?php foreach ($gaps as $id => $gap) : ?>
+                        <tr>
+                            <td>
+                                <span style="font-weight:600;color:<?php echo 'depth' === $gap['type'] ? '#996800' : '#646970'; ?>;">
+                                    <?php echo esc_html(strtoupper($gap['type'])); ?>
+                                </span>
+                            </td>
+                            <td><?php echo (int) $gap['count']; ?></td>
+                            <td>
+                                <?php foreach ($gap['questions'] as $q) : ?>
+                                    <div>&ldquo;<?php echo esc_html($q); ?>&rdquo;</div>
+                                <?php endforeach; ?>
+                            </td>
+                            <td>
+                                <?php if (!empty($gap['matched']['title'])) : ?>
+                                    <?php echo esc_html($gap['matched']['title']); ?>
+                                    <br><small>(<?php echo esc_html__('relevance', 'france-relocation-assistant') . ' ' . esc_html($gap['relevance']); ?>)</small>
+                                <?php else : ?>
+                                    <em><?php esc_html_e('none', 'france-relocation-assistant'); ?></em>
+                                <?php endif; ?>
+                            </td>
+                            <td><?php echo esc_html($gap['status']); ?></td>
+                            <td>
+                                <?php if ('open' === $gap['status']) : ?>
+                                    <form method="post" style="margin:0;">
+                                        <?php wp_nonce_field('fra_kb_gaps'); ?>
+                                        <button type="submit" name="fra_dismiss_gap" value="<?php echo esc_attr($id); ?>" class="button button-small">
+                                            <?php esc_html_e('Dismiss', 'france-relocation-assistant'); ?>
+                                        </button>
+                                    </form>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php endif; ?>
+        </div>
+        <?php
+    }
+
     public function render_settings_page() {
         include FRA_PLUGIN_DIR . 'includes/settings-page.php';
     }
@@ -1823,6 +1918,7 @@ require_once FRA_PLUGIN_DIR . 'includes/dynamic-menu.php';
 // Core modules
 require_once FRA_PLUGIN_DIR . 'includes/class-fra-model-resolver.php';
 require_once FRA_PLUGIN_DIR . 'includes/class-fra-review-api.php';
+require_once FRA_PLUGIN_DIR . 'includes/class-fra-kb-gaps.php';
 require_once FRA_PLUGIN_DIR . 'includes/class-fra-seo.php';
 require_once FRA_PLUGIN_DIR . 'includes/class-fra-membership.php';
 require_once FRA_PLUGIN_DIR . 'includes/class-fra-updater.php';
