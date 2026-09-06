@@ -27,47 +27,68 @@ $github_repo    = get_option( 'fra_github_repo', '' );
 $update_url     = get_option( 'fra_update_url', '' );
 $membership_url = get_option( 'fra_membership_url', '/membership/' );
 
+// Which form was submitted. This page renders two forms that share one nonce
+// and one submit name, so without this marker saving the GitHub form ran the
+// API branch too - and because its fields are absent from that POST, an
+// unchecked-by-omission "Enable AI" switched AI off and the membership URL
+// reset to its default. Each branch now only touches its own form's fields.
+$posted_section = isset( $_POST['fra_settings_section'] )
+    ? sanitize_key( wp_unslash( $_POST['fra_settings_section'] ) )
+    : '';
+
+// The Review API toggle rides on any submit of the API form - Save, Generate
+// secret, or Test connection - because the checkbox is posted every time.
+if ( 'api' === $posted_section && check_admin_referer( 'fra_settings_nonce' ) ) {
+    $review_api_on = isset( $_POST['fra_review_api_enabled'] );
+    update_option( FRA_Review_API::ENABLED_OPTION, $review_api_on );
+}
+
 // Handle form submission.
 if ( isset( $_POST['fra_save_settings'] ) && check_admin_referer( 'fra_settings_nonce' ) ) {
-    $new_api_key    = isset( $_POST['fra_api_key'] ) ? sanitize_text_field( wp_unslash( $_POST['fra_api_key'] ) ) : '';
-    $api_model      = isset( $_POST['fra_api_model'] ) ? sanitize_text_field( wp_unslash( $_POST['fra_api_model'] ) ) : 'auto';
-    $enable_ai      = isset( $_POST['fra_enable_ai'] );
-    $github_repo    = isset( $_POST['fra_github_repo'] ) ? sanitize_text_field( wp_unslash( $_POST['fra_github_repo'] ) ) : '';
-    $update_url     = isset( $_POST['fra_update_url'] ) ? esc_url_raw( wp_unslash( $_POST['fra_update_url'] ) ) : '';
-    $membership_url = isset( $_POST['fra_membership_url'] ) ? esc_url_raw( wp_unslash( $_POST['fra_membership_url'] ) ) : '/membership/';
 
-    // Only update API key if a new one is provided (not the placeholder).
-    if ( ! empty( $new_api_key ) && '••••••••••••••••' !== $new_api_key ) {
-        France_Relocation_Assistant::save_api_key( $new_api_key );
-        $api_key     = $new_api_key;
-        $has_api_key = true;
-    }
+    if ( 'api' === $posted_section ) {
+        $new_api_key    = isset( $_POST['fra_api_key'] ) ? sanitize_text_field( wp_unslash( $_POST['fra_api_key'] ) ) : '';
+        $api_model      = isset( $_POST['fra_api_model'] ) ? sanitize_text_field( wp_unslash( $_POST['fra_api_model'] ) ) : 'auto';
+        $enable_ai      = isset( $_POST['fra_enable_ai'] );
+        $membership_url = isset( $_POST['fra_membership_url'] ) ? esc_url_raw( wp_unslash( $_POST['fra_membership_url'] ) ) : '/membership/';
 
-    update_option( 'fra_api_model', $api_model );
+        // Only update API key if a new one is provided (not the placeholder).
+        if ( ! empty( $new_api_key ) && '••••••••••••••••' !== $new_api_key ) {
+            France_Relocation_Assistant::save_api_key( $new_api_key );
+            $api_key     = $new_api_key;
+            $has_api_key = true;
+        }
 
-    // Per-purpose model tiers. The exact model ID is resolved at call time.
-    $allowed_tiers = array( 'opus', 'sonnet', 'haiku' );
-    foreach ( array( 'chat', 'review', 'docs' ) as $purpose ) {
-        $field = 'fra_model_tier_' . $purpose;
-        if ( isset( $_POST[ $field ] ) ) {
-            $tier = sanitize_key( wp_unslash( $_POST[ $field ] ) );
-            if ( in_array( $tier, $allowed_tiers, true ) ) {
-                $model_tiers[ $purpose ] = $tier;
-                update_option( $field, $tier );
+        update_option( 'fra_api_model', $api_model );
+
+        // Per-purpose model tiers. The exact model ID is resolved at call time.
+        $allowed_tiers = array( 'opus', 'sonnet', 'haiku' );
+        foreach ( array( 'chat', 'review', 'docs' ) as $purpose ) {
+            $field = 'fra_model_tier_' . $purpose;
+            if ( isset( $_POST[ $field ] ) ) {
+                $tier = sanitize_key( wp_unslash( $_POST[ $field ] ) );
+                if ( in_array( $tier, $allowed_tiers, true ) ) {
+                    $model_tiers[ $purpose ] = $tier;
+                    update_option( $field, $tier );
+                }
             }
         }
+
+        // Settings changed - pull a fresh model catalog.
+        if ( class_exists( 'FRA_Model_Resolver' ) ) {
+            FRA_Model_Resolver::refresh_catalog();
+        }
+        update_option( 'fra_enable_ai', $enable_ai );
+        update_option( 'fra_membership_url', $membership_url );
     }
 
-    // Settings changed - pull a fresh model catalog.
-    if ( class_exists( 'FRA_Model_Resolver' ) ) {
-        FRA_Model_Resolver::refresh_catalog();
+    if ( 'github' === $posted_section ) {
+        $github_repo = isset( $_POST['fra_github_repo'] ) ? sanitize_text_field( wp_unslash( $_POST['fra_github_repo'] ) ) : '';
+        $update_url  = isset( $_POST['fra_update_url'] ) ? esc_url_raw( wp_unslash( $_POST['fra_update_url'] ) ) : '';
+
+        update_option( 'fra_github_repo', $github_repo );
+        update_option( 'fra_update_url', $update_url );
     }
-    update_option( 'fra_enable_ai', $enable_ai );
-    update_option( FRA_Review_API::ENABLED_OPTION, isset( $_POST['fra_review_api_enabled'] ) );
-    $review_api_on = isset( $_POST['fra_review_api_enabled'] );
-    update_option( 'fra_github_repo', $github_repo );
-    update_option( 'fra_update_url', $update_url );
-    update_option( 'fra_membership_url', $membership_url );
 
     // Clear update cache when settings change.
     delete_transient( 'fra_update_check' );
@@ -141,6 +162,7 @@ if (isset($_POST['fra_test_api']) && check_admin_referer('fra_settings_nonce')) 
             
             <form method="post" action="">
                 <?php wp_nonce_field('fra_settings_nonce'); ?>
+                <input type="hidden" name="fra_settings_section" value="api">
                 
                 <table class="form-table">
                     <tr>
@@ -260,6 +282,13 @@ if (isset($_POST['fra_test_api']) && check_admin_referer('fra_settings_nonce')) 
                             </label>
                             <p class="description">
                                 <?php _e('Exposes two authenticated endpoints so the review can run on a scheduler outside WordPress. The worker can only add suggestions to the approval queue - it can never publish to the knowledge base directly. Off by default; both routes return 404 while disabled.', 'france-relocation-assistant'); ?>
+                            </p>
+
+                            <?php $api_live = FRA_Review_API::is_enabled(); ?>
+                            <p style="margin:10px 0 0;font-weight:600;color:<?php echo $api_live ? '#008a20' : '#646970'; ?>;">
+                                <?php echo $api_live
+                                    ? esc_html__('Endpoints are LIVE and accepting authenticated requests.', 'france-relocation-assistant')
+                                    : esc_html__('Endpoints are CLOSED. They return 404 until this is enabled and a secret exists.', 'france-relocation-assistant'); ?>
                             </p>
 
                             <?php if ($new_review_secret) : ?>
@@ -383,6 +412,7 @@ if (isset($_POST['fra_test_api']) && check_admin_referer('fra_settings_nonce')) 
             
             <form method="post" action="">
                 <?php wp_nonce_field('fra_settings_nonce'); ?>
+                <input type="hidden" name="fra_settings_section" value="github">
                 
                 <table class="form-table">
                     <tr>

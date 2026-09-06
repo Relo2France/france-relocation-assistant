@@ -44,6 +44,9 @@ class FRA_Review_API {
     /** @var string Option recording the last successful call, for the admin UI */
     const LAST_CALL_OPTION = 'fra_review_api_last_call';
 
+    /** @var string Option used as an advisory write lock */
+    const LOCK_OPTION = 'fra_review_api_lock';
+
     /** @var string Transient prefix for rate limiting */
     const RATE_TRANSIENT = 'fra_review_api_rate';
 
@@ -275,12 +278,24 @@ class FRA_Review_API {
             );
         }
 
+        // Two suggestions arriving together would otherwise read the same
+        // array and one would overwrite the other - exactly the race that
+        // corrupted the review counters. Serialise the read-modify-write.
+        if (!$this->acquire_lock()) {
+            return new WP_Error(
+                'fra_review_busy',
+                __('Another suggestion is being written. Retry shortly.', 'france-relocation-assistant'),
+                array('status' => 409)
+            );
+        }
+
         $pending = get_option('fra_pending_reviews', array());
         if (!is_array($pending)) {
             $pending = array();
         }
 
         if (count($pending) >= self::MAX_PENDING) {
+            $this->release_lock();
             return new WP_Error(
                 'fra_review_queue_full',
                 sprintf(
@@ -319,6 +334,7 @@ class FRA_Review_API {
 
         update_option('fra_pending_reviews', $pending);
         update_option(self::LAST_CALL_OPTION, current_time('mysql'), false);
+        $this->release_lock();
 
         return new WP_REST_Response(array(
             'review_id' => $review_id,
@@ -340,7 +356,15 @@ class FRA_Review_API {
         if (!is_string($value)) {
             return '';
         }
-        return substr(wp_kses_post($value), 0, self::MAX_CONTENT);
+
+        // Trim before sanitising, and character-aware: this content is French,
+        // and a byte-wise substr() can split an accented character in half and
+        // leave invalid UTF-8 in the option.
+        $value = function_exists('mb_substr')
+            ? mb_substr($value, 0, self::MAX_CONTENT, 'UTF-8')
+            : substr($value, 0, self::MAX_CONTENT);
+
+        return wp_kses_post($value);
     }
 
     /**
@@ -438,6 +462,37 @@ class FRA_Review_API {
         }
 
         return $clean;
+    }
+
+    /**
+     * Take an advisory write lock.
+     *
+     * add_option() fails when the row already exists, which makes it a cheap
+     * mutex. Advisory, not bulletproof - but it closes the window that matters
+     * here, and a caller that loses gets a 409 it can retry.
+     *
+     * @return bool True if the lock was acquired
+     */
+    private function acquire_lock() {
+        if (add_option(self::LOCK_OPTION, time(), '', false)) {
+            return true;
+        }
+
+        // Reclaim a lock left behind by a request that died mid-write.
+        $held = (int) get_option(self::LOCK_OPTION, 0);
+        if (time() - $held > 30) {
+            update_option(self::LOCK_OPTION, time(), false);
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Release the advisory write lock.
+     */
+    private function release_lock() {
+        delete_option(self::LOCK_OPTION);
     }
 
     /**
