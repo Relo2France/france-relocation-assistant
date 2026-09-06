@@ -211,13 +211,21 @@ if (isset($_POST['fra_test_api']) && check_admin_referer('fra_settings_nonce')) 
                             <?php if ( $has_api_key ) : ?>
                                 <p class="description" style="color: green;">✓ <?php esc_html_e( 'API key is saved (encrypted)', 'france-relocation-assistant' ); ?></p>
                             <?php endif; ?>
-                            <button type="button" class="button" onclick="toggleApiKeyVisibility()" id="toggle-api-key">
+                            <button type="button" class="button" onclick="toggleApiKeyVisibility()" id="toggle-api-key"
+                                <?php echo $has_api_key ? 'disabled' : ''; ?>>
                                 <?php _e('Show', 'france-relocation-assistant'); ?>
                             </button>
-                            <p class="description">
-                                <?php _e('Get your API key from', 'france-relocation-assistant'); ?> 
-                                <a href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com</a>
-                            </p>
+                            <?php if ( $has_api_key ) : ?>
+                                <p class="description">
+                                    <?php _e('The saved key is never sent to your browser, so it cannot be displayed here. Show only reveals a key you have just typed. To use this key elsewhere, create a separate key at', 'france-relocation-assistant'); ?>
+                                    <a href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com</a><?php _e(' - a second key can be revoked on its own without breaking this site.', 'france-relocation-assistant'); ?>
+                                </p>
+                            <?php else : ?>
+                                <p class="description">
+                                    <?php _e('Get your API key from', 'france-relocation-assistant'); ?> 
+                                    <a href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com</a>
+                                </p>
+                            <?php endif; ?>
                         </td>
                     </tr>
                     
@@ -515,6 +523,19 @@ if (isset($_POST['fra_test_api']) && check_admin_referer('fra_settings_nonce')) 
 </style>
 
 <script>
+// The saved key is never rendered into the page - the field holds bullet
+// characters, not the key - so Show has nothing to reveal until the admin
+// types a new one. Enable it at that point rather than leaving a button that
+// appears to do nothing.
+(function () {
+    var input = document.getElementById('fra_api_key');
+    var button = document.getElementById('toggle-api-key');
+    if (!input || !button) return;
+    input.addEventListener('input', function () {
+        button.disabled = input.value === '';
+    });
+})();
+
 function toggleApiKeyVisibility() {
     var input = document.getElementById('fra_api_key');
     var button = document.getElementById('toggle-api-key');
