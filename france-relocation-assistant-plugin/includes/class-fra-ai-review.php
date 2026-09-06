@@ -972,8 +972,8 @@ For example, for Visitor Visa:
         $body = FRA_Model_Resolver::message(array(
             'purpose'    => 'review',
             'max_tokens' => 8000, // More tokens for comprehensive content
-            'timeout'    => 300,  // Longer timeout for comprehensive research
-            'tools'      => array(FRA_Model_Resolver::web_search_tool(10)),
+            'timeout'    => 600,  // Longer timeout for comprehensive research
+            'tools'      => array(FRA_Model_Resolver::web_search_tool(5)),
             'messages'   => array(
                 array('role' => 'user', 'content' => $prompt)
             ),

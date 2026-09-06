@@ -515,8 +515,8 @@ Research and write an \"**In Practice**\" section that covers:
         $body = FRA_Model_Resolver::message(array(
             'purpose'    => 'review',
             'max_tokens' => 8000,
-            'timeout'    => 300,
-            'tools'      => array(FRA_Model_Resolver::web_search_tool(10)),
+            'timeout'    => 600,
+            'tools'      => array(FRA_Model_Resolver::web_search_tool(5)),
             'messages'   => array(
                 array('role' => 'user', 'content' => $prompt)
             ),
@@ -555,10 +555,9 @@ Research and write an \"**In Practice**\" section that covers:
      * Complete the review process
      */
     private function complete_review() {
-        $status = $this->get_status();
-        
-        // Update final status
-        $this->update_status(array(
+        // update_status() returns the merged status - use that, not the copy
+        // read beforehand, or completed_at is still empty in the email below.
+        $status = $this->update_status(array(
             'running' => false,
             'current_topic' => '',
             'completed_at' => current_time('mysql')
@@ -605,6 +604,9 @@ Research and write an \"**In Practice**\" section that covers:
         $message .= "Errors: {$status['errors']}\n";
         $message .= "Started: {$status['started_at']}\n";
         $message .= "Completed: {$status['completed_at']}\n";
+        if (class_exists('FRA_Model_Resolver')) {
+            $message .= "Model: " . FRA_Model_Resolver::for_purpose('review') . "\n";
+        }
         $message .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n";
         
         if ($status['changes_found'] > 0) {
