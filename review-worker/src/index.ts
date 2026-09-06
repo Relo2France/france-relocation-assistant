@@ -90,6 +90,14 @@ export default {
         const only = url.searchParams.get('only');
         if (only) params.only = only.split(',').map((s) => s.trim()).filter(Boolean);
 
+        // Check the requested topics exist before starting, so a typo is
+        // reported now rather than showing up as a quietly shorter run.
+        let unmatched: string[] = [];
+        if (params.only?.length) {
+          const available = (await fetchTopics(env)).map((t) => `${t.category}/${t.topic_key}`);
+          unmatched = params.only.filter((t) => !available.includes(t));
+        }
+
         const instance = await env.REVIEW_WORKFLOW.create({ params });
         return json({
           started: true,
@@ -97,6 +105,7 @@ export default {
           status: await instance.status(),
           dry_run: Boolean(params.dryRun),
           topics: params.only ?? 'all',
+          unmatched_topics: unmatched,
         });
       }
 

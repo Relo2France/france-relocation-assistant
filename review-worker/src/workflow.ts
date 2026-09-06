@@ -43,11 +43,23 @@ export class ReviewWorkflow extends WorkflowEntrypoint<Env, ReviewParams> {
 
     // Steps persist their return value, so keep this to identifiers rather
     // than the topic bodies - the content is large and is not needed again.
-    const targets = await step.do('list topics', async () => {
+    const plan = await step.do('list topics', async () => {
       const topics = await fetchTopics(this.env);
-      const wanted = topics.map((t) => `${t.category}/${t.topic_key}`);
-      return params.only?.length ? wanted.filter((t) => params.only!.includes(t)) : wanted;
+      const available = topics.map((t) => `${t.category}/${t.topic_key}`);
+
+      if (!params.only?.length) {
+        return { targets: available, unmatched: [] as string[] };
+      }
+
+      // Report anything asked for that does not exist. Quietly filtering it
+      // out produces a run that looks clean while doing less than requested.
+      return {
+        targets: available.filter((t) => params.only!.includes(t)),
+        unmatched: params.only.filter((t) => !available.includes(t)),
+      };
     });
+
+    const targets = plan.targets;
 
     const outcomes: TopicOutcome[] = [];
 
@@ -62,9 +74,10 @@ export class ReviewWorkflow extends WorkflowEntrypoint<Env, ReviewParams> {
         `review ${target}`,
         {
           retries: { limit: 2, delay: '30 seconds', backoff: 'exponential' },
-          // A topic took 341s live. 15 minutes leaves real headroom without
-          // letting a wedged request hold the run open indefinitely.
-          timeout: '15 minutes',
+          // Observed durations for a single topic: 236s, 341s, 647s. The
+          // spread is wide enough that 15 minutes was uncomfortably close to
+          // the top of it; 25 still bounds a wedged request.
+          timeout: '25 minutes',
         },
         async (): Promise<TopicOutcome> => {
           try {
@@ -99,16 +112,26 @@ export class ReviewWorkflow extends WorkflowEntrypoint<Env, ReviewParams> {
       const failed = outcomes.filter((o) => !o.ok);
       const posted = outcomes.filter((o) => o.posted);
 
+      const durations = reviewed
+        .map((o) => Math.round((o.duration_ms ?? 0) / 1000))
+        .sort((a, b) => a - b);
+
       const summary = {
+        requested: params.only?.length ?? outcomes.length,
         attempted: outcomes.length,
         reviewed: reviewed.length,
         suggestions_posted: posted.length,
         failed: failed.length,
+        // Named so a run cannot look clean while having skipped work.
+        unmatched_topics: plan.unmatched,
         // Named, not counted: a silent failure is the thing that hid the
         // WP-Cron problems for weeks.
         failures: failed.map((o) => ({ topic: o.topic, error: o.error })),
         total_output_tokens: reviewed.reduce((sum, o) => sum + (o.output_tokens ?? 0), 0),
         total_duration_ms: reviewed.reduce((sum, o) => sum + (o.duration_ms ?? 0), 0),
+        // Per-topic seconds, sorted. The spread matters more than the total:
+        // it is what decides whether the step timeout is safe.
+        topic_seconds: durations,
         dry_run: Boolean(params.dryRun),
       };
 
