@@ -745,6 +745,86 @@ class FRA_Model_Resolver {
     }
 
     /**
+     * Pull a JSON object out of a response.
+     *
+     * Before web search was enabled these prompts produced a single text block
+     * containing nothing but JSON, so json_decode() on the whole string worked.
+     * With server-side search the model narrates between searches, so the
+     * concatenated text is prose *and* JSON and a naive decode fails.
+     *
+     * Try, in order: a fenced ```json block, the whole string, then the
+     * outermost { ... } span.
+     *
+     * @param array $body Decoded response body
+     * @return array|null Decoded JSON, or null if none could be recovered
+     */
+    public static function extract_json($body) {
+        $text = trim(self::extract_text($body));
+
+        if ('' === $text) {
+            return null;
+        }
+
+        // 1. A fenced block anywhere in the text.
+        if (preg_match('/```(?:json)?\s*(\{.*\})\s*```/s', $text, $matches)) {
+            $decoded = json_decode($matches[1], true);
+            if (is_array($decoded)) {
+                return $decoded;
+            }
+        }
+
+        // 2. The whole response.
+        $decoded = json_decode($text, true);
+        if (is_array($decoded)) {
+            return $decoded;
+        }
+
+        // 3. The outermost object, ignoring any prose around it.
+        $start = strpos($text, '{');
+        $end   = strrpos($text, '}');
+        if (false !== $start && false !== $end && $end > $start) {
+            $decoded = json_decode(substr($text, $start, $end - $start + 1), true);
+            if (is_array($decoded)) {
+                return $decoded;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Was the response cut off before the model finished?
+     *
+     * Distinguishes "the model wrote prose around the JSON" from "the JSON is
+     * truncated because max_tokens ran out" - very different fixes.
+     *
+     * @param array $body Decoded response body
+     * @return bool
+     */
+    public static function was_truncated($body) {
+        return isset($body['stop_reason']) && 'max_tokens' === $body['stop_reason'];
+    }
+
+    /**
+     * Human-readable suffix explaining why parsing failed.
+     *
+     * @param array $body Decoded response body
+     * @return string
+     */
+    public static function parse_failure_reason($body) {
+        if (self::was_truncated($body)) {
+            return ' (response hit the max_tokens limit and was cut off)';
+        }
+
+        $text = trim(self::extract_text($body));
+        if ('' === $text) {
+            return ' (the model returned no text)';
+        }
+
+        return ' (no JSON object found in a ' . strlen($text) . ' character response)';
+    }
+
+    /**
      * Collect the URLs the model actually visited via web search.
      *
      * @param array $body Decoded response body

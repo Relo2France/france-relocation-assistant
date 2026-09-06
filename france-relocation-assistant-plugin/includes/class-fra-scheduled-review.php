@@ -95,6 +95,7 @@ class FRA_Scheduled_Review {
             'running' => false,
             'total_topics' => 0,
             'processed' => 0,
+            'succeeded' => 0,
             'changes_found' => 0,
             'errors' => 0,
             'current_topic' => '',
@@ -298,6 +299,7 @@ class FRA_Scheduled_Review {
             'trigger' => $trigger,
             'total_topics' => count($queue),
             'processed' => 0,
+            'succeeded' => 0,
             'changes_found' => 0,
             'errors' => 0,
             'current_topic' => $queue[0]['name'],
@@ -333,10 +335,13 @@ class FRA_Scheduled_Review {
         $topic = array_shift($queue);
         update_option(self::QUEUE_OPTION, $queue);
         
-        // Update status
+        // Read again rather than trusting the value from the top of this
+        // method - overlapping cron events otherwise lose increments, which is
+        // how a run once reported more updates than successful reviews.
+        $current = $this->get_status();
         $this->update_status(array(
             'current_topic' => $topic['name'],
-            'processed' => $status['processed'] + 1
+            'processed' => $current['processed'] + 1
         ));
         
         // Process this topic
@@ -351,10 +356,12 @@ class FRA_Scheduled_Review {
                 'errors' => $status['errors'] + 1,
                 'error_messages' => array_slice($errors, -10) // Keep last 10 errors
             ));
-        } elseif ($result['needs_update']) {
-            $this->update_status(array(
-                'changes_found' => $status['changes_found'] + 1
-            ));
+        } else {
+            $updates = array('succeeded' => $status['succeeded'] + 1);
+            if (!empty($result['needs_update'])) {
+                $updates['changes_found'] = $status['changes_found'] + 1;
+            }
+            $this->update_status($updates);
         }
         
         // Schedule next topic (with 30 second delay to avoid rate limits)
@@ -526,19 +533,15 @@ Research and write an \"**In Practice**\" section that covers:
             return $body;
         }
         
-        $ai_response = FRA_Model_Resolver::extract_text($body);
-        
-        if ('' === $ai_response) {
-            return new WP_Error('api_error', 'Unexpected response format');
-        }
-        
-        $ai_response = preg_replace('/^```json\s*/', '', trim($ai_response));
-        $ai_response = preg_replace('/\s*```$/', '', $ai_response);
-        
-        $result = json_decode($ai_response, true);
+        // With web search on, the model narrates between searches, so the
+        // response is prose *and* JSON. extract_json() digs the object out.
+        $result = FRA_Model_Resolver::extract_json($body);
         
         if (!$result) {
-            return new WP_Error('parse_error', 'Failed to parse AI response');
+            return new WP_Error(
+                'parse_error',
+                'Failed to parse AI response' . FRA_Model_Resolver::parse_failure_reason($body)
+            );
         }
         
         // Add sources_checked from response
@@ -599,7 +602,9 @@ Research and write an \"**In Practice**\" section that covers:
         $processed = (int) $status['processed'];
         $errors    = (int) $status['errors'];
         $changes   = (int) $status['changes_found'];
-        $succeeded = max(0, $processed - $errors);
+        $succeeded = isset($status['succeeded'])
+            ? (int) $status['succeeded']
+            : max(0, $processed - $errors);
         $failed_completely = ($processed > 0 && 0 === $succeeded);
         
         if ($failed_completely) {

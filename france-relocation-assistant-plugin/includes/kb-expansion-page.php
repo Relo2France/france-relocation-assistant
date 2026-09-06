@@ -72,19 +72,12 @@ Focus on practical, actionable information for Americans relocating to France. I
             if (is_wp_error($body)) {
                 $generation_error = 'API error: ' . $body->get_error_message();
             } else {
-                $json_text = FRA_Model_Resolver::extract_text($body);
+                $generated_topic = FRA_Model_Resolver::extract_json($body);
                 
-                if ('' === $json_text) {
-                    $generation_error = 'Unexpected API response format';
-                } else {
-                    // Clean up any markdown formatting
-                    $clean_text = preg_replace('/^```json\s*/', '', trim($json_text));
-                    $clean_text = preg_replace('/\s*```$/', '', $clean_text);
-                    $generated_topic = json_decode($clean_text, true);
-                    
-                    if (!$generated_topic) {
-                        $generation_error = 'Failed to parse generated content. Raw response: ' . substr($json_text, 0, 200);
-                    }
+                if (!$generated_topic) {
+                    $generation_error = 'Failed to parse generated content'
+                        . FRA_Model_Resolver::parse_failure_reason($body)
+                        . '. Raw response: ' . substr(FRA_Model_Resolver::extract_text($body), 0, 200);
                 }
             }
         }

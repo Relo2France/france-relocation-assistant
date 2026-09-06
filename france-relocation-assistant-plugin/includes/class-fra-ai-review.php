@@ -501,20 +501,15 @@ Write an \"**In Practice**\" section that covers the real-world reality of this 
             return $body;
         }
         
-        // Parse response
-        $ai_response = FRA_Model_Resolver::extract_text($body);
-        
-        if ('' === $ai_response) {
-            return new WP_Error('api_error', 'Unexpected response format');
-        }
-        
-        $ai_response = preg_replace('/^```json\s*/', '', trim($ai_response));
-        $ai_response = preg_replace('/\s*```$/', '', $ai_response);
-        
-        $result = json_decode($ai_response, true);
+        // Parse response - see extract_json(): with web search the model
+        // narrates around the JSON, so a plain json_decode() fails.
+        $result = FRA_Model_Resolver::extract_json($body);
         
         if (!$result) {
-            return new WP_Error('parse_error', 'Failed to parse AI response');
+            return new WP_Error(
+                'parse_error',
+                'Failed to parse AI response' . FRA_Model_Resolver::parse_failure_reason($body)
+            );
         }
         
         return array(
@@ -983,20 +978,15 @@ For example, for Visitor Visa:
             return $body;
         }
         
-        // Parse response
-        $ai_response = FRA_Model_Resolver::extract_text($body);
-        
-        if ('' === $ai_response) {
-            return new WP_Error('api_error', 'Unexpected response format');
-        }
-        
-        $ai_response = preg_replace('/^```json\s*/', '', trim($ai_response));
-        $ai_response = preg_replace('/\s*```$/', '', $ai_response);
-        
-        $result = json_decode($ai_response, true);
+        // Parse response - see extract_json(): with web search the model
+        // narrates around the JSON, so a plain json_decode() fails.
+        $result = FRA_Model_Resolver::extract_json($body);
         
         if (!$result) {
-            return new WP_Error('parse_error', 'Failed to parse AI response');
+            return new WP_Error(
+                'parse_error',
+                'Failed to parse AI response' . FRA_Model_Resolver::parse_failure_reason($body)
+            );
         }
         
         // Combine official content with In Practice section

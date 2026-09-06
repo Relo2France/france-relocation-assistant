@@ -80,6 +80,46 @@ class FRAMT_AI_Client {
     }
 
     /**
+     * Pull a JSON object out of a response.
+     *
+     * @param array $body Decoded response body
+     * @return array|null
+     */
+    public static function extract_json($body) {
+        if (self::has_resolver()) {
+            return FRA_Model_Resolver::extract_json($body);
+        }
+
+        $text = trim(self::extract_text($body));
+        if ('' === $text) {
+            return null;
+        }
+
+        if (preg_match('/```(?:json)?\s*(\{.*\})\s*```/s', $text, $matches)) {
+            $decoded = json_decode($matches[1], true);
+            if (is_array($decoded)) {
+                return $decoded;
+            }
+        }
+
+        $decoded = json_decode($text, true);
+        if (is_array($decoded)) {
+            return $decoded;
+        }
+
+        $start = strpos($text, '{');
+        $end   = strrpos($text, '}');
+        if (false !== $start && false !== $end && $end > $start) {
+            $decoded = json_decode(substr($text, $start, $end - $start + 1), true);
+            if (is_array($decoded)) {
+                return $decoded;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * The web search tool definition, when the resolver can supply one.
      *
      * Returns an empty array without the main plugin, so callers simply run
