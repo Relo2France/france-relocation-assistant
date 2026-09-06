@@ -20,6 +20,9 @@ $model_tiers    = array(
 	'docs'   => get_option( 'fra_model_tier_docs', 'sonnet' ),
 );
 $enable_ai      = get_option( 'fra_enable_ai', false );
+$review_api_on  = (bool) get_option( FRA_Review_API::ENABLED_OPTION, false );
+$review_secret_set = strlen( (string) get_option( FRA_Review_API::SECRET_OPTION, '' ) ) >= 32;
+$new_review_secret = '';
 $github_repo    = get_option( 'fra_github_repo', '' );
 $update_url     = get_option( 'fra_update_url', '' );
 $membership_url = get_option( 'fra_membership_url', '/membership/' );
@@ -60,6 +63,8 @@ if ( isset( $_POST['fra_save_settings'] ) && check_admin_referer( 'fra_settings_
         FRA_Model_Resolver::refresh_catalog();
     }
     update_option( 'fra_enable_ai', $enable_ai );
+    update_option( FRA_Review_API::ENABLED_OPTION, isset( $_POST['fra_review_api_enabled'] ) );
+    $review_api_on = isset( $_POST['fra_review_api_enabled'] );
     update_option( 'fra_github_repo', $github_repo );
     update_option( 'fra_update_url', $update_url );
     update_option( 'fra_membership_url', $membership_url );
@@ -68,6 +73,12 @@ if ( isset( $_POST['fra_save_settings'] ) && check_admin_referer( 'fra_settings_
     delete_transient( 'fra_update_check' );
 
     echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Settings saved successfully.', 'france-relocation-assistant' ) . '</p></div>';
+}
+
+// Generate a review API secret if requested. Displayed once and never again.
+if ( isset( $_POST['fra_generate_review_secret'] ) && check_admin_referer( 'fra_settings_nonce' ) ) {
+    $new_review_secret = FRA_Review_API::generate_secret();
+    $review_secret_set = true;
 }
 
 // Test API connection if requested
@@ -240,6 +251,52 @@ if (isset($_POST['fra_test_api']) && check_admin_referer('fra_settings_nonce')) 
                         </td>
                     </tr>
                     
+                    <tr>
+                        <th scope="row"><?php _e('Review API', 'france-relocation-assistant'); ?></th>
+                        <td>
+                            <label>
+                                <input type="checkbox" name="fra_review_api_enabled" value="1" <?php checked($review_api_on); ?>>
+                                <?php _e('Allow an external worker to run the knowledge base review', 'france-relocation-assistant'); ?>
+                            </label>
+                            <p class="description">
+                                <?php _e('Exposes two authenticated endpoints so the review can run on a scheduler outside WordPress. The worker can only add suggestions to the approval queue - it can never publish to the knowledge base directly. Off by default; both routes return 404 while disabled.', 'france-relocation-assistant'); ?>
+                            </p>
+
+                            <?php if ($new_review_secret) : ?>
+                                <div class="notice notice-success inline" style="margin:12px 0;padding:10px 12px;">
+                                    <p style="margin:0 0 6px;"><strong><?php _e('Copy this secret now - it will not be shown again:', 'france-relocation-assistant'); ?></strong></p>
+                                    <code style="display:block;padding:8px;word-break:break-all;background:#f6f7f7;"><?php echo esc_html($new_review_secret); ?></code>
+                                </div>
+                            <?php endif; ?>
+
+                            <p style="margin-top:10px;">
+                                <button type="submit" name="fra_generate_review_secret" value="1" class="button">
+                                    <?php echo $review_secret_set
+                                        ? esc_html__('Regenerate secret', 'france-relocation-assistant')
+                                        : esc_html__('Generate secret', 'france-relocation-assistant'); ?>
+                                </button>
+                                <span style="margin-left:8px;color:<?php echo $review_secret_set ? '#008a20' : '#996800'; ?>;">
+                                    <?php echo $review_secret_set
+                                        ? esc_html__('A secret is set.', 'france-relocation-assistant')
+                                        : esc_html__('No secret yet - the endpoints stay closed until one exists.', 'france-relocation-assistant'); ?>
+                                </span>
+                            </p>
+                            <?php if ($review_secret_set) : ?>
+                                <p class="description" style="margin-top:8px;">
+                                    <?php _e('Regenerating immediately invalidates the old secret.', 'france-relocation-assistant'); ?>
+                                    <?php $last = get_option(FRA_Review_API::LAST_CALL_OPTION, ''); ?>
+                                    <?php if ($last) : ?>
+                                        <br><?php printf(esc_html__('Last accepted suggestion: %s', 'france-relocation-assistant'), esc_html($last)); ?>
+                                    <?php endif; ?>
+                                </p>
+                                <p class="description" style="margin-top:8px;">
+                                    <code><?php echo esc_html(rest_url('fra/v1/review/topics')); ?></code><br>
+                                    <code><?php echo esc_html(rest_url('fra/v1/review/suggestions')); ?></code>
+                                </p>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+
                     <tr>
                         <th scope="row">
                             <label for="fra_membership_url"><?php _e('Membership Signup URL', 'france-relocation-assistant'); ?></label>
