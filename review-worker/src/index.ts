@@ -13,10 +13,13 @@
  * Every route requires the trigger secret. This worker can write to the site's
  * review queue, so it is not left open.
  */
+import { ReviewWorkflow, type ReviewParams } from './workflow';
 import { reviewTopic } from './review';
 import { resolveModel } from './models';
 import { fetchTopics } from './wordpress';
 import type { Env } from './types';
+
+export { ReviewWorkflow };
 
 const json = (body: unknown, status = 200): Response =>
   new Response(JSON.stringify(body, null, 2), {
@@ -78,6 +81,32 @@ export default {
         });
       }
 
+      // Start a full run. Returns immediately with an instance id - the run
+      // itself takes hours, so it must not be tied to this request.
+      if (url.pathname === '/run' && request.method === 'POST') {
+        const params: ReviewParams = {
+          dryRun: url.searchParams.get('dry_run') === '1',
+        };
+        const only = url.searchParams.get('only');
+        if (only) params.only = only.split(',').map((s) => s.trim()).filter(Boolean);
+
+        const instance = await env.REVIEW_WORKFLOW.create({ params });
+        return json({
+          started: true,
+          instance_id: instance.id,
+          status: await instance.status(),
+          dry_run: Boolean(params.dryRun),
+          topics: params.only ?? 'all',
+        });
+      }
+
+      // Progress of a run.
+      const runStatus = url.pathname.match(/^\/run\/([\w-]+)$/);
+      if (runStatus && request.method === 'GET') {
+        const instance = await env.REVIEW_WORKFLOW.get(runStatus[1]!);
+        return json({ instance_id: runStatus[1], status: await instance.status() });
+      }
+
       const match = url.pathname.match(/^\/review\/([a-z0-9_-]+)\/([a-z0-9_-]+)$/i);
       if (match && request.method === 'POST') {
         const [, category, topicKey] = match;
@@ -92,5 +121,14 @@ export default {
       console.error('review worker failed', { path: url.pathname, message });
       return json({ error: message }, 500);
     }
+  },
+
+  /**
+   * Weekly cron. Starts a Workflow instance and returns - the run outlives
+   * this invocation, which is the whole point of using a Workflow.
+   */
+  async scheduled(event: ScheduledController, env: Env): Promise<void> {
+    const instance = await env.REVIEW_WORKFLOW.create({ params: {} });
+    console.log('scheduled review started', { cron: event.cron, instance_id: instance.id });
   },
 };
