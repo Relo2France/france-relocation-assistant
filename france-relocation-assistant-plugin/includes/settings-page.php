@@ -13,7 +13,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 // Get current values (API key is now encrypted).
 $api_key        = France_Relocation_Assistant::get_api_key();
 $has_api_key    = ! empty( $api_key );
-$api_model      = get_option( 'fra_api_model', 'claude-sonnet-4-20250514' );
+$api_model      = get_option( 'fra_api_model', 'auto' );
+$model_tiers    = array(
+	'chat'   => get_option( 'fra_model_tier_chat', 'sonnet' ),
+	'review' => get_option( 'fra_model_tier_review', 'opus' ),
+	'docs'   => get_option( 'fra_model_tier_docs', 'sonnet' ),
+);
 $enable_ai      = get_option( 'fra_enable_ai', false );
 $github_repo    = get_option( 'fra_github_repo', '' );
 $update_url     = get_option( 'fra_update_url', '' );
@@ -22,7 +27,7 @@ $membership_url = get_option( 'fra_membership_url', '/membership/' );
 // Handle form submission.
 if ( isset( $_POST['fra_save_settings'] ) && check_admin_referer( 'fra_settings_nonce' ) ) {
     $new_api_key    = isset( $_POST['fra_api_key'] ) ? sanitize_text_field( wp_unslash( $_POST['fra_api_key'] ) ) : '';
-    $api_model      = isset( $_POST['fra_api_model'] ) ? sanitize_text_field( wp_unslash( $_POST['fra_api_model'] ) ) : 'claude-sonnet-4-20250514';
+    $api_model      = isset( $_POST['fra_api_model'] ) ? sanitize_text_field( wp_unslash( $_POST['fra_api_model'] ) ) : 'auto';
     $enable_ai      = isset( $_POST['fra_enable_ai'] );
     $github_repo    = isset( $_POST['fra_github_repo'] ) ? sanitize_text_field( wp_unslash( $_POST['fra_github_repo'] ) ) : '';
     $update_url     = isset( $_POST['fra_update_url'] ) ? esc_url_raw( wp_unslash( $_POST['fra_update_url'] ) ) : '';
@@ -36,6 +41,24 @@ if ( isset( $_POST['fra_save_settings'] ) && check_admin_referer( 'fra_settings_
     }
 
     update_option( 'fra_api_model', $api_model );
+
+    // Per-purpose model tiers. The exact model ID is resolved at call time.
+    $allowed_tiers = array( 'opus', 'sonnet', 'haiku' );
+    foreach ( array( 'chat', 'review', 'docs' ) as $purpose ) {
+        $field = 'fra_model_tier_' . $purpose;
+        if ( isset( $_POST[ $field ] ) ) {
+            $tier = sanitize_key( wp_unslash( $_POST[ $field ] ) );
+            if ( in_array( $tier, $allowed_tiers, true ) ) {
+                $model_tiers[ $purpose ] = $tier;
+                update_option( $field, $tier );
+            }
+        }
+    }
+
+    // Settings changed - pull a fresh model catalog.
+    if ( class_exists( 'FRA_Model_Resolver' ) ) {
+        FRA_Model_Resolver::refresh_catalog();
+    }
     update_option( 'fra_enable_ai', $enable_ai );
     update_option( 'fra_github_repo', $github_repo );
     update_option( 'fra_update_url', $update_url );
@@ -53,30 +76,28 @@ if (isset($_POST['fra_test_api']) && check_admin_referer('fra_settings_nonce')) 
     if (empty($api_key)) {
         $test_result = array('success' => false, 'message' => 'Please enter an API key first.');
     } else {
-        $response = wp_remote_post('https://api.anthropic.com/v1/messages', array(
-            'timeout' => 30,
-            'headers' => array(
-                'Content-Type' => 'application/json',
-                'x-api-key' => $api_key,
-                'anthropic-version' => '2023-06-01'
+        $body = FRA_Model_Resolver::message(array(
+            'purpose'    => 'chat',
+            'max_tokens' => 50,
+            'timeout'    => 30,
+            'messages'   => array(
+                array('role' => 'user', 'content' => 'Say "API connection successful" and nothing else.')
             ),
-            'body' => json_encode(array(
-                'model' => $api_model,
-                'max_tokens' => 50,
-                'messages' => array(
-                    array('role' => 'user', 'content' => 'Say "API connection successful" and nothing else.')
-                )
-            ))
         ));
         
-        if (is_wp_error($response)) {
-            $test_result = array('success' => false, 'message' => 'Connection failed: ' . $response->get_error_message());
+        if (is_wp_error($body)) {
+            $test_result = array('success' => false, 'message' => 'Connection failed: ' . $body->get_error_message());
         } else {
-            $body = json_decode(wp_remote_retrieve_body($response), true);
-            if (isset($body['error'])) {
-                $test_result = array('success' => false, 'message' => 'API Error: ' . ($body['error']['message'] ?? 'Unknown error'));
-            } elseif (isset($body['content'][0]['text'])) {
-                $test_result = array('success' => true, 'message' => 'Connection successful! Response: ' . $body['content'][0]['text']);
+            $text = FRA_Model_Resolver::extract_text($body);
+            if ('' !== $text) {
+                $test_result = array(
+                    'success' => true,
+                    'message' => sprintf(
+                        'Connection successful using %s. Response: %s',
+                        isset($body['fra_model']) ? $body['fra_model'] : 'the resolved model',
+                        $text
+                    ),
+                );
             } else {
                 $test_result = array('success' => false, 'message' => 'Unexpected response format');
             }
@@ -145,21 +166,76 @@ if (isset($_POST['fra_test_api']) && check_admin_referer('fra_settings_nonce')) 
                         </td>
                     </tr>
                     
+                    <?php
+                    $tier_labels = array(
+                        'opus'   => __('Opus - most capable, highest cost', 'france-relocation-assistant'),
+                        'sonnet' => __('Sonnet - balanced (recommended)', 'france-relocation-assistant'),
+                        'haiku'  => __('Haiku - fastest and cheapest', 'france-relocation-assistant'),
+                    );
+                    $purpose_labels = array(
+                        'chat'   => __('Visitor chat', 'france-relocation-assistant'),
+                        'review' => __('Weekly law &amp; policy review', 'france-relocation-assistant'),
+                        'docs'   => __('Guides, documents &amp; knowledge base', 'france-relocation-assistant'),
+                    );
+                    $model_choices = class_exists('FRA_Model_Resolver') ? FRA_Model_Resolver::get_choices() : array();
+                    ?>
+
+                    <?php foreach ($purpose_labels as $purpose => $purpose_label) : ?>
                     <tr>
                         <th scope="row">
-                            <label for="fra_api_model"><?php _e('Claude Model', 'france-relocation-assistant'); ?></label>
+                            <label for="fra_model_tier_<?php echo esc_attr($purpose); ?>"><?php echo esc_html($purpose_label); ?></label>
+                        </th>
+                        <td>
+                            <select name="fra_model_tier_<?php echo esc_attr($purpose); ?>" id="fra_model_tier_<?php echo esc_attr($purpose); ?>">
+                                <?php foreach ($tier_labels as $tier => $tier_label) : ?>
+                                    <option value="<?php echo esc_attr($tier); ?>" <?php selected($model_tiers[$purpose], $tier); ?>>
+                                        <?php echo esc_html($tier_label); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                            <p class="description">
+                                <?php
+                                if (class_exists('FRA_Model_Resolver')) {
+                                    printf(
+                                        /* translators: %s: resolved model ID */
+                                        esc_html__('Currently resolves to: %s', 'france-relocation-assistant'),
+                                        '<code>' . esc_html(FRA_Model_Resolver::resolve($model_tiers[$purpose])) . '</code>'
+                                    );
+                                }
+                                ?>
+                            </p>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+
+                    <tr>
+                        <th scope="row">
+                            <label for="fra_api_model"><?php _e('Pin a specific model', 'france-relocation-assistant'); ?></label>
                         </th>
                         <td>
                             <select name="fra_api_model" id="fra_api_model">
-                                <option value="claude-sonnet-4-20250514" <?php selected($api_model, 'claude-sonnet-4-20250514'); ?>>
-                                    Claude Sonnet 4 (Recommended - Best balance)
+                                <option value="auto" <?php selected($api_model, 'auto'); ?>>
+                                    <?php _e('Automatic (recommended) - always use the newest model in the tier', 'france-relocation-assistant'); ?>
                                 </option>
-                                <option value="claude-haiku-4-20250514" <?php selected($api_model, 'claude-haiku-4-20250514'); ?>>
-                                    Claude Haiku 4 (Faster, cheaper)
-                                </option>
+                                <?php foreach ($model_choices as $tier => $models) : ?>
+                                    <optgroup label="<?php echo esc_attr(ucfirst($tier)); ?>">
+                                        <?php foreach ($models as $choice) : ?>
+                                            <option value="<?php echo esc_attr($choice['id']); ?>" <?php selected($api_model, $choice['id']); ?>>
+                                                <?php echo esc_html($choice['label']); ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </optgroup>
+                                <?php endforeach; ?>
+                                <?php if (!empty($api_model) && 'auto' !== $api_model && class_exists('FRA_Model_Resolver') && !FRA_Model_Resolver::is_live($api_model)) : ?>
+                                    <optgroup label="<?php esc_attr_e('Retired', 'france-relocation-assistant'); ?>">
+                                        <option value="<?php echo esc_attr($api_model); ?>" selected>
+                                            <?php echo esc_html($api_model); ?> <?php esc_html_e('(no longer available)', 'france-relocation-assistant'); ?>
+                                        </option>
+                                    </optgroup>
+                                <?php endif; ?>
                             </select>
                             <p class="description">
-                                <?php _e('Sonnet: ~$0.015/query | Haiku: ~$0.004/query', 'france-relocation-assistant'); ?>
+                                <?php _e('This list is pulled live from your Anthropic account and refreshes daily. Leave on Automatic unless you need to lock the visitor chat to one exact model - a pinned model that Anthropic retires will fall back to the newest model in the same tier.', 'france-relocation-assistant'); ?>
                             </p>
                         </td>
                     </tr>

@@ -14,10 +14,30 @@ if (!defined('ABSPATH')) {
 
 class FRAMT_AI_Guide_Generator {
 
+    /**
+     * Resolve the model to use.
+     *
+     * Asks the main plugin's resolver for the newest live model in the
+     * configured tier, so a retired model ID is never sent.
+     *
+     * @return string Model ID
+     */
+    private function get_model() {
+        if (class_exists('FRA_Model_Resolver')) {
+            return FRA_Model_Resolver::for_purpose('docs');
+        }
+        return self::MODEL;
+    }
+
+
     private static $instance = null;
     
     const API_ENDPOINT = 'https://api.anthropic.com/v1/messages';
-    const MODEL = 'claude-sonnet-4-20250514';
+    /**
+     * Last-resort model, used only if the main plugin's resolver is missing.
+     * The live model is chosen by get_model() below.
+     */
+    const MODEL = 'claude-sonnet-5';
 
     public static function get_instance() {
         if (null === self::$instance) {
@@ -906,7 +926,7 @@ VISA-SPECIFIC REQUIREMENTS FOR RETIREE VISA:
         $api_key = $this->get_api_key();
 
         $body = array(
-            'model' => self::MODEL,
+            'model' => $this->get_model(),
             'max_tokens' => 4096,
             'messages' => array(
                 array(

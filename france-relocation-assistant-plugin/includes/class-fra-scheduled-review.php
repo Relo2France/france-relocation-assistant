@@ -507,38 +507,32 @@ Research and write an \"**In Practice**\" section that covers:
 - Be specific with examples where possible
 - If a grey area exists, explain both the official rule AND the practical reality";
 
-        $response = wp_remote_post('https://api.anthropic.com/v1/messages', array(
-            'timeout' => 120,
-            'headers' => array(
-                'Content-Type' => 'application/json',
-                'x-api-key' => $api_key,
-                'anthropic-version' => '2023-06-01'
+        // The model is resolved at call time from the live Anthropic model
+        // catalog, so a retired model ID can never be baked in here.
+        // Web search gives this review real access to current sources - without
+        // it the model can only answer from training data and would invent the
+        // source citations the prompt asks for.
+        $body = FRA_Model_Resolver::message(array(
+            'purpose'    => 'review',
+            'max_tokens' => 8000,
+            'timeout'    => 300,
+            'tools'      => array(FRA_Model_Resolver::web_search_tool(10)),
+            'messages'   => array(
+                array('role' => 'user', 'content' => $prompt)
             ),
-            'body' => json_encode(array(
-                'model' => 'claude-sonnet-4-20250514',
-                'max_tokens' => 6000,
-                'messages' => array(
-                    array('role' => 'user', 'content' => $prompt)
-                )
-            ))
         ));
         
-        if (is_wp_error($response)) {
-            return $response;
+        if (is_wp_error($body)) {
+            return $body;
         }
         
-        $body = json_decode(wp_remote_retrieve_body($response), true);
+        $ai_response = FRA_Model_Resolver::extract_text($body);
         
-        if (isset($body['error'])) {
-            return new WP_Error('api_error', $body['error']['message'] ?? 'Unknown API error');
-        }
-        
-        if (!isset($body['content'][0]['text'])) {
+        if ('' === $ai_response) {
             return new WP_Error('api_error', 'Unexpected response format');
         }
         
-        $ai_response = $body['content'][0]['text'];
-        $ai_response = preg_replace('/^```json\s*/', '', $ai_response);
+        $ai_response = preg_replace('/^```json\s*/', '', trim($ai_response));
         $ai_response = preg_replace('/\s*```$/', '', $ai_response);
         
         $result = json_decode($ai_response, true);
@@ -549,6 +543,10 @@ Research and write an \"**In Practice**\" section that covers:
         
         // Add sources_checked from response
         $result['sources_checked'] = $result['official_sources_checked'] ?? array();
+        
+        // Record the pages the model actually read, and which model reviewed.
+        $result['web_sources'] = FRA_Model_Resolver::extract_sources($body);
+        $result['model_used']  = isset($body['fra_model']) ? $body['fra_model'] : '';
         
         return $result;
     }

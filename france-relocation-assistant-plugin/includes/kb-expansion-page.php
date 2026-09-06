@@ -58,38 +58,32 @@ Please respond with a JSON object (no markdown, just raw JSON) containing:
 
 Focus on practical, actionable information for Americans relocating to France. Include official French government sources where possible.";
 
-            $response = wp_remote_post('https://api.anthropic.com/v1/messages', array(
-                'timeout' => 90,
-                'headers' => array(
-                    'Content-Type' => 'application/json',
-                    'x-api-key' => $api_key,
-                    'anthropic-version' => '2023-06-01'
+            // Model resolved live; web search so the cited .gouv.fr URLs are real.
+            $body = FRA_Model_Resolver::message(array(
+                'purpose'    => 'docs',
+                'max_tokens' => 4096,
+                'timeout'    => 180,
+                'tools'      => array(FRA_Model_Resolver::web_search_tool(6)),
+                'messages'   => array(
+                    array('role' => 'user', 'content' => $prompt)
                 ),
-                'body' => json_encode(array(
-                    'model' => 'claude-sonnet-4-20250514',
-                    'max_tokens' => 2048,
-                    'messages' => array(
-                        array('role' => 'user', 'content' => $prompt)
-                    )
-                ))
             ));
             
-            if (is_wp_error($response)) {
-                $generation_error = 'API request failed: ' . $response->get_error_message();
+            if (is_wp_error($body)) {
+                $generation_error = 'API error: ' . $body->get_error_message();
             } else {
-                $body = json_decode(wp_remote_retrieve_body($response), true);
+                $json_text = FRA_Model_Resolver::extract_text($body);
                 
-                if (isset($body['error'])) {
-                    $generation_error = 'API error: ' . ($body['error']['message'] ?? 'Unknown error');
-                } elseif (isset($body['content'][0]['text'])) {
-                    $json_text = $body['content'][0]['text'];
+                if ('' === $json_text) {
+                    $generation_error = 'Unexpected API response format';
+                } else {
                     // Clean up any markdown formatting
-                    $json_text = preg_replace('/^```json\s*/', '', $json_text);
-                    $json_text = preg_replace('/\s*```$/', '', $json_text);
-                    $generated_topic = json_decode($json_text, true);
+                    $clean_text = preg_replace('/^```json\s*/', '', trim($json_text));
+                    $clean_text = preg_replace('/\s*```$/', '', $clean_text);
+                    $generated_topic = json_decode($clean_text, true);
                     
                     if (!$generated_topic) {
-                        $generation_error = 'Failed to parse generated content. Raw response: ' . substr($body['content'][0]['text'], 0, 200);
+                        $generation_error = 'Failed to parse generated content. Raw response: ' . substr($json_text, 0, 200);
                     }
                 }
             }

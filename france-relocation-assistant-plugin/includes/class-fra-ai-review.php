@@ -486,39 +486,29 @@ Write an \"**In Practice**\" section that covers the real-world reality of this 
 }
 ```";
 
-        $response = wp_remote_post('https://api.anthropic.com/v1/messages', array(
-            'timeout' => 90,
-            'headers' => array(
-                'Content-Type' => 'application/json',
-                'x-api-key' => $api_key,
-                'anthropic-version' => '2023-06-01'
+        // Model resolved live; web search so the cited sources are real.
+        $body = FRA_Model_Resolver::message(array(
+            'purpose'    => 'review',
+            'max_tokens' => 4000,
+            'timeout'    => 180,
+            'tools'      => array(FRA_Model_Resolver::web_search_tool(8)),
+            'messages'   => array(
+                array('role' => 'user', 'content' => $prompt)
             ),
-            'body' => json_encode(array(
-                'model' => 'claude-sonnet-4-20250514',
-                'max_tokens' => 2000,
-                'messages' => array(
-                    array('role' => 'user', 'content' => $prompt)
-                )
-            ))
         ));
         
-        if (is_wp_error($response)) {
-            return $response;
-        }
-        
-        $body = json_decode(wp_remote_retrieve_body($response), true);
-        
-        if (isset($body['error'])) {
-            return new WP_Error('api_error', $body['error']['message'] ?? 'Unknown API error');
-        }
-        
-        if (!isset($body['content'][0]['text'])) {
-            return new WP_Error('api_error', 'Unexpected response format');
+        if (is_wp_error($body)) {
+            return $body;
         }
         
         // Parse response
-        $ai_response = $body['content'][0]['text'];
-        $ai_response = preg_replace('/^```json\s*/', '', $ai_response);
+        $ai_response = FRA_Model_Resolver::extract_text($body);
+        
+        if ('' === $ai_response) {
+            return new WP_Error('api_error', 'Unexpected response format');
+        }
+        
+        $ai_response = preg_replace('/^```json\s*/', '', trim($ai_response));
         $ai_response = preg_replace('/\s*```$/', '', $ai_response);
         
         $result = json_decode($ai_response, true);
@@ -530,7 +520,8 @@ Write an \"**In Practice**\" section that covers the real-world reality of this 
         return array(
             'in_practice_content' => $result['in_practice_content'] ?? '',
             'key_insights' => $result['key_insights'] ?? array(),
-            'sources' => $result['sources'] ?? array()
+            'sources' => $result['sources'] ?? array(),
+            'web_sources' => FRA_Model_Resolver::extract_sources($body)
         );
     }
     
@@ -977,39 +968,29 @@ For example, for Visitor Visa:
 - Be specific with examples where possible
 - If a grey area exists, explain both the official rule AND the practical reality";
 
-        $response = wp_remote_post('https://api.anthropic.com/v1/messages', array(
-            'timeout' => 120, // Longer timeout for comprehensive research
-            'headers' => array(
-                'Content-Type' => 'application/json',
-                'x-api-key' => $api_key,
-                'anthropic-version' => '2023-06-01'
+        // Model resolved live; web search so the cited sources are real.
+        $body = FRA_Model_Resolver::message(array(
+            'purpose'    => 'review',
+            'max_tokens' => 8000, // More tokens for comprehensive content
+            'timeout'    => 300,  // Longer timeout for comprehensive research
+            'tools'      => array(FRA_Model_Resolver::web_search_tool(10)),
+            'messages'   => array(
+                array('role' => 'user', 'content' => $prompt)
             ),
-            'body' => json_encode(array(
-                'model' => 'claude-sonnet-4-20250514',
-                'max_tokens' => 6000, // More tokens for comprehensive content
-                'messages' => array(
-                    array('role' => 'user', 'content' => $prompt)
-                )
-            ))
         ));
         
-        if (is_wp_error($response)) {
-            return $response;
-        }
-        
-        $body = json_decode(wp_remote_retrieve_body($response), true);
-        
-        if (isset($body['error'])) {
-            return new WP_Error('api_error', $body['error']['message'] ?? 'Unknown API error');
-        }
-        
-        if (!isset($body['content'][0]['text'])) {
-            return new WP_Error('api_error', 'Unexpected response format');
+        if (is_wp_error($body)) {
+            return $body;
         }
         
         // Parse response
-        $ai_response = $body['content'][0]['text'];
-        $ai_response = preg_replace('/^```json\s*/', '', $ai_response);
+        $ai_response = FRA_Model_Resolver::extract_text($body);
+        
+        if ('' === $ai_response) {
+            return new WP_Error('api_error', 'Unexpected response format');
+        }
+        
+        $ai_response = preg_replace('/^```json\s*/', '', trim($ai_response));
         $ai_response = preg_replace('/\s*```$/', '', $ai_response);
         
         $result = json_decode($ai_response, true);
@@ -1024,10 +1005,11 @@ For example, for Visitor Visa:
             $full_content .= "\n\n" . $result['in_practice_content'];
         }
         
-        // Combine all sources
+        // Combine all sources, including the pages the model actually fetched
         $all_sources = array_merge(
             $result['official_sources_checked'] ?? array(),
-            array_map(function($s) { return $s['name'] . ' (' . $s['type'] . ')'; }, $result['practice_sources'] ?? array())
+            array_map(function($s) { return $s['name'] . ' (' . $s['type'] . ')'; }, $result['practice_sources'] ?? array()),
+            array_map(function($s) { return $s['url']; }, FRA_Model_Resolver::extract_sources($body))
         );
         
         return array(

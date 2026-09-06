@@ -611,7 +611,21 @@ $react_settings = array(
                     body: formData,
                     credentials: 'same-origin'
                 })
-                .then(function(response) { return response.json(); })
+                .then(function(response) {
+                    // If something upstream turned this into a redirect or an
+                    // HTML error page, say so instead of failing silently.
+                    return response.text().then(function(body) {
+                        try {
+                            return JSON.parse(body);
+                        } catch (e) {
+                            return {
+                                success: false,
+                                data: 'The server returned an unexpected response (HTTP ' +
+                                    response.status + '). Please try again, or contact support if this continues.'
+                            };
+                        }
+                    });
+                })
                 .then(function(data) {
                     if (data.success) {
                         // Reload page to show portal
