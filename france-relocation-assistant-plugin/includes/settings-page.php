@@ -35,12 +35,30 @@ $membership_url = get_option( 'fra_membership_url', '/membership/' );
 $posted_section = isset( $_POST['fra_settings_section'] )
     ? sanitize_key( wp_unslash( $_POST['fra_settings_section'] ) )
     : '';
+$has_section_marker = ( '' !== $posted_section );
 
 // The Review API toggle rides on any submit of the API form - Save, Generate
 // secret, or Test connection - because the checkbox is posted every time.
-if ( 'api' === $posted_section && check_admin_referer( 'fra_settings_nonce' ) ) {
+//
+// This deliberately requires the explicit marker rather than the inferred
+// section below: an unchecked checkbox is indistinguishable from one that was
+// never on the page, so acting on a form we only *think* is the API form would
+// let a stale browser tab silently switch the endpoints off.
+if ( $has_section_marker && 'api' === $posted_section && check_admin_referer( 'fra_settings_nonce' ) ) {
     $review_api_on = isset( $_POST['fra_review_api_enabled'] );
     update_option( FRA_Review_API::ENABLED_OPTION, $review_api_on );
+}
+
+// A page rendered before the marker existed - a browser tab left open across
+// this deploy - posts without it. Infer the section from the fields actually
+// present so an old form still saves, instead of silently doing nothing while
+// reporting success.
+if ( ! $has_section_marker ) {
+    if ( isset( $_POST['fra_api_model'] ) || isset( $_POST['fra_membership_url'] ) ) {
+        $posted_section = 'api';
+    } elseif ( isset( $_POST['fra_github_repo'] ) || isset( $_POST['fra_update_url'] ) ) {
+        $posted_section = 'github';
+    }
 }
 
 // Handle form submission.
@@ -93,7 +111,11 @@ if ( isset( $_POST['fra_save_settings'] ) && check_admin_referer( 'fra_settings_
     // Clear update cache when settings change.
     delete_transient( 'fra_update_check' );
 
-    echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Settings saved successfully.', 'france-relocation-assistant' ) . '</p></div>';
+    if ( '' !== $posted_section ) {
+        echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Settings saved successfully.', 'france-relocation-assistant' ) . '</p></div>';
+    } else {
+        echo '<div class="notice notice-error is-dismissible"><p>' . esc_html__( 'Nothing was saved - the form could not be identified. Reload this page and try again.', 'france-relocation-assistant' ) . '</p></div>';
+    }
 }
 
 // Generate a review API secret if requested. Displayed once and never again.
