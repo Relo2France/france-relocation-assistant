@@ -593,13 +593,29 @@ Research and write an \"**In Practice**\" section that covers:
         $site_name = get_bloginfo('name');
         $admin_url = admin_url('admin.php?page=france-relocation-assistant-ai-review');
         
-        $subject = "[{$site_name}] AI Review Complete - {$status['changes_found']} Updates Pending";
+        // A topic counts as processed the moment it is attempted, so a run in
+        // which everything errored still reports processed = 31. Success is
+        // what is left after the errors - report that, not the attempt count.
+        $processed = (int) $status['processed'];
+        $errors    = (int) $status['errors'];
+        $changes   = (int) $status['changes_found'];
+        $succeeded = max(0, $processed - $errors);
+        $failed_completely = ($processed > 0 && 0 === $succeeded);
+        
+        if ($failed_completely) {
+            $subject = "[{$site_name}] AI Review FAILED - 0 of {$processed} topics reviewed";
+        } elseif ($errors > 0) {
+            $subject = "[{$site_name}] AI Review Complete - {$changes} Updates Pending, {$errors} Errors";
+        } else {
+            $subject = "[{$site_name}] AI Review Complete - {$changes} Updates Pending";
+        }
         
         $message = "Hello,\n\n";
         $message .= "Your scheduled AI Knowledge Base review has completed.\n\n";
         $message .= "📊 REVIEW SUMMARY\n";
         $message .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
-        $message .= "Topics Reviewed: {$status['processed']}\n";
+        $message .= "Topics Attempted: {$processed}\n";
+        $message .= "Reviewed Successfully: {$succeeded}\n";
         $message .= "Updates Suggested: {$status['changes_found']}\n";
         $message .= "Errors: {$status['errors']}\n";
         $message .= "Started: {$status['started_at']}\n";
@@ -609,18 +625,35 @@ Research and write an \"**In Practice**\" section that covers:
         }
         $message .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n";
         
-        if ($status['changes_found'] > 0) {
+        if ($failed_completely) {
+            $message .= "❌ REVIEW FAILED\n";
+            $message .= "None of the {$processed} topics could be reviewed - every one returned\n";
+            $message .= "an error. Your knowledge base has NOT been checked, and the result\n";
+            $message .= "above does not mean it is up to date. See the errors below.\n\n";
+        } elseif ($changes > 0) {
             $message .= "🔔 ACTION REQUIRED\n";
-            $message .= "You have {$status['changes_found']} pending updates to review.\n\n";
+            $message .= "You have {$changes} pending updates to review.\n\n";
             $message .= "Review them here:\n{$admin_url}\n\n";
+            if ($errors > 0) {
+                $message .= "Note: {$errors} of {$processed} topics failed and were not checked.\n\n";
+            }
+        } elseif ($errors > 0) {
+            $message .= "⚠️ PARTIAL REVIEW\n";
+            $message .= "{$succeeded} of {$processed} topics were reviewed and needed no updates.\n";
+            $message .= "The remaining {$errors} failed and were not checked. See the errors below.\n\n";
         } else {
-            $message .= "✅ Your knowledge base is up to date!\n\n";
+            $message .= "✅ Your knowledge base is up to date!\n";
+            $message .= "All {$processed} topics were reviewed and none needed updates.\n\n";
         }
         
-        if ($status['errors'] > 0) {
+        if ($errors > 0) {
             $message .= "⚠️ ERRORS\n";
             foreach ($status['error_messages'] as $error) {
                 $message .= "• {$error}\n";
+            }
+            $shown = count($status['error_messages']);
+            if ($errors > $shown) {
+                $message .= "...and " . ($errors - $shown) . " more (only the most recent {$shown} are kept).\n";
             }
             $message .= "\n";
         }
