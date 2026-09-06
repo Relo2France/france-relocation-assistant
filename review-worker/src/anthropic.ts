@@ -7,6 +7,7 @@
  * the JSON out of a response that also contains search narration.
  */
 import { resolveModel, tierOf } from './models';
+import { readMessageStream } from './stream';
 import type { ContentBlock, Env, MessagesResponse, WebSource } from './types';
 
 const MESSAGES_ENDPOINT = 'https://api.anthropic.com/v1/messages';
@@ -117,6 +118,11 @@ export async function sendMessage(env: Env, options: MessageOptions): Promise<Me
       payload.tools = [{ type: searchType, name: 'web_search', max_uses: options.webSearchUses }];
     }
 
+    // Stream. A review with web search runs past Cloudflare's 125s proxy read
+    // timeout in front of api.anthropic.com; streaming keeps bytes flowing so
+    // the read timeout never fires.
+    payload.stream = true;
+
     const response = await fetch(MESSAGES_ENDPOINT, {
       method: 'POST',
       headers: {
@@ -127,9 +133,23 @@ export async function sendMessage(env: Env, options: MessageOptions): Promise<Me
       body: JSON.stringify(payload),
     });
 
-    const body = (await response.json()) as MessagesResponse & {
-      error?: { type?: string; message?: string };
-    };
+    let body: MessagesResponse & { error?: { type?: string; message?: string } };
+
+    if (!response.ok) {
+      // An error response is JSON; anything else (an edge timeout page, say)
+      // must not be fed to JSON.parse - that turns a clear failure into a
+      // baffling "Unexpected token" message.
+      const raw = await response.text();
+      try {
+        body = JSON.parse(raw) as typeof body;
+      } catch {
+        throw new Error(
+          `Anthropic returned HTTP ${response.status}: ${raw.slice(0, 200).trim() || '(empty body)'}`
+        );
+      }
+    } else {
+      body = await readMessageStream(response);
+    }
 
     if (body.error) {
       const message = body.error.message ?? 'Unknown API error';

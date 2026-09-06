@@ -37,7 +37,10 @@ export async function reviewTopic(
   const outcome = await sendMessage(env, {
     tier: env.MODEL_TIER,
     prompt: buildReviewPrompt(topic),
-    maxTokens: 8000,
+    // Generous because we stream: the old 8000 ceiling cut the JSON off
+    // mid-object on a real topic. Streaming removes the timeout pressure that
+    // made a small cap tempting, and unused headroom costs nothing.
+    maxTokens: 32000,
     webSearchUses: 5,
     // Deliberately off: continuing a truncated JSON object rarely yields
     // valid JSON. Truncation is reported instead, and the run fails loudly.

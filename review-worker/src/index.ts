@@ -27,7 +27,10 @@ const json = (body: unknown, status = 200): Response =>
 function authorised(request: Request, env: Env): boolean {
   const header = request.headers.get('authorization') ?? '';
   const provided = header.toLowerCase().startsWith('bearer ') ? header.slice(7).trim() : '';
-  const expected = env.TRIGGER_SECRET ?? '';
+  // Trim the stored value too. A secret pasted into the dashboard can pick up
+  // a trailing newline, and surrounding whitespace is never meaningful in a
+  // token - without this the mismatch is invisible and reads as a wrong key.
+  const expected = (env.TRIGGER_SECRET ?? '').trim();
 
   if (!provided || !expected || provided.length !== expected.length) return false;
 
