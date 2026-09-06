@@ -359,6 +359,18 @@ class France_Relocation_Assistant {
         $error_message = $this->get_login_error_message($error_code);
         set_transient('fra_login_error_' . sanitize_key($username), $error_message, 60);
         
+        // Only redirect for real browser page loads. AJAX and REST callers -
+        // the member portal login at /portal/ is one - need to receive their
+        // own JSON error response. Redirecting here turns their request into a
+        // 302 to the homepage, the JSON parse fails, and every login problem
+        // surfaces as a single generic "An error occurred" message.
+        if (wp_doing_ajax()
+            || (defined('REST_REQUEST') && REST_REQUEST)
+            || (defined('XMLRPC_REQUEST') && XMLRPC_REQUEST)
+            || (defined('WP_CLI') && WP_CLI)) {
+            return;
+        }
+        
         // Redirect to home with error flag
         wp_safe_redirect(home_url('/?login_error=1&user=' . urlencode($username)));
         exit;
