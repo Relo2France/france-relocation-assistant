@@ -353,8 +353,9 @@ class FRAMT_Main_Plugin_Bridge {
         // Model resolved live from the Anthropic catalog.
         $body = FRAMT_AI_Client::message( array(
             'purpose'    => 'chat',
-            'max_tokens' => 1024,
-            'timeout'    => 60,
+            'max_tokens' => 4096,
+            'timeout'    => 120,
+            'continue_on_truncation' => true,
             'messages'   => array(
                 array('role' => 'user', 'content' => $message)
             ),

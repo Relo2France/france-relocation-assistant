@@ -535,6 +535,11 @@ class FRA_Model_Resolver {
             'max_tokens' => 4096,
             'tools'      => array(),
             'timeout'    => 120,
+            // Prose answers should never be served half-finished. JSON callers
+            // leave this off: continuing a truncated JSON object rarely yields
+            // valid JSON, and extract_json() reports the truncation instead.
+            'continue_on_truncation' => false,
+            'max_continuations'      => 2,
         ));
 
         $api_key = self::get_api_key();
@@ -550,8 +555,10 @@ class FRA_Model_Resolver {
         $messages      = $args['messages'];
         $collected     = array();
         $turns         = 0;
+        $continuations = 0;
+        $was_continued = false;
 
-        while ($turns < 6) {
+        while ($turns < 10) {
             $turns++;
 
             $payload = array(
@@ -634,8 +641,27 @@ class FRA_Model_Resolver {
                 continue;
             }
 
-            $body['content']   = $collected;
-            $body['fra_model'] = $model;
+            // The answer hit the token ceiling mid-sentence. Ask for the rest
+            // rather than serving a cut-off response.
+            if ('max_tokens' === $stop_reason
+                && $args['continue_on_truncation']
+                && $continuations < (int) $args['max_continuations']) {
+                $continuations++;
+                $was_continued = true;
+                $messages[] = array('role' => 'assistant', 'content' => $body['content']);
+                $messages[] = array(
+                    'role'    => 'user',
+                    'content' => 'Continue from exactly where you stopped. Do not repeat any text you have already written, do not restate the question, and do not add a preamble - just carry straight on.',
+                );
+                continue;
+            }
+
+            $body['content']       = $collected;
+            $body['fra_model']     = $model;
+            $body['fra_continued'] = $was_continued;
+            // Truthful even after continuing: true here means it is STILL cut
+            // off, having exhausted the continuation budget.
+            $body['fra_truncated'] = ('max_tokens' === $stop_reason);
             return $body;
         }
 
@@ -742,6 +768,130 @@ class FRA_Model_Resolver {
         }
 
         return implode('', $parts);
+    }
+
+    /**
+     * Check an answer before it is shown to anyone.
+     *
+     * Runs a fast, cheap pass on the Haiku tier asking whether the answer
+     * actually addresses the question and reads as finished. This is a
+     * safety net, not a rewrite: it reports problems so the caller can
+     * retry or degrade, and it never edits the answer itself.
+     *
+     * Costs one small extra call. Callers that cannot spend the latency
+     * should skip it rather than have it silently disabled.
+     *
+     * @param string $question The user's question
+     * @param string $answer   The generated answer
+     * @return array {
+     *     @type bool   $ok      True if the answer passes
+     *     @type bool   $checked False if the check could not run
+     *     @type string $issue   Short description of the problem, if any
+     * }
+     */
+    public static function verify_answer($question, $answer) {
+        $question = trim((string) $question);
+        $answer   = trim((string) $answer);
+
+        // Cheap structural checks first - no API call needed to spot these.
+        if ('' === $answer) {
+            return array('ok' => false, 'checked' => true, 'issue' => 'The answer was empty.');
+        }
+
+        if (preg_match('/[a-z0-9,;:]\s*$/i', $answer) && strlen($answer) > 200) {
+            // Ends mid-sentence with no terminal punctuation.
+            return array('ok' => false, 'checked' => true, 'issue' => 'The answer stops mid-sentence.');
+        }
+
+        if ('' === $question) {
+            return array('ok' => true, 'checked' => false, 'issue' => '');
+        }
+
+        $prompt = "You are checking whether an answer is fit to show a user. Be strict about "
+            . "completeness and relevance, but do not judge writing style.\n\n"
+            . "QUESTION:\n" . $question . "\n\n"
+            . "ANSWER:\n" . $answer . "\n\n"
+            . "Respond with ONLY this JSON object:\n"
+            . '{"answers_question": true/false, "complete": true/false, "issue": "one short sentence, or empty string if fine"}';
+
+        $body = self::message(array(
+            'model'      => self::resolve('haiku'),
+            'max_tokens' => 300,
+            'timeout'    => 30,
+            'messages'   => array(array('role' => 'user', 'content' => $prompt)),
+        ));
+
+        // If the checker itself fails, do not block the answer - say it was
+        // unchecked and let the caller decide.
+        if (is_wp_error($body)) {
+            return array('ok' => true, 'checked' => false, 'issue' => '');
+        }
+
+        $verdict = self::extract_json($body);
+        if (!is_array($verdict)) {
+            return array('ok' => true, 'checked' => false, 'issue' => '');
+        }
+
+        $answers  = !empty($verdict['answers_question']);
+        $complete = !empty($verdict['complete']);
+        $issue    = isset($verdict['issue']) ? trim((string) $verdict['issue']) : '';
+
+        if ($answers && $complete) {
+            return array('ok' => true, 'checked' => true, 'issue' => '');
+        }
+
+        if ('' === $issue) {
+            $issue = $answers
+                ? 'The answer looks incomplete.'
+                : 'The answer does not address the question asked.';
+        }
+
+        return array('ok' => false, 'checked' => true, 'issue' => $issue);
+    }
+
+    /**
+     * Generate an answer, check it, and retry once if the check fails.
+     *
+     * @param array  $args     Arguments for message()
+     * @param string $question The question being answered, for the check
+     * @return array|WP_Error Response body with fra_verification added
+     */
+    public static function message_verified($args, $question = '') {
+        $args = wp_parse_args($args, array('continue_on_truncation' => true));
+
+        $body = self::message($args);
+        if (is_wp_error($body)) {
+            return $body;
+        }
+
+        $check = self::verify_answer($question, self::extract_text($body));
+
+        if ($check['ok']) {
+            $body['fra_verification'] = $check;
+            return $body;
+        }
+
+        // One retry, telling the model what was wrong with the first attempt.
+        $retry_args = $args;
+        $retry_args['messages'] = array_merge($args['messages'], array(
+            array('role' => 'assistant', 'content' => self::extract_text($body)),
+            array(
+                'role'    => 'user',
+                'content' => 'That response had a problem: ' . $check['issue']
+                    . ' Please answer the original question again, completely and directly.',
+            ),
+        ));
+
+        $retry = self::message($retry_args);
+        if (is_wp_error($retry)) {
+            // Keep the first attempt rather than failing outright.
+            $body['fra_verification'] = $check;
+            return $body;
+        }
+
+        $retry['fra_verification'] = self::verify_answer($question, self::extract_text($retry));
+        $retry['fra_retried']      = true;
+        return $retry;
     }
 
     /**

@@ -279,8 +279,9 @@ class FRA_API_Proxy {
         // Make API request (model resolved live from the Anthropic catalog)
         $body = FRA_Model_Resolver::message(array(
             'purpose'    => 'chat',
-            'max_tokens' => $config['max_tokens'],
-            'timeout'    => 60,
+            'max_tokens' => max(2048, (int) $config['max_tokens']),
+            'timeout'    => 120,
+            'continue_on_truncation' => true,
             'system'     => $system_prompt,
             'messages'   => array(
                 array('role' => 'user', 'content' => $user_message)

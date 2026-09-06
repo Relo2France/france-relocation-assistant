@@ -55,6 +55,24 @@ class FRAMT_AI_Client {
     }
 
     /**
+     * Send a request, check the answer, and retry once if the check fails.
+     *
+     * Falls back to a plain request when the main plugin is unavailable -
+     * the check needs the resolver.
+     *
+     * @param array  $args     Request arguments
+     * @param string $question What the answer is meant to address
+     * @return array|WP_Error
+     */
+    public static function message_verified($args, $question = '') {
+        if (self::has_resolver()) {
+            return FRA_Model_Resolver::message_verified($args, $question);
+        }
+
+        return self::fallback_message($args);
+    }
+
+    /**
      * Extract all text blocks from a response.
      *
      * @param array $body Decoded response body

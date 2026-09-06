@@ -133,7 +133,13 @@ class FRAMT_AI_Guide_Generator {
             return $prompt;
         }
 
-        $response = $this->call_api($prompt);
+        $response = $this->call_api(
+            $prompt,
+            sprintf(
+                'Produce a personalized "%s" guide for this member, using the details they provided.',
+                str_replace('-', ' ', $guide_type)
+            )
+        );
         
         if (is_wp_error($response)) {
             return $response;
@@ -922,48 +928,41 @@ VISA-SPECIFIC REQUIREMENTS FOR RETIREE VISA:
     /**
      * Call the Claude API
      */
-    private function call_api($prompt) {
-        $api_key = $this->get_api_key();
-
-        $body = array(
-            'model' => $this->get_model(),
-            'max_tokens' => 4096,
-            'messages' => array(
-                array(
-                    'role' => 'user',
-                    'content' => $prompt,
+    private function call_api($prompt, $question = '') {
+        // Routed through the shared client so this path gets the same
+        // treatment as everything else: a live model, automatic continuation
+        // when the answer hits the token ceiling, and a check that the answer
+        // actually addresses the question before it reaches a member.
+        $body = FRAMT_AI_Client::message_verified(
+            array(
+                'purpose'    => 'docs',
+                'max_tokens' => 8192,
+                'timeout'    => 180,
+                'continue_on_truncation' => true,
+                'messages'   => array(
+                    array('role' => 'user', 'content' => $prompt),
                 ),
             ),
+            $question
         );
 
-        $response = wp_remote_post(self::API_ENDPOINT, array(
-            'timeout' => 120,
-            'headers' => array(
-                'Content-Type' => 'application/json',
-                'x-api-key' => $api_key,
-                'anthropic-version' => '2023-06-01',
-            ),
-            'body' => json_encode($body),
-        ));
-
-        if (is_wp_error($response)) {
-            return $response;
+        if (is_wp_error($body)) {
+            return $body;
         }
 
-        $response_code = wp_remote_retrieve_response_code($response);
-        $response_body = wp_remote_retrieve_body($response);
-        $data = json_decode($response_body, true);
+        $text = FRAMT_AI_Client::extract_text($body);
 
-        if ($response_code !== 200) {
-            $error_message = $data['error']['message'] ?? __('API request failed', 'fra-member-tools');
-            return new WP_Error('api_error', $error_message);
-        }
-
-        if (!isset($data['content'][0]['text'])) {
+        if ('' === $text) {
             return new WP_Error('invalid_response', __('Invalid API response', 'fra-member-tools'));
         }
 
-        return $data['content'][0]['text'];
+        // Still cut off after using up the continuation budget - say so rather
+        // than handing the member a sentence that stops halfway.
+        if (!empty($body['fra_truncated'])) {
+            $text .= "\n\n_This answer was longer than the space available and has been cut short. Ask a more specific question to get the rest._";
+        }
+
+        return $text;
     }
 
     /**

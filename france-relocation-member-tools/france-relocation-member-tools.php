@@ -14,7 +14,7 @@
  * Plugin Name: France Relocation Member Tools
  * Plugin URI:  https://relo2france.com
  * Description: Premium member features including the Members Portal with project management, task tracking, document generation, checklists, guides, and personalized relocation planning.
- * Version:     2.2.0
+ * Version:     2.3.0
  * Author:      Relo2France
  * Author URI:  https://relo2france.com
  * License:     GPL v2 or later
@@ -31,7 +31,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Plugin constants.
-define( 'FRAMT_VERSION', '2.2.0' );
+define( 'FRAMT_VERSION', '2.3.0' );
 define('FRAMT_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('FRAMT_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('FRAMT_PLUGIN_BASENAME', plugin_basename(__FILE__));
@@ -2371,8 +2371,9 @@ window.onload = function() {
         // Call Anthropic API (model resolved live from the Anthropic catalog)
         $body = FRAMT_AI_Client::message(array(
             'purpose'    => 'docs',
-            'max_tokens' => 4000,
-            'timeout'    => 60,
+            'max_tokens' => 8000,
+            'timeout'    => 180,
+            'continue_on_truncation' => true,
             'messages'   => array(
                 array('role' => 'user', 'content' => $prompt),
             ),
@@ -3294,8 +3295,9 @@ Please provide a helpful, accurate answer about their health insurance coverage 
         // Call Claude API (model resolved live from the Anthropic catalog)
         $data = FRAMT_AI_Client::message(array(
             'purpose'    => 'docs',
-            'max_tokens' => 1024,
-            'timeout'    => 60,
+            'max_tokens' => 4096,
+            'timeout'    => 120,
+            'continue_on_truncation' => true,
             'messages'   => array(
                 array('role' => 'user', 'content' => $prompt)
             ),

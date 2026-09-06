@@ -27,7 +27,7 @@ function fra_get_api_config() {
         'rate_limit'        => get_option('fra_rate_limit', 20), // requests per minute
         'daily_limit'       => get_option('fra_daily_limit', 100), // requests per day for non-members
         'member_multiplier' => get_option('fra_member_rate_multiplier', 3), // members get 3x limits
-        'max_tokens'        => get_option('fra_max_tokens', 1024),
+        'max_tokens'        => (int) get_option('fra_max_tokens', 4096),
         'temperature'       => get_option('fra_temperature', 0.7)
     );
 }
@@ -303,6 +303,7 @@ function fra_register_api_settings() {
         'default' => 3
     ));
 
+    // 1024 truncated real answers mid-sentence; 4096 is roughly 3000 words.
     register_setting('fra_settings', 'fra_max_tokens', array(
         'type' => 'integer',
         'sanitize_callback' => 'absint',
