@@ -1,0 +1,29 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "relo2france-review",
+  "main": "./src/index.ts",
+  "compatibility_date": "2026-09-01",
+  "observability": { "enabled": true },
+
+  "vars": {
+    "ENVIRONMENT": "production",
+    "WP_BASE_URL": "https://relo2france.com",
+    // Tier, not a model id. The exact model is resolved from the live
+    // Anthropic catalogue at call time, so a retired model never gets sent.
+    "MODEL_TIER": "sonnet"
+  },
+
+  // Caches the Anthropic model catalogue. Replaces the hand-rolled WordPress
+  // transient plus failure backoff.
+  "kv_namespaces": [
+    { "binding": "MODEL_CACHE", "id": "REPLACE_WITH_KV_ID" }
+  ]
+
+  // Secrets, set with `wrangler secret put`:
+  //   ANTHROPIC_API_KEY  - the same key WordPress uses
+  //   WP_SHARED_SECRET   - matches the Review API secret in WP settings
+  //   TRIGGER_SECRET     - guards the manual trigger route
+  //
+  // No cron trigger yet. Phase 3 adds:
+  //   "triggers": { "crons": ["0 3 * * 0"] }
+}

@@ -1,0 +1,20 @@
+{
+  "name": "relo2france-review-worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Runs the Relo2France knowledge base review on Cloudflare Workers instead of WP-Cron",
+  "scripts": {
+    "dev": "wrangler dev",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "deploy": "npm run typecheck && npm test && wrangler deploy"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250109.0",
+    "typescript": "^5.7.3",
+    "vitest": "^2.1.8",
+    "wrangler": "^3.101.0"
+  }
+}
