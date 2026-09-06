@@ -222,7 +222,7 @@ class France_Relocation_Assistant {
         add_action('admin_menu', array($this, 'add_admin_menu'));
         add_action('admin_init', array($this, 'register_settings'));
 
-        // Auto-reactivate plugins after WP Pusher updates (WordPress.com hosted compatibility)
+        // Auto-reactivate plugins after a GitHub Sync update (WordPress.com hosted compatibility)
         add_action('admin_init', array($this, 'auto_reactivate_plugins'), 1);
         
         // AJAX handlers (logged-in and public)
@@ -1365,8 +1365,16 @@ class France_Relocation_Assistant {
     /**
      * Auto-reactivate France Relocation plugins after updates
      *
-     * This handles WordPress.com hosted environments where mu-plugins
-     * aren't available. Runs on admin_init to ensure plugins stay active.
+     * France Relocation GitHub Sync deactivates a plugin, replaces its files,
+     * then reactivates it. If that reactivation fails - or the request dies
+     * between the two steps - the plugin is left switched off. This is the
+     * safety net: on the next admin page load, any of our plugins that is
+     * present but inactive gets switched back on.
+     *
+     * Needed because WordPress.com hosting does not give us mu-plugins, which
+     * is where this would normally live. Runs on admin_init at priority 1.
+     *
+     * (Previously this covered WP Pusher, which GitHub Sync replaced.)
      *
      * @return void
      */

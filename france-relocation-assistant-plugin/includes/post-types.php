@@ -122,7 +122,7 @@ add_action('init', 'fra_register_taxonomies');
 /**
  * Flush rewrite rules on plugin activation
  *
- * IMPORTANT: After deploying via WP Pusher, you must also go to
+ * IMPORTANT: After deploying via GitHub Sync, you must also go to
  * Settings -> Permalinks and click Save to flush rules.
  */
 function fra_flush_rewrite_rules() {
