@@ -14,7 +14,7 @@
  * Plugin Name: France Relocation Member Tools
  * Plugin URI:  https://relo2france.com
  * Description: Premium member features including the Members Portal with project management, task tracking, document generation, checklists, guides, and personalized relocation planning.
- * Version:     2.1.0
+ * Version:     2.2.0
  * Author:      Relo2France
  * Author URI:  https://relo2france.com
  * License:     GPL v2 or later
@@ -31,7 +31,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Plugin constants.
-define( 'FRAMT_VERSION', '2.1.0' );
+define( 'FRAMT_VERSION', '2.2.0' );
 define('FRAMT_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('FRAMT_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('FRAMT_PLUGIN_BASENAME', plugin_basename(__FILE__));
@@ -308,6 +308,7 @@ final class FRA_Member_Tools {
     private function load_dependencies() {
         // Core classes - load with file existence check
         $required_files = array(
+            'includes/class-framt-ai-client.php',
             'includes/class-framt-membership.php',
             'includes/class-framt-profile.php',
             'includes/class-framt-dashboard.php',
@@ -2367,34 +2368,25 @@ window.onload = function() {
             throw new Exception('Unknown document type');
         }
         
-        // Call Anthropic API
-        $response = wp_remote_post('https://api.anthropic.com/v1/messages', array(
-            'timeout' => 60,
-            'headers' => array(
-                'Content-Type' => 'application/json',
-                'x-api-key' => $api_key,
-                'anthropic-version' => '2023-06-01',
+        // Call Anthropic API (model resolved live from the Anthropic catalog)
+        $body = FRAMT_AI_Client::message(array(
+            'purpose'    => 'docs',
+            'max_tokens' => 4000,
+            'timeout'    => 60,
+            'messages'   => array(
+                array('role' => 'user', 'content' => $prompt),
             ),
-            'body' => json_encode(array(
-                'model' => 'claude-sonnet-4-20250514',
-                'max_tokens' => 4000,
-                'messages' => array(
-                    array('role' => 'user', 'content' => $prompt),
-                ),
-            )),
         ));
         
-        if (is_wp_error($response)) {
-            throw new Exception($response->get_error_message());
+        if (is_wp_error($body)) {
+            throw new Exception($body->get_error_message());
         }
         
-        $body = json_decode(wp_remote_retrieve_body($response), true);
+        $content = FRAMT_AI_Client::extract_text($body);
         
-        if (!isset($body['content'][0]['text'])) {
+        if ('' === $content) {
             throw new Exception('Invalid API response');
         }
-        
-        $content = $body['content'][0]['text'];
         
         $titles = array(
             'cover-letter' => __('Visa Cover Letter', 'fra-member-tools'),
@@ -3299,33 +3291,25 @@ User's question: " . $question . "
 
 Please provide a helpful, accurate answer about their health insurance coverage or French visa health insurance requirements. Be concise but thorough. If you're not sure about something specific to their policy, say so and provide general guidance.";
 
-        // Call Claude API
-        $response = wp_remote_post('https://api.anthropic.com/v1/messages', array(
-            'timeout' => 60,
-            'headers' => array(
-                'Content-Type' => 'application/json',
-                'x-api-key' => $api_key,
-                'anthropic-version' => '2023-06-01',
+        // Call Claude API (model resolved live from the Anthropic catalog)
+        $data = FRAMT_AI_Client::message(array(
+            'purpose'    => 'docs',
+            'max_tokens' => 1024,
+            'timeout'    => 60,
+            'messages'   => array(
+                array('role' => 'user', 'content' => $prompt)
             ),
-            'body' => wp_json_encode(array(
-                'model' => 'claude-sonnet-4-20250514',
-                'max_tokens' => 1024,
-                'messages' => array(
-                    array('role' => 'user', 'content' => $prompt)
-                ),
-            )),
         ));
         
-        if (is_wp_error($response)) {
-            wp_send_json_error(array('message' => $response->get_error_message()));
+        if (is_wp_error($data)) {
+            wp_send_json_error(array('message' => $data->get_error_message()));
             return;
         }
         
-        $body = wp_remote_retrieve_body($response);
-        $data = json_decode($body, true);
+        $answer = FRAMT_AI_Client::extract_text($data);
         
-        if (isset($data['content'][0]['text'])) {
-            wp_send_json_success(array('answer' => $data['content'][0]['text']));
+        if ('' !== $answer) {
+            wp_send_json_success(array('answer' => $answer));
         } else {
             wp_send_json_error(array('message' => __('Could not get response', 'fra-member-tools')));
         }

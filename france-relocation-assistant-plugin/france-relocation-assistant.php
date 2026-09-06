@@ -15,7 +15,7 @@
  * Plugin Name: France Relocation Assistant
  * Plugin URI:  https://relo2france.com
  * Description: AI-powered US to France relocation guidance with visa info, property guides, healthcare, taxes, and practical insights. Features weekly auto-updates, "In Practice" real-world advice, and comprehensive knowledge base.
- * Version:     3.6.4
+ * Version:     3.7.0
  * Author:      Relo2France
  * Author URI:  https://relo2france.com
  * License:     GPL v2 or later
@@ -36,7 +36,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 | Plugin Constants
 |--------------------------------------------------------------------------
 */
-define( 'FRA_VERSION', '3.6.4' );
+define( 'FRA_VERSION', '3.7.0' );
 define( 'FRA_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FRA_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'FRA_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
@@ -1407,12 +1407,27 @@ class France_Relocation_Assistant {
             'default'           => '',
         ) );
         
-        // AI Model selection
+        // AI model pin. 'auto' resolves the newest live model in the
+        // configured tier via FRA_Model_Resolver.
         register_setting('fra_settings', 'fra_api_model', array(
             'type' => 'string',
             'sanitize_callback' => 'sanitize_text_field',
-            'default' => 'claude-sonnet-4-20250514'
+            'default' => 'auto'
         ));
+
+        // Per-purpose model tiers (opus | sonnet | haiku).
+        $tier_defaults = array(
+            'chat'   => 'sonnet',
+            'review' => 'opus',
+            'docs'   => 'sonnet',
+        );
+        foreach ($tier_defaults as $purpose => $default_tier) {
+            register_setting('fra_settings', 'fra_model_tier_' . $purpose, array(
+                'type' => 'string',
+                'sanitize_callback' => 'sanitize_key',
+                'default' => $default_tier
+            ));
+        }
         
         // Enable AI toggle
         register_setting('fra_settings', 'fra_enable_ai', array(
@@ -1494,7 +1509,7 @@ class France_Relocation_Assistant {
             return;
         }
         
-        $model = get_option('fra_api_model', 'claude-sonnet-4-20250514');
+        $model = FRA_Model_Resolver::for_purpose('chat');
         
         // Build the prompt with context - emphasizing both official AND practical info
         $system_prompt = "You are an expert assistant helping Americans relocate to France on the Relo2France website. You combine official information with practical, real-world insights.
@@ -1565,38 +1580,27 @@ If the user asks you to create, generate, make, or produce any kind of document,
             }
         }
         
-        // Call Anthropic API
-        $response = wp_remote_post('https://api.anthropic.com/v1/messages', array(
-            'timeout' => 60,
-            'headers' => array(
-                'Content-Type' => 'application/json',
-                'x-api-key' => $api_key,
-                'anthropic-version' => '2023-06-01'
+        // Call Anthropic API (model resolved live from the Anthropic catalog)
+        $body = FRA_Model_Resolver::message(array(
+            'purpose'    => 'chat',
+            'max_tokens' => 1024,
+            'timeout'    => 60,
+            'system'     => $system_prompt,
+            'messages'   => array(
+                array('role' => 'user', 'content' => $user_message)
             ),
-            'body' => json_encode(array(
-                'model' => $model,
-                'max_tokens' => 1024,
-                'system' => $system_prompt,
-                'messages' => array(
-                    array('role' => 'user', 'content' => $user_message)
-                )
-            ))
         ));
         
-        if (is_wp_error($response)) {
-            wp_send_json_error('API request failed: ' . $response->get_error_message());
+        if (is_wp_error($body)) {
+            wp_send_json_error('API error: ' . $body->get_error_message());
         }
         
-        $body = json_decode(wp_remote_retrieve_body($response), true);
+        $text = FRA_Model_Resolver::extract_text($body);
         
-        if (isset($body['error'])) {
-            wp_send_json_error('API error: ' . ($body['error']['message'] ?? 'Unknown error'));
-        }
-        
-        if (isset($body['content'][0]['text'])) {
+        if ('' !== $text) {
             wp_send_json_success(array(
-                'response' => $body['content'][0]['text'],
-                'model' => $model,
+                'response' => $text,
+                'model' => isset($body['fra_model']) ? $body['fra_model'] : $model,
                 'usage' => $body['usage'] ?? null
             ));
         } else {
@@ -1808,6 +1812,7 @@ require_once FRA_PLUGIN_DIR . 'includes/meta-fields.php';
 require_once FRA_PLUGIN_DIR . 'includes/dynamic-menu.php';
 
 // Core modules
+require_once FRA_PLUGIN_DIR . 'includes/class-fra-model-resolver.php';
 require_once FRA_PLUGIN_DIR . 'includes/class-fra-seo.php';
 require_once FRA_PLUGIN_DIR . 'includes/class-fra-membership.php';
 require_once FRA_PLUGIN_DIR . 'includes/class-fra-updater.php';

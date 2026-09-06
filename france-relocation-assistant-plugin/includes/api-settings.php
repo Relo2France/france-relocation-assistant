@@ -20,7 +20,9 @@ if (!defined('ABSPATH')) {
 function fra_get_api_config() {
     return array(
         'api_key'           => France_Relocation_Assistant::get_api_key(),
-        'api_model'         => get_option('fra_api_model', 'claude-sonnet-4-20250514'),
+        'api_model'         => class_exists('FRA_Model_Resolver')
+            ? FRA_Model_Resolver::for_purpose('chat')
+            : get_option('fra_api_model', 'claude-sonnet-5'),
         'enable_ai'         => get_option('fra_enable_ai', false),
         'rate_limit'        => get_option('fra_rate_limit', 20), // requests per minute
         'daily_limit'       => get_option('fra_daily_limit', 100), // requests per day for non-members
@@ -213,7 +215,18 @@ function fra_get_admin_usage_stats() {
 
     // Calculate cost estimates
     $config = fra_get_api_config();
-    $cost_per_request = ($config['api_model'] === 'claude-haiku-4-20250514') ? 0.004 : 0.015;
+    // Rough per-request estimate by tier, so it keeps working as models change.
+    $tier = class_exists('FRA_Model_Resolver')
+        ? FRA_Model_Resolver::tier_of($config['api_model'])
+        : 'sonnet';
+    $tier_costs = array(
+        'haiku'  => 0.004,
+        'sonnet' => 0.015,
+        'opus'   => 0.045,
+        'fable'  => 0.090,
+        'mythos' => 0.090,
+    );
+    $cost_per_request = isset($tier_costs[$tier]) ? $tier_costs[$tier] : 0.015;
 
     return array(
         'total_requests' => $stats['total_requests'],

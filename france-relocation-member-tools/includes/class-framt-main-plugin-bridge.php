@@ -350,42 +350,23 @@ class FRAMT_Main_Plugin_Bridge {
      * @return array|WP_Error
      */
     private function direct_api_call( $message, $context = '' ) {
-        $api_key = France_Relocation_Assistant::get_api_key();
-        $model   = get_option( 'fra_api_model', 'claude-sonnet-4-20250514' );
-
-        if ( empty( $api_key ) ) {
-            return new WP_Error( 'no_api_key', 'API key not configured' );
-        }
-
-        $response = wp_remote_post('https://api.anthropic.com/v1/messages', array(
-            'timeout' => 60,
-            'headers' => array(
-                'Content-Type' => 'application/json',
-                'x-api-key' => $api_key,
-                'anthropic-version' => '2023-06-01'
+        // Model resolved live from the Anthropic catalog.
+        $body = FRAMT_AI_Client::message( array(
+            'purpose'    => 'chat',
+            'max_tokens' => 1024,
+            'timeout'    => 60,
+            'messages'   => array(
+                array('role' => 'user', 'content' => $message)
             ),
-            'body' => wp_json_encode(array(
-                'model' => $model,
-                'max_tokens' => 1024,
-                'messages' => array(
-                    array('role' => 'user', 'content' => $message)
-                )
-            ))
-        ));
+        ) );
 
-        if (is_wp_error($response)) {
-            return $response;
-        }
-
-        $body = json_decode(wp_remote_retrieve_body($response), true);
-
-        if (isset($body['error'])) {
-            return new WP_Error('api_error', $body['error']['message'] ?? 'Unknown error');
+        if (is_wp_error($body)) {
+            return $body;
         }
 
         return array(
-            'response' => $body['content'][0]['text'] ?? '',
-            'model' => $model,
+            'response' => FRAMT_AI_Client::extract_text($body),
+            'model' => isset($body['fra_model']) ? $body['fra_model'] : '',
             'usage' => $body['usage'] ?? null
         );
     }

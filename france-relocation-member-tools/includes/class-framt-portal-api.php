@@ -8672,7 +8672,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
         if ( $is_placeholder ) {
             $placeholder_reason = $footer['placeholder_reason'] ?? '';
             $reason_messages = array(
-                'api_key_missing' => 'The OpenAI API key is not configured. Please add your API key in the plugin settings.',
+                'api_key_missing' => 'The Anthropic API key is not configured. Please add your API key in the plugin settings.',
                 'api_error'       => 'Unable to connect to the AI service. Please try again later.',
                 'parse_error'     => 'The AI response could not be processed. Please try regenerating the report.',
             );
@@ -9031,50 +9031,30 @@ Your reports must:
 CRITICAL: You must respond with ONLY valid JSON. No markdown, no code blocks, no explanation text - just the raw JSON object starting with { and ending with }.
 SYSTEM;
 
-        // Get model from settings, default to claude-sonnet
-        $model = get_option( 'fra_api_model', 'claude-sonnet-4-20250514' );
+        // Call Anthropic Claude API (model resolved live from the Anthropic
+        // catalog; web search so the INSEE/Eurostat figures are real).
+        $body = FRAMT_AI_Client::message( array(
+            'purpose'    => 'docs',
+            'max_tokens' => 8000,
+            'timeout'    => 300,
+            'system'     => $system_message,
+            'tools'      => FRAMT_AI_Client::web_search_tool( 8 ),
+            'messages'   => array(
+                array( 'role' => 'user', 'content' => $prompt ),
+            ),
+        ) );
 
-        // Call Anthropic Claude API (same as main plugin)
-        $response = wp_remote_post(
-            'https://api.anthropic.com/v1/messages',
-            array(
-                'timeout' => 120,
-                'headers' => array(
-                    'Content-Type'      => 'application/json',
-                    'x-api-key'         => $ai_api_key,
-                    'anthropic-version' => '2023-06-01',
-                ),
-                'body' => wp_json_encode( array(
-                    'model'      => $model,
-                    'max_tokens' => 8000,
-                    'system'     => $system_message,
-                    'messages'   => array(
-                        array( 'role' => 'user', 'content' => $prompt ),
-                    ),
-                ) ),
-            )
-        );
-
-        if ( is_wp_error( $response ) ) {
-            error_log( 'FRA Report: API request failed - ' . $response->get_error_message() );
+        if ( is_wp_error( $body ) ) {
+            error_log( 'FRA Report: Claude API error - ' . $body->get_error_message() );
             return $this->generate_placeholder_report( $type, $code, $name, 'api_error' );
         }
 
-        $body = json_decode( wp_remote_retrieve_body( $response ), true );
+        $raw_text = FRAMT_AI_Client::extract_text( $body );
 
-        // Check for API errors (invalid key, rate limit, etc.)
-        if ( isset( $body['error'] ) ) {
-            error_log( 'FRA Report: Claude API error - ' . ( $body['error']['message'] ?? 'Unknown error' ) );
-            return $this->generate_placeholder_report( $type, $code, $name, 'api_error' );
-        }
-
-        // Claude API response format: content[0].text
-        if ( ! isset( $body['content'][0]['text'] ) ) {
+        if ( '' === $raw_text ) {
             error_log( 'FRA Report: Invalid API response structure - ' . wp_json_encode( $body ) );
             return $this->generate_placeholder_report( $type, $code, $name, 'api_error' );
         }
-
-        $raw_text = $body['content'][0]['text'];
 
         // Extract JSON from response (Claude might wrap it in markdown code blocks)
         $json_text = $raw_text;

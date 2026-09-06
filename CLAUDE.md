@@ -78,6 +78,29 @@ Verified:
    - Always return `new WP_Error()` for errors
    - Never throw exceptions in REST handlers
 
+3. **Never hardcode a Claude model ID**
+   - Anthropic retires models; a pinned ID silently breaks every AI feature
+     when it goes away (this happened with `claude-sonnet-4-20250514`)
+   - Call `FRA_Model_Resolver::message()` / `::extract_text()` instead of
+     posting to `api.anthropic.com` directly
+   - Member Tools calls `FRAMT_AI_Client`, which delegates to the resolver and
+     falls back to a direct call if the main plugin is deactivated
+   - Callers ask for a purpose (`chat`, `review`, `docs`) which maps to a tier
+     option (`fra_model_tier_*`), resolved against the live `GET /v1/models`
+     catalog: cached 24h, refreshed by a daily cron, with one automatic
+     re-resolve and retry if a model is retired mid-request
+   - Keep request bodies minimal - no `thinking`, `output_config` or
+     `budget_tokens`. Those are model-generation specific and start returning
+     400s as soon as the resolver picks a model that doesn't accept them
+   - For research tasks, pass `FRA_Model_Resolver::web_search_tool()`. Without
+     it the model answers from training data and invents its citations
+
+4. **Don't redirect inside AJAX or REST handlers**
+   - A `wp_safe_redirect()` + `exit` on a shared hook (e.g. `wp_login_failed`)
+     turns an AJAX response into a 302 with an empty body
+   - The caller's `response.json()` then throws and the real error is lost
+   - Guard with `wp_doing_ajax()` / `REST_REQUEST` before redirecting
+
 ## Build Commands
 
 ```bash

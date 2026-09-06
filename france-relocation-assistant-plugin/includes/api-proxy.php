@@ -32,6 +32,7 @@ class FRA_API_Proxy {
      *
      * @var string
      */
+    /** @deprecated Requests now go through FRA_Model_Resolver::message(). */
     const API_ENDPOINT = 'https://api.anthropic.com/v1/messages';
 
     /**
@@ -275,42 +276,28 @@ class FRA_API_Proxy {
             $user_message = "Relevant context:\n" . $context . "\n\nUser question: " . $message;
         }
 
-        // Make API request
-        $response = wp_remote_post(self::API_ENDPOINT, array(
-            'timeout' => 60,
-            'headers' => array(
-                'Content-Type' => 'application/json',
-                'x-api-key' => $config['api_key'],
-                'anthropic-version' => self::API_VERSION
+        // Make API request (model resolved live from the Anthropic catalog)
+        $body = FRA_Model_Resolver::message(array(
+            'purpose'    => 'chat',
+            'max_tokens' => $config['max_tokens'],
+            'timeout'    => 60,
+            'system'     => $system_prompt,
+            'messages'   => array(
+                array('role' => 'user', 'content' => $user_message)
             ),
-            'body' => wp_json_encode(array(
-                'model' => $config['api_model'],
-                'max_tokens' => $config['max_tokens'],
-                'system' => $system_prompt,
-                'messages' => array(
-                    array('role' => 'user', 'content' => $user_message)
-                )
-            ))
         ));
 
         // Handle errors
-        if (is_wp_error($response)) {
+        if (is_wp_error($body)) {
             return new WP_Error(
                 'api_error',
-                'API request failed: ' . $response->get_error_message()
+                'API error: ' . $body->get_error_message()
             );
         }
 
-        $body = json_decode(wp_remote_retrieve_body($response), true);
+        $text = FRA_Model_Resolver::extract_text($body);
 
-        if (isset($body['error'])) {
-            return new WP_Error(
-                'api_error',
-                'API error: ' . ($body['error']['message'] ?? 'Unknown error')
-            );
-        }
-
-        if (!isset($body['content'][0]['text'])) {
+        if ('' === $text) {
             return new WP_Error(
                 'api_error',
                 'Unexpected API response format'
@@ -319,8 +306,8 @@ class FRA_API_Proxy {
 
         // Build result
         $result = array(
-            'response' => $body['content'][0]['text'],
-            'model' => $config['api_model'],
+            'response' => $text,
+            'model' => isset($body['fra_model']) ? $body['fra_model'] : $config['api_model'],
             'usage' => $body['usage'] ?? null
         );
 
