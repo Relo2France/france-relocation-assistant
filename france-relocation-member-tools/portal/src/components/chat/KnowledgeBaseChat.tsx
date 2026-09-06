@@ -28,6 +28,7 @@ import {
   useSendChatMessage,
 } from '@/hooks/useApi';
 import type { ChatMessage as ChatMessageType, ChatSource } from '@/types';
+import MarkdownMessage from '../shared/MarkdownMessage';
 
 // Knowledge base category icons
 const categoryIcons = {
@@ -446,7 +447,7 @@ function ChatMessage({ message }: ChatMessageProps) {
         <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
           {/* Content area with professional typography */}
           <div className="px-6 py-5">
-            <MessageContent content={message.content} />
+            <MarkdownMessage content={message.content} />
           </div>
 
           {/* Sources section */}
@@ -494,181 +495,6 @@ function ChatMessage({ message }: ChatMessageProps) {
 }
 
 // Message content with professional markdown rendering
-function MessageContent({ content }: { content: string }) {
-  const lines = content.split('\n');
-  const elements: JSX.Element[] = [];
-  let currentList: { text: string; formatted: JSX.Element }[] = [];
-  let currentListType: 'ul' | 'ol' | null = null;
-
-  // Parse inline formatting (bold, links, inline code)
-  const parseInlineFormatting = (text: string): JSX.Element => {
-    const parts: (string | JSX.Element)[] = [];
-    let remaining = text;
-    let keyIndex = 0;
-
-    // Process text for bold, links, and inline code
-    while (remaining.length > 0) {
-      // Check for markdown links [text](url)
-      const linkMatch = remaining.match(/\[([^\]]+)\]\(([^)]+)\)/);
-      // Check for bold **text**
-      const boldMatch = remaining.match(/\*\*([^*]+)\*\*/);
-      // Check for inline code `code`
-      const codeMatch = remaining.match(/`([^`]+)`/);
-
-      // Find the earliest match
-      const matches = [
-        linkMatch ? { type: 'link', match: linkMatch, index: remaining.indexOf(linkMatch[0]) } : null,
-        boldMatch ? { type: 'bold', match: boldMatch, index: remaining.indexOf(boldMatch[0]) } : null,
-        codeMatch ? { type: 'code', match: codeMatch, index: remaining.indexOf(codeMatch[0]) } : null,
-      ].filter(Boolean).sort((a, b) => (a?.index ?? Infinity) - (b?.index ?? Infinity));
-
-      if (matches.length === 0 || matches[0] === null) {
-        parts.push(remaining);
-        break;
-      }
-
-      const earliest = matches[0];
-      if (earliest.index > 0) {
-        parts.push(remaining.slice(0, earliest.index));
-      }
-
-      if (earliest.type === 'link' && earliest.match) {
-        parts.push(
-          <a
-            key={keyIndex++}
-            href={earliest.match[2]}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-primary-600 hover:text-primary-700 underline font-medium"
-          >
-            {earliest.match[1]}
-          </a>
-        );
-        remaining = remaining.slice(earliest.index + earliest.match[0].length);
-      } else if (earliest.type === 'bold' && earliest.match) {
-        parts.push(
-          <strong key={keyIndex++} className="font-semibold text-gray-900">
-            {earliest.match[1]}
-          </strong>
-        );
-        remaining = remaining.slice(earliest.index + earliest.match[0].length);
-      } else if (earliest.type === 'code' && earliest.match) {
-        parts.push(
-          <code key={keyIndex++} className="px-1.5 py-0.5 bg-gray-100 rounded text-sm font-mono text-gray-800">
-            {earliest.match[1]}
-          </code>
-        );
-        remaining = remaining.slice(earliest.index + earliest.match[0].length);
-      }
-    }
-
-    return <>{parts}</>;
-  };
-
-  const flushList = () => {
-    if (currentList.length > 0) {
-      const isOrdered = currentListType === 'ol';
-      elements.push(
-        isOrdered ? (
-          <ol key={elements.length} className="my-4 ml-6 space-y-2 list-decimal">
-            {currentList.map((item, i) => (
-              <li key={i} className="text-gray-700 leading-relaxed pl-1">
-                {item.formatted}
-              </li>
-            ))}
-          </ol>
-        ) : (
-          <ul key={elements.length} className="my-4 ml-6 space-y-2">
-            {currentList.map((item, i) => (
-              <li key={i} className="text-gray-700 leading-relaxed flex items-start gap-2">
-                <span className="text-primary-500 mt-1.5">•</span>
-                <span>{item.formatted}</span>
-              </li>
-            ))}
-          </ul>
-        )
-      );
-      currentList = [];
-      currentListType = null;
-    }
-  };
-
-  lines.forEach((line) => {
-    const trimmedLine = line.trim();
-
-    // H1 headers (# Header)
-    if (trimmedLine.startsWith('# ')) {
-      flushList();
-      elements.push(
-        <h2 key={elements.length} className="text-xl font-bold text-gray-900 mt-6 mb-3 pb-2 border-b border-gray-200">
-          {parseInlineFormatting(trimmedLine.slice(2))}
-        </h2>
-      );
-    }
-    // H2 headers (## Header)
-    else if (trimmedLine.startsWith('## ')) {
-      flushList();
-      elements.push(
-        <h3 key={elements.length} className="text-lg font-semibold text-gray-900 mt-5 mb-2">
-          {parseInlineFormatting(trimmedLine.slice(3))}
-        </h3>
-      );
-    }
-    // H3 headers (### Header) or bold-only lines as subheadings
-    else if (trimmedLine.startsWith('### ') || (trimmedLine.startsWith('**') && trimmedLine.endsWith('**') && trimmedLine.indexOf('**', 2) === trimmedLine.length - 2)) {
-      flushList();
-      const headerText = trimmedLine.startsWith('### ')
-        ? trimmedLine.slice(4)
-        : trimmedLine.slice(2, -2);
-      elements.push(
-        <h4 key={elements.length} className="text-base font-semibold text-gray-800 mt-4 mb-2">
-          {headerText}
-        </h4>
-      );
-    }
-    // Bullet points
-    else if (trimmedLine.match(/^[\-\*•]\s/)) {
-      if (currentListType !== 'ul') flushList();
-      currentListType = 'ul';
-      const itemText = trimmedLine.replace(/^[\-\*•]\s/, '');
-      currentList.push({ text: itemText, formatted: parseInlineFormatting(itemText) });
-    }
-    // Numbered lists
-    else if (trimmedLine.match(/^\d+\.\s/)) {
-      if (currentListType !== 'ol') flushList();
-      currentListType = 'ol';
-      const itemText = trimmedLine.replace(/^\d+\.\s/, '');
-      currentList.push({ text: itemText, formatted: parseInlineFormatting(itemText) });
-    }
-    // Code blocks
-    else if (trimmedLine.startsWith('```')) {
-      flushList();
-      elements.push(
-        <pre key={elements.length} className="my-4 bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto">
-          <code className="text-sm font-mono">{trimmedLine.replace(/```/g, '')}</code>
-        </pre>
-      );
-    }
-    // Regular paragraphs
-    else if (trimmedLine) {
-      flushList();
-      elements.push(
-        <p key={elements.length} className="text-gray-700 leading-relaxed mb-3">
-          {parseInlineFormatting(trimmedLine)}
-        </p>
-      );
-    }
-    // Empty lines - just flush the list
-    else {
-      flushList();
-    }
-  });
-
-  flushList(); // Flush any remaining list
-
-  return <div className="prose-content">{elements}</div>;
-}
-
 // Source badge with type differentiation
 function SourceBadge({ source }: { source: ChatSource }) {
   // Different styles for different source types

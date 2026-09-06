@@ -21,8 +21,8 @@ import {
 import { VISA_TYPES } from '@/config/profile';
 import { useMemberProfile, useSendChatMessage, useUpdateMemberProfile } from '@/hooks/useApi';
 import type { ChatMessage as ChatMessageType, ProfileVisaType } from '@/types';
-import GuideMessageContent from './GuideMessageContent';
 import { difficultyColors, getSuggestedQuestionsForGuide } from './guidesData';
+import MarkdownMessage from '../shared/MarkdownMessage';
 import type { Guide } from './guidesData';
 
 interface GuideDetailProps {
@@ -360,7 +360,7 @@ export default function GuideDetail({ guide, onBack }: GuideDetailProps) {
                         </div>
                         <div className="flex-1 bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
                           <div className="px-5 py-4">
-                            <GuideMessageContent content={message.content} />
+                            <MarkdownMessage content={message.content} />
                           </div>
                         </div>
                       </div>
