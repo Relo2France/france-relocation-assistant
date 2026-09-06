@@ -32,21 +32,26 @@ All require `Authorization: Bearer $TRIGGER_SECRET`.
 | `GET /topics` | What is reviewable, with content sizes. |
 | `POST /review/:category/:topic` | Review one topic. Add `?dry_run=1` to skip the write-back. |
 
-## Setup
+## Deployed
 
-    npm install
-    npx wrangler kv namespace create MODEL_CACHE   # put the id in wrangler.jsonc
+    https://relo2france-review.kburrowbridge.workers.dev
+
+KV namespace `MODEL_CACHE` (`2e9eda58e4244b3ba10ba42ceedcd622`) is created and
+bound. Redeploy with `npm run deploy`, which typechecks and tests first.
+
+## Remaining setup - secrets
+
+Until these are set every route returns 401, which is the intended closed
+default:
 
     npx wrangler secret put ANTHROPIC_API_KEY      # same key WordPress uses
     npx wrangler secret put WP_SHARED_SECRET       # the Review API secret in WP settings
     npx wrangler secret put TRIGGER_SECRET         # any long random string
 
-    npm run deploy                                 # typechecks and tests first
-
 ## Try it
 
     curl -X POST -H "Authorization: Bearer $TRIGGER_SECRET" \
-      "https://relo2france-review.<subdomain>.workers.dev/review/visas/overview?dry_run=1"
+      "https://relo2france-review.kburrowbridge.workers.dev/review/visas/overview?dry_run=1"
 
 Start with `dry_run=1`: it runs the full review and reports what it would post,
 without touching the approval queue.
