@@ -110,11 +110,24 @@ describeBuilt('404, sitemap and robots', () => {
     }
   });
 
-  it('points robots.txt at the sitemap', () => {
+  it('matches robots.txt to the build it came from', () => {
+    // dist holds whichever build ran last, so detect the mode rather than
+    // assuming production - and assert the two stay consistent with each
+    // other, which is the thing that actually matters.
     const txt = raw('robots.txt');
+    const isStagingBuild = raw('index.html').includes('name="robots" content="noindex"');
+
     expect(txt).toContain('User-agent: *');
-    expect(txt).toContain('Allow: /');
-    expect(txt).toContain('Sitemap: https://relo2france.com/sitemap.xml');
+
+    if (isStagingBuild) {
+      expect(txt).toContain('Disallow: /');
+      expect(txt).not.toContain('Allow: /');
+      // A staging build must not advertise the production sitemap.
+      expect(txt).not.toContain('Sitemap:');
+    } else {
+      expect(txt).toContain('Allow: /');
+      expect(txt).toContain('Sitemap: https://relo2france.com/sitemap.xml');
+    }
   });
 });
 
