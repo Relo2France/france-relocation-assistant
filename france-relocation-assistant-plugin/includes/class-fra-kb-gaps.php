@@ -51,6 +51,13 @@ class FRA_KB_Gaps {
     /** @var int Times a depth gap must recur before it is drafted */
     const DEPTH_THRESHOLD = 2;
 
+    /**
+     * A gap raised deliberately by an editor is ready on the first sighting.
+     * Traffic thresholds exist to filter noise from one-off questions; a
+     * person naming a missing subject is not noise.
+     */
+    const RAISED_THRESHOLD = 1;
+
     /** @var float Relevance below which the KB is considered not to have matched */
     const COVERAGE_CEILING = 0.35;
 
@@ -171,6 +178,37 @@ class FRA_KB_Gaps {
         self::store($type, $question, $relevance, $matched, (string) ($args['answer'] ?? ''));
 
         return $type;
+    }
+
+    /**
+     * Raise a gap deliberately, rather than inferring one from traffic.
+     *
+     * Used when a person notices the knowledge base is missing something -
+     * a claim seen elsewhere, a subject a guide had to work around, a visa
+     * category that is simply absent. It enters the same queue as a detected
+     * gap and is drafted, reviewed and approved the same way: nothing here
+     * publishes anything.
+     *
+     * @param string $question The subject to research, phrased as a question
+     * @param string $note     Why it was raised - carried into the draft prompt
+     * @param array  $matched  Optional category/topic it belongs under
+     * @return string|false The gap id, or false if it was rejected
+     */
+    public static function raise($question, $note = '', $matched = array()) {
+        if (!self::is_enabled()) {
+            return false;
+        }
+
+        $question = trim((string) $question);
+        if (strlen($question) < 8) {
+            return false;
+        }
+
+        $matched = is_array($matched) ? $matched : array();
+
+        self::store('raised', $question, 0.0, $matched, trim((string) $note));
+
+        return self::signature('raised', $question, $matched);
     }
 
     /**
@@ -429,7 +467,13 @@ class FRA_KB_Gaps {
         $ready = array();
 
         foreach (self::get_all('open') as $id => $gap) {
-            $threshold = ('depth' === $gap['type']) ? self::DEPTH_THRESHOLD : self::COVERAGE_THRESHOLD;
+            if ('raised' === $gap['type']) {
+                $threshold = self::RAISED_THRESHOLD;
+            } elseif ('depth' === $gap['type']) {
+                $threshold = self::DEPTH_THRESHOLD;
+            } else {
+                $threshold = self::COVERAGE_THRESHOLD;
+            }
             if ($gap['count'] >= $threshold) {
                 $ready[$id] = $gap;
             }

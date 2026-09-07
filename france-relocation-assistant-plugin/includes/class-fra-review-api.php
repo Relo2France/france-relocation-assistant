@@ -119,9 +119,25 @@ class FRA_Review_API {
         // web search plus a model call, minutes per gap - runs on the worker
         // for the same reason the review does.
         register_rest_route(self::NS, '/review/gaps', array(
-            'methods'             => WP_REST_Server::READABLE,
-            'callback'            => array($this, 'get_gaps'),
-            'permission_callback' => array($this, 'authenticate'),
+            array(
+                'methods'             => WP_REST_Server::READABLE,
+                'callback'            => array($this, 'get_gaps'),
+                'permission_callback' => array($this, 'authenticate'),
+            ),
+            // Raising a gap by hand. The knowledge base should hold as much as
+            // it can defend, so anything noticed as missing goes in the queue
+            // to be researched - it is not published from here.
+            array(
+                'methods'             => WP_REST_Server::CREATABLE,
+                'callback'            => array($this, 'raise_gap'),
+                'permission_callback' => array($this, 'authenticate'),
+                'args'                => array(
+                    'question' => array('required' => true, 'type' => 'string'),
+                    'note'     => array('required' => false, 'type' => 'string'),
+                    'category' => array('required' => false, 'type' => 'string'),
+                    'topic'    => array('required' => false, 'type' => 'string'),
+                ),
+            ),
         ));
 
         register_rest_route(self::NS, '/review/gaps/(?P<id>[A-Za-z0-9_]+)', array(
@@ -372,6 +388,44 @@ class FRA_Review_API {
      * @param WP_REST_Request $request Request
      * @return WP_REST_Response
      */
+    /**
+     * Record a gap someone raised deliberately.
+     *
+     * @param WP_REST_Request $request Request
+     * @return WP_REST_Response|WP_Error
+     */
+    public function raise_gap($request) {
+        if (!class_exists('FRA_KB_Gaps')) {
+            return new WP_Error(
+                'fra_gaps_unavailable',
+                __('Knowledge base gap tracking is not available.', 'france-relocation-assistant'),
+                array('status' => 503)
+            );
+        }
+
+        $question = mb_substr(sanitize_text_field((string) $request->get_param('question')), 0, 300);
+        $note     = mb_substr(sanitize_textarea_field((string) $request->get_param('note')), 0, 1000);
+        $category = sanitize_key((string) $request->get_param('category'));
+        $topic    = sanitize_key((string) $request->get_param('topic'));
+
+        $matched = array();
+        if ('' !== $category) {
+            $matched = array('category' => $category, 'topic' => $topic, 'title' => '');
+        }
+
+        $id = FRA_KB_Gaps::raise($question, $note, $matched);
+
+        if (false === $id) {
+            return new WP_Error(
+                'fra_gap_rejected',
+                __('The gap was not recorded. Gap tracking may be disabled, or the question too short.', 'france-relocation-assistant'),
+                array('status' => 400)
+            );
+        }
+
+        return new WP_REST_Response(array('id' => $id, 'status' => 'queued'), 201);
+    }
+
     public function get_gaps($request) {
         if (!class_exists('FRA_KB_Gaps')) {
             return new WP_REST_Response(array('gaps' => array(), 'count' => 0), 200);
@@ -390,14 +444,28 @@ class FRA_Review_API {
                 'relevance' => isset($gap['relevance']) ? (float) $gap['relevance'] : 0.0,
             );
 
-            if ('depth' === $gap['type']) {
+            // A raised gap carries the editor's note, and may name the topic
+            // it belongs under - in which case it is drafted as an update.
+            if ('raised' === $gap['type']) {
+                $entry['note'] = isset($gap['answer']) ? (string) $gap['answer'] : '';
+            }
+
+            if ('depth' === $gap['type']
+                || ('raised' === $gap['type'] && !empty($gap['matched']['category']))) {
                 $category = $gap['matched']['category'] ?? '';
                 $topic    = $gap['matched']['topic'] ?? '';
 
-                // The topic may have been renamed or removed since the gap was
-                // recorded. Say so rather than sending the worker after it.
                 if (!isset($knowledge_base[$category][$topic])) {
-                    $entry['stale'] = true;
+                    // A detected gap pointed at a topic that has since been
+                    // renamed or removed - say so rather than sending the
+                    // worker after it. A raised gap naming a topic that does
+                    // not exist yet is a request for a new one, so let it
+                    // through as a new topic inside the named category.
+                    if ('raised' === $gap['type'] && isset($knowledge_base[$category])) {
+                        $entry['categories'] = array($category);
+                    } else {
+                        $entry['stale'] = true;
+                    }
                 } else {
                     $entry['category']        = $category;
                     $entry['topic']           = $topic;
