@@ -2,28 +2,53 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Default CSS variables - will be overridden by portal settings in production */
+/*
+ * Brand palette, mirroring site/src/styles/tokens.css so the portal and the
+ * public site read as one product. WordPress overrides these at runtime from
+ * portal settings; FRAMT_Portal_Settings::BRAND holds the same values, and
+ * these defaults are what dev and the loading state use.
+ */
 :root {
-  --portal-primary: #22c55e;
-  --portal-primary-dark: #16a34a;
-  --portal-secondary: #3b82f6;
-  --portal-accent: #f59e0b;
-  --portal-sidebar-bg: #1f2937;
-  --portal-sidebar-hover: #374151;
-  --portal-sidebar-active: #4b5563;
-  --portal-sidebar-text: #ffffff;
+  --portal-primary: #2c5346;        /* vine */
+  --portal-primary-dark: #23332c;   /* shell */
+  --portal-secondary: #5f6e66;      /* muted */
+  --portal-accent: #b87a21;         /* honey */
+  --portal-sidebar-bg: #23332c;     /* shell */
+  --portal-sidebar-hover: #2c3832;  /* rule */
+  --portal-sidebar-active: #2c5346; /* vine */
+  --portal-sidebar-text: #d6dfd9;
   --portal-sidebar-text-active: #ffffff;
   --portal-header-bg: #ffffff;
+
+  /* Surfaces and type, from the same token set. */
+  --portal-ground: #fcfcfb;
+  --portal-card: #ffffff;
+  --portal-card-2: #f4f6f4;
+  --portal-ink: #1c2420;
+  --portal-muted: #5f6e66;
+  --portal-rule: #dde3de;
+  --portal-vine-soft: #e7efea;
+  --portal-honey-soft: #fbf1df;
+  --font-display: "Fraunces", Georgia, "Times New Roman", serif;
+  --font-ui: "Karla", "Helvetica Neue", Arial, sans-serif;
 }
 
 /* Custom base styles */
 @layer base {
   html {
-    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: var(--font-ui);
   }
 
   body {
-    @apply bg-gray-50 text-gray-900 antialiased;
+    background: var(--portal-ground);
+    color: var(--portal-ink);
+    @apply antialiased;
+  }
+
+  /* The public site sets headings in the display face; the portal follows. */
+  h1, h2, h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.018em;
   }
 }
 
@@ -212,14 +237,15 @@
 
 /* Portal-scoped button styles to override WordPress theme */
 #fra-portal-root .btn-primary {
-  background-color: #16a34a !important;
+  /* Follows portal settings, so a rebrand is one place, not three. */
+  background-color: var(--portal-primary, #2c5346) !important;
   color: #ffffff !important;
 }
 
 #fra-portal-root .btn-primary:hover {
-  background-color: #15803d !important;
+  background-color: var(--portal-primary-dark, #23332c) !important;
 }
 
 #fra-portal-root .btn-primary:focus {
-  --tw-ring-color: #16a34a;
+  --tw-ring-color: var(--portal-primary, #2c5346);
 }

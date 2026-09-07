@@ -33,14 +33,39 @@ class FRAMT_Portal_Settings {
      *
      * @var array
      */
+    /**
+     * The brand palette, in one place.
+     *
+     * Copied from the public site's design tokens so the portal and the site
+     * are visibly one product. Changing a colour here is a rebrand, not a
+     * preference - the migration below re-applies it to sites still carrying
+     * the old green.
+     */
+    const BRAND = array(
+        'primary_color'      => '#2c5346', // vine
+        'secondary_color'    => '#5f6e66', // muted
+        'sidebar_bg_color'   => '#23332c', // shell
+        'sidebar_text_color' => '#ffffff',
+        'header_bg_color'    => '#ffffff',
+        'accent_color'       => '#b87a21', // honey
+    );
+
+    /** Bumped when BRAND changes, to re-apply it once. */
+    const BRAND_VERSION = 2;
+    const BRAND_VERSION_OPTION = 'framt_portal_brand_version';
+
     private $defaults = array(
         // Appearance
-        'primary_color'       => '#22c55e',
-        'secondary_color'     => '#3b82f6',
-        'sidebar_bg_color'    => '#1f2937',
-        'sidebar_text_color'  => '#ffffff',
-        'header_bg_color'     => '#ffffff',
-        'accent_color'        => '#f59e0b',
+        // Brand palette, shared with the public site. Vine is the primary,
+        // honey the accent, and the sidebar is the site's "shell" tone rather
+        // than a neutral slate - see site/src/styles/tokens.css, which is the
+        // source these values are copied from.
+        'primary_color'       => self::BRAND['primary_color'],
+        'secondary_color'     => self::BRAND['secondary_color'],
+        'sidebar_bg_color'    => self::BRAND['sidebar_bg_color'],
+        'sidebar_text_color'  => self::BRAND['sidebar_text_color'],
+        'header_bg_color'     => self::BRAND['header_bg_color'],
+        'accent_color'        => self::BRAND['accent_color'],
 
         // Layout
         'show_wp_header'      => false,
@@ -191,8 +216,32 @@ class FRAMT_Portal_Settings {
      */
     public static function get_settings() {
         $instance = new self();
-        $saved    = get_option( self::OPTION_NAME, array() );
+        self::maybe_apply_brand();
+        $saved = get_option( self::OPTION_NAME, array() );
         return wp_parse_args( $saved, $instance->defaults );
+    }
+
+    /**
+     * Re-apply the brand palette once after a rebrand.
+     *
+     * Saved settings win over defaults, so a site that has ever opened this
+     * page keeps the old colours forever - which would leave the portal green
+     * while the public site is not. This runs once per BRAND_VERSION and
+     * touches only the six colour keys, leaving every other saved setting and
+     * any custom CSS alone.
+     */
+    public static function maybe_apply_brand() {
+        if ( (int) get_option( self::BRAND_VERSION_OPTION, 0 ) >= self::BRAND_VERSION ) {
+            return;
+        }
+
+        $saved = get_option( self::OPTION_NAME, array() );
+
+        if ( is_array( $saved ) && ! empty( $saved ) ) {
+            update_option( self::OPTION_NAME, array_merge( $saved, self::BRAND ) );
+        }
+
+        update_option( self::BRAND_VERSION_OPTION, self::BRAND_VERSION );
     }
 
     /**
