@@ -1,6 +1,7 @@
 import { Button, GuideCard, Label, SiteNav, Timeline } from '../components';
 import { guides } from '../content/guides';
 import { coverage, totalTopics } from '../content/coverage';
+import { portalFeatures } from '../content/portal';
 
 const steps = [
   { when: '12 months out', what: 'Choose your visa', note: 'Seven long-stay types. Retired and not working narrows it to one.' },
@@ -54,6 +55,32 @@ export function Home() {
               <span className="font-mono text-[0.76rem] text-muted tabular-nums">{area.topics}</span>
             </div>
           ))}
+        </div>
+      </section>
+
+      <section className="px-7 py-9 border-t border-rule-soft">
+        <Label tone="honey">Members</Label>
+        <h2 className="font-display font-semibold text-[1.5rem] tracking-[-0.012em] mt-2 mb-2 text-balance">
+          The guides tell you what is required. The portal does it with you.
+        </h2>
+        <p className="text-muted max-w-[54ch] mb-6">
+          Everything above is free to read and always will be. What members get is the
+          same information turned into their own file — dated, tracked, and answerable.
+        </p>
+
+        <div className="grid md:grid-cols-2 gap-x-8 gap-y-0 border-t border-rule">
+          {portalFeatures.map((feature) => (
+            <div key={feature.name} className="py-4 border-b border-rule-soft">
+              <h3 className="font-display font-semibold text-[1rem] mb-1">{feature.name}</h3>
+              <p className="text-[0.9rem] text-muted mb-2">{feature.what}</p>
+              <p className="text-[0.82rem] text-muted/80 italic m-0">{feature.publicVersion}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex gap-[10px] mt-7 flex-wrap items-center">
+          <Button href="/start">See what you’d get</Button>
+          <span className="text-[0.82rem] text-muted">Lifetime access · no subscription</span>
         </div>
       </section>
 
