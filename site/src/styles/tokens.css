@@ -1,0 +1,83 @@
+/**
+ * Design tokens - the single source of truth.
+ *
+ * Every colour is declared once here, on bare :root, and only redefined inside
+ * the dark blocks. A colour whose only definition lives inside a media query
+ * or a [data-theme] block silently fails in the un-stamped "system" state,
+ * which is what most visitors are actually in.
+ *
+ * The governing rule of this system:
+ *   - vine   carries the brand: navigation, actions, the timeline spine
+ *   - honey  means "not law" - lived experience, or a deadline. Nothing else.
+ *   - ink    and the rules carry content, which stays monochrome
+ */
+:root {
+  /* Surfaces */
+  --ground: #fcfcfb;
+  --card: #ffffff;
+  --card-2: #f4f6f4;
+  --shell: #23332c;
+
+  /* Text */
+  --ink: #1c2420;
+  --muted: #5f6e66;
+  --on-brand: #ffffff;
+
+  /* Lines */
+  --rule: #dde3de;
+  --rule-soft: #ebefeb;
+
+  /* Brand */
+  --vine: #2c5346;
+  --vine-soft: #e7efea;
+
+  /* The one accent, with one meaning. */
+  --honey: #b87a21;
+  --honey-soft: #fbf1df;
+
+  /* Type */
+  --font-display: "Fraunces", Georgia, "Times New Roman", serif;
+  --font-ui: "Karla", "Helvetica Neue", Arial, sans-serif;
+  --font-read: "Newsreader", Georgia, "Times New Roman", serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* Shape */
+  --radius: 12px;
+  --radius-sm: 10px;
+  --radius-pill: 100px;
+  --measure: 64ch;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: #0f1412;
+    --card: #171e1a;
+    --card-2: #1e2723;
+    --shell: #101715;
+    --ink: #e8eee9;
+    --muted: #9baaa1;
+    --on-brand: #0f1412;
+    --rule: #2c3832;
+    --rule-soft: #232e28;
+    --vine: #7fbaa3;
+    --vine-soft: #16271f;
+    --honey: #e0ac5c;
+    --honey-soft: #2a2113;
+  }
+}
+
+:root[data-theme="dark"] {
+  --ground: #0f1412;
+  --card: #171e1a;
+  --card-2: #1e2723;
+  --shell: #101715;
+  --ink: #e8eee9;
+  --muted: #9baaa1;
+  --on-brand: #0f1412;
+  --rule: #2c3832;
+  --rule-soft: #232e28;
+  --vine: #7fbaa3;
+  --vine-soft: #16271f;
+  --honey: #e0ac5c;
+  --honey-soft: #2a2113;
+}

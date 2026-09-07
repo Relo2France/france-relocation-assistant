@@ -1,0 +1,31 @@
+@import "./tokens.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--font-ui);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Content is exact: read at length in a serif, at a comfortable measure. */
+  .prose-exact {
+    font-family: var(--font-read);
+    font-size: 1.02rem;
+    line-height: 1.68;
+    max-width: var(--measure);
+  }
+
+  :where(a, button, [tabindex]):focus-visible {
+    outline: 2px solid var(--vine);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+}
