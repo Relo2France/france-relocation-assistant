@@ -82,6 +82,14 @@ class FRA_KB_Gaps {
      * Schedule the daily promotion pass.
      */
     public static function maybe_schedule() {
+        // Gap drafting is the same shape of job as the review - web search
+        // plus a model call, minutes at a time - so it follows the same
+        // ownership switch. WP-Cron cannot run this reliably.
+        if (!self::wordpress_owns_promotion()) {
+            self::unschedule();
+            return;
+        }
+
         if (!wp_next_scheduled(self::PROMOTE_HOOK)) {
             wp_schedule_event(time() + (2 * HOUR_IN_SECONDS), 'daily', self::PROMOTE_HOOK);
         }
@@ -359,6 +367,60 @@ class FRA_KB_Gaps {
     }
 
     /**
+     * Does WordPress still draft gap additions itself?
+     *
+     * Shares the review's runner setting - it makes no sense for one AI job to
+     * be on the worker and the other on WP-Cron.
+     *
+     * @return bool
+     */
+    public static function wordpress_owns_promotion() {
+        if (!class_exists('FRA_Scheduled_Review')) {
+            return true;
+        }
+        return FRA_Scheduled_Review::wordpress_owns_review();
+    }
+
+    /**
+     * Record that a gap has been drafted into the approval queue.
+     *
+     * @param string $id        Gap id
+     * @param string $review_id The pending review it produced
+     * @return bool
+     */
+    public static function mark_drafted($id, $review_id) {
+        $gaps = get_option(self::GAPS_OPTION, array());
+        if (!isset($gaps[$id])) {
+            return false;
+        }
+
+        $gaps[$id]['status']    = 'drafted';
+        $gaps[$id]['review_id'] = $review_id;
+        update_option(self::GAPS_OPTION, $gaps, false);
+
+        return true;
+    }
+
+    /**
+     * Record that drafting a gap failed, without consuming it.
+     *
+     * @param string $id      Gap id
+     * @param string $message Why
+     * @return bool
+     */
+    public static function mark_failed($id, $message) {
+        $gaps = get_option(self::GAPS_OPTION, array());
+        if (!isset($gaps[$id])) {
+            return false;
+        }
+
+        $gaps[$id]['last_error'] = substr((string) $message, 0, 300);
+        update_option(self::GAPS_OPTION, $gaps, false);
+
+        return true;
+    }
+
+    /**
      * Which gaps have recurred often enough to be worth drafting?
      *
      * @return array
@@ -389,6 +451,11 @@ class FRA_KB_Gaps {
      */
     public static function promote_ready() {
         if (!self::is_enabled() || !class_exists('FRA_Model_Resolver')) {
+            return;
+        }
+
+        if (!self::wordpress_owns_promotion()) {
+            error_log('FRA: gap promotion skipped - the Cloudflare worker owns this job');
             return;
         }
 

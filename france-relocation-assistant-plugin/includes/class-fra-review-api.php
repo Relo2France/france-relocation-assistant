@@ -114,6 +114,21 @@ class FRA_Review_API {
             'callback'            => array($this, 'create_suggestion'),
             'permission_callback' => array($this, 'authenticate'),
         ));
+
+        // Knowledge base gaps waiting to be drafted. The drafting itself -
+        // web search plus a model call, minutes per gap - runs on the worker
+        // for the same reason the review does.
+        register_rest_route(self::NS, '/review/gaps', array(
+            'methods'             => WP_REST_Server::READABLE,
+            'callback'            => array($this, 'get_gaps'),
+            'permission_callback' => array($this, 'authenticate'),
+        ));
+
+        register_rest_route(self::NS, '/review/gaps/(?P<id>[A-Za-z0-9_]+)', array(
+            'methods'             => WP_REST_Server::CREATABLE,
+            'callback'            => array($this, 'create_gap_draft'),
+            'permission_callback' => array($this, 'authenticate'),
+        ));
     }
 
     /* ---------------------------------------------------------------------
@@ -339,6 +354,170 @@ class FRA_Review_API {
         return new WP_REST_Response(array(
             'review_id' => $review_id,
             'pending'   => count($pending),
+        ), 201);
+    }
+
+    /* ---------------------------------------------------------------------
+     * GET /review/gaps
+     * ------------------------------------------------------------------ */
+
+    /**
+     * Gaps that have recurred often enough to be worth drafting.
+     *
+     * Returns everything the worker needs to write the addition, so it never
+     * has to guess at the knowledge base's shape: for a depth gap, the topic
+     * that matched and its current content; for a coverage gap, the categories
+     * a new topic could belong to.
+     *
+     * @param WP_REST_Request $request Request
+     * @return WP_REST_Response
+     */
+    public function get_gaps($request) {
+        if (!class_exists('FRA_KB_Gaps')) {
+            return new WP_REST_Response(array('gaps' => array(), 'count' => 0), 200);
+        }
+
+        $knowledge_base = get_option('fra_knowledge_base', array());
+        $ready          = FRA_KB_Gaps::get_ready();
+        $gaps           = array();
+
+        foreach ($ready as $id => $gap) {
+            $entry = array(
+                'id'        => $id,
+                'type'      => $gap['type'],
+                'questions' => array_values((array) $gap['questions']),
+                'count'     => (int) $gap['count'],
+                'relevance' => isset($gap['relevance']) ? (float) $gap['relevance'] : 0.0,
+            );
+
+            if ('depth' === $gap['type']) {
+                $category = $gap['matched']['category'] ?? '';
+                $topic    = $gap['matched']['topic'] ?? '';
+
+                // The topic may have been renamed or removed since the gap was
+                // recorded. Say so rather than sending the worker after it.
+                if (!isset($knowledge_base[$category][$topic])) {
+                    $entry['stale'] = true;
+                } else {
+                    $entry['category']        = $category;
+                    $entry['topic']           = $topic;
+                    $entry['topic_name']      = $gap['matched']['title'] ?? $topic;
+                    $entry['current_content'] = (string) $knowledge_base[$category][$topic]['content'];
+                }
+            } else {
+                $entry['categories'] = array_keys($knowledge_base);
+            }
+
+            $gaps[] = $entry;
+        }
+
+        return new WP_REST_Response(array('gaps' => $gaps, 'count' => count($gaps)), 200);
+    }
+
+    /* ---------------------------------------------------------------------
+     * POST /review/gaps/{id}
+     * ------------------------------------------------------------------ */
+
+    /**
+     * Accept a drafted addition for one gap.
+     *
+     * Separate from /review/suggestions because a coverage gap proposes a
+     * topic that does not exist yet, which that endpoint deliberately rejects.
+     * Creating one here is still gated: the review must carry is_new_topic,
+     * and the category must already exist.
+     *
+     * @param WP_REST_Request $request Request
+     * @return WP_REST_Response|WP_Error
+     */
+    public function create_gap_draft($request) {
+        if (!class_exists('FRA_KB_Gaps')) {
+            return new WP_Error('fra_gaps_unavailable', __('Gap detection is not available.', 'france-relocation-assistant'), array('status' => 503));
+        }
+
+        $rate = $this->check_rate_limit();
+        if (is_wp_error($rate)) {
+            return $rate;
+        }
+
+        $gap_id = sanitize_text_field((string) $request->get_param('id'));
+        $gaps   = get_option(FRA_KB_Gaps::GAPS_OPTION, array());
+
+        if (!isset($gaps[$gap_id])) {
+            return new WP_Error('fra_gap_unknown', __('Unknown gap.', 'france-relocation-assistant'), array('status' => 404));
+        }
+
+        // The worker can report that it could not draft this one. Recorded
+        // against the gap rather than thrown away, so a gap that keeps failing
+        // is visible instead of looking untouched.
+        $error = $request->get_param('error');
+        if (!empty($error) && is_string($error)) {
+            FRA_KB_Gaps::mark_failed($gap_id, $error);
+            return new WP_REST_Response(array('gap_id' => $gap_id, 'recorded' => 'error'), 200);
+        }
+
+        $suggested = $this->clean_content($request->get_param('suggested_content'));
+        if ('' === $suggested) {
+            return new WP_Error('fra_gap_empty', __('A draft must contain suggested_content.', 'france-relocation-assistant'), array('status' => 400));
+        }
+
+        $knowledge_base = get_option('fra_knowledge_base', array());
+        $category       = sanitize_key((string) $request->get_param('category'));
+        $topic          = sanitize_key((string) $request->get_param('topic'));
+
+        if ('' === $category || '' === $topic || !isset($knowledge_base[$category])) {
+            return new WP_Error(
+                'fra_gap_bad_target',
+                __('category must be an existing category, and topic is required.', 'france-relocation-assistant'),
+                array('status' => 400)
+            );
+        }
+
+        $is_new_topic = !isset($knowledge_base[$category][$topic]);
+
+        $pending = get_option('fra_pending_reviews', array());
+        if (!is_array($pending)) {
+            $pending = array();
+        }
+
+        if (count($pending) >= self::MAX_PENDING) {
+            return new WP_Error('fra_review_queue_full', __('The pending review queue is full.', 'france-relocation-assistant'), array('status' => 409));
+        }
+
+        $review_id = uniqid('gap_');
+
+        $pending[$review_id] = array(
+            'id'                  => $review_id,
+            'category'            => $category,
+            'topic'               => $topic,
+            'topic_name'          => sanitize_text_field((string) $request->get_param('topic_name')) ?: $topic,
+            'update_type'         => $this->clean_enum($request->get_param('update_type'), array('none', 'minor', 'significant', 'rewrite'), 'significant'),
+            'confidence'          => $this->clean_enum($request->get_param('confidence'), array('high', 'medium', 'low'), 'medium'),
+            'current_content'     => $is_new_topic ? '' : (string) ($knowledge_base[$category][$topic]['content'] ?? ''),
+            'suggested_content'   => $suggested,
+            'in_practice_content' => '',
+            'changes_summary'     => sanitize_textarea_field((string) $request->get_param('changes_summary')),
+            'practice_sources'    => array(),
+            'key_insights'        => $this->clean_string_list($request->get_param('key_insights')),
+            'sources_checked'     => $this->clean_string_list($request->get_param('sources_checked')),
+            'web_sources'         => $this->clean_web_sources($request->get_param('web_sources')),
+            'model_used'          => sanitize_text_field((string) $request->get_param('model_used')),
+            'source'              => 'gap-detection',
+            'gap_id'              => $gap_id,
+            'gap_type'            => $gaps[$gap_id]['type'],
+            'gap_questions'       => array_values((array) $gaps[$gap_id]['questions']),
+            'is_new_topic'        => $is_new_topic,
+            'timestamp'           => current_time('mysql'),
+        );
+
+        update_option('fra_pending_reviews', $pending);
+        update_option(self::LAST_CALL_OPTION, current_time('mysql'), false);
+        FRA_KB_Gaps::mark_drafted($gap_id, $review_id);
+
+        return new WP_REST_Response(array(
+            'gap_id'       => $gap_id,
+            'review_id'    => $review_id,
+            'is_new_topic' => $is_new_topic,
+            'pending'      => count($pending),
         ), 201);
     }
 

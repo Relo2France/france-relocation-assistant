@@ -14,12 +14,14 @@
  * review queue, so it is not left open.
  */
 import { ReviewWorkflow, type ReviewParams } from './workflow';
+import { GapWorkflow, type GapParams } from './gap-workflow';
+import { fetchGaps } from './gaps';
 import { reviewTopic } from './review';
 import { resolveModel } from './models';
 import { fetchTopics } from './wordpress';
 import type { Env } from './types';
 
-export { ReviewWorkflow };
+export { ReviewWorkflow, GapWorkflow };
 
 const json = (body: unknown, status = 200): Response =>
   new Response(JSON.stringify(body, null, 2), {
@@ -116,6 +118,43 @@ export default {
         return json({ instance_id: runStatus[1], status: await instance.status() });
       }
 
+      // What the knowledge base is currently failing to answer.
+      if (url.pathname === '/gaps' && request.method === 'GET') {
+        const gaps = await fetchGaps(env);
+        return json({
+          count: gaps.length,
+          gaps: gaps.map((g) => ({
+            id: g.id,
+            type: g.type,
+            count: g.count,
+            questions: g.questions,
+            topic: g.topic ? `${g.category}/${g.topic}` : null,
+            stale: Boolean(g.stale),
+          })),
+        });
+      }
+
+      // Draft additions for the gaps that are ready.
+      if (url.pathname === '/gaps' && request.method === 'POST') {
+        const params: GapParams = {};
+        const limit = url.searchParams.get('limit');
+        if (limit) params.limit = Math.max(1, Math.min(10, parseInt(limit, 10) || 3));
+
+        const instance = await env.GAP_WORKFLOW.create({ params });
+        return json({
+          started: true,
+          instance_id: instance.id,
+          status: await instance.status(),
+          limit: params.limit ?? 3,
+        });
+      }
+
+      const gapStatus = url.pathname.match(/^\/gaps\/([\w-]+)$/);
+      if (gapStatus && request.method === 'GET') {
+        const instance = await env.GAP_WORKFLOW.get(gapStatus[1]!);
+        return json({ instance_id: gapStatus[1], status: await instance.status() });
+      }
+
       const match = url.pathname.match(/^\/review\/([a-z0-9_-]+)\/([a-z0-9_-]+)$/i);
       if (match && request.method === 'POST') {
         const [, category, topicKey] = match;
@@ -137,6 +176,13 @@ export default {
    * this invocation, which is the whole point of using a Workflow.
    */
   async scheduled(event: ScheduledController, env: Env): Promise<void> {
+    // Two schedules: the full review weekly, gap drafting daily.
+    if (event.cron === '0 4 * * *') {
+      const instance = await env.GAP_WORKFLOW.create({ params: {} });
+      console.log('scheduled gap drafting started', { cron: event.cron, instance_id: instance.id });
+      return;
+    }
+
     const instance = await env.REVIEW_WORKFLOW.create({ params: {} });
     console.log('scheduled review started', { cron: event.cron, instance_id: instance.id });
   },

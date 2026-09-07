@@ -26,6 +26,11 @@
       "name": "relo2france-review-workflow",
       "binding": "REVIEW_WORKFLOW",
       "class_name": "ReviewWorkflow"
+    },
+    {
+      "name": "relo2france-gap-workflow",
+      "binding": "GAP_WORKFLOW",
+      "class_name": "GapWorkflow"
     }
   ],
 
@@ -33,7 +38,12 @@
   // 1-7 with 1 = Sunday, so "0" is rejected outright and "1" would silently
   // mean Sunday where most cron systems read it as Monday.
   "triggers": {
-    "crons": ["0 3 * * SUN"]
+    "crons": [
+      // The full review, weekly.
+      "0 3 * * SUN",
+      // Gap drafting, daily and cheap - at most three gaps a pass.
+      "0 4 * * *"
+    ]
   }
 
   // Secrets, set with `wrangler secret put`:
