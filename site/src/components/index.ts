@@ -7,3 +7,4 @@ export { PracticeNote } from './PracticeNote';
 export { Requirements, Requirement, Figure, Caveat } from './Requirements';
 export { GuideCard, type Guide } from './GuideCard';
 export { SiteNav } from './SiteNav';
+export { PersonalLead, PersonalNext } from './Personal';

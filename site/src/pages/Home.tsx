@@ -1,5 +1,6 @@
 import { Button, GuideCard, Label, SiteNav, Timeline } from '../components';
 import { guides } from '../content/guides';
+import { coverage, totalTopics } from '../content/coverage';
 
 const steps = [
   { when: '12 months out', what: 'Choose your visa', note: 'Seven long-stay types. Retired and not working narrows it to one.' },
@@ -30,6 +31,30 @@ export function Home() {
           </div>
         </div>
         <Timeline steps={steps} />
+      </section>
+
+      <section className="px-7 py-9 border-t border-rule-soft bg-card-2">
+        <Label>What we cover</Label>
+        <h2 className="font-display font-semibold text-[1.5rem] tracking-[-0.012em] mt-2 mb-2 text-balance">
+          {totalTopics} topics, re-checked every week
+        </h2>
+        <p className="text-muted max-w-[52ch] mb-6">
+          Requirements, fees and thresholds change without announcement — the SMIC
+          benchmark moved twice in 2026 alone. Every topic is re-verified against
+          official French sources, and anything that changed is flagged.
+        </p>
+
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-0 border-t border-rule">
+          {coverage.map((area) => (
+            <div key={area.name} className="flex items-baseline justify-between gap-4 py-[11px] border-b border-rule-soft">
+              <div>
+                <span className="font-display font-semibold text-[0.97rem]">{area.name}</span>
+                <span className="block text-[0.82rem] text-muted">{area.examples}</span>
+              </div>
+              <span className="font-mono text-[0.76rem] text-muted tabular-nums">{area.topics}</span>
+            </div>
+          ))}
+        </div>
       </section>
 
       <section className="px-7 py-8 border-t border-rule-soft">

@@ -1,5 +1,6 @@
 import {
-  Caveat, Figure, Label, PracticeNote, Requirement, Requirements, SiteNav, SourceChip,
+  Caveat, Figure, PersonalLead, PersonalNext, PracticeNote, Requirement, Requirements,
+  SiteNav, SourceChip,
 } from '../components';
 import type { GuideDoc } from '../content/guides';
 
@@ -36,6 +37,7 @@ export function Guide({ guide }: { guide: GuideDoc }) {
 
       <div className="grid md:grid-cols-[1fr_252px] border-t border-rule-soft">
         <article className="prose-exact px-7 py-7 pb-9">
+          <PersonalLead topic={guide.title.toLowerCase()} />
           {guide.sections.map((section) => (
             <section key={section.heading}>
               <h2 className="font-display text-[1.1rem] mt-[26px] first:mt-0 mb-2 pb-[7px] border-b border-rule-soft">
@@ -68,13 +70,7 @@ export function Guide({ guide }: { guide: GuideDoc }) {
         </article>
 
         <aside className="border-t md:border-t-0 md:border-l border-rule-soft px-[22px] py-[26px] bg-card-2">
-          <div className="border border-rule rounded p-4 bg-card">
-            <span className="block mb-2"><Label>Next in your timeline</Label></span>
-            <p className="font-display font-semibold text-[0.97rem] text-ink mb-1">Order your apostilles</p>
-            <p className="text-[0.86rem] text-muted m-0">
-              Marriage and birth certificates. Start now — state processing runs to weeks.
-            </p>
-          </div>
+          <PersonalNext />
         </aside>
       </div>
     </>
