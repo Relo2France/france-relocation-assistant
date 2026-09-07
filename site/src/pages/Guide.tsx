@@ -4,7 +4,7 @@ import {
 } from '../components';
 import type { GuideDoc } from '../content/guides';
 
-/** {{...}} in requirement text marks a number someone would check twice. */
+/** {{...}} marks a number someone would check twice, anywhere in a section. */
 function withFigures(text: string) {
   return text.split(/(\{\{[^}]+\}\})/g).map((part, i) =>
     part.startsWith('{{') ? <Figure key={i}>{part.slice(2, -2)}</Figure> : <span key={i}>{part}</span>
@@ -44,7 +44,7 @@ export function Guide({ guide }: { guide: GuideDoc }) {
                 {section.heading}
               </h2>
               {section.paragraphs?.map((p) => (
-                <p key={p} className="mb-[14px]">{p}</p>
+                <p key={p} className="mb-[14px]">{withFigures(p)}</p>
               ))}
               {section.requirements ? (
                 <Requirements>
@@ -53,7 +53,7 @@ export function Guide({ guide }: { guide: GuideDoc }) {
                   ))}
                 </Requirements>
               ) : null}
-              {section.caveat ? <Caveat>{section.caveat}</Caveat> : null}
+              {section.caveat ? <Caveat>{withFigures(section.caveat)}</Caveat> : null}
             </section>
           ))}
 
@@ -64,8 +64,13 @@ export function Guide({ guide }: { guide: GuideDoc }) {
           ) : null}
 
           <div className="flex gap-[6px] flex-wrap mt-4">
-            <SourceChip kind="official">service-public.fr</SourceChip>
-            {guide.practice ? <SourceChip kind="community">r/expats</SourceChip> : null}
+            {guide.sources.map((s) => (
+              <SourceChip key={s.label} kind={s.kind}>{s.label}</SourceChip>
+            ))}
+            {/* Community reporting is only ever what the In Practice note cites. */}
+            {guide.practice ? (
+              <SourceChip kind="community">{guide.practice.sources}</SourceChip>
+            ) : null}
           </div>
         </article>
 
