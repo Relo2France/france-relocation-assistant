@@ -44,9 +44,24 @@ interface Env {
   ASSETS: { fetch: (request: Request) => Promise<Response> };
   /** Origin that still runs WordPress, e.g. https://relo2france.com */
   WP_ORIGIN?: string;
+  /**
+   * After cutover, relo2france.com resolves to this Worker, so proxying to
+   * that hostname would make the Worker call itself. WordPress.com serves by
+   * Host header and redirects any other hostname back to the primary domain,
+   * so we cannot simply proxy to relo2france.wordpress.com either - that
+   * 301s straight back here.
+   *
+   * resolveOverride solves both at once: the Host header stays
+   * relo2france.com, so WordPress.com serves the right site with no redirect,
+   * while the connection is made to whatever this hostname resolves to.
+   * Cloudflare ignores it unless the target is inside the same zone, so this
+   * must be a CNAME in the zone pointing at relo2france.wordpress.com -
+   * DNS-only, not proxied.
+   */
+  WP_RESOLVE_OVERRIDE?: string;
 }
 
-async function proxy(request: Request, origin: string): Promise<Response> {
+async function proxy(request: Request, origin: string, resolveOverride?: string): Promise<Response> {
   const url = new URL(request.url);
   const target = new URL(url.pathname + url.search, origin);
 
@@ -59,12 +74,15 @@ async function proxy(request: Request, origin: string): Promise<Response> {
   headers.set('X-Forwarded-Host', url.host);
   headers.set('X-Forwarded-Proto', url.protocol.replace(':', ''));
 
-  const upstream = await fetch(target.toString(), {
+  const init: RequestInit & { cf?: Record<string, unknown> } = {
     method: request.method,
     headers,
     body: request.method === 'GET' || request.method === 'HEAD' ? undefined : request.body,
     redirect: 'manual',
-  });
+  };
+  if (resolveOverride) init.cf = { resolveOverride };
+
+  const upstream = await fetch(target.toString(), init);
 
   // Rewrite redirects that point back at the origin so the browser stays on
   // this host - otherwise signing in bounces the user off the new domain.
@@ -85,7 +103,7 @@ export default {
       if (!origin) {
         return new Response('WP_ORIGIN is not configured', { status: 503 });
       }
-      return proxy(request, origin.replace(/\/$/, ''));
+      return proxy(request, origin.replace(/\/$/, ''), env.WP_RESOLVE_OVERRIDE);
     }
 
     return env.ASSETS.fetch(request);
