@@ -99,8 +99,8 @@ describe('Dossier', () => {
 
 describe('Button', () => {
   it('renders an anchor when given a destination', () => {
-    render(<Button href="/start">Plan my move</Button>);
-    expect(screen.getByRole('link', { name: 'Plan my move' })).toHaveAttribute('href', '/start');
+    render(<Button href="/pricing/">Plan my move</Button>);
+    expect(screen.getByRole('link', { name: 'Plan my move' })).toHaveAttribute('href', '/pricing/');
   });
 
   it('uses the on-brand token so it stays legible in dark mode', () => {

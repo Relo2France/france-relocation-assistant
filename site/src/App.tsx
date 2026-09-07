@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { notFoundRoute, resolveRoute } from './router';
 import { settleAfterNavigation, startNavigation } from './navigation';
 import { MemberProvider } from './member';
+import { Shell } from './Shell';
 
 export function App({ path }: { path?: string }) {
   // On the server, and for the first client render, this must match the
@@ -35,9 +36,7 @@ export function App({ path }: { path?: string }) {
 
   return (
     <MemberProvider>
-      <main className="max-w-[1140px] mx-auto bg-card border-x border-rule min-h-screen">
-        {(route ?? notFoundRoute()).element}
-      </main>
+      <Shell>{(route ?? notFoundRoute()).element}</Shell>
     </MemberProvider>
   );
 }

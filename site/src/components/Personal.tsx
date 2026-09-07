@@ -1,3 +1,4 @@
+import { external } from '../content/links';
 import { Button, Label } from './index';
 import { daysUntil, useMember } from '../member';
 
@@ -64,8 +65,8 @@ export function PersonalNext() {
           </div>
 
           <div className="mt-4 flex flex-col gap-2">
-            <Button href="/start" full>See what you&rsquo;d get</Button>
-            <Button href="/sign-in" variant="ghost" full>Sign in</Button>
+            <Button href="/pricing/" full>See what you&rsquo;d get</Button>
+            <Button href={external.signIn} variant="ghost" full>Sign in</Button>
           </div>
         </div>
       </div>

@@ -3,6 +3,8 @@ import { Home } from './pages/Home';
 import { GuideIndex } from './pages/GuideIndex';
 import { Guide } from './pages/Guide';
 import { NotFound } from './pages/NotFound';
+import { HowItWorks } from './pages/HowItWorks';
+import { Pricing } from './pages/Pricing';
 import { guideBySlug } from './content/guides';
 
 export interface PageMeta {
@@ -55,6 +57,45 @@ export function resolveRoute(path: string): { element: ReactElement; meta: PageM
           'Guides for Americans relocating to France: visas, property, healthcare, tax and banking, in the order you will need them.',
         canonical: `${SITE}/guides/`,
         jsonLd: null,
+      },
+    };
+  }
+
+  if (clean === '/how-it-works/') {
+    return {
+      element: <HowItWorks />,
+      meta: {
+        title: `How it works — ${SITE_NAME}`,
+        description:
+          'How Relo2France works: free guides drawn from official French sources, then a dated task list and an assistant that answers against your own file.',
+        canonical: `${SITE}/how-it-works/`,
+        jsonLd: null,
+      },
+    };
+  }
+
+  if (clean === '/pricing/') {
+    return {
+      element: <Pricing />,
+      meta: {
+        title: `Pricing — ${SITE_NAME}`,
+        description:
+          'Relo2France costs $35 once, for lifetime access. The guides are free; membership adds your own dated file, documents and the assistant.',
+        canonical: `${SITE}/pricing/`,
+        jsonLd: {
+          '@context': 'https://schema.org',
+          '@type': 'Product',
+          name: `${SITE_NAME} Lifetime Membership`,
+          description:
+            'Lifetime access to the Relo2France member portal: a dated relocation plan, document tools and an assistant answering against your own file.',
+          offers: {
+            '@type': 'Offer',
+            price: '35',
+            priceCurrency: 'USD',
+            url: `${SITE}/pricing/`,
+            availability: 'https://schema.org/InStock',
+          },
+        },
       },
     };
   }
