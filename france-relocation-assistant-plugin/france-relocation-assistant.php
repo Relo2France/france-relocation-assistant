@@ -15,7 +15,7 @@
  * Plugin Name: France Relocation Assistant
  * Plugin URI:  https://relo2france.com
  * Description: AI-powered US to France relocation guidance with visa info, property guides, healthcare, taxes, and practical insights. Features weekly auto-updates, "In Practice" real-world advice, and comprehensive knowledge base.
- * Version:     3.12.0
+ * Version:     3.13.0
  * Author:      Relo2France
  * Author URI:  https://relo2france.com
  * License:     GPL v2 or later
@@ -36,7 +36,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 | Plugin Constants
 |--------------------------------------------------------------------------
 */
-define( 'FRA_VERSION', '3.12.0' );
+define( 'FRA_VERSION', '3.13.0' );
 define( 'FRA_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FRA_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'FRA_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
@@ -997,6 +997,32 @@ class France_Relocation_Assistant {
         ?>
         <div class="wrap">
             <h1><?php esc_html_e('Knowledge Base Gaps', 'france-relocation-assistant'); ?></h1>
+            <?php
+            $answer_stats = get_option('framt_chat_answer_stats', array());
+            $direct_n = isset($answer_stats['direct']) ? (int) $answer_stats['direct'] : 0;
+            $ai_n     = isset($answer_stats['ai']) ? (int) $answer_stats['ai'] : 0;
+            $total_n  = $direct_n + $ai_n;
+            ?>
+            <?php if ($total_n > 0) : ?>
+                <div style="background:#f0f6fc;border:1px solid #c5d9ed;border-radius:6px;padding:12px 14px;margin:12px 0;max-width:70ch;">
+                    <strong><?php
+                        printf(
+                            /* translators: 1: percentage, 2: direct answers, 3: total questions */
+                            esc_html__('%1$d%% of questions answered from the knowledge base alone (%2$d of %3$d).', 'france-relocation-assistant'),
+                            (int) round(($direct_n / $total_n) * 100),
+                            $direct_n,
+                            $total_n
+                        );
+                    ?></strong>
+                    <p class="description" style="margin:6px 0 0;">
+                        <?php esc_html_e('Those cost no API call at all. If this number is very low the confidence threshold is too strict; if answers start looking blunt or off-target, it is too loose.', 'france-relocation-assistant'); ?>
+                        <?php if (!empty($answer_stats['since'])) : ?>
+                            <?php printf(esc_html__('Counting since %s.', 'france-relocation-assistant'), esc_html($answer_stats['since'])); ?>
+                        <?php endif; ?>
+                    </p>
+                </div>
+            <?php endif; ?>
+
             <p class="description" style="max-width:70ch;">
                 <?php esc_html_e('Questions the knowledge base answered poorly. A COVERAGE gap means nothing matched. A DEPTH gap means a topic matched well but the answer still needed outside sources - so that topic is missing something. Gaps that recur are drafted into the AI Review approval queue; nothing is published without your approval.', 'france-relocation-assistant'); ?>
             </p>
@@ -1516,6 +1542,18 @@ class France_Relocation_Assistant {
             'type' => 'string',
             'sanitize_callback' => 'sanitize_text_field',
             'default' => 'auto'
+        ));
+
+        // Tier 1 direct answers: serve a strongly matching knowledge base topic
+        // without calling the model at all.
+        register_setting('fra_settings', 'framt_chat_direct_answers', array(
+            'type' => 'boolean', 'sanitize_callback' => 'rest_sanitize_boolean', 'default' => true
+        ));
+        register_setting('fra_settings', 'framt_chat_direct_threshold', array(
+            'type' => 'number', 'sanitize_callback' => 'floatval', 'default' => 0.75
+        ));
+        register_setting('fra_settings', 'framt_chat_direct_margin', array(
+            'type' => 'number', 'sanitize_callback' => 'floatval', 'default' => 0.2
         ));
 
         // Per-purpose model tiers (opus | sonnet | haiku).

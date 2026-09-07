@@ -4198,13 +4198,28 @@ Signature:
             // Initial question: Search KB first, then enhance with AI + web search
             $web_sources   = array();
             $kb_results    = $this->search_knowledge_base( $message, $context );
-            $response_text = $this->generate_kb_enhanced_response( $message, $context, $include_practice, $kb_results, $user_context );
+
+            // Tier 1: the knowledge base already answers this well. Serve it
+            // and stop - no system prompt, no topics resent, no model call.
+            $direct = $this->direct_answer_candidate( $kb_results );
+
+            if ( $direct ) {
+                $response_text = $this->build_direct_answer( $direct, $user_context );
+                $answered_directly = true;
+                $this->record_answer_kind( 'direct' );
+            } else {
+                $answered_directly = false;
+                $this->record_answer_kind( 'ai' );
+                $response_text = $this->generate_kb_enhanced_response( $message, $context, $include_practice, $kb_results, $user_context );
+            }
 
             // Combine KB sources with web sources
             $sources = $this->format_kb_sources( $kb_results );
 
-            // Add web sources if "Include real-world insights" is enabled
-            if ( $include_practice ) {
+            // Add web sources if "Include real-world insights" is enabled.
+            // Skipped on the direct path - the point is to answer without
+            // reaching outside, and a web call would undo the saving.
+            if ( $include_practice && ! $answered_directly ) {
                 $web_results = $this->search_web_for_info( $message, $context );
                 $web_sources = $this->format_web_sources( $web_results );
                 $sources = array_merge( $sources, $web_sources );
@@ -4213,7 +4228,8 @@ Signature:
             // Record whether the knowledge base actually carried this answer.
             // Everything needed is already in scope here - relevance scores and
             // the source mix - so this costs an option write, not an API call.
-            if ( class_exists( 'FRA_KB_Gaps' ) && ! is_wp_error( $response_text ) ) {
+            // A direct hit is by definition not a gap, so it is not recorded.
+            if ( ! $answered_directly && class_exists( 'FRA_KB_Gaps' ) && ! is_wp_error( $response_text ) ) {
                 FRA_KB_Gaps::record( array(
                     'question'   => $message,
                     'kb_results' => $kb_results,
@@ -4355,6 +4371,7 @@ Signature:
 
                 if ( $relevance > 0.2 ) { // Minimum relevance threshold
                     $results[] = array(
+                        'keyword_hit' => $this->kb_keyword_hit( $lower_message, $article ),
                         'category'  => $category,
                         'topic_id'  => $topic_id,
                         'title'     => $article['title'] ?? ucfirst( $topic_id ),
@@ -4421,6 +4438,126 @@ Signature:
      * @param bool   $is_category_match Whether this is from the user's selected category
      * @return float Relevance score 0-1
      */
+    /**
+     * Did one of this topic's curated keywords actually appear in the question?
+     *
+     * This matters more than the score. Relevance accrues +0.05 for every word
+     * over four characters that appears anywhere in the body, so a long
+     * question can score highly on vocabulary overlap alone, with nothing to
+     * do with the topic. A keyword match is the signal someone curated.
+     *
+     * @param string $lower_message Lowercased question
+     * @param array  $article       Knowledge base topic
+     * @return bool
+     */
+    private function kb_keyword_hit( $lower_message, $article ) {
+        foreach ( (array) ( $article['keywords'] ?? array() ) as $keyword ) {
+            if ( '' !== $keyword && false !== strpos( $lower_message, strtolower( $keyword ) ) ) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Can this be answered from the knowledge base alone, with no model call?
+     *
+     * The two-tier design the settings page has always described - "Tier 2 AI
+     * responses when knowledge base confidence is low" - but which the code
+     * never implemented: every question above the 0.2 floor went to the model,
+     * carrying ~1,450 tokens of system prompt plus up to three topics verbatim,
+     * uncached, every time.
+     *
+     * Three conditions, because a score on its own is not enough:
+     *   1. a curated keyword matched, not just shared vocabulary
+     *   2. the score is high
+     *   3. the top topic clearly beats the second - otherwise the question
+     *      spans topics and deserves a synthesised answer
+     *
+     * @param array $kb_results Sorted knowledge base matches
+     * @return array|false The topic to answer from, or false
+     */
+    private function direct_answer_candidate( $kb_results ) {
+        if ( ! get_option( 'framt_chat_direct_answers', true ) ) {
+            return false;
+        }
+
+        if ( empty( $kb_results[0] ) ) {
+            return false;
+        }
+
+        $top = $kb_results[0];
+
+        if ( empty( $top['keyword_hit'] ) || empty( $top['content'] ) ) {
+            return false;
+        }
+
+        $threshold = (float) get_option( 'framt_chat_direct_threshold', 0.75 );
+        if ( (float) $top['relevance'] < $threshold ) {
+            return false;
+        }
+
+        $margin = (float) get_option( 'framt_chat_direct_margin', 0.2 );
+        $second = isset( $kb_results[1]['relevance'] ) ? (float) $kb_results[1]['relevance'] : 0.0;
+        if ( $second > 0 && ( (float) $top['relevance'] - $second ) < $margin ) {
+            return false;
+        }
+
+        return $top;
+    }
+
+    /**
+     * Build an answer from a knowledge base topic without calling the model.
+     *
+     * String assembly only. The personal line is templated from the profile
+     * rather than generated, which is the whole point: a main topic should not
+     * cost tokens to answer.
+     *
+     * @param array $topic        The matched topic
+     * @param array $user_context Portal context for the member
+     * @return string
+     */
+    private function build_direct_answer( $topic, $user_context ) {
+        $profile = isset( $user_context['profile'] ) && is_array( $user_context['profile'] )
+            ? $user_context['profile']
+            : array();
+
+        $name        = trim( (string) ( $profile['legal_first_name'] ?? '' ) );
+        $destination = trim( (string) ( $profile['target_location'] ?? '' ) );
+
+        $opener = '';
+        if ( '' !== $name ) {
+            $opener = '' !== $destination
+                ? sprintf( "Hi %s — here's what applies for your move to %s.", $name, $destination )
+                : sprintf( 'Hi %s.', $name );
+            $opener .= "\n\n";
+        }
+
+        return $opener
+            . (string) $topic['content']
+            . "\n\n_Ask a follow-up if you'd like this applied to your particular situation._";
+    }
+
+    /**
+     * Count how often the knowledge base answered without the model.
+     *
+     * The ratio is the point: it says whether the thresholds above are set
+     * sensibly, and it is the only way to know what this is saving.
+     *
+     * @param string $kind direct|ai
+     */
+    private function record_answer_kind( $kind ) {
+        $key   = 'framt_chat_answer_stats';
+        $stats = get_option( $key, array( 'direct' => 0, 'ai' => 0, 'since' => current_time( 'mysql' ) ) );
+
+        if ( ! is_array( $stats ) ) {
+            $stats = array( 'direct' => 0, 'ai' => 0, 'since' => current_time( 'mysql' ) );
+        }
+
+        $stats[ $kind ] = (int) ( $stats[ $kind ] ?? 0 ) + 1;
+        update_option( $key, $stats, false );
+    }
+
     private function calculate_kb_relevance( $lower_message, $message_words, $article, $is_category_match = false ) {
         $score = 0;
 
