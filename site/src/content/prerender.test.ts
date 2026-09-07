@@ -75,6 +75,49 @@ describeBuilt('prerendered output', () => {
   });
 });
 
+describeBuilt('404, sitemap and robots', () => {
+  const raw = (name: string) => readFileSync(resolve(DIST, name), 'utf8');
+
+  it('ships a 404 page with real content, not an apology', () => {
+    const html = raw('404.html');
+    expect(html).toContain('That page isn');
+    expect(html).not.toContain('<div id="root"></div>');
+    // It offers a way onward rather than dead-ending.
+    expect(html).toContain('/guides/');
+  });
+
+  it('keeps the 404 out of the index', () => {
+    expect(raw('404.html')).toContain('<meta name="robots" content="noindex">');
+  });
+
+  it('lists every real route in the sitemap', () => {
+    const xml = raw('sitemap.xml');
+    for (const route of routes) {
+      expect(xml, `${route} missing from sitemap`).toContain(`<loc>https://relo2france.com${route}</loc>`);
+    }
+    expect((xml.match(/<loc>/g) ?? []).length).toBe(routes.length);
+  });
+
+  it('never lists the 404 in the sitemap', () => {
+    expect(raw('sitemap.xml')).not.toContain('/404');
+  });
+
+  it('dates guide entries from when their content was verified', () => {
+    const xml = raw('sitemap.xml');
+    for (const g of guides) {
+      const block = xml.split(`<loc>https://relo2france.com/guides/${g.slug}/</loc>`)[1] ?? '';
+      expect(block, `${g.slug} has no lastmod`).toContain(`<lastmod>${g.verified}-01</lastmod>`);
+    }
+  });
+
+  it('points robots.txt at the sitemap', () => {
+    const txt = raw('robots.txt');
+    expect(txt).toContain('User-agent: *');
+    expect(txt).toContain('Allow: /');
+    expect(txt).toContain('Sitemap: https://relo2france.com/sitemap.xml');
+  });
+});
+
 describe('guide URLs', () => {
   /**
    * These slugs are already indexed on relo2france.com. Changing one costs a

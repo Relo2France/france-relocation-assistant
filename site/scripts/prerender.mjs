@@ -34,6 +34,10 @@ function buildHead(meta) {
     `<meta property="og:url" content="${escapeHtml(meta.canonical)}">`,
   ];
 
+  if (meta.noindex) {
+    parts.push('<meta name="robots" content="noindex">');
+  }
+
   if (meta.jsonLd) {
     // </script> inside JSON would close the tag early.
     const json = JSON.stringify(meta.jsonLd).replace(/</g, '\\u003c');
@@ -52,8 +56,15 @@ const vite = await createServer({
 });
 
 try {
-  const { render, routes } = await vite.ssrLoadModule('/src/entry-server.tsx');
+  const { render, renderNotFound, routes, guides, SITE } = await vite.ssrLoadModule(
+    '/src/entry-server.tsx'
+  );
   let written = 0;
+
+  const shell = (result) =>
+    template
+      .replace(/<title>[^<]*<\/title>/, buildHead(result.meta))
+      .replace('<div id="root"></div>', `<div id="root">${result.html}</div>`);
 
   for (const route of routes) {
     const result = render(route);
@@ -64,9 +75,7 @@ try {
       throw new Error(`Route ${route} did not resolve - refusing to write an empty page`);
     }
 
-    const html = template
-      .replace(/<title>[^<]*<\/title>/, buildHead(result.meta))
-      .replace('<div id="root"></div>', `<div id="root">${result.html}</div>`);
+    const html = shell(result);
 
     if (!html.includes(result.html.slice(0, 60))) {
       throw new Error(`Body injection failed for ${route}`);
@@ -78,6 +87,45 @@ try {
     written++;
     console.log(`  prerendered ${route}`);
   }
+
+  // 404: prerendered like any other page, but noindex and absent from the
+  // sitemap. Hosts serve it for unmatched paths.
+  writeFileSync(join(DIST, '404.html'), shell(renderNotFound()));
+  console.log('  prerendered /404.html');
+
+  // Sitemap. Guides carry a lastmod from the date their content was verified,
+  // which is the only honest signal we have.
+  const lastmod = (route) => {
+    const match = route.match(/^\/guides\/([a-z0-9-]+)\/$/);
+    const guide = match && guides.find((g) => g.slug === match[1]);
+    return guide ? `${guide.verified}-01` : null;
+  };
+
+  const urls = routes
+    .map((route) => {
+      const mod = lastmod(route);
+      return [
+        '  <url>',
+        `    <loc>${SITE}${route}</loc>`,
+        mod ? `    <lastmod>${mod}</lastmod>` : null,
+        '  </url>',
+      ]
+        .filter(Boolean)
+        .join('\n');
+    })
+    .join('\n');
+
+  writeFileSync(
+    join(DIST, 'sitemap.xml'),
+    `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`
+  );
+  console.log(`  wrote sitemap.xml (${routes.length} urls)`);
+
+  writeFileSync(
+    join(DIST, 'robots.txt'),
+    ['User-agent: *', 'Allow: /', '', `Sitemap: ${SITE}/sitemap.xml`, ''].join('\n')
+  );
+  console.log('  wrote robots.txt');
 
   console.log(`\n${written} routes prerendered into ${DIST}/`);
 } finally {

@@ -2,6 +2,7 @@ import type { ReactElement } from 'react';
 import { Home } from './pages/Home';
 import { GuideIndex } from './pages/GuideIndex';
 import { Guide } from './pages/Guide';
+import { NotFound } from './pages/NotFound';
 import { guideBySlug } from './content/guides';
 
 export interface PageMeta {
@@ -11,6 +12,8 @@ export interface PageMeta {
   canonical: string;
   /** schema.org JSON-LD, or null where none is warranted. */
   jsonLd: object | null;
+  /** Keep this page out of the index. Only the 404 should set it. */
+  noindex?: boolean;
 }
 
 export const SITE = 'https://relo2france.com';
@@ -80,4 +83,18 @@ export function resolveRoute(path: string): { element: ReactElement; meta: PageM
   }
 
   return null;
+}
+
+/** The 404 page. Not in `routes`, so it never reaches the sitemap. */
+export function notFoundRoute(): { element: ReactElement; meta: PageMeta } {
+  return {
+    element: <NotFound />,
+    meta: {
+      title: `Page not found — ${SITE_NAME}`,
+      description: 'That page is not here. Browse the guides for Americans relocating to France.',
+      canonical: `${SITE}/404`,
+      jsonLd: null,
+      noindex: true,
+    },
+  };
 }

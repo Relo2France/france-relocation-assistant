@@ -7,7 +7,7 @@
  * component to HTML at build time is the fix.
  */
 import { renderToString } from 'react-dom/server';
-import { resolveRoute, type PageMeta } from './router';
+import { notFoundRoute, resolveRoute, type PageMeta } from './router';
 
 export function render(path: string): { html: string; meta: PageMeta } | null {
   const route = resolveRoute(path);
@@ -15,4 +15,12 @@ export function render(path: string): { html: string; meta: PageMeta } | null {
   return { html: renderToString(route.element), meta: route.meta };
 }
 
+/** The 404 shell. Rendered separately so it never enters the route list. */
+export function renderNotFound(): { html: string; meta: PageMeta } {
+  const route = notFoundRoute();
+  return { html: renderToString(route.element), meta: route.meta };
+}
+
 export { routes } from './content/guides';
+export { guides } from './content/guides';
+export { SITE } from './router';

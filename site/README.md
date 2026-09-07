@@ -75,10 +75,23 @@ Guide slugs match the URLs already indexed on relo2france.com, so the cutover
 needs no redirects for these pages. A test pins the list: changing a slug costs
 a ranking, so it should be deliberate rather than a rename that slipped through.
 
+## Also generated at build
+
+- `404.html` - prerendered like any other page, but `noindex` and absent from
+  the sitemap. It offers the guides rather than dead-ending, because most
+  people arrive here from a stale link.
+- `sitemap.xml` - every route, with `lastmod` on guides taken from when their
+  content was last verified. That is the only honest freshness signal we have.
+- `robots.txt` - allows everything and points at the sitemap.
+
+Your host needs telling to serve `404.html` for unmatched paths. On Cloudflare
+that is `not_found_handling` in the assets config.
+
 ## Not done yet
 
 - The remaining guide bodies are stubs. Structure and metadata are real; the
-  prose needs writing or porting.
-- No 404 page, sitemap.xml or robots.txt.
+  prose needs writing or porting. A prerendered guide is currently ~1,500
+  characters against ~58,000 on the live WordPress page.
+- No deployment. The site is not wired to Cloudflare yet.
 - Four typefaces is a lot. Dropping Karla and letting Fraunces label is the
   first cut if load time matters.
