@@ -54,11 +54,31 @@ makes that impossible to ship.
     npm run typecheck
     npm run build
 
+## Prerendering
+
+`npm run build` compiles, then runs `scripts/prerender.mjs`, which renders each
+route's real React component to HTML and writes a static shell carrying the
+full article plus its `<head>` meta and JSON-LD. The app script stays, so
+browsers hydrate and behave as an SPA from there.
+
+This is not optional polish. `cgp-site` shipped client-rendered content pages
+and Google flagged ~136 URLs as Soft 404 - the crawler saw a title and an empty
+div. `src/content/prerender.test.ts` reads the built output and fails if a page
+ever ships as a shell again.
+
+The prerender step refuses to write a page whose route does not resolve, rather
+than emitting an empty one.
+
+### URLs are pinned
+
+Guide slugs match the URLs already indexed on relo2france.com, so the cutover
+needs no redirects for these pages. A test pins the list: changing a slug costs
+a ranking, so it should be deliberate rather than a rename that slipped through.
+
 ## Not done yet
 
-- Prerendering. The whole SEO argument rests on it, and CGP already learned
-  this the hard way: client-rendered content pages got ~136 URLs flagged as
-  Soft 404. Copy the approach in `cgp-site/scripts/prerender-content.mjs`.
-- Routing, the home page, and the remaining seven guides.
+- The remaining guide bodies are stubs. Structure and metadata are real; the
+  prose needs writing or porting.
+- No 404 page, sitemap.xml or robots.txt.
 - Four typefaces is a lot. Dropping Karla and letting Fraunces label is the
   first cut if load time matters.
