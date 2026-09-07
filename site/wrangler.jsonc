@@ -2,11 +2,20 @@
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "relo2france-site-staging",
   "compatibility_date": "2026-09-01",
+  "main": "./src/worker.ts",
 
-  // Static assets only - no Worker script. The site is prerendered at build
-  // time, so there is nothing to run per request.
+  // WordPress still owns the portal, sign-in and checkout. The Worker proxies
+  // those paths so the browser sees one origin and the portal's nonce auth
+  // keeps working. Set to the WordPress origin - on staging that is the live
+  // site; after cutover it must be a hostname that does NOT resolve back here,
+  // or the Worker will call itself.
+  "vars": { "WP_ORIGIN": "https://relo2france.com" },
+
+  // Prerendered pages. The Worker script above decides what reaches this
+  // binding and what goes to WordPress instead.
   "assets": {
     "directory": "./dist",
+    "binding": "ASSETS",
     // Serve our own 404.html for unmatched paths rather than the platform's.
     // Without this the prerendered 404 never appears.
     "not_found_handling": "404-page",
