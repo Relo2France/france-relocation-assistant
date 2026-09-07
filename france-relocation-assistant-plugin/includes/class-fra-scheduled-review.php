@@ -30,6 +30,19 @@ class FRA_Scheduled_Review {
     
     /** @var string Cron hook name */
     const CRON_HOOK = 'fra_scheduled_review';
+
+    /**
+     * @var string Which system runs the review.
+     *
+     * 'worker'    - the Cloudflare worker owns it. WordPress will not start a
+     *               run even if the weekly schedule is somehow re-enabled.
+     * 'wordpress' - the historical behaviour.
+     *
+     * A deliberate setting rather than a checkbox, because a run starting by
+     * accident is not a small thing: it costs hours of API time and clears its
+     * own topics out of the approval queue.
+     */
+    const RUNNER_OPTION = 'fra_review_runner';
     
     /** @var string Process hook name */
     const PROCESS_HOOK = 'fra_process_review_queue';
@@ -62,6 +75,15 @@ class FRA_Scheduled_Review {
         add_action('update_option_' . self::SCHEDULE_OPTION, array($this, 'reschedule_cron'), 10, 2);
     }
     
+    /**
+     * Does WordPress still run the review itself?
+     *
+     * @return bool
+     */
+    public static function wordpress_owns_review() {
+        return 'worker' !== get_option(self::RUNNER_OPTION, 'wordpress');
+    }
+
     /**
      * Get default schedule settings
      */
@@ -144,6 +166,15 @@ class FRA_Scheduled_Review {
         $settings['hour'] = max(0, min(23, $settings['hour']));
         $settings['minute'] = max(0, min(59, $settings['minute']));
         
+        // Which system owns the job. Saved before setup_cron() so that
+        // switching to the worker unschedules in the same request.
+        if (isset($_POST['runner'])) {
+            $runner = sanitize_key(wp_unslash($_POST['runner']));
+            if (in_array($runner, array('wordpress', 'worker'), true)) {
+                update_option(self::RUNNER_OPTION, $runner);
+            }
+        }
+
         update_option(self::SCHEDULE_OPTION, $settings);
         
         // Reschedule cron
@@ -172,7 +203,7 @@ class FRA_Scheduled_Review {
             wp_unschedule_event($timestamp, self::CRON_HOOK);
         }
         
-        if (!$settings['enabled']) {
+        if (!$settings['enabled'] || !self::wordpress_owns_review()) {
             return;
         }
         
@@ -223,6 +254,14 @@ class FRA_Scheduled_Review {
      * Start scheduled review (called by cron)
      */
     public function start_scheduled_review() {
+        if (!self::wordpress_owns_review()) {
+            // Belt and braces: setup_cron() also unschedules in this mode, but
+            // a stale cron entry left over from before the switch would
+            // otherwise start a full run and clear the queue behind it.
+            error_log('FRA: scheduled review skipped - the Cloudflare worker owns this job');
+            return;
+        }
+
         $this->start_background_review('scheduled');
     }
     
@@ -236,6 +275,12 @@ class FRA_Scheduled_Review {
             wp_send_json_error('Unauthorized');
         }
         
+        if (!self::wordpress_owns_review() && empty($_POST['force'])) {
+            wp_send_json_error(
+                __('The Cloudflare worker currently runs this review. Running it here as well would duplicate the work and clear these topics from the approval queue. Switch the runner back to WordPress in the schedule settings if you really want this.', 'france-relocation-assistant')
+            );
+        }
+
         $result = $this->start_background_review('manual');
         
         if (is_wp_error($result)) {
@@ -287,8 +332,26 @@ class FRA_Scheduled_Review {
             return new WP_Error('no_topics', 'No topics to review');
         }
         
-        // Clear any existing pending reviews for fresh start
-        update_option('fra_pending_reviews', array());
+        // Drop only this run's own topics from the queue, not the whole thing.
+        // Emptying it was harmless when WordPress was the only writer; it is
+        // not now that the Cloudflare worker and gap detection also post here,
+        // and a run starting would silently destroy their suggestions.
+        $pending = get_option('fra_pending_reviews', array());
+        if (is_array($pending) && !empty($pending)) {
+            $in_this_run = array();
+            foreach ($queue as $queued_topic) {
+                $in_this_run[$queued_topic['category'] . '/' . $queued_topic['topic_key']] = true;
+            }
+
+            foreach ($pending as $review_id => $review) {
+                $key = ($review['category'] ?? '') . '/' . ($review['topic'] ?? '');
+                if (isset($in_this_run[$key])) {
+                    unset($pending[$review_id]);
+                }
+            }
+
+            update_option('fra_pending_reviews', $pending);
+        }
         
         // Save queue
         update_option(self::QUEUE_OPTION, $queue);

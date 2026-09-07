@@ -185,8 +185,19 @@ foreach ($reviewable_topics as $cat => $topics) {
         <div class="fra-bg-status fra-bg-complete" style="background: #d4edda; border: 1px solid #28a745; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
             <h4 style="margin: 0 0 10px; color: #155724;">✓ Last Background Review Complete</h4>
             <p style="margin: 0; color: #155724;">
+                <?php
+                $attempted = intval($bg_status['processed']);
+                $succeeded = isset($bg_status['succeeded'])
+                    ? intval($bg_status['succeeded'])
+                    : max(0, $attempted - intval($bg_status['errors']));
+                ?>
                 Completed: <?php echo esc_html($bg_status['completed_at']); ?> • 
-                <?php echo intval($bg_status['processed']); ?> topics reviewed • 
+                <?php printf(
+                    /* translators: 1: topics reviewed successfully, 2: topics attempted */
+                    esc_html__('%1$d of %2$d topics reviewed', 'france-relocation-assistant'),
+                    $succeeded,
+                    $attempted
+                ); ?> • 
                 <strong><?php echo intval($actual_pending_count); ?> updates pending</strong>
                 <?php if ($bg_status['errors'] > 0): ?>
                 • <?php echo intval($bg_status['errors']); ?> errors
@@ -231,8 +242,35 @@ foreach ($reviewable_topics as $cat => $topics) {
                 <p style="font-size: 12px; color: #666; margin: 0;">
                     <?php _e('Next scheduled run:', 'france-relocation-assistant'); ?> 
                     <strong><?php echo date_i18n('F j, Y \a\t g:i a', $next_run); ?></strong>
+                    <br><em><?php _e('Unchecking the box above does not take effect until you press Save Schedule.', 'france-relocation-assistant'); ?></em>
+                </p>
+                <?php elseif ($schedule_settings['enabled']): ?>
+                <p style="font-size: 12px; color: #996800; margin: 0;">
+                    <?php _e('Enabled, but nothing is scheduled - press Save Schedule.', 'france-relocation-assistant'); ?>
                 </p>
                 <?php endif; ?>
+
+                <?php $wp_owns = FRA_Scheduled_Review::wordpress_owns_review(); ?>
+                <div style="margin-top: 14px; padding: 12px; border-radius: 6px; border: 1px solid <?php echo $wp_owns ? '#dcdcde' : '#28a745'; ?>; background: <?php echo $wp_owns ? '#fff' : '#f0f9f2'; ?>;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 6px;">
+                        <?php _e('This review is run by', 'france-relocation-assistant'); ?>
+                    </label>
+                    <select id="fra_review_runner" style="min-width: 260px;">
+                        <option value="wordpress" <?php selected($wp_owns, true); ?>>
+                            <?php _e('WordPress (this server)', 'france-relocation-assistant'); ?>
+                        </option>
+                        <option value="worker" <?php selected($wp_owns, false); ?>>
+                            <?php _e('Cloudflare worker (recommended)', 'france-relocation-assistant'); ?>
+                        </option>
+                    </select>
+                    <p style="font-size: 12px; color: #666; margin: 8px 0 0;">
+                        <?php if ($wp_owns) : ?>
+                            <?php _e('WordPress runs the review itself. It has no retries, cannot exceed its request timeout, and a run clears its own topics from the approval queue.', 'france-relocation-assistant'); ?>
+                        <?php else : ?>
+                            <?php _e('The Cloudflare worker owns this job. WordPress will not start a review even if the weekly schedule above is re-enabled, and Run Now is blocked. Switch back here to undo.', 'france-relocation-assistant'); ?>
+                        <?php endif; ?>
+                    </p>
+                </div>
             </div>
             
             <div>
@@ -257,7 +295,7 @@ foreach ($reviewable_topics as $cat => $topics) {
         </div>
         
         <p style="font-size: 12px; color: #666; margin-top: 10px;">
-            <?php _e('Background review processes 1 topic every 30 seconds to avoid server timeouts. A full review of 40 topics takes about 20-30 minutes.', 'france-relocation-assistant'); ?>
+            <?php _e('Background review processes one topic at a time with a 30 second gap. Since web search was added each topic takes several minutes, so a full run of ~31 topics takes many hours - the last one took 10h39m and lost 11 topics to timeouts. This is why the Cloudflare worker now owns this job.', 'france-relocation-assistant'); ?>
         </p>
     </div>
 
@@ -1116,6 +1154,7 @@ jQuery(document).ready(function($) {
             type: 'POST',
             data: {
                 action: 'fra_save_schedule',
+                runner: document.getElementById('fra_review_runner') ? document.getElementById('fra_review_runner').value : 'wordpress',
                 nonce: '<?php echo wp_create_nonce('fra_admin_nonce'); ?>',
                 enabled: $('#fra-schedule-enabled').is(':checked') ? 1 : 0,
                 day: $('#fra-schedule-day').val(),
