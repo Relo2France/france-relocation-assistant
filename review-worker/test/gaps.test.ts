@@ -89,3 +89,53 @@ describe('prompts', () => {
     }
   });
 });
+
+/**
+ * Gaps raised by a person, not inferred from traffic.
+ *
+ * A raised gap is the route for "this is probably true, but the knowledge base
+ * does not say it" - so the one thing that must not happen is the model
+ * treating the note as established fact and writing it up as such.
+ */
+describe('raised gaps', () => {
+  const raised = (over: Partial<Gap> = {}): Gap => ({
+    id: 'raised_abc123',
+    type: 'raised',
+    questions: ['Is the PUMA three-month wait waived for refugees?'],
+    count: 1,
+    relevance: 0,
+    note: 'Claim seen elsewhere; unverified.',
+    categories: ['healthcare', 'visas'],
+    ...over,
+  });
+
+  it('tells the model the claim is unverified', () => {
+    const prompt = buildCoveragePrompt(raised());
+    expect(prompt).toContain('Treat it as unverified');
+    expect(prompt).toContain('Claim seen elsewhere');
+    expect(prompt).not.toContain('Members asked these questions');
+  });
+
+  it('still reads as member traffic for a detected coverage gap', () => {
+    const prompt = buildCoveragePrompt(raised({ type: 'coverage', note: undefined }));
+    expect(prompt).toContain('Members asked these questions');
+    expect(prompt).not.toContain('Treat it as unverified');
+  });
+
+  it('updates the named topic when the gap names one', () => {
+    const target = resolveTarget(
+      raised({ category: 'healthcare', topic: 'puma', topic_name: 'PUMA' }),
+      {}
+    );
+    expect(target).toEqual({ category: 'healthcare', topic: 'puma', title: 'PUMA' });
+  });
+
+  it('proposes a new topic when the gap names none', () => {
+    const target = resolveTarget(raised(), {
+      suggested_category: 'visas',
+      suggested_topic_key: 'schengen 90/180',
+    });
+    expect(target?.category).toBe('visas');
+    expect(target?.topic).toBe('schengen_90_180');
+  });
+});

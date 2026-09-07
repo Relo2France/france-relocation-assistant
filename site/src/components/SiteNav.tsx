@@ -1,4 +1,5 @@
 import { Button } from './Button';
+import { external } from '../content/links';
 
 /** Warm chrome. Nothing in the navigation is ever a legal requirement. */
 export function SiteNav({ cta = 'Get started' }: { cta?: string }) {
@@ -9,9 +10,9 @@ export function SiteNav({ cta = 'Get started' }: { cta?: string }) {
       </a>
       <ul className="hidden sm:flex gap-[22px] list-none m-0 p-0">
         {[
-          ['Guides', '/guides'],
-          ['How it works', '/how-it-works'],
-          ['Pricing', '/pricing'],
+          ['Guides', '/guides/'],
+          ['How it works', '/how-it-works/'],
+          ['Pricing', '/pricing/'],
         ].map(([label, href]) => (
           <li key={href}>
             <a href={href} className="font-ui text-[0.86rem] font-medium text-muted no-underline hover:text-ink">
@@ -21,8 +22,9 @@ export function SiteNav({ cta = 'Get started' }: { cta?: string }) {
         ))}
       </ul>
       <div className="flex gap-2">
-        <Button href="/sign-in" variant="ghost">Sign in</Button>
-        <Button href="/start">{cta}</Button>
+        {/* Sign-in still lives on WordPress until the portal is ported. */}
+        <Button href={external.signIn} variant="ghost">Sign in</Button>
+        <Button href="/pricing/">{cta}</Button>
       </div>
     </nav>
   );

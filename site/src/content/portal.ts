@@ -9,6 +9,11 @@
 export interface PortalFeature {
   name: string;
   what: string;
+  /**
+   * Set only for features that do not exist yet. Everything without it is
+   * live today - see the note above about not claiming what the portal cannot do.
+   */
+  status?: 'soon';
   /** What the same subject looks like on the public site, for contrast. */
   publicVersion: string;
 }
@@ -36,7 +41,8 @@ export const portalFeatures: PortalFeature[] = [
   },
   {
     name: 'Schengen day counting',
-    what: 'Trips logged against the 90-in-180 rule, so you know where you stand before you book.',
+    status: 'soon',
+    what: 'Trips logged against the 90-in-180 rule, so you know where you stand before you book. Built as a standalone tool first, then included in membership at no extra cost.',
     publicVersion: 'The guides explain the rule.',
   },
   {

@@ -27,7 +27,7 @@ export function Home() {
             tells you.
           </p>
           <div className="flex gap-[10px] mt-6 flex-wrap items-center">
-            <Button href="/start">Plan my move</Button>
+            <Button href="/pricing/">Plan my move</Button>
             <span className="text-[0.82rem] text-muted">Free to browse · no card</span>
           </div>
         </div>
@@ -71,7 +71,14 @@ export function Home() {
         <div className="grid md:grid-cols-2 gap-x-8 gap-y-0 border-t border-rule">
           {portalFeatures.map((feature) => (
             <div key={feature.name} className="py-4 border-b border-rule-soft">
-              <h3 className="font-display font-semibold text-[1rem] mb-1">{feature.name}</h3>
+              <h3 className="font-display font-semibold text-[1rem] mb-1 flex items-baseline gap-2 flex-wrap">
+                {feature.name}
+                {feature.status === 'soon' ? (
+                  <span className="font-ui font-bold text-[0.66rem] uppercase tracking-[0.07em] text-muted border border-rule rounded-pill px-[7px] py-px">
+                    Coming soon
+                  </span>
+                ) : null}
+              </h3>
               <p className="text-[0.9rem] text-muted mb-2">{feature.what}</p>
               <p className="text-[0.82rem] text-muted/80 italic m-0">{feature.publicVersion}</p>
             </div>
@@ -79,7 +86,7 @@ export function Home() {
         </div>
 
         <div className="flex gap-[10px] mt-7 flex-wrap items-center">
-          <Button href="/start">See what you’d get</Button>
+          <Button href="/pricing/">See what you’d get</Button>
           <span className="text-[0.82rem] text-muted">Lifetime access · no subscription</span>
         </div>
       </section>

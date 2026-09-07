@@ -12,7 +12,12 @@ import type { Env, WebSource } from './types';
 
 export interface Gap {
   id: string;
-  type: 'coverage' | 'depth';
+  /**
+   * "raised" is a gap a person named rather than one inferred from traffic.
+   * It behaves like a depth gap when it names a topic, and like a coverage
+   * gap when it does not.
+   */
+  type: 'coverage' | 'depth' | 'raised';
   questions: string[];
   count: number;
   relevance: number;
@@ -23,6 +28,8 @@ export interface Gap {
   current_content?: string;
   /** Coverage gaps only - where a new topic could live. */
   categories?: string[];
+  /** Raised gaps only - why a person flagged it, carried into the prompt. */
+  note?: string;
   /** The matched topic has since been renamed or removed. */
   stale?: boolean;
 }
@@ -126,11 +133,14 @@ Respond with ONLY this JSON:
 export function buildCoveragePrompt(gap: Gap): string {
   const questions = gap.questions.join('\n- ');
   const categories = (gap.categories ?? []).join(', ');
+  const raised = gap.type === 'raised';
+  const note = gap.note ? `\n\nWhy this was raised:\n${gap.note}` : '';
 
   return `You maintain a knowledge base for Americans relocating to France.
 
-Members asked these questions and we have no topic covering them:
-- ${questions}
+${raised
+    ? `An editor flagged this as missing from the knowledge base:\n- ${questions}${note}\n\nTreat it as unverified. Confirm it against official sources before stating it, and if you cannot confirm it, say so in changes_summary and set confidence to "low" rather than writing it as fact.`
+    : `Members asked these questions and we have no topic covering them:\n- ${questions}`}
 
 Research the current official position using web search, then write a new knowledge base topic that answers them.
 
@@ -160,8 +170,10 @@ export async function draftGap(env: Env, gap: Gap): Promise<GapOutcome> {
     return { ...base, ok: false, error: 'stale topic', duration_ms: Date.now() - started };
   }
 
-  const isDepth = gap.type === 'depth';
-  const prompt = isDepth ? buildDepthPrompt(gap) : buildCoveragePrompt(gap);
+  // A raised gap that names a topic is an update to that topic; one that does
+  // not is a new topic, exactly like a coverage gap.
+  const isUpdate = gap.type === 'depth' || (gap.type === 'raised' && !!gap.category && !!gap.topic);
+  const prompt = isUpdate ? buildDepthPrompt(gap) : buildCoveragePrompt(gap);
 
   let outcome;
   try {
@@ -201,7 +213,7 @@ export async function draftGap(env: Env, gap: Gap): Promise<GapOutcome> {
     category: target.category,
     topic: target.topic,
     topic_name: target.title,
-    update_type: isDepth ? 'minor' : 'significant',
+    update_type: isUpdate ? 'minor' : 'significant',
     confidence: draft.confidence ?? 'medium',
     changes_summary: draft.changes_summary ?? '',
     suggested_content: draft.suggested_content,
@@ -232,7 +244,7 @@ export function resolveTarget(
   gap: Gap,
   draft: DraftJson
 ): { category: string; topic: string; title: string } | null {
-  if (gap.type === 'depth') {
+  if (gap.type === 'depth' || (gap.type === 'raised' && gap.category && gap.topic)) {
     if (!gap.category || !gap.topic) return null;
     return { category: gap.category, topic: gap.topic, title: gap.topic_name ?? gap.topic };
   }
