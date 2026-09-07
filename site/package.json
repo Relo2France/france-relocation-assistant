@@ -12,7 +12,9 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "eslint src --ext ts,tsx"
+    "lint": "eslint src --ext ts,tsx",
+    "build:staging": "tsc --noEmit && vite build && SITE_ENV=staging node scripts/prerender.mjs",
+    "deploy:staging": "npm run build:staging && npx wrangler deploy"
   },
   "dependencies": {
     "react": "^18.3.1",
@@ -31,6 +33,7 @@
     "tailwindcss": "^3.4.17",
     "typescript": "^5.7.3",
     "vite": "^6.0.7",
-    "vitest": "^3.2.7"
+    "vitest": "^3.2.7",
+    "wrangler": "^4.129.0"
   }
 }

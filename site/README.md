@@ -87,6 +87,26 @@ a ranking, so it should be deliberate rather than a rename that slipped through.
 Your host needs telling to serve `404.html` for unmatched paths. On Cloudflare
 that is `not_found_handling` in the assets config.
 
+## Deploying
+
+    npm run deploy:staging   # -> relo2france-site-staging.kburrowbridge.workers.dev
+
+Static assets only - the site is prerendered, so there is no Worker script and
+nothing runs per request. `not_found_handling` is set to `404-page` so our own
+404 is served, and `html_handling` to `auto-trailing-slash` so `/guides/x` and
+`/guides/x/` resolve to the same page.
+
+### Staging is noindex, deliberately
+
+`SITE_ENV=staging` makes the prerender write a `Disallow: /` robots.txt and add
+`<meta name="robots" content="noindex">` to every page. A public staging URL
+serving `Allow: /` invites Google to index a duplicate that then competes with
+the real site. Canonicals point at production either way, which is right - but
+that alone is not enough.
+
+A production build is unaffected: `npm run build` still emits the normal
+robots.txt and no noindex tags.
+
 ## Not done yet
 
 - The remaining guide bodies are stubs. Structure and metadata are real; the

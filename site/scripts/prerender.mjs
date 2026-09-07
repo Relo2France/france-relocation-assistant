@@ -15,6 +15,15 @@ import { dirname, join } from 'node:path';
 
 const DIST = 'dist';
 
+/**
+ * Staging must never be indexed.
+ *
+ * A public staging URL serving "Allow: /" invites Google to index a duplicate
+ * of the site, which then competes with the real one. Canonicals already point
+ * at production, but that is not enough on its own.
+ */
+const IS_STAGING = process.env.SITE_ENV === 'staging';
+
 function escapeHtml(value) {
   return String(value)
     .replace(/&/g, '&amp;')
@@ -34,7 +43,7 @@ function buildHead(meta) {
     `<meta property="og:url" content="${escapeHtml(meta.canonical)}">`,
   ];
 
-  if (meta.noindex) {
+  if (meta.noindex || IS_STAGING) {
     parts.push('<meta name="robots" content="noindex">');
   }
 
@@ -123,11 +132,15 @@ try {
 
   writeFileSync(
     join(DIST, 'robots.txt'),
-    ['User-agent: *', 'Allow: /', '', `Sitemap: ${SITE}/sitemap.xml`, ''].join('\n')
+    IS_STAGING
+      ? ['# Staging. Not for indexing.', 'User-agent: *', 'Disallow: /', ''].join('\n')
+      : ['User-agent: *', 'Allow: /', '', `Sitemap: ${SITE}/sitemap.xml`, ''].join('\n')
   );
-  console.log('  wrote robots.txt');
+  console.log(`  wrote robots.txt${IS_STAGING ? ' (staging: disallow all)' : ''}`);
 
-  console.log(`\n${written} routes prerendered into ${DIST}/`);
+  console.log(
+    `\n${written} routes prerendered into ${DIST}/${IS_STAGING ? ' — staging build, noindex throughout' : ''}`
+  );
 } finally {
   await vite.close();
 }

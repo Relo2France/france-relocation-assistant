@@ -1,0 +1,19 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "relo2france-site-staging",
+  "compatibility_date": "2026-09-01",
+
+  // Static assets only - no Worker script. The site is prerendered at build
+  // time, so there is nothing to run per request.
+  "assets": {
+    "directory": "./dist",
+    // Serve our own 404.html for unmatched paths rather than the platform's.
+    // Without this the prerendered 404 never appears.
+    "not_found_handling": "404-page",
+    // Prerendered routes are directories with an index.html, so /guides/x and
+    // /guides/x/ must resolve to the same page.
+    "html_handling": "auto-trailing-slash"
+  },
+
+  "observability": { "enabled": true }
+}
