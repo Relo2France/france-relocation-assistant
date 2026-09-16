@@ -23,7 +23,8 @@ export interface Member {
   nextAction: { what: string; note: string };
 }
 
-const MemberContext = createContext<Member | null>(null);
+/** Exported so tests can render the member view without a network. */
+export const MemberContext = createContext<Member | null>(null);
 
 /** Days until the move, or null once it is in the past. */
 export function daysUntil(iso: string, now = new Date()): number | null {

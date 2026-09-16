@@ -10,7 +10,8 @@ import { resolve } from 'node:path';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { PersonalLead, PersonalNext } from './components';
-import { daysUntil } from './member';
+import { Hero } from './pages/Home';
+import { MemberContext, daysUntil, type Member } from './member';
 
 describe('daysUntil', () => {
   it('counts forward to the move', () => {
@@ -40,6 +41,41 @@ describe('without a member', () => {
   });
 });
 
+/**
+ * The home hero is two different cards. A first-time visitor must not be
+ * shown a countdown that looks like theirs; a member must be sent to their
+ * own file, not to the pricing page.
+ */
+describe('the home hero', () => {
+  const member: Member = {
+    firstName: 'Kevin', destination: 'Monsac', visaType: 'Visitor', moveDate: '2099-03-15',
+    applicants: 2, dossier: { ready: 4, total: 9 }, nextAction: { what: 'x', note: 'y' },
+  };
+
+  it('shows a stranger an example, labelled as one, with nothing marked and no way into the portal', () => {
+    const { container } = render(<Hero />);
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/moving to France\?/i);
+    expect(screen.getByText(/example · a move/i)).toBeInTheDocument();
+    expect(container.querySelector('[aria-current="step"]')).toBeNull();
+    expect(screen.getByRole('link', { name: /browse the guides/i })).toHaveAttribute('href', '/guides/');
+    expect(screen.getByRole('link', { name: /plan my move/i })).toHaveAttribute('href', '/pricing/');
+    expect(screen.queryByRole('link', { name: /dossier/i })).toBeNull();
+  });
+
+  it('shows a member their month, their place, and the way into their dossier', () => {
+    const { container } = render(
+      <MemberContext.Provider value={member}>
+        <Hero />
+      </MemberContext.Provider>
+    );
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/in March 2099/);
+    expect(screen.getByText(/where you are/i)).toBeInTheDocument();
+    expect(container.querySelector('[aria-current="step"]')).not.toBeNull();
+    expect(screen.getByRole('link', { name: /open my dossier/i })).toHaveAttribute('href', expect.stringContaining('/portal/'));
+    expect(screen.queryByRole('link', { name: /plan my move/i })).toBeNull();
+  });
+});
+
 const DIST = resolve(process.cwd(), 'dist');
 const built = existsSync(resolve(DIST, 'index.html'));
 (built ? describe : describe.skip)('prerendered output', () => {
@@ -55,7 +91,7 @@ const built = existsSync(resolve(DIST, 'index.html'));
       for (const leak of [
         'Kevin', 'Monsac', 'DAYS TO MONSAC', 'data-personal="lead"', 'data-personal="next"',
         // The hero may not tell a stranger when they are moving, or where they are.
-        'moving to France in', 'you are here',
+        'moving to France in', 'you are here', 'data-personal="hero"', 'Open my dossier',
       ]) {
         expect(html.includes(leak), `${file} leaked "${leak}" into static HTML`).toBe(false);
       }

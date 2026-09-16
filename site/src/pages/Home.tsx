@@ -3,36 +3,75 @@ import { guides } from '../content/guides';
 import { coverage, totalTopics } from '../content/coverage';
 import { portalFeatures } from '../content/portal';
 import { HERO_STEPS, heroFor } from '../content/hero';
-import { useMember } from '../member';
+import { daysUntil, useMember } from '../member';
+import { external } from '../content/links';
 
 /**
- * Generic in the prerender and for anyone signed out. After hydration a
- * member sees their own month and their own place on the timeline; nobody
- * else is told when they are moving.
+ * Two different cards for two different people.
+ *
+ * A first-time visitor has no plan yet, so the timeline is shown as what it
+ * is: an example of a move in order, labelled as one, with nothing marked.
+ * The buttons send them to read, or to see what membership is.
+ *
+ * A member gets their own month in the headline, their file's date, the
+ * marker on the step they are actually at, and a button into the portal.
+ * The prerendered page is always the first card; the second appears only
+ * after hydration, from their own data.
  */
-function Hero() {
+export function Hero() {
   const member = useMember();
   const { headline, nowIndex } = heroFor(member);
   const steps = HERO_STEPS.map((step, i) => (i === nowIndex ? { ...step, now: true } : step));
+  const days = member ? daysUntil(member.moveDate) : null;
+  const moveDate = member
+    ? new Date(`${member.moveDate}T00:00:00Z`).toLocaleDateString('en-US', {
+        month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC',
+      })
+    : null;
 
   return (
     <section className="px-7 pt-[50px] pb-10 grid md:grid-cols-[1.05fr_0.95fr] gap-11 items-center">
       <div>
-        <Label>For Americans moving to France</Label>
+        <Label>{member ? `${member.firstName}, your move` : 'For Americans moving to France'}</Label>
         <h1 className="font-display font-semibold text-[clamp(2rem,4.7vw,2.95rem)] leading-[1.04] tracking-[-0.019em] mt-3 mb-3 text-balance">
           {headline}
         </h1>
-        <p className="text-muted text-[1.05rem] max-w-[42ch]">
-          Every requirement in the order you need it — re-checked against official
-          French sources every week, because the numbers move more often than anyone
-          tells you.
-        </p>
+        {member ? (
+          <p className="text-muted text-[1.05rem] max-w-[42ch]" data-personal="hero">
+            Your file is dated back from {moveDate}
+            {days !== null ? `, ${days} days from now` : ''}. Every requirement,
+            re-checked against official French sources every week.
+          </p>
+        ) : (
+          <p className="text-muted text-[1.05rem] max-w-[42ch]">
+            Every requirement in the order you need it — re-checked against official
+            French sources every week, because the numbers move more often than anyone
+            tells you.
+          </p>
+        )}
         <div className="flex gap-[10px] mt-6 flex-wrap items-center">
-          <Button href="/pricing/">Plan my move</Button>
-          <span className="text-[0.82rem] text-muted">Free to browse · no card</span>
+          {member ? (
+            <>
+              <Button href={external.portal}>Open my dossier</Button>
+              <Button href="/guides/" variant="ghost">Browse the guides</Button>
+            </>
+          ) : (
+            <>
+              <Button href="/guides/">Browse the guides</Button>
+              <Button href="/pricing/" variant="ghost">Plan my move</Button>
+              <span className="text-[0.82rem] text-muted">Free to read · no card</span>
+            </>
+          )}
         </div>
       </div>
-      <Timeline steps={steps} />
+      <div>
+        <span className="block mb-3">
+          <Label tone={member ? 'honey' : 'muted'}>
+            {member ? 'Where you are' : 'Example · a move, counted back from the date'}
+          </Label>
+        </span>
+        <Timeline steps={steps} />
+      </div>
     </section>
   );
 }
