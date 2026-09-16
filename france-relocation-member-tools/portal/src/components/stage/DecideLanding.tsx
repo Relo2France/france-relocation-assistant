@@ -2,91 +2,142 @@
  * DecideLanding
  *
  * The first stage is not a list of tasks. Someone here is still asking
- * whether they can do this and how, so the page is built around the five
- * questions that settle it, each leading to the place that answers it.
+ * whether they can do this and how, so the page is a path: five blocks in
+ * the order that settles it, arrows between them, the ones already answered
+ * ticked off, the next one lit. Each block carries its own way forward.
  */
-import { ArrowRight } from 'lucide-react';
+import { clsx } from 'clsx';
+import { ArrowDown, ArrowRight, Check } from 'lucide-react';
+import { useFamilyMembers, useMemberProfile } from '@/hooks/useApi';
 import { usePortalStore } from '@/store';
 import type { Project } from '@/types';
 
 const SITE = 'https://relo2france.com';
 
-interface Question {
-  eyebrow: string;
+interface Block {
+  id: string;
   title: string;
   body: string;
-  actions: { label: string; onClick?: () => void; href?: string; primary?: boolean }[];
+  done: boolean;
+  doneNote?: string;
+  primary: { label: string; onClick?: () => void; href?: string };
+  secondary?: { label: string; href: string };
 }
 
 export default function DecideLanding({ project, visaType }: { project: Project; visaType: string | null }) {
   const { setActiveView, setSettingsTab } = usePortalStore();
-  const routeChosen = !!visaType && visaType !== 'undecided';
+  const { data: profile } = useMemberProfile();
+  const { data: family } = useFamilyMembers();
 
-  const questions: Question[] = [
+  const routeChosen = !!visaType && visaType !== 'undecided';
+  const location = (profile as { target_location?: string } | undefined)?.target_location?.trim() ?? '';
+  const applicants = (profile as { applicants?: string } | undefined)?.applicants ?? '';
+  const familyCount = family?.members?.length ?? 0;
+  const whoAnswered = familyCount > 0 || (applicants !== '' && applicants !== 'unknown');
+  const dateSet = !!project.target_move_date;
+
+  const blocks: Block[] = [
     {
-      eyebrow: 'Which route',
-      title: routeChosen ? `Your route: ${project.visa_type_label}` : 'Which visa route fits us?',
-      body: routeChosen
-        ? 'You can change it any time. The stages that follow are built for the route you chose.'
-        : 'Seven long-stay routes. Which one fits depends on whether you will work, who is coming, and what you can show. Start with the overview, then set your route in your profile.',
-      actions: [
-        { label: 'Read the visa overview', href: `${SITE}/guides/long-stay-visa-overview/` },
-        { label: routeChosen ? 'Change my route' : 'Set my route', onClick: () => { setSettingsTab('visa-profile'); setActiveView('profile'); }, primary: !routeChosen },
-      ],
+      id: 'route',
+      title: 'Which visa route?',
+      body: 'Seven long-stay routes. It depends on whether you will work, who is coming, and what you can show.',
+      done: routeChosen,
+      doneNote: routeChosen ? project.visa_type_label : undefined,
+      primary: { label: routeChosen ? 'Change my route' : 'Set my route', onClick: () => { setSettingsTab('visa-profile'); setActiveView('profile'); } },
+      secondary: { label: 'Read the overview', href: `${SITE}/guides/long-stay-visa-overview/` },
     },
     {
-      eyebrow: 'Where',
+      id: 'where',
       title: 'Where in France?',
       body: 'Regions, cost of living, and the questions to ask before you pick a town.',
-      actions: [{ label: 'Explore France', onClick: () => setActiveView('research'), primary: true }],
+      done: location !== '',
+      doneNote: location || undefined,
+      primary: { label: 'Explore France', onClick: () => setActiveView('research') },
     },
     {
-      eyebrow: 'What it takes',
+      id: 'cost',
       title: 'What will it cost, and what must we show?',
-      body: 'The fee, the resources benchmark, the insurance rule, and how long the paperwork takes from the States.',
-      actions: [
-        { label: 'What each document needs', href: `${SITE}/guides/visa-application-timeline/` },
-        { label: 'The visitor route in full', href: `${SITE}/guides/visitor-visa-requirements/` },
-      ],
+      body: 'The fee, the resources benchmark, the insurance rule, and the lead times from the States.',
+      done: false,
+      primary: { label: 'What each document needs', href: `${SITE}/guides/visa-application-timeline/` },
+      secondary: { label: 'The visitor route in full', href: `${SITE}/guides/visitor-visa-requirements/` },
     },
     {
-      eyebrow: 'Who',
+      id: 'who',
       title: 'Who is moving?',
       body: 'Each person applies separately. A spouse or a child gets their own file, on the same calendar as yours.',
-      actions: [{ label: 'Family plans', onClick: () => setActiveView('family'), primary: true }],
+      done: whoAnswered,
+      doneNote: familyCount > 0 ? `You and ${familyCount} other${familyCount === 1 ? '' : 's'}` : whoAnswered ? 'Answered in your profile' : undefined,
+      primary: { label: 'Family plans', onClick: () => setActiveView('family') },
     },
     {
-      eyebrow: 'When',
-      title: project.target_move_date ? 'Your move date is set' : 'When, roughly?',
-      body: project.target_move_date
-        ? 'Every step in the stages ahead is counted back from it. Change it and the plan moves with it.'
-        : 'A target date, even a rough one, is what turns the stages ahead into dated steps.',
-      actions: [{ label: project.target_move_date ? 'Change the date' : 'Set a move date', onClick: () => setActiveView('dashboard'), primary: !project.target_move_date }],
+      id: 'when',
+      title: 'When, roughly?',
+      body: 'A target date, even a rough one, turns the stages ahead into dated steps.',
+      done: dateSet,
+      doneNote: dateSet ? new Date(`${project.target_move_date!.slice(0, 10)}T00:00:00Z`).toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' }) : undefined,
+      primary: { label: dateSet ? 'Change the date' : 'Set a move date', onClick: () => setActiveView('dashboard') },
     },
   ];
 
+  const nextIndex = blocks.findIndex((b) => !b.done && b.id !== 'cost');
+  const answered = blocks.filter((b) => b.done).length;
+
   return (
     <div className="flex flex-col gap-4">
-      {questions.map((q) => (
-        <div key={q.eyebrow} className="card p-6 flex flex-col gap-2">
-          <span className="eyebrow">{q.eyebrow}</span>
-          <h3 className="font-display text-[1.25rem] font-semibold tracking-[-0.018em] leading-snug">{q.title}</h3>
-          <p className="text-gray-600 max-w-[60ch]">{q.body}</p>
-          <div className="flex flex-wrap gap-2 mt-2">
-            {q.actions.map((a) =>
-              a.href ? (
-                <a key={a.label} href={a.href} target="_blank" rel="noreferrer" className={a.primary ? 'btn btn-primary' : 'btn btn-secondary'}>
-                  {a.label}
-                </a>
-              ) : (
-                <button key={a.label} onClick={a.onClick} className={a.primary ? 'btn btn-primary gap-1.5' : 'btn btn-secondary gap-1.5'}>
-                  {a.label} <ArrowRight className="w-4 h-4" aria-hidden="true" />
-                </button>
-              )
-            )}
-          </div>
-        </div>
-      ))}
+      <div className="flex items-baseline justify-between">
+        <p className="text-gray-600 m-0">Five questions settle it. Take them in order, or jump to the one on your mind.</p>
+        <span className="font-mono text-xs text-gray-500">{answered} of 4 answered</span>
+      </div>
+
+      <ol className="flex flex-col md:flex-row md:flex-wrap md:items-stretch gap-3 list-none m-0 p-0">
+        {blocks.map((b, i) => {
+          const state: 'done' | 'next' | 'later' = b.done ? 'done' : i === nextIndex ? 'next' : 'later';
+          const isLast = i === blocks.length - 1;
+          return (
+            <li key={b.id} className="contents">
+              <div
+                className={clsx(
+                  'flex flex-col gap-2 p-5 rounded-lg md:basis-[calc(33.333%-2.5rem)] md:flex-grow min-w-0',
+                  state === 'done' && 'bg-primary-100 border border-primary-100',
+                  state === 'next' && 'bg-card border-2 border-primary-500',
+                  state === 'later' && 'bg-card border border-rule'
+                )}
+                aria-current={state === 'next' ? 'step' : undefined}
+              >
+                <div className="flex items-center justify-between">
+                  <span className={clsx('w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold', state === 'done' ? 'bg-primary-500 text-white' : state === 'next' ? 'bg-primary-500 text-white' : 'bg-card-2 text-gray-600')}>
+                    {state === 'done' ? <Check className="w-4 h-4" aria-hidden="true" /> : i + 1}
+                  </span>
+                  <span className={clsx('font-mono text-[0.68rem] uppercase', state === 'next' ? 'text-primary-500' : 'text-gray-500')}>
+                    {state === 'done' ? (b.doneNote ?? 'Done') : state === 'next' ? 'Next' : b.id === 'cost' ? 'Read any time' : 'Later'}
+                  </span>
+                </div>
+                <h3 className="font-display text-[1.1rem] font-semibold tracking-[-0.018em] leading-snug">{b.title}</h3>
+                <p className="text-sm text-gray-600 m-0 flex-grow">{b.body}</p>
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {b.primary.href ? (
+                    <a href={b.primary.href} target="_blank" rel="noreferrer" className={state === 'next' ? 'btn btn-primary' : 'btn btn-secondary'}>{b.primary.label}</a>
+                  ) : (
+                    <button onClick={b.primary.onClick} className={clsx(state === 'next' ? 'btn btn-primary' : 'btn btn-secondary', 'gap-1.5')}>
+                      {b.primary.label} <ArrowRight className="w-4 h-4" aria-hidden="true" />
+                    </button>
+                  )}
+                  {b.secondary ? (
+                    <a href={b.secondary.href} target="_blank" rel="noreferrer" className="btn btn-ghost">{b.secondary.label}</a>
+                  ) : null}
+                </div>
+              </div>
+              {!isLast ? (
+                <div className="flex items-center justify-center text-gray-400 md:w-6" aria-hidden="true">
+                  <ArrowRight className="hidden md:block w-5 h-5" />
+                  <ArrowDown className="md:hidden w-5 h-5" />
+                </div>
+              ) : null}
+            </li>
+          );
+        })}
+      </ol>
     </div>
   );
 }
