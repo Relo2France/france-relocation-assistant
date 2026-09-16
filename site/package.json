@@ -14,7 +14,8 @@
     "test:watch": "vitest",
     "lint": "eslint src --ext ts,tsx",
     "build:staging": "tsc --noEmit && vite build && SITE_ENV=staging node scripts/prerender.mjs",
-    "deploy:staging": "npm run build:staging && npx wrangler deploy"
+    "deploy:staging": "npm run build:staging && npx wrangler deploy",
+    "deploy": "npm run build && npx wrangler deploy --env production"
   },
   "dependencies": {
     "react": "^18.3.1",

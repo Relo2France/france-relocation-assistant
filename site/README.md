@@ -89,12 +89,16 @@ that is `not_found_handling` in the assets config.
 
 ## Deploying
 
+    npm run deploy           # -> relo2france.com (builds first, then deploys)
     npm run deploy:staging   # -> relo2france-site-staging.kburrowbridge.workers.dev
 
-Static assets only - the site is prerendered, so there is no Worker script and
-nothing runs per request. `not_found_handling` is set to `404-page` so our own
-404 is served, and `html_handling` to `auto-trailing-slash` so `/guides/x` and
-`/guides/x/` resolve to the same page.
+Always build before deploying: `wrangler deploy` uploads whatever is in
+`dist/`, so a bare `npx wrangler deploy --env production` after a source edit
+ships the previous build. `npm run deploy` does both in order. Sign-in,
+checkout, account and the portal are proxied to WordPress.com by the Worker
+(`src/worker.ts`); everything else is prerendered. `not_found_handling` is set
+to `404-page` so our own 404 is served, and `html_handling` to
+`auto-trailing-slash` so `/guides/x` and `/guides/x/` resolve to the same page.
 
 ### Staging is noindex, deliberately
 
@@ -112,6 +116,5 @@ robots.txt and no noindex tags.
 - The remaining guide bodies are stubs. Structure and metadata are real; the
   prose needs writing or porting. A prerendered guide is currently ~1,500
   characters against ~58,000 on the live WordPress page.
-- No deployment. The site is not wired to Cloudflare yet.
 - Four typefaces is a lot. Dropping Karla and letting Fraunces label is the
   first cut if load time matters.
