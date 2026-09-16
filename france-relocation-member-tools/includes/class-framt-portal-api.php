@@ -1656,6 +1656,8 @@ class FRAMT_Portal_API {
     public function get_tasks( $request ) {
         $project_id = $request->get_param( 'project_id' );
 
+        $this->backfill_task_persons( $this->acting_user_id(), (int) $project_id );
+
         $args = array(
             'stage'     => $request->get_param( 'stage' ),
             'status'    => $request->get_param( 'status' ),
@@ -7153,6 +7155,40 @@ Focus on practical advice while being careful not to state incorrect facts. When
         }
 
         return $tasks_created;
+    }
+
+    /**
+     * Tag tasks created before the Family plan knew who they were for.
+     *
+     * Template tasks carry a person from now on; the ones already in a
+     * member's file do not. Match them once by title against the spouse and
+     * children templates, then remember that it has been done.
+     *
+     * @param int $user_id    Member.
+     * @param int $project_id Project.
+     * @return void
+     */
+    private function backfill_task_persons( $user_id, $project_id ) {
+        if ( ! $user_id || ! $project_id || '1' === get_user_meta( $user_id, 'framt_person_backfill', true ) ) {
+            return;
+        }
+        $by_title = array();
+        foreach ( $this->get_spouse_task_templates() as $t ) {
+            $by_title[ $t['title'] ] = 'partner';
+        }
+        foreach ( $this->get_children_task_templates() as $t ) {
+            $by_title[ $t['title'] ] = 'children';
+        }
+        foreach ( FRAMT_Task::get_by_project( $project_id, array() ) as $task ) {
+            $metadata = is_array( $task->metadata ) ? $task->metadata : array();
+            if ( ! empty( $metadata['person'] ) || ! isset( $by_title[ $task->title ] ) ) {
+                continue;
+            }
+            $metadata['person'] = $by_title[ $task->title ];
+            $task->metadata     = $metadata;
+            $task->save();
+        }
+        update_user_meta( $user_id, 'framt_person_backfill', '1' );
     }
 
     /**
