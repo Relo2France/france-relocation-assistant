@@ -661,6 +661,375 @@ export const guides: GuideDoc[] = [
       },
     ],
   },
+  {
+    slug: 'work-visa-salarie',
+    title: 'The Salaried Work Visa',
+    when: '9 months out',
+    summary: 'Your employer moves first',
+    description:
+      'How the French VLS-TS Salarié works for Americans in 2026: the work authorisation your employer must obtain, the documents, the timeline, and the step after you land.',
+    verified: '2026-09',
+    sourceCount: 2,
+    sources: [
+      { label: 'france-visas.gouv.fr', kind: 'official' },
+      { label: 'administration-etrangers-en-france.interieur.gouv.fr', kind: 'official' },
+    ],
+    sections: [
+      {
+        heading: 'Who it’s for',
+        paragraphs: [
+          'For employment in France by a French company. You must have a job offer before you apply — the visa cannot be used to come and look for work.',
+          'The decisive step is not yours. Your employer must obtain a work authorisation ({{autorisation de travail}}) before your visa application can proceed, through the ANEF portal, which routes the request to the regional labour authority (DREETS).',
+        ],
+      },
+      {
+        heading: 'How the process runs',
+        requirements: [
+          'Your French employer offers you a position',
+          'The employer applies for work authorisation through the ANEF portal — this has replaced the older paper-based process',
+          'The authorisation is reviewed — officially a {{2 month}} instruction period',
+          'Once approved, you apply for the visa at the French consulate for your US region',
+          'Visa processing typically takes {{3–6 weeks}}',
+          'The visa is issued and you may work on arrival',
+          'Within {{3 months}} of arrival, validate the visa online through ANEF',
+        ],
+        caveat:
+          'End to end, {{3–6 months}} is a reasonable estimate including the employer’s authorisation step.',
+      },
+      {
+        heading: 'What you’ll need',
+        requirements: [
+          'Passport valid {{6+ months}} beyond your stay',
+          'Signed work contract or a detailed job offer letter',
+          'The employer’s work authorisation approval from DREETS via ANEF',
+          'Proof of qualifications — diplomas with certified translations',
+          'Proof of accommodation in France',
+          'Health insurance cover',
+          'Proof of financial means',
+          'A clean criminal background check, apostilled',
+          'The visa application fee of {{€99}}',
+        ],
+        caveat:
+          'The validation tax paid online after arrival is a separate cost from the €99 fee and easy to overlook. Its amount depends on contract length and salary level — confirm the current figure on france-visas.gouv.fr.',
+      },
+      {
+        heading: 'Consider the Talent Passport instead',
+        paragraphs: [
+          'If you have advanced qualifications and a sufficiently high salary, or specialised in-demand skills, the Talent Passport is generally faster to process, carries a card valid for up to {{4 years}}, and automatically covers accompanying family members.',
+          'Its salary thresholds differ by sub-category and are indexed to the French minimum wage or an average reference salary, so the exact figure changes. Check the current threshold for your category on france-visas.gouv.fr rather than relying on a single number.',
+        ],
+      },
+    ],
+    practice: {
+      paragraphs: [
+        'Real-world authorisation timelines of 6–10+ weeks are common and vary by region — Paris and Île-de-France are frequently reported as slower than elsewhere.',
+        'Many applicants report the full process running past the estimate, especially where the employer is sponsoring someone for the first time and is unfamiliar with the paperwork.',
+      ],
+      sources: 'Applicant reports held in the knowledge base · 2026',
+    },
+  },
+  {
+    slug: 'talent-passport',
+    title: 'The Talent Passport',
+    when: '9 months out',
+    summary: 'Multi-year, and your spouse can work',
+    description:
+      'The French Passeport Talent for Americans: the categories, what each requires, the four-year validity, family rights, and why the salary thresholds move every January.',
+    verified: '2026-09',
+    sourceCount: 1,
+    sources: [{ label: 'france-visas.gouv.fr', kind: 'official' }],
+    sections: [
+      {
+        heading: 'Who it’s for',
+        paragraphs: [
+          'A multi-year visa for highly-qualified workers, researchers, company founders and investors, valid for up to {{4 years}} and renewable.',
+        ],
+        requirements: [
+          'Highly-qualified employee — a salary threshold plus a Master’s degree or equivalent experience',
+          'Young qualified professional — under 30, Master’s degree, with its own salary threshold',
+          'Company founder — an innovative business in France, via a BPI France- or incubator-recognised project',
+          'Investor — a minimum {{€300,000}} investment in a French company, with job-creation or job-maintenance commitments',
+          'Researcher — a hosting agreement with a French research or higher-education institution',
+          'Artist or cultural professional — recognised talent in the arts, literature or culture',
+        ],
+      },
+      {
+        heading: 'The thresholds move, so check the date',
+        paragraphs: [
+          'Salary thresholds are indexed to the SMIC or to a reference average salary and are revised annually, typically each {{1 January}}. With the 2026 SMIC increase they have likely moved higher than in prior years.',
+          'Our knowledge base currently carries two figures for the highly-qualified employee route: {{€66,600}} a year, and a range commonly cited near {{€43,000–€58,000}} depending on the sub-route and year. Treat both as approximate and confirm the current number for your category on france-visas.gouv.fr before you rely on it.',
+        ],
+        caveat:
+          'A threshold quoted anywhere, including here, is only as current as the day it was checked. The consulate applies the figure in force when you apply.',
+      },
+      {
+        heading: 'What it gives you',
+        requirements: [
+          '{{4-year}} validity, renewable, with a simplified renewal process',
+          'Your spouse or partner receives automatic work authorisation',
+          'Family members apply as “Passeport talent famille”',
+          'A path to permanent residency after {{5 years}} of continuous residence',
+          'You can change employer within the same category by notification',
+          'Exempt from the post-arrival medical visit and the integration contract that other categories are summoned to',
+        ],
+      },
+      {
+        heading: 'Applying',
+        paragraphs: [
+          'The standard visa documents, plus proof that you qualify for your specific category — an employment contract, a business plan, or project documentation. The application fee is {{€225–€250}} depending on the consulate, and processing runs {{2–10 weeks}} depending on consulate and category.',
+        ],
+      },
+    ],
+  },
+  {
+    slug: 'spouse-and-family-visas',
+    title: 'Joining a Spouse or Family in France',
+    when: '6 months out',
+    summary: 'Three routes, very different waits',
+    description:
+      'Family visas for Americans in 2026: the spouse-of-a-French-citizen route, family reunification, PACS partners, and what changes when both of you move together.',
+    verified: '2026-09',
+    sourceCount: 2,
+    sources: [
+      { label: 'service-public.fr', kind: 'official' },
+      { label: 'france-visas.gouv.fr', kind: 'official' },
+    ],
+    sections: [
+      {
+        heading: 'Spouse of a French citizen',
+        paragraphs: [
+          'You apply for a {{vie privée et familiale}} visa at the French consulate, and you have the right to work immediately on arrival. There is no income requirement on the French spouse.',
+        ],
+        requirements: [
+          'Your marriage certificate, apostilled — digital apostilles are now accepted',
+          'Your spouse’s French identity document',
+          'Proof that the relationship is genuine',
+        ],
+        caveat:
+          'Processing runs {{2–10 weeks}} depending on the consulate. Family-based visas are often issued as “carte de séjour à solliciter” rather than a VLS-TS, which means a prefecture appointment within {{2 months}} of arrival instead of online validation — see the guide on the two visa types.',
+      },
+      {
+        heading: 'Spouse of a non-EU resident: family reunification',
+        paragraphs: [
+          'Here the spouse already in France applies for {{regroupement familial}} on your behalf, and only after holding their first residence permit for {{18 months}}.',
+        ],
+        requirements: [
+          'Sponsor income of {{1.3×}} the minimum wage — approximately {{€2,730}} a month as of 2026',
+          'Housing of adequate size and condition, verified by the prefecture',
+          'Processing of {{6–15 months}} after submission',
+        ],
+      },
+      {
+        heading: 'PACS partners',
+        paragraphs: [
+          'A civil union follows the same vie privée et familiale process as marriage, with more scrutiny. The PACS must have been registered for {{12+ months}} with continuous cohabitation, and you should expect to prove a shared life in depth — joint accounts, lease, travel together, utility bills, insurance policies.',
+        ],
+      },
+      {
+        heading: 'Moving together, and children',
+        requirements: [
+          'Each spouse needs their own visa application — there is no joint file',
+          'If one of you holds an EU Blue Card or Talent Passport, the other gets automatic work authorisation',
+          'Time the applications together for consistency',
+          'Minor children under {{18}} are included on a parent’s application, with birth certificates and, where relevant, custody agreements',
+        ],
+        caveat:
+          'Spouses of French nationals are among the categories exempt from the post-arrival visa validation tax. Confirm your category on the ANEF portal, since the exemptions are set by the finance law and can change.',
+      },
+    ],
+    practice: {
+      paragraphs: [
+        'Delays beyond the 2–10 week range for spouse-of-a-French-citizen files were reported through 2025 and 2026, and family reunification waits have lengthened past the 6–15 month range in reports from the same period.',
+      ],
+      sources: 'Applicant reports held in the knowledge base · 2025–2026',
+    },
+  },
+  {
+    slug: 'validate-your-visa-anef',
+    title: 'Validating Your Visa After Arrival',
+    when: 'On arrival',
+    summary: 'Three months, or the visa lapses',
+    description:
+      'How to validate a French VLS-TS online through ANEF within three months of arrival: the steps, the stamp, the 2026 tax rise, and what happens if you miss the deadline.',
+    verified: '2026-09',
+    sourceCount: 2,
+    sources: [
+      { label: 'administration-etrangers-en-france.interieur.gouv.fr', kind: 'official' },
+      { label: 'france-visas.gouv.fr', kind: 'official' },
+    ],
+    sections: [
+      {
+        heading: 'The deadline is counted from your entry stamp',
+        paragraphs: [
+          'A VLS-TS must be validated within {{3 months}} of the date you entered France — the date your passport was stamped at the border, not your lease date, your address registration, or the date printed on the visa. Leaving and re-entering during that window does not reset the clock.',
+          'This step is what makes the visa function as a residence permit for its first year. In-person OFII validation of the sticker no longer exists; it is done online for essentially every VLS-TS category.',
+        ],
+        caveat:
+          'Miss the deadline and you are no longer legally present in France, and cannot re-enter the Schengen Area without a new visa — even though the sticker still looks valid. During the first three months you may travel freely without having validated yet; the restriction bites only once the deadline passes.',
+      },
+      {
+        heading: 'The online steps',
+        requirements: [
+          'Go to administration-etrangers-en-france.interieur.gouv.fr and choose “I validate my visa”',
+          'Authenticate via FranceConnect, or create a direct account and activate it within {{24 hours}} of the confirmation email',
+          'Enter your visa details, arrival date and French address',
+          'Upload your passport photo page, the visa sticker, and proof of address in France',
+          'Pay the {{timbre fiscal}} online by card, or buy it at timbres.impots.gouv.fr — the code is single-use and time-limited, so finish the validation the same day',
+          'Keep the confirmation email and the PDF “Confirmation de validation” — banks, healthcare and the prefecture will ask for them in your first year',
+        ],
+      },
+      {
+        heading: 'The tax went up in 2026',
+        paragraphs: [
+          'Under Article 128 of the {{loi de finances pour 2026}}, the validation tax for standard VLS-TS categories rose from {{€200}} to {{€300}}, effective {{1 May 2026}}. Reduced-rate categories, students among them, sit lower. Some exemptions remain — spouses of French nationals, certain scholarship holders — so confirm your category on the portal.',
+          'The amount is set annually by the finance law and revised, so check the ANEF portal or timbres.impots.gouv.fr on the day you pay rather than trusting any figure written earlier, including this one.',
+        ],
+      },
+      {
+        heading: 'If your passport was not stamped',
+        paragraphs: [
+          'Entering by land or rail from another Schengen country, or on a flight connecting through another Schengen airport, may leave you without an entry stamp. ANEF still requires an entry date, so be ready to document it another way — a boarding pass, a ticket, a lease start date.',
+        ],
+        requirements: [
+          'Some categories are summoned afterwards to an in-person medical visit and/or to sign the Contrat d’Intégration Républicaine; Talent Passport holders are exempt from both',
+          'Once validated you can travel within Schengen for the rest of the visa, apply for the Carte Vitale, and open a bank account more easily',
+        ],
+      },
+    ],
+  },
+  {
+    slug: 'vls-ts-or-carte-de-sejour',
+    title: 'VLS-TS or Carte de Séjour à Solliciter?',
+    when: '12 months out',
+    summary: 'You don’t choose. It decides your first months.',
+    description:
+      'The two kinds of French long-stay visa, why the consulate picks one for you, and how each changes what you must do in your first three months in France.',
+    verified: '2026-09',
+    sourceCount: 2,
+    sources: [
+      { label: 'france-visas.gouv.fr', kind: 'official' },
+      { label: 'service-public.fr', kind: 'official' },
+    ],
+    sections: [
+      {
+        heading: 'Two visas that look alike',
+        paragraphs: [
+          'A long-stay visa for more than {{90 days}} arrives either as a VLS-TS — a visa that is also a residence permit, usually for one year — or as a visa marked “carte de séjour à solliciter”, which grants entry only and leaves the residence right to be issued by a prefecture after you arrive.',
+          'They are not interchangeable, and you do not pick between them. On France-Visas you select only your purpose of stay; the consulate decides the type from the legal category, the risk profile and administrative policy.',
+        ],
+      },
+      {
+        heading: 'What a VLS-TS means for you',
+        requirements: [
+          'Mandatory online validation within {{3 months}} of arrival through the ANEF portal — track the calendar date, not a day count',
+          'A validation tax, set by the annual finance law and raised again on {{1 May 2026}} — confirm the current amount on ANEF before paying',
+          'No prefecture appointment in the first year',
+          'Renewal at the prefecture {{2–4 months}} before expiry',
+        ],
+      },
+      {
+        heading: 'What “carte de séjour à solliciter” means for you',
+        requirements: [
+          'No online validation and no validation tax',
+          'A mandatory prefecture appointment — the visa is stamped “à solliciter dans les {{2 mois}}”, the standard national deadline',
+          'Your residence status is not secure until the card is issued',
+          'Higher risk if the deadline is missed',
+        ],
+      },
+      {
+        heading: 'Who tends to get which',
+        paragraphs: [
+          'Most visitor visas — retirees, the financially independent, second-home owners — are issued as VLS-TS: a low-risk category with no employment and no access to benefits.',
+          'Family-based visas — spouse of a French national, parent of a French child, family reunification — are often “à solliciter”, because marriage validity, family ties or cohabitation are verified locally. So are some salaried, self-employed and regulated-profession visas, and some Talent Passport sub-categories, where work authorisation is checked locally.',
+        ],
+        caveat:
+          'Expect a VLS-TS if you are financially independent, not working in France and not relying on family-based rights. Expect “carte de séjour à solliciter” if your stay involves employment, a regulated profession, family reunification or complex personal circumstances.',
+      },
+    ],
+  },
+  {
+    slug: 'digital-nomad-visa-france',
+    title: 'There Is No Digital Nomad Visa',
+    when: '12 months out',
+    summary: 'Remote workers apply as visitors',
+    description:
+      'France has no digital nomad visa as of 2026. What remote workers employed abroad actually apply for, what consulates now ask about the arrangement, and where the law is still unsettled.',
+    verified: '2026-09',
+    sourceCount: 1,
+    sources: [{ label: 'france-visas.gouv.fr', kind: 'official' }],
+    sections: [
+      {
+        heading: 'The phrase is marketing, not a category',
+        paragraphs: [
+          'France still has no legally distinct digital nomad visa as of {{September 2026}}. “Digital nomad visa” is language used by relocation companies and media; it is not a France-Visas category, and you will not find it on the application.',
+          'Remote workers employed by non-French companies apply under the standard long-stay visitor visa, with the same documentation as any visitor applicant.',
+        ],
+      },
+      {
+        heading: 'What you actually apply for',
+        requirements: [
+          'A valid passport with {{6+ months}} validity beyond the intended stay',
+          'Stable monthly resources at or around net SMIC — roughly {{€1,426–€1,500}} a month in 2026 — or savings of roughly {{€17,000–€18,000}} to cover a year',
+          'Comprehensive health insurance covering the full stay, including repatriation and emergency care',
+          'Proof of accommodation in France',
+          'A signed declaration ({{attestation sur l’honneur}}) not to work in France',
+        ],
+        caveat:
+          'Figures you see quoted vary with whether a consulate is referencing gross SMIC, around {{€1,802}} a month, or net. The requirement is “sufficient means”, assessed case by case.',
+      },
+      {
+        heading: 'Consulates now ask about the arrangement',
+        paragraphs: [
+          'Some consulates now ask for more detail on remote work: an employer letter confirming the arrangement is compatible with French residency, and how your time will be split between France and elsewhere.',
+          'Whether the visitor visa permits remote work for a purely foreign employer remains genuinely contested and evolving. It clearly does not permit working for a French employer or French clients. Do not settle the question on the strength of a forum post, in either direction.',
+        ],
+      },
+    ],
+  },
+  {
+    slug: 'visa-application-timeline',
+    title: 'When to Start Each Document',
+    when: '6 months out',
+    summary: 'The FBI check sets the pace',
+    description:
+      'A working timeline for a French long-stay visa from the US: lead times for the FBI check, apostilles and translations, when to book the consulate, and what the official processing times really say.',
+    verified: '2026-09',
+    sourceCount: 1,
+    sources: [{ label: 'france-visas.gouv.fr', kind: 'official' }],
+    sections: [
+      {
+        heading: 'What the official times say',
+        paragraphs: [
+          'France-Visas publishes no fixed statutory turnaround for long-stay visas. Consulates commonly process complete dossiers in roughly {{2–6 weeks}}, varying by consulate, category and season. Applications must be submitted between {{3 months}} and {{15 days}} before travel.',
+          'In peak season — roughly {{May–August}}, and to a lesser extent December — add {{1–3 weeks}} for both appointments and decisions. An incomplete file pauses the clock entirely until the missing documents arrive. Expedited processing is not a standard service for long-stay visas.',
+        ],
+      },
+      {
+        heading: 'Lead times that catch people out',
+        requirements: [
+          'FBI background check: {{10–14 weeks}} by mail direct from the FBI, versus roughly {{3–7 business days}} through an FBI-approved channeler — use the channeler',
+          'State apostilles: {{1–2 weeks}} in most states; some offer {{24–48 hour}} expedited service, others by mail can run {{4+ weeks}}',
+          'Birth and marriage certificate apostilles: {{1–3 weeks}}, with the same variability',
+          'Certified French translations by a sworn translator ({{traducteur assermenté}}) for most official English-language documents',
+          'Official stamped bank statements: allow {{1–2 weeks}}',
+          'Academic transcripts and diploma authentication: {{2–3 weeks}}, longer if the institution is slow',
+          'Medical examinations, where your category requires one: {{1–2 weeks}} for an appointment',
+        ],
+      },
+      {
+        heading: 'A timeline that works',
+        requirements: [
+          '{{5–6 months}} before travel: start collecting documents, the FBI check first',
+          '{{3–4 months}} before: submit apostille requests, book any medical exam',
+          '{{2–3 months}} before: book the consulate appointment as soon as your online dossier is ready — slots vary widely by consulate and season',
+          '{{6–8 weeks}} before: submit the complete application at the appointment',
+          '{{2–3 weeks}} before: follow up if there is no decision',
+        ],
+        caveat:
+          'The visa fee is {{€99}} for most long-stay categories and is not refunded on a refusal. The post-arrival validation tax is a separate, later cost that is easy to miss because it is not part of the consulate application.',
+      },
+    ],
+  },
 ];
 
 export function guideBySlug(slug: string): GuideDoc | undefined {

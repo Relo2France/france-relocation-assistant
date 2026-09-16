@@ -149,6 +149,16 @@ describe('guide URLs', () => {
         'role-of-notaire',
         'tax-residency-rules',
         'visitor-visa-requirements',
+        // Added 2026-09-16, written from the knowledge base's visa topics.
+        // New URLs, so nothing indexed depends on them yet - but once they
+        // are, the same rule applies: renaming one is a deliberate act.
+        'work-visa-salarie',
+        'talent-passport',
+        'spouse-and-family-visas',
+        'validate-your-visa-anef',
+        'vls-ts-or-carte-de-sejour',
+        'digital-nomad-visa-france',
+        'visa-application-timeline',
       ].sort()
     );
   });
