@@ -31,7 +31,7 @@ export function Guide({ guide }: { guide: GuideDoc }) {
         </h1>
         <div className="flex gap-4 flex-wrap mt-[14px] font-mono text-[0.72rem] text-muted uppercase">
           <span>Verified {guide.verified}</span>
-          <span>{guide.sourceCount} official sources</span>
+          <span>{guide.sourceCount} official {guide.sourceCount === 1 ? 'source' : 'sources'}</span>
         </div>
       </header>
 
