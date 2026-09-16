@@ -71,6 +71,16 @@ class FRA_Site_Header {
      * Constructor - Register hooks if header is enabled
      */
     private function __construct() {
+        // Plugins load before the theme, so deciding here would never see a
+        // filter the theme adds in functions.php. Decide once the theme is up.
+        add_action('after_setup_theme', array($this, 'register_hooks'), 20);
+    }
+
+    /**
+     * Register the header hooks, if the header is enabled once the theme has
+     * had its say.
+     */
+    public function register_hooks() {
         if ($this->is_enabled()) {
             // Output CSS to hide theme header (in <head>)
             add_action('wp_head', array($this, 'output_theme_hide_css'), 5);
