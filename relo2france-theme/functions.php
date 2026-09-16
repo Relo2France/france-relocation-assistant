@@ -69,6 +69,21 @@ add_action('after_setup_theme', 'relo2france_setup');
 add_filter('fra_site_header_enabled', '__return_false');
 
 /**
+ * Never a comment form under a payment form. MemberPress products are a
+ * post type with comments open by default, and both single.php and page.php
+ * render the comments template when they are.
+ */
+function relo2france_no_product_comments($open, $post_id) {
+    return get_post_type($post_id) === 'memberpressproduct' ? false : $open;
+}
+add_filter('comments_open', 'relo2france_no_product_comments', 10, 2);
+
+function relo2france_no_product_comment_count($count, $post_id) {
+    return get_post_type($post_id) === 'memberpressproduct' ? 0 : $count;
+}
+add_filter('get_comments_number', 'relo2france_no_product_comment_count', 10, 2);
+
+/**
  * Enqueue theme scripts and styles.
  *
  * @since 1.0.0
