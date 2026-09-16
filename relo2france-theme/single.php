@@ -5,6 +5,14 @@
  * @package Relo2France
  */
 
+// A MemberPress product (the checkout page) is a post type, so WordPress
+// routes it here, but it is a page in every sense that matters: no date, no
+// previous/next post, and never a comment form under the payment form.
+if (get_post_type() === 'memberpressproduct') {
+    get_template_part('page');
+    return;
+}
+
 get_header();
 ?>
 

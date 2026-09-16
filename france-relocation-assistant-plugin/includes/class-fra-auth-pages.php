@@ -81,6 +81,38 @@ class FRA_Auth_Pages {
            colour. Honey is never a price, a button or a badge.
            ============================================================ */
 
+        /* MemberPress also appends its own account form to the page it is
+           told is the account page, so the form appears twice: once inside
+           our card and once bare in the content. Hide the bare copy. */
+        body:has(.fra-auth-container) .entry-content > .mp_wrapper,
+        body:has(.fra-auth-container) .entry-content > .mepr-account-form,
+        body:has(.fra-auth-container) .entry-content > #mepr-account-nav {
+            display: none !important;
+        }
+
+        /* MemberPress notices that render outside our card, e.g. "you already
+           have a subscription" on the product page for a logged-in member.
+           Errors are brick, never honey. */
+        .entry-content .mepr_error,
+        .entry-content .mepr-form-has-errors,
+        .entry-content .mepr_updated {
+            font-family: var(--font-ui, Karla, Arial, sans-serif);
+            font-size: 0.9rem;
+            line-height: 1.5;
+            padding: 12px 16px;
+            border-radius: 10px;
+            background: #fdf4f2;
+            border: 1px solid #f2c9c1;
+            color: #b4432f;
+        }
+        .entry-content .mepr_error a,
+        .entry-content .mepr-form-has-errors a { color: inherit; text-decoration: underline; }
+        .entry-content .mepr_updated {
+            background: var(--vine-soft, #e7efea);
+            border-color: var(--vine-soft, #e7efea);
+            color: var(--ink, #1c2420);
+        }
+
         /* === HIDE DUPLICATE MEMBERPRESS FORMS === */
         /* Hide any MemberPress login forms that appear AFTER our container */
         .fra-auth-container ~ .mepr-login-form,

@@ -241,6 +241,17 @@ $react_settings = array(
     <link rel="apple-touch-icon" href="<?php echo esc_url( FRAMT_PLUGIN_URL . 'assets/images/pwa-icon-192.png' ); ?>">
 
     <?php
+    // The theme's stylesheet is for WordPress pages, not this app. Since the
+    // theme moved onto the site's tokens its generic classes (.card, .btn)
+    // follow dark mode, and they collide with the portal's own classes of
+    // the same name - a dark card with dark text. Drop them before wp_head
+    // prints styles; the portal ships everything it needs.
+    add_action( 'wp_enqueue_scripts', function () {
+        foreach ( array( 'relo2france-style', 'relo2france-tokens', 'relo2france-fonts' ) as $handle ) {
+            wp_dequeue_style( $handle );
+        }
+    }, 100 );
+
     // Always call wp_head to load required scripts and styles
     wp_head();
     ?>

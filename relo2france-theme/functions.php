@@ -62,6 +62,13 @@ function relo2france_setup() {
 add_action('after_setup_theme', 'relo2france_setup');
 
 /**
+ * The theme's header mirrors the public site, so the plugin's own site header
+ * (the old logo, tagline and orange CTA) must not render on top of it. The
+ * plugin honours this filter regardless of its saved setting.
+ */
+add_filter('fra_site_header_enabled', '__return_false');
+
+/**
  * Enqueue theme scripts and styles.
  *
  * @since 1.0.0

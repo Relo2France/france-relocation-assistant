@@ -90,7 +90,14 @@ class FRA_Site_Header {
      */
     public function is_enabled() {
         $saved = get_option('fra_customizer', array());
-        return !empty($saved['site_header_enabled']);
+        $enabled = !empty($saved['site_header_enabled']);
+        /**
+         * Lets a theme that ships its own header switch this one off without
+         * touching the saved setting. The Relo2France theme does, since 2.0:
+         * its header mirrors the public site and this one would sit on top of
+         * it in the old design.
+         */
+        return (bool) apply_filters('fra_site_header_enabled', $enabled);
     }
     
     /**

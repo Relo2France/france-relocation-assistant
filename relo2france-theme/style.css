@@ -814,3 +814,14 @@ body:has(.fra-container) {
     scroll-snap-align: start;
     scroll-snap-stop: normal;
 }
+
+/* Auth pages render their own card inside the page article. Two nested
+   cards read as a mistake, so the article goes flat when one is present. */
+article.card:has(.fra-auth-container) {
+    background: transparent;
+    border: 0;
+    padding: 0;
+}
+article.card:has(.fra-auth-container) .page-header {
+    display: none;
+}
