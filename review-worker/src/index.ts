@@ -15,7 +15,7 @@
  */
 import { ReviewWorkflow, type ReviewParams } from './workflow';
 import { GapWorkflow, type GapParams } from './gap-workflow';
-import { fetchGaps } from './gaps';
+import { fetchGaps, raiseGap } from './gaps';
 import { reviewTopic } from './review';
 import { resolveModel } from './models';
 import { fetchTopics } from './wordpress';
@@ -138,6 +138,16 @@ export default {
             stale: Boolean(g.stale),
           })),
         });
+      }
+
+      // Raise a gap by hand: { question, note?, category?, topic? }.
+      if (url.pathname === '/gaps/raise' && request.method === 'POST') {
+        const body = (await request.json()) as { question?: string; note?: string; category?: string; topic?: string };
+        const question = (body.question ?? '').trim();
+        if (question.length < 10) {
+          return json({ error: 'question is required' }, 400);
+        }
+        return json(await raiseGap(env, { ...body, question }), 201);
       }
 
       // Draft additions for the gaps that are ready.

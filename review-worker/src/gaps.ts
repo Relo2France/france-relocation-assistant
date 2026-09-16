@@ -63,6 +63,26 @@ function authHeaders(env: Env): HeadersInit {
   };
 }
 
+/**
+ * Raise a gap by hand. The knowledge base should hold as much as it can
+ * defend, so anything noticed as missing goes into the queue to be
+ * researched from official sources - it is never published from here.
+ */
+export async function raiseGap(
+  env: Env,
+  gap: { question: string; note?: string; category?: string; topic?: string }
+): Promise<{ id: string; status: string }> {
+  const response = await fetch(`${env.WP_BASE_URL}/wp-json/fra/v1/review/gaps`, {
+    method: 'POST',
+    headers: { ...authHeaders(env), 'content-type': 'application/json' },
+    body: JSON.stringify(gap),
+  });
+  if (!response.ok) {
+    throw new Error(`Could not raise gap: HTTP ${response.status} ${await response.text()}`);
+  }
+  return (await response.json()) as { id: string; status: string };
+}
+
 export async function fetchGaps(env: Env): Promise<Gap[]> {
   const response = await fetch(`${env.WP_BASE_URL}/wp-json/fra/v1/review/gaps`, {
     headers: authHeaders(env),
