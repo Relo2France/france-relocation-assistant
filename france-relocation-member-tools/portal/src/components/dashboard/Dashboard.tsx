@@ -204,10 +204,29 @@ export default function Dashboard() {
       <div className="grid lg:grid-cols-3 gap-5 px-6 md:px-8 py-5">
         <div className="lg:col-span-2 card overflow-hidden">
           <div className="flex justify-between items-baseline px-5 py-4 border-b border-rule">
-            <span className="font-display font-semibold text-[1.1rem]">{now.name} · {stageTasks.length} step{stageTasks.length === 1 ? '' : 's'}{doneCount ? `, ${doneCount} done` : ''}</span>
+            <span className="font-display font-semibold text-[1.1rem]">
+              {nowId === 'decide' ? 'Decide · start here' : `${now.name} · ${stageTasks.length} step${stageTasks.length === 1 ? '' : 's'}${doneCount ? `, ${doneCount} done` : ''}`}
+            </span>
             <button onClick={() => openStage(nowId)} className="text-sm font-semibold text-primary-500 hover:text-primary-700">Open stage</button>
           </div>
-          {listed.length === 0 ? (
+          {nowId === 'decide' ? (
+            <ul className="divide-y divide-rule-soft">
+              {[
+                ['Which visa route fits us?', 'Seven long-stay routes, one of which is yours.'],
+                ['Where in France?', 'Regions, cost of living, the questions to ask first.'],
+                ['What will it cost, and what must we show?', 'The fee, the resources benchmark, the insurance rule.'],
+                ['Who is moving?', 'Each person gets their own file on the same calendar.'],
+                ['When, roughly?', 'A target date turns the stages ahead into dated steps.'],
+              ].map(([q, a]) => (
+                <li key={q} className="px-5 py-3">
+                  <button onClick={() => openStage('decide')} className="text-left w-full">
+                    <span className="block text-[0.95rem] font-semibold">{q}</span>
+                    <span className="block text-[0.82rem] text-gray-500">{a}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : listed.length === 0 ? (
             <p className="px-5 py-6 text-sm text-gray-500">No steps in this stage yet.</p>
           ) : (
             <ul className="divide-y divide-rule-soft">
