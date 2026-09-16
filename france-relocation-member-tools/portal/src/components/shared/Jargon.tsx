@@ -8,21 +8,53 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { HelpCircle } from 'lucide-react';
 import { useGlossary } from '@/hooks/useApi';
-import type { GlossaryTerm } from '@/types';
+
+/**
+ * What a glossary entry looks like once normalised. The API sends
+ * { term, definition, pronunciation }; the older type in @/types says
+ * { title, short, french }. Accept either, and never trust that a field is
+ * a string - one entry without a name must not take the page down.
+ */
+interface GlossaryTerm {
+  title: string;
+  short: string;
+  french?: string;
+}
+
+function asString(v: unknown): string | undefined {
+  return typeof v === 'string' && v.trim() ? v.trim() : undefined;
+}
+
+function normalise(raw: unknown): GlossaryTerm | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const r = raw as Record<string, unknown>;
+  const title = asString(r.term) ?? asString(r.title);
+  const short = asString(r.definition) ?? asString(r.short);
+  if (!title || !short) return null;
+  return { title, short, french: asString(r.french) };
+}
 
 function escapeRegExp(s: string) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 /** Terms sorted longest first so "carte de séjour" wins over "carte". */
-function buildIndex(categories: { terms: GlossaryTerm[] }[] | undefined): { terms: GlossaryTerm[]; pattern: RegExp | null } {
-  const terms = (categories ?? []).flatMap((c) => c.terms).filter((t) => t.title.length >= 4);
+function buildIndex(categories: unknown): { terms: GlossaryTerm[]; pattern: RegExp | null } {
+  const cats = Array.isArray(categories) ? categories : [];
+  const terms = cats
+    .flatMap((c) => (c && typeof c === 'object' && Array.isArray((c as { terms?: unknown }).terms) ? ((c as { terms: unknown[] }).terms) : []))
+    .map(normalise)
+    .filter((t): t is GlossaryTerm => t !== null && t.title.length >= 4);
   if (terms.length === 0) return { terms, pattern: null };
   const names = terms
     .flatMap((t) => [t.title, t.french].filter((x): x is string => !!x && x.length >= 4))
     .sort((a, b) => b.length - a.length)
     .map(escapeRegExp);
-  return { terms, pattern: new RegExp(`(?<![\\p{L}])(${names.join('|')})(?![\\p{L}])`, 'giu') };
+  try {
+    return { terms, pattern: new RegExp(`(?<![\\p{L}])(${names.join('|')})(?![\\p{L}])`, 'giu') };
+  } catch {
+    return { terms, pattern: null };
+  }
 }
 
 function findTerm(terms: GlossaryTerm[], word: string): GlossaryTerm | undefined {
