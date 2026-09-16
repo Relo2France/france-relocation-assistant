@@ -11684,6 +11684,7 @@ SECTIONS;
 
         $user   = get_user_by( 'email', $email );
         $is_new = false;
+        $first_name_for_email = trim( (string) strtok( (string) ( $members[ $index ]['name'] ?? '' ), ' ' ) );
         if ( $user ) {
             $other_owner = (int) get_user_meta( $user->ID, 'framt_household_owner', true );
             if ( $other_owner && $other_owner !== $owner_id ) {
@@ -11725,23 +11726,21 @@ SECTIONS;
         // portal for an existing one.
         $owner_first = $owner ? ( $owner->first_name ?: strtok( $owner->display_name, ' ' ) ) : 'Your partner';
         $portal_url  = home_url( '/portal/' );
+        $body        = '<p style="margin:0 0 12px;">You have your own sign-in to the household file: the same tasks, documents and deadlines, with the parts that are yours marked for you.</p>';
         if ( $is_new ) {
             $key  = get_password_reset_key( $user );
             $link = is_wp_error( $key ) ? wp_lostpassword_url() : network_site_url( 'wp-login.php?action=rp&key=' . $key . '&login=' . rawurlencode( $user->user_login ), 'login' );
-            $body = sprintf(
-                "%s added you to their move to France on Relo2France.\n\nYou have your own sign-in to the household file: the same tasks, documents and deadlines, with the parts that are yours marked for you.\n\nSet your password here:\n%s\n\nThen open the portal:\n%s\n",
-                $owner_first,
-                $link,
-                $portal_url
-            );
+            $body .= '<p style="margin:0 0 12px;">Set your password first, then open the portal with this address.</p>';
+            $cta_label = 'Set your password';
+            $cta_url   = $link;
         } else {
-            $body = sprintf(
-                "%s added you to their move to France on Relo2France.\n\nSign in with this address and you will see the household file: the same tasks, documents and deadlines, with the parts that are yours marked for you.\n\n%s\n",
-                $owner_first,
-                $portal_url
-            );
+            $body .= '<p style="margin:0 0 12px;">Sign in with this address and the household file is there.</p>';
+            $cta_label = 'Open the portal';
+            $cta_url   = $portal_url;
         }
-        wp_mail( $email, sprintf( '%s added you to their move to France', $owner_first ), $body );
+        $subject = sprintf( '%s added you to their move to France', $owner_first );
+        $html    = FRAMT_Messages::render_email( $subject, 'Hello ' . ( '' !== $first_name_for_email ? $first_name_for_email : 'there' ) . ',', $body, $cta_label, $cta_url );
+        FRAMT_Messages::send_html( $email, $subject, $html );
 
         return rest_ensure_response( $members[ $index ] );
     }

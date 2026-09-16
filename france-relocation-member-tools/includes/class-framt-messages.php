@@ -330,8 +330,8 @@ class FRAMT_Messages {
         }
 
         $user_id = get_current_user_id();
-        $subject = sanitize_text_field($_POST['subject']);
-        $content = sanitize_textarea_field($_POST['content']);
+        $subject = sanitize_text_field(wp_unslash($_POST['subject']));
+        $content = sanitize_textarea_field(wp_unslash($_POST['content']));
 
         if (empty($subject) || empty($content)) {
             wp_send_json_error(array('message' => 'Subject and message are required'));
@@ -409,7 +409,7 @@ class FRAMT_Messages {
         }
 
         $message_id = intval($_POST['message_id']);
-        $content = sanitize_textarea_field($_POST['content']);
+        $content = sanitize_textarea_field(wp_unslash($_POST['content']));
         $user_id = get_current_user_id();
 
         // Verify ownership
@@ -562,72 +562,34 @@ class FRAMT_Messages {
 
         $user = get_user_by('id', $message['user_id']);
         $admin_email = get_option('admin_email');
-        
-        // Get the latest reply content
+
         $replies = $this->get_replies($message_id);
         $latest_reply = !empty($replies) ? end($replies) : null;
         $message_content = $latest_reply ? $latest_reply['content'] : '';
-        
-        $subject = $type === 'new' 
-            ? '🔔 [Relo2France] New Support Message: ' . $message['subject']
-            : '💬 [Relo2France] Member Reply: ' . $message['subject'];
 
-        // Build HTML email
-        $body = '<!DOCTYPE html>
-<html>
-<head>
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background: #1e3a5f; color: white; padding: 20px; border-radius: 8px 8px 0 0; }
-        .header h2 { margin: 0; font-size: 18px; }
-        .content { background: #f9fafb; padding: 20px; border: 1px solid #e5e7eb; }
-        .message-box { background: white; padding: 15px; border-radius: 6px; border-left: 4px solid #e85a1b; margin: 15px 0; }
-        .meta { color: #6b7280; font-size: 14px; margin-bottom: 10px; }
-        .meta strong { color: #1e3a5f; }
-        .button { display: inline-block; background: #e85a1b; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 15px; }
-        .footer { padding: 15px; font-size: 12px; color: #9ca3af; text-align: center; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h2>' . ($type === 'new' ? '📩 New Support Message' : '💬 New Reply to Support Ticket') . '</h2>
-        </div>
-        <div class="content">
-            <div class="meta">
-                <strong>From:</strong> ' . esc_html($user->display_name) . ' (' . esc_html($user->user_email) . ')<br>
-                <strong>Subject:</strong> ' . esc_html($message['subject']) . '<br>
-                <strong>Status:</strong> ' . ucfirst($message['status']) . '
-            </div>
-            
-            <div class="message-box">
-                <strong>Message:</strong><br><br>
-                ' . nl2br(esc_html($message_content)) . '
-            </div>
-            
-            <a href="' . admin_url('admin.php?page=fra-messages&message_id=' . $message_id) . '" class="button">
-                View & Respond
-            </a>
-        </div>
-        <div class="footer">
-            This is an automated notification from Relo2France Member Support System.
-        </div>
-    </div>
-</body>
-</html>';
+        $who = $user ? $user->display_name . ' (' . $user->user_email . ')' : 'A member';
+        $subject = ($type === 'new' ? 'New support message: ' : 'Member reply: ') . $message['subject'];
+        $lead = ($type === 'new' ? $who . ' wrote to Support.' : $who . ' replied.') . ' Subject: ' . $message['subject'] . '.';
 
-        // Set content type to HTML
-        $headers = array('Content-Type: text/html; charset=UTF-8');
-        
-        wp_mail($admin_email, $subject, $body, $headers);
+        $html = self::render_email(
+            $type === 'new' ? 'New support message' : 'A member replied',
+            $lead,
+            self::markdown_to_html($message_content),
+            'Open and reply',
+            admin_url('admin.php?page=fra-messages&message_id=' . $message_id)
+        );
+
+        self::send_html($admin_email, $subject, $html);
     }
 
     /**
-     * Send email notification to user
+     * Email a member when the team writes to them or replies.
      *
-     * @param int $message_id Message ID
-     * @param string $reply_content Reply content preview
+     * The whole message goes in the email, rendered, so the member can read
+     * it where they are; the button opens the thread in the portal.
+     *
+     * @param int    $message_id    Message ID
+     * @param string $reply_content Reply content
      * @return void
      */
     public function send_user_notification($message_id, $reply_content) {
@@ -641,21 +603,116 @@ class FRAMT_Messages {
             return;
         }
 
-        $subject = '[Relo2France] Reply to: ' . $message['subject'];
+        $first = $user->first_name ?: strtok($user->display_name, ' ');
+        $subject = $message['subject'];
+        $replies = $this->get_replies($message_id);
+        $is_first = count($replies) <= 1;
 
-        $body = sprintf(
-            "Hello %s,\n\n" .
-            "You have received a reply to your support message.\n\n" .
-            "Subject: %s\n\n" .
-            "Reply Preview:\n%s\n\n" .
-            "View the full conversation at:\n%s",
-            $user->display_name,
+        $html = self::render_email(
             $message['subject'],
-            wp_trim_words($reply_content, 50),
-            home_url('/?view_message=' . $message_id)
+            $is_first ? 'Hello ' . $first . ',' : 'Hello ' . $first . ', there is a reply to "' . $message['subject'] . '".',
+            self::markdown_to_html(wp_unslash($reply_content)),
+            'Open in the portal',
+            home_url('/portal/?view=messages')
         );
 
-        wp_mail($user->user_email, $subject, $body);
+        self::send_html($user->user_email, $subject, $html);
+    }
+
+    /**
+     * Send an HTML email as Relo2France.
+     *
+     * WordPress.com may rewrite the From address; the name is ours either way.
+     *
+     * @param string $to      Recipient.
+     * @param string $subject Subject.
+     * @param string $html    Body from render_email().
+     * @return bool
+     */
+    public static function send_html($to, $subject, $html) {
+        $name = function () {
+            return 'Relo2France';
+        };
+        add_filter('wp_mail_from_name', $name, 99);
+        $sent = wp_mail($to, $subject, $html, array('Content-Type: text/html; charset=UTF-8'));
+        remove_filter('wp_mail_from_name', $name, 99);
+        return $sent;
+    }
+
+    /**
+     * The one email layout: the site's palette, a title, a lead line, the
+     * body, one button. Plain enough to survive every mail client.
+     *
+     * @param string $title     Heading.
+     * @param string $lead      One line under the heading (plain text).
+     * @param string $body_html Rendered body.
+     * @param string $cta_label Button text.
+     * @param string $cta_url   Button link.
+     * @return string
+     */
+    public static function render_email($title, $lead, $body_html, $cta_label, $cta_url) {
+        $site = home_url('/');
+        return '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>' . esc_html($title) . '</title></head>'
+            . '<body style="margin:0;padding:0;background:#f4f6f4;">'
+            . '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f4;padding:32px 16px;">'
+            . '<tr><td align="center">'
+            . '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border:1px solid #dde3de;border-radius:12px;">'
+            . '<tr><td style="padding:28px 32px 0;font-family:Georgia,\'Times New Roman\',serif;font-size:20px;font-weight:700;color:#1c2420;">'
+            . 'Relo<span style="color:#2c5346;">2</span>France</td></tr>'
+            . '<tr><td style="padding:24px 32px 0;font-family:Georgia,\'Times New Roman\',serif;font-size:24px;line-height:1.2;font-weight:600;color:#1c2420;">' . esc_html($title) . '</td></tr>'
+            . ('' !== $lead ? '<tr><td style="padding:10px 32px 0;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif;font-size:16px;line-height:1.5;color:#5f6e66;">' . esc_html($lead) . '</td></tr>' : '')
+            . '<tr><td style="padding:18px 32px 0;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif;font-size:16px;line-height:1.6;color:#1c2420;">' . $body_html . '</td></tr>'
+            . ('' !== $cta_url ? '<tr><td style="padding:26px 32px 0;"><a href="' . esc_url($cta_url) . '" style="display:inline-block;background:#2c5346;color:#ffffff;text-decoration:none;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif;font-size:15px;font-weight:600;padding:12px 22px;border-radius:999px;">' . esc_html($cta_label) . '</a></td></tr>' : '')
+            . '<tr><td style="padding:28px 32px 28px;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif;font-size:13px;line-height:1.5;color:#5f6e66;border-top:1px solid #ebefeb;">'
+            . 'Sent by Relo2France because you have an account at <a href="' . esc_url($site) . '" style="color:#2c5346;">relo2france.com</a>. Reply from the portal, not to this email.'
+            . '</td></tr></table></td></tr></table></body></html>';
+    }
+
+    /**
+     * The little markdown messages use, turned into email-safe HTML:
+     * paragraphs, **bold**, headings, bullet and numbered lists, links.
+     *
+     * @param string $text Message text.
+     * @return string
+     */
+    public static function markdown_to_html($text) {
+        $text = str_replace(array("\r\n", "\r"), "\n", (string) $text);
+        $inline = function ($line) {
+            $line = esc_html($line);
+            $line = preg_replace('/\*\*(.+?)\*\*/s', '<strong>$1</strong>', $line);
+            $line = preg_replace('/(?<![\w*])\*(?!\s)(.+?)(?<!\s)\*(?![\w*])/s', '<em>$1</em>', $line);
+            $line = preg_replace('/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/', '<a href="$2" style="color:#2c5346;">$1</a>', $line);
+            return $line;
+        };
+        $out = '';
+        $blocks = preg_split("/\n{2,}/", trim($text));
+        foreach ($blocks as $block) {
+            $lines = explode("\n", trim($block));
+            if (preg_match('/^#{1,3}\s+/', $lines[0])) {
+                $out .= '<p style="margin:18px 0 6px;font-family:Georgia,\'Times New Roman\',serif;font-size:18px;font-weight:600;color:#1c2420;">' . $inline(preg_replace('/^#{1,3}\s+/', '', $lines[0])) . '</p>';
+                array_shift($lines);
+                if (empty($lines)) {
+                    continue;
+                }
+                $block = implode("\n", $lines);
+            }
+            if (preg_match('/^\s*[-*]\s+/', $lines[0])) {
+                $out .= '<ul style="margin:8px 0;padding-left:22px;">';
+                foreach ($lines as $l) {
+                    $out .= '<li style="margin:4px 0;">' . $inline(preg_replace('/^\s*[-*]\s+/', '', $l)) . '</li>';
+                }
+                $out .= '</ul>';
+            } elseif (preg_match('/^\s*\d+[.)]\s+/', $lines[0])) {
+                $out .= '<ol style="margin:8px 0;padding-left:22px;">';
+                foreach ($lines as $l) {
+                    $out .= '<li style="margin:4px 0;">' . $inline(preg_replace('/^\s*\d+[.)]\s+/', '', $l)) . '</li>';
+                }
+                $out .= '</ol>';
+            } else {
+                $out .= '<p style="margin:0 0 12px;">' . implode('<br>', array_map($inline, $lines)) . '</p>';
+            }
+        }
+        return $out;
     }
 
     // =========================================
@@ -758,7 +815,7 @@ class FRAMT_Messages {
         }
 
         $message_id = intval($_POST['message_id']);
-        $content = sanitize_textarea_field($_POST['content']);
+        $content = sanitize_textarea_field(wp_unslash($_POST['content']));
         $user_id = get_current_user_id();
 
         $message = $this->get_message($message_id);
@@ -883,8 +940,8 @@ class FRAMT_Messages {
         }
 
         $recipient = sanitize_text_field($_POST['recipient']);
-        $subject = sanitize_text_field($_POST['subject']);
-        $content = sanitize_textarea_field($_POST['content']);
+        $subject = sanitize_text_field(wp_unslash($_POST['subject']));
+        $content = sanitize_textarea_field(wp_unslash($_POST['content']));
         $admin_id = get_current_user_id();
 
         if (empty($subject) || empty($content)) {
@@ -998,8 +1055,8 @@ class FRAMT_Messages {
 
         $settings = array(
             'welcome_enabled' => isset($_POST['welcome_enabled']) && $_POST['welcome_enabled'] === 'true',
-            'welcome_subject' => sanitize_text_field($_POST['welcome_subject']),
-            'welcome_message' => wp_kses_post($_POST['welcome_message']),
+            'welcome_subject' => sanitize_text_field(wp_unslash($_POST['welcome_subject'])),
+            'welcome_message' => wp_kses_post(wp_unslash($_POST['welcome_message'])),
         );
 
         update_option('framt_auto_messages', $settings);
@@ -1015,7 +1072,7 @@ class FRAMT_Messages {
     public function get_default_auto_settings() {
         return array(
             'welcome_enabled' => true,
-            'welcome_subject' => '🎉 Welcome to Relo2France!',
+            'welcome_subject' => 'Welcome to Relo2France',
             'welcome_message' => $this->get_default_welcome_message(),
         );
     }
@@ -1026,32 +1083,42 @@ class FRAMT_Messages {
      * @return string
      */
     public function get_default_welcome_message() {
-        return "Welcome to Relo2France! We're thrilled to have you join our community of people planning their move to France.
+        return "Hello {first_name},
 
-**Your Account is Ready!**
+Your account is open. Everything in it is dated from your move, so the first thing worth doing is setting your move date and your visa route. The six stages then fill in with what to do, in the order you'll need it.
 
-Here's what you can do with your membership:
+**What's here**
 
-📊 **Dashboard** — Your personalized command center for tracking your relocation progress.
+- **Where you are** shows the one thing to do next, and what's coming.
+- **The six stages**, Decide to Settle & renew, hold every step, dated back from your move.
+- **Documents & files** is your dossier: what the consulate will want, per person, and where it stands.
+- **Ask about my case** answers against your own file and shows its sources.
+- **Family plans** gives your partner and children files of their own.
 
-📋 **Custom Checklists** — Step-by-step visa application checklists tailored to your visa type.
+**Two things to know**
 
-📄 **Document Generator** — Create properly formatted documents for your French visa application.
+The requirements are checked against official French sources and updated when they change. And when a step needs a tax professional, a lawyer or a notaire, the portal says so and why.
 
-📚 **Knowledge Base** — Comprehensive guides on visas, healthcare, taxes, property, and more.
+If something is wrong or missing, write to us from Support. We read everything.
 
-💬 **AI Assistant** — Get instant answers about relocating to France from our AI-powered guide.
+Kevin
+Relo2France";
+    }
 
-**Getting Started:**
-
-1. Complete your **Visa Profile** — This helps us personalize all your documents and checklists.
-2. Explore the **Knowledge Base** — Start with topics relevant to your visa type.
-3. Generate your first **Checklist** — See exactly what documents you need.
-
-If you have any questions about your membership or find any errors on the site, use the **My Messages** feature to reach us.
-
-À bientôt!
-The Relo2France Team";
+    /**
+     * Whether a saved welcome text is the old default, which should give way
+     * to the current one rather than keep sending emoji and command centers.
+     *
+     * @param array $settings Saved auto-message settings.
+     * @return bool
+     */
+    private function welcome_is_stale($settings) {
+        $message = wp_unslash((string) ($settings['welcome_message'] ?? ''));
+        $subject = (string) ($settings['welcome_subject'] ?? '');
+        return '' === trim($message)
+            || false !== strpos($message, 'thrilled to have you join')
+            || false !== strpos($message, 'command center')
+            || false !== strpos($subject, '🎉');
     }
 
     /**
@@ -1062,7 +1129,12 @@ The Relo2France Team";
      */
     public function send_welcome_message($txn_or_user) {
         $settings = get_option('framt_auto_messages', $this->get_default_auto_settings());
-        
+        if ($this->welcome_is_stale($settings)) {
+            $defaults = $this->get_default_auto_settings();
+            $settings['welcome_subject'] = $defaults['welcome_subject'];
+            $settings['welcome_message'] = $defaults['welcome_message'];
+        }
+
         if (!$settings['welcome_enabled']) {
             return;
         }
@@ -1096,8 +1168,8 @@ The Relo2France Team";
         }
 
         // Personalize message
-        $subject = $settings['welcome_subject'];
-        $message = $settings['welcome_message'];
+        $subject = wp_unslash($settings['welcome_subject']);
+        $message = wp_unslash($settings['welcome_message']);
         
         // Replace placeholders
         $message = str_replace('{first_name}', $user->first_name ?: $user->display_name, $message);
