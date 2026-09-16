@@ -25,7 +25,12 @@ if ( $is_logged_in && $require_membership && class_exists( 'MeprUser' ) ) {
     // A partner invited from the Family plan is covered by the owner's membership.
     $household_owner = (int) get_user_meta( $current_user->ID, 'framt_household_owner', true );
     $mepr_user       = new MeprUser( $household_owner > 0 ? $household_owner : $current_user->ID );
-    if ( empty( $mepr_user->active_product_subscriptions() ) ) {
+    // The Family add-on is an extra on top of membership, not a membership:
+    // holding only the add-on does not open the portal.
+    $addon_id = (int) get_option( 'framt_family_addon_product_id', 0 );
+    $active   = array_map( 'intval', (array) $mepr_user->active_product_subscriptions( 'ids' ) );
+    $active   = array_diff( $active, array( $addon_id ) );
+    if ( empty( $active ) ) {
         // Redirect to membership page
         $membership_url = get_option( 'fra_membership_url', '/membership/' );
         wp_redirect( home_url( $membership_url ) );
