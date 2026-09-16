@@ -9,27 +9,15 @@ get_header();
 ?>
 
 <div class="content-narrow">
-    <section class="error-404 not-found card text-center">
-        <header class="page-header">
-            <div style="font-size: 6rem; margin-bottom: 1rem;">🗺️</div>
-            <h1 class="page-title"><?php esc_html_e('Page Not Found', 'relo2france'); ?></h1>
-        </header>
-
-        <div class="page-content">
-            <p><?php esc_html_e('It looks like this page has relocated! The page you\'re looking for doesn\'t exist or may have been moved.', 'relo2france'); ?></p>
-            
-            <div class="mt-3">
-                <a href="<?php echo esc_url(home_url('/')); ?>" class="btn btn-primary">
-                    <?php esc_html_e('Go to Homepage', 'relo2france'); ?>
-                </a>
-            </div>
-            
-            <div class="mt-3">
-                <p><strong><?php esc_html_e('Looking for something specific?', 'relo2france'); ?></strong></p>
-                <?php get_search_form(); ?>
-            </div>
-        </div>
-    </section>
+    <article class="error-404 not-found card">
+        <span class="eyebrow">404</span>
+        <h1 class="page-title"><?php esc_html_e('That page isn’t here', 'relo2france'); ?></h1>
+        <p><?php esc_html_e('The link may be out of date, or the guide may have been renamed. The guides cover everything from choosing a visa to opening a bank account.', 'relo2france'); ?></p>
+        <p class="mt-2">
+            <a href="<?php echo esc_url(home_url('/guides/')); ?>" class="btn btn-primary"><?php esc_html_e('Browse the guides', 'relo2france'); ?></a>
+            <a href="<?php echo esc_url(home_url('/')); ?>" class="btn btn-outline"><?php esc_html_e('Home', 'relo2france'); ?></a>
+        </p>
+    </article>
 </div>
 
 <?php
