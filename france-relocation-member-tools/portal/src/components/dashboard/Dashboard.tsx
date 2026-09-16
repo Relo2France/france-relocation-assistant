@@ -51,8 +51,8 @@ export default function Dashboard() {
 
   if (!data) return null;
 
-  const { project, stages, welcome_banner, upcoming_tasks, overdue_tasks } = data;
-  const nowId = currentStage(project);
+  const { project, profile_visa_type, welcome_banner, upcoming_tasks, overdue_tasks } = data;
+  const nowId = currentStage(project, profile_visa_type);
   const now = stageById(nowId) ?? JOURNEY[0];
   const nowIndex = JOURNEY.findIndex((s) => s.id === nowId);
 
@@ -177,7 +177,7 @@ export default function Dashboard() {
         <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-2.5">
           {JOURNEY.map((stage, i) => {
             const state = i < nowIndex ? 'done' : i === nowIndex ? 'now' : 'ahead';
-            const p = progressFor(stage, stages);
+            const p = progressFor(stage, tasks ?? [], project);
             return (
               <button
                 key={stage.id}

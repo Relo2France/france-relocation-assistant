@@ -1,14 +1,14 @@
 /**
  * The journey: six stages from "could we really do this?" to "time to renew".
  *
- * The database seeds six stages per visa type (planning, documents,
- * application, approval, moving, settling) and every task carries one. The
- * portal shows a different six: Apply absorbs the wait for a decision, and
- * Settling In splits into the first 90 days and everything after. Mapping
- * here, rather than migrating stored data, keeps every existing task where
- * it is and lets the split follow the move date.
+ * Tasks arrive with two different stage vocabularies. The database seeds six
+ * stages per visa type (planning, documents, application, approval, moving,
+ * settling); the task templates that actually populate a project use four
+ * (pre-arrival, arrival, integration, settlement). The portal shows six of
+ * its own. Mapping here, rather than migrating stored data, keeps every task
+ * where it is and lets the split between stages follow the move date.
  */
-import type { Project, StageProgress, Task } from '@/types';
+import type { Project, Task } from '@/types';
 
 export type JourneyStageId = 'decide' | 'prepare' | 'apply' | 'move' | 'arrive' | 'settle';
 
@@ -118,40 +118,85 @@ function daysBetween(a: Date, b: Date): number {
   return Math.round((b.getTime() - a.getTime()) / 86_400_000);
 }
 
+/** Template tasks that are about getting there, not about the dossier. */
+const MOVE_WORDS = /\b(pets?|accommodation|housing|book(ing)?|flights?|shipping|movers?|packing|vet(erinarian)?|vaccination)\b/i;
+/** Template tasks that are the application itself. */
+const APPLY_WORDS = /\b(apply for [a-z ]*visas?|consulate|appointment|biometrics?|submit|france-visas|visa application)\b/i;
+
 /**
- * Which journey stage a task belongs to. The only ambiguity is "settling":
- * a task due within the arrival window after the move is arriving; later, or
- * undated, it is settling.
+ * Which journey stage a task belongs to.
+ *
+ * Seeded database stages map one to one, with the wait for a decision folded
+ * into Apply. Template stages need more: "pre-arrival" spans three of our
+ * stages, so the title decides between preparing, applying and moving; and
+ * anything after the move is arriving for 90 days, then settling.
  */
-export function stageForTask(task: Pick<Task, 'stage' | 'due_date'>, project: Pick<Project, 'target_move_date'>): JourneyStageId {
-  if (task.stage !== 'settling') {
-    const found = JOURNEY.find((s) => s.dbStages.includes(task.stage));
-    return found ? found.id : 'decide';
-  }
+export function stageForTask(
+  task: Pick<Task, 'stage' | 'due_date'> & { title?: string },
+  project: Pick<Project, 'target_move_date'>
+): JourneyStageId {
+  const stage = task.stage ?? '';
   const move = parseDate(project.target_move_date);
   const due = parseDate(task.due_date);
-  if (!move || !due) return 'settle';
-  return daysBetween(move, due) <= ARRIVAL_WINDOW_DAYS ? 'arrive' : 'settle';
+  const daysFromMove = move && due ? daysBetween(move, due) : null;
+
+  // After the move, the date decides regardless of vocabulary.
+  if (daysFromMove !== null && daysFromMove >= 0) {
+    return daysFromMove <= ARRIVAL_WINDOW_DAYS ? 'arrive' : 'settle';
+  }
+
+  switch (stage) {
+    case 'planning': return 'decide';
+    case 'documents': return 'prepare';
+    case 'application':
+    case 'approval': return 'apply';
+    case 'moving': return 'move';
+    case 'settling': return daysFromMove === null ? 'settle' : 'arrive';
+    case 'arrival': return 'arrive';
+    case 'integration':
+    case 'settlement': return 'settle';
+    case 'pre-arrival': {
+      const title = task.title ?? '';
+      if (APPLY_WORDS.test(title)) return 'apply';
+      if (MOVE_WORDS.test(title)) return 'move';
+      return 'prepare';
+    }
+    default: return 'prepare';
+  }
 }
 
 /**
- * Where the person is now. The project's stored stage is the source of
- * truth, with the settling split decided by today's date against the move.
+ * Where the person is now.
+ *
+ * The stored project stage never advances on its own, so it cannot be the
+ * answer. Until a visa route is chosen they are deciding. After that the
+ * move date places them: preparing until four months out, applying until
+ * the last month, moving in that month, arriving for 90 days, then settling.
  */
-export function currentStage(project: Pick<Project, 'current_stage' | 'target_move_date'>, now = new Date()): JourneyStageId {
-  if (project.current_stage !== 'settling') {
-    const found = JOURNEY.find((s) => s.dbStages.includes(project.current_stage));
-    return found ? found.id : 'decide';
-  }
+export function currentStage(
+  project: Pick<Project, 'target_move_date'>,
+  visaType: string | null | undefined,
+  now = new Date()
+): JourneyStageId {
+  if (!visaType || visaType === 'undecided') return 'decide';
   const move = parseDate(project.target_move_date);
-  if (!move) return 'arrive';
-  return daysBetween(move, now) <= ARRIVAL_WINDOW_DAYS ? 'arrive' : 'settle';
+  if (!move) return 'prepare';
+  const days = daysBetween(now, move);
+  if (days > 120) return 'prepare';
+  if (days > 30) return 'apply';
+  if (days > 0) return 'move';
+  if (-days <= ARRIVAL_WINDOW_DAYS) return 'arrive';
+  return 'settle';
 }
 
-/** Progress for a journey stage, summed over the database stages it holds. */
-export function progressFor(stage: JourneyStage, stages: StageProgress[]): { total: number; completed: number } {
-  const own = stages.filter((s) => stage.dbStages.includes(s.slug));
-  return own.reduce((acc, s) => ({ total: acc.total + s.total, completed: acc.completed + s.completed }), { total: 0, completed: 0 });
+/** Progress for a journey stage, counted from the tasks that map to it. */
+export function progressFor(
+  stage: JourneyStage,
+  tasks: Pick<Task, 'stage' | 'due_date' | 'status' | 'title'>[],
+  project: Pick<Project, 'target_move_date'>
+): { total: number; completed: number } {
+  const own = tasks.filter((t) => stageForTask(t, project) === stage.id);
+  return { total: own.length, completed: own.filter((t) => t.status === 'done').length };
 }
 
 /**

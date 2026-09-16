@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react';
 import SaveButton from '@/components/shared/SaveButton';
 import { VISA_TYPES, WORK_IN_FRANCE_OPTIONS, WORK_STATUS_OPTIONS } from '@/config/profile';
 import { useUpdateMemberProfile } from '@/hooks/useApi';
+import { usePortalStore } from '@/store';
 import type {
   MemberProfile,
   ProfileVisaType,
@@ -22,6 +23,7 @@ interface VisaSectionProps {
 
 export default function VisaSection({ profile }: VisaSectionProps) {
   const updateProfile = useUpdateMemberProfile();
+  const { setActiveStage, setActiveView } = usePortalStore();
   const [formData, setFormData] = useState({
     visa_type: 'undecided' as ProfileVisaType,
     employment_status: 'not_working' as WorkStatus,
@@ -73,9 +75,18 @@ export default function VisaSection({ profile }: VisaSectionProps) {
             </option>
           ))}
         </select>
-        <p className="mt-1 text-sm text-gray-500">
-          Select the visa type that best matches your situation.
-        </p>
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+          <p className="text-sm text-gray-500 m-0">
+            Select the visa type that best matches your situation.
+          </p>
+          <button
+            type="button"
+            onClick={() => { setActiveStage('decide'); setActiveView('stage'); }}
+            className="btn btn-secondary py-1.5 text-sm"
+          >
+            Not sure? Discover the visa types
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { StageProgress, Task } from '@/types';
+import type { Task } from '@/types';
 import { JOURNEY, currentStage, groupByLeadTime, progressFor, stageForTask, stageWhen, timeToGo } from './journey';
 
 const NOW = new Date('2026-09-16T12:00:00Z');
@@ -25,16 +25,36 @@ describe('where a task belongs', () => {
     expect(stageForTask({ stage: 'settling', due_date: '2028-03-01' }, project)).toBe('settle');
     expect(stageForTask({ stage: 'settling', due_date: null }, project)).toBe('settle');
   });
+  it('reads the template vocabulary: pre-arrival splits by what the task is', () => {
+    expect(stageForTask({ stage: 'pre-arrival', due_date: null, title: 'Get documents apostilled' }, project)).toBe('prepare');
+    expect(stageForTask({ stage: 'pre-arrival', due_date: null, title: 'Apply for spouse visa' }, project)).toBe('apply');
+    expect(stageForTask({ stage: 'pre-arrival', due_date: null, title: 'Get pet microchipped' }, project)).toBe('move');
+    expect(stageForTask({ stage: 'pre-arrival', due_date: null, title: 'Book temporary accommodation' }, project)).toBe('move');
+  });
+  it('puts every post-move template into arriving or settling by date', () => {
+    expect(stageForTask({ stage: 'arrival', due_date: null, title: 'Set up utilities' }, project)).toBe('arrive');
+    expect(stageForTask({ stage: 'settlement', due_date: '2027-10-14', title: 'Get Carte Vitale' }, project)).toBe('arrive');
+    expect(stageForTask({ stage: 'integration', due_date: '2028-02-11', title: 'File French tax return' }, project)).toBe('settle');
+    expect(stageForTask({ stage: 'settlement', due_date: null, title: 'Exchange driving license' }, project)).toBe('settle');
+  });
 });
 
 describe('where the person is', () => {
-  it('reads the stored stage', () => {
-    expect(currentStage(project, NOW)).toBe('prepare');
+  it('is deciding until a visa route is chosen', () => {
+    expect(currentStage(project, null, NOW)).toBe('decide');
+    expect(currentStage(project, 'undecided', NOW)).toBe('decide');
+  });
+  it('is preparing with a route but no date, or far out', () => {
+    expect(currentStage({ target_move_date: null }, 'visitor', NOW)).toBe('prepare');
+    expect(currentStage(project, 'visitor', NOW)).toBe('prepare');
+  });
+  it('applies inside four months, moves in the last month', () => {
+    expect(currentStage({ target_move_date: '2026-12-01' }, 'visitor', NOW)).toBe('apply');
+    expect(currentStage({ target_move_date: '2026-10-01' }, 'visitor', NOW)).toBe('move');
   });
   it('is arriving for 90 days after the move, then settling', () => {
-    const settling = { current_stage: 'settling', target_move_date: '2026-08-01' };
-    expect(currentStage(settling, new Date('2026-09-16T00:00:00Z'))).toBe('arrive');
-    expect(currentStage(settling, new Date('2027-01-16T00:00:00Z'))).toBe('settle');
+    expect(currentStage({ target_move_date: '2026-08-01' }, 'visitor', NOW)).toBe('arrive');
+    expect(currentStage({ target_move_date: '2026-03-01' }, 'visitor', NOW)).toBe('settle');
   });
 });
 
@@ -53,12 +73,14 @@ describe('labels', () => {
 });
 
 describe('progress and grouping', () => {
-  it('sums the database stages a journey stage holds', () => {
-    const stages = [
-      { slug: 'application', total: 4, completed: 1 },
-      { slug: 'approval', total: 2, completed: 2 },
-    ] as StageProgress[];
-    expect(progressFor(JOURNEY[2], stages)).toEqual({ total: 6, completed: 3 });
+  it('counts progress from the tasks that map to a stage', () => {
+    const tasks = [
+      { stage: 'pre-arrival', due_date: null, status: 'done', title: 'Gather all required documents' },
+      { stage: 'pre-arrival', due_date: null, status: 'todo', title: 'Get documents translated' },
+      { stage: 'pre-arrival', due_date: null, status: 'todo', title: 'Get pet microchipped' },
+    ] as Task[];
+    expect(progressFor(JOURNEY[1], tasks, project)).toEqual({ total: 2, completed: 1 });
+    expect(progressFor(JOURNEY[3], tasks, project)).toEqual({ total: 1, completed: 0 });
   });
   it('orders a stage as start now, then, undated, done', () => {
     const t = (id: number, due: string | null, status: Task['status'] = 'todo') => ({ id, due_date: due, status } as Task);

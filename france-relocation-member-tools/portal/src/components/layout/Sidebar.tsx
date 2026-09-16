@@ -20,7 +20,7 @@ import {
   User,
   Users,
 } from 'lucide-react';
-import { useDashboard } from '@/hooks/useApi';
+import { useDashboard, useTasks } from '@/hooks/useApi';
 import { JOURNEY, type JourneyStage, currentStage, progressFor, timeToGo } from '@/journey/journey';
 import { usePortalStore } from '@/store';
 
@@ -67,9 +67,9 @@ export default function Sidebar() {
   const { sidebarCollapsed, toggleSidebar, activeView, setActiveView, activeStage, setActiveStage, settings, isMenuItemVisible } =
     usePortalStore();
   const { data } = useDashboard();
-
   const project = data?.project;
-  const nowStage = project ? currentStage(project) : 'decide';
+  const { data: tasks } = useTasks(project?.id ?? 0);
+  const nowStage = project ? currentStage(project, data?.profile_visa_type) : 'decide';
   const nowIndex = JOURNEY.findIndex((s) => s.id === nowStage);
 
   const sidebarStyle = {
@@ -127,7 +127,7 @@ export default function Sidebar() {
             {JOURNEY.map((stage, i) => {
               const state: 'done' | 'now' | 'ahead' = i < nowIndex ? 'done' : i === nowIndex ? 'now' : 'ahead';
               const isActive = activeView === 'stage' && activeStage === stage.id;
-              const progress = data ? progressFor(stage, data.stages) : { total: 0, completed: 0 };
+              const progress = project ? progressFor(stage, tasks ?? [], project) : { total: 0, completed: 0 };
               const sub =
                 state === 'done'
                   ? 'Done'

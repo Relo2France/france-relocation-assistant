@@ -29,7 +29,7 @@ export default function StageView() {
   const { data } = useDashboard();
   const stage = stageById(activeStage) ?? JOURNEY[0];
   const project = data?.project;
-  const nowStage = project ? currentStage(project) : 'decide';
+  const nowStage = project ? currentStage(project, data?.profile_visa_type) : 'decide';
   const { data: tasks } = useTasks(project?.id ?? 0);
   const { data: family } = useFamilyMembers();
   const updateStatus = useUpdateTaskStatus();
@@ -37,7 +37,7 @@ export default function StageView() {
 
   const own = (tasks ?? []).filter((t) => project && stageForTask(t, project) === stage.id);
   const groups = groupByLeadTime(own);
-  const progress = data ? progressFor(stage, data.stages) : { total: 0, completed: 0 };
+  const progress = project ? progressFor(stage, tasks ?? [], project) : { total: 0, completed: 0 };
   const pct = progress.total > 0 ? Math.round((progress.completed / progress.total) * 100) : 0;
   const nextHard = own.filter((t) => t.status !== 'done' && t.due_date).sort((a, b) => (a.due_date ?? '').localeCompare(b.due_date ?? ''))[0];
   const members = family?.members ?? [];
