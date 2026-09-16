@@ -171,6 +171,41 @@ export default {
         display: ['Fraunces', 'Georgia', 'Times New Roman', 'serif'],
         mono: ['IBM Plex Mono', 'ui-monospace', 'SF Mono', 'Menlo', 'monospace'],
       },
+
+      /*
+       * Shape and type remap - the same trick as the palette remap above.
+       *
+       * The components carry ~650 `text-sm`, ~420 `rounded-lg` and ~70
+       * `shadow-*` call sites. Redefining what those utilities mean restyles
+       * every one of them at once onto the public site's language: a slightly
+       * larger, calmer Karla scale; 10-12px radii; no card shadows. Only the
+       * floating surfaces (dropdowns, modals) keep an elevation shadow, via
+       * `shadow-lg`/`shadow-xl`.
+       */
+      borderRadius: {
+        DEFAULT: '10px',
+        md: '10px',
+        lg: '12px',
+        xl: '12px',
+        '2xl': '14px',
+      },
+      boxShadow: {
+        sm: 'none',
+        DEFAULT: 'none',
+        md: '0 1px 2px rgba(28,36,32,0.06)',
+        lg: '0 16px 40px -16px rgba(28,36,32,0.3)',
+        xl: '0 16px 40px -16px rgba(28,36,32,0.3)',
+      },
+      fontSize: {
+        xs: ['0.76rem', '1.15rem'],
+        sm: ['0.9rem', '1.4rem'],
+        base: ['1rem', '1.55rem'],
+        lg: ['1.1rem', '1.5rem'],
+        xl: ['1.25rem', '1.6rem'],
+        '2xl': ['1.5rem', '1.9rem'],
+        '3xl': ['1.9rem', '2.2rem'],
+        '4xl': ['2.4rem', '2.6rem'],
+      },
     },
   },
   plugins: [],

@@ -258,11 +258,12 @@ $react_settings = array(
             --portal-sidebar-text: <?php echo esc_attr( $settings['sidebar_text_color'] ); ?>;
             --portal-sidebar-text-active: <?php echo esc_attr( $settings['sidebar_text_color'] ); ?>;
             --portal-header-bg: <?php echo esc_attr( $settings['header_bg_color'] ); ?>;
+            --portal-ground: #fcfcfb;
         }
 
         #fra-portal-root {
             min-height: 100vh;
-            background: #f9fafb;
+            background: var(--portal-ground, #fcfcfb);
         }
 
         .portal-loading {
@@ -271,7 +272,7 @@ $react_settings = array(
             align-items: center;
             justify-content: center;
             min-height: 100vh;
-            background: #f9fafb;
+            background: var(--portal-ground, #fcfcfb);
         }
 
         .portal-loading-spinner {
@@ -286,7 +287,7 @@ $react_settings = array(
         .portal-loading-text {
             margin-top: 16px;
             color: #6b7280;
-            font-family: 'Inter', system-ui, sans-serif;
+            font-family: 'Karla', 'Helvetica Neue', Arial, sans-serif;
         }
 
         @keyframes spin {
@@ -299,14 +300,14 @@ $react_settings = array(
             display: flex;
             align-items: center;
             justify-content: center;
-            background: linear-gradient(135deg, <?php echo esc_attr( $settings['sidebar_bg_color'] ); ?> 0%, <?php echo esc_attr( framt_darken_color( $settings['sidebar_bg_color'], 20 ) ); ?> 100%);
+            background: <?php echo esc_attr( $settings['sidebar_bg_color'] ); ?>;
             padding: 20px;
         }
 
         .portal-login-card {
             background: white;
-            border-radius: 16px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            border-radius: 12px;
+            border: 1px solid #dde3de;
             padding: 48px;
             width: 100%;
             max-width: 420px;
@@ -320,16 +321,17 @@ $react_settings = array(
         }
 
         .portal-login-title {
-            font-family: 'Inter', system-ui, sans-serif;
+            font-family: 'Fraunces', Georgia, 'Times New Roman', serif;
             font-size: 28px;
-            font-weight: 700;
+            font-weight: 600;
+            letter-spacing: -0.018em;
             color: #111827;
             text-align: center;
             margin: 0 0 8px;
         }
 
         .portal-login-subtitle {
-            font-family: 'Inter', system-ui, sans-serif;
+            font-family: 'Karla', 'Helvetica Neue', Arial, sans-serif;
             font-size: 15px;
             color: #6b7280;
             text-align: center;
@@ -344,7 +346,7 @@ $react_settings = array(
             border-radius: 8px;
             font-size: 14px;
             margin-bottom: 20px;
-            font-family: 'Inter', system-ui, sans-serif;
+            font-family: 'Karla', 'Helvetica Neue', Arial, sans-serif;
         }
 
         .portal-login-form {
@@ -360,14 +362,14 @@ $react_settings = array(
         }
 
         .portal-form-group label {
-            font-family: 'Inter', system-ui, sans-serif;
+            font-family: 'Karla', 'Helvetica Neue', Arial, sans-serif;
             font-size: 14px;
             font-weight: 500;
             color: #374151;
         }
 
         .portal-form-group input {
-            font-family: 'Inter', system-ui, sans-serif;
+            font-family: 'Karla', 'Helvetica Neue', Arial, sans-serif;
             font-size: 15px;
             padding: 12px 16px;
             border: 1px solid #d1d5db;
@@ -389,7 +391,7 @@ $react_settings = array(
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-family: 'Inter', system-ui, sans-serif;
+            font-family: 'Karla', 'Helvetica Neue', Arial, sans-serif;
             font-size: 14px;
         }
 
@@ -418,7 +420,7 @@ $react_settings = array(
         }
 
         .portal-login-button {
-            font-family: 'Inter', system-ui, sans-serif;
+            font-family: 'Karla', 'Helvetica Neue', Arial, sans-serif;
             font-size: 15px;
             font-weight: 600;
             color: white;
@@ -448,7 +450,7 @@ $react_settings = array(
         }
 
         .portal-register-link {
-            font-family: 'Inter', system-ui, sans-serif;
+            font-family: 'Karla', 'Helvetica Neue', Arial, sans-serif;
             font-size: 14px;
             color: #6b7280;
             text-align: center;

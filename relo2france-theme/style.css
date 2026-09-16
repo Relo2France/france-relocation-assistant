@@ -3,8 +3,8 @@ Theme Name: Relo2France
 Theme URI: https://relo2france.com
 Author: Relo2France
 Author URI: https://relo2france.com
-Description: A clean, professional theme designed for the France Relocation Assistant. Optimized for Americans relocating to France. Includes auth page templates for MemberPress integration.
-Version: 1.2.4
+Description: The WordPress half of relo2france.com - sign-in, checkout, account and the member portal shell - styled on the same design tokens as the public site so the two read as one product.
+Version: 2.0.0
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
@@ -15,6 +15,15 @@ Tags: one-column, custom-menu, featured-images, translation-ready, custom-logo
 
 Relo2France Theme - Your guide to relocating from the US to France.
 (c) 2024 Relo2France. All rights reserved.
+
+The tokens (colours, faces, radii) live in assets/css/tokens.css, a copy of
+site/src/styles/tokens.css kept identical by a test in the site package. This
+file only ever uses them - never a raw hex - so dark mode and any future
+rebrand come from the tokens alone.
+
+The governing rule, from the site: chrome is warm (vine, pills, Fraunces),
+content is exact (hairline rules, no shadows), and honey means "not law" -
+never a price, a button or a heading.
 */
 
 /* ===== CSS Reset & Base ===== */
@@ -25,45 +34,49 @@ Relo2France Theme - Your guide to relocating from the US to France.
 }
 
 :root {
-    /* Colors */
-    --r2f-primary: #1e3a5f;
-    --r2f-primary-dark: #152a45;
-    --r2f-accent: #c9a227;
-    --r2f-accent-hover: #b8922a;
-    --r2f-text: #2c3e50;
-    --r2f-text-light: #6c757d;
-    --r2f-bg: #f8f9fa;
-    --r2f-white: #ffffff;
-    --r2f-border: #e1e5e9;
-    --r2f-success: #28a745;
-    --r2f-france: #0055a4;
-    --r2f-us: #b22234;
-    
-    /* Auth Page Colors (can be overridden by plugin) */
-    --r2f-auth-blue-dark: #172554;
-    --r2f-auth-blue: #1e3a8a;
-    --r2f-auth-blue-light: #3b82f6;
-    --r2f-auth-orange: #f97316;
-    --r2f-auth-orange-hover: #ea580c;
-    
+    /*
+     * The old --r2f-* names are kept because plugin CSS still reads them.
+     * Every one now resolves to a token. The accent is vine, not honey:
+     * honey has one meaning on this site and "call to action" is not it.
+     */
+    --r2f-primary: var(--vine);
+    --r2f-primary-dark: var(--shell);
+    --r2f-accent: var(--vine);
+    --r2f-accent-hover: var(--shell);
+    --r2f-text: var(--ink);
+    --r2f-text-light: var(--muted);
+    --r2f-bg: var(--ground);
+    --r2f-white: var(--card);
+    --r2f-border: var(--rule);
+    --r2f-success: var(--vine);
+    --r2f-france: var(--vine);
+    --r2f-us: var(--vine);
+
+    /* Auth page colours the plugin reads. Blues become shell/vine, orange vine. */
+    --r2f-auth-blue-dark: var(--shell);
+    --r2f-auth-blue: var(--vine);
+    --r2f-auth-blue-light: var(--vine-soft);
+    --r2f-auth-orange: var(--vine);
+    --r2f-auth-orange-hover: var(--shell);
+
     /* Typography */
-    --r2f-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    --r2f-font: var(--font-ui);
     --r2f-font-size: 16px;
     --r2f-line-height: 1.6;
-    
+
     /* Spacing */
     --r2f-spacing-xs: 0.5rem;
     --r2f-spacing-sm: 1rem;
     --r2f-spacing-md: 1.5rem;
     --r2f-spacing-lg: 2rem;
     --r2f-spacing-xl: 3rem;
-    
+
     /* Layout */
     --r2f-max-width: 1200px;
     --r2f-content-width: 900px;
-    --r2f-radius: 8px;
-    --r2f-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    --r2f-shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.12);
+    --r2f-radius: var(--radius);
+    --r2f-shadow: none;
+    --r2f-shadow-lg: none;
 }
 
 html {
@@ -72,42 +85,73 @@ html {
 }
 
 body {
-    font-family: var(--r2f-font);
+    font-family: var(--font-ui);
     font-size: 1rem;
     line-height: var(--r2f-line-height);
-    color: var(--r2f-text);
-    background-color: var(--r2f-bg);
+    color: var(--ink);
+    background-color: var(--ground);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
 
 /* ===== Typography ===== */
 h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
     font-weight: 600;
-    line-height: 1.3;
-    color: var(--r2f-primary);
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    color: var(--ink);
     margin-bottom: var(--r2f-spacing-sm);
 }
 
-h1 { font-size: 2.5rem; }
-h2 { font-size: 2rem; }
-h3 { font-size: 1.5rem; }
-h4 { font-size: 1.25rem; }
-h5 { font-size: 1.125rem; }
-h6 { font-size: 1rem; }
+h1 { font-size: 2.2rem; }
+h2 { font-size: 1.6rem; }
+h3 { font-size: 1.25rem; }
+h4 { font-size: 1.1rem; }
+h5 { font-size: 1rem; }
+h6 { font-size: 0.95rem; }
 
 p {
     margin-bottom: var(--r2f-spacing-sm);
 }
 
 a {
-    color: var(--r2f-primary);
+    color: var(--vine);
     text-decoration: none;
-    transition: color 0.2s ease;
+    transition: color 0.15s ease;
 }
 
 a:hover {
-    color: var(--r2f-accent);
+    color: var(--ink);
+}
+
+:where(a, button, [tabindex]):focus-visible {
+    outline: 2px solid var(--vine);
+    outline-offset: 2px;
+}
+
+.screen-reader-text {
+    position: absolute !important;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(1px, 1px, 1px, 1px);
+    white-space: nowrap;
+}
+
+.skip-link:focus {
+    position: fixed;
+    top: 8px;
+    left: 8px;
+    z-index: 10000;
+    width: auto;
+    height: auto;
+    clip: auto;
+    padding: 8px 14px;
+    background: var(--card);
+    color: var(--ink);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-pill);
 }
 
 /* ===== Layout ===== */
@@ -122,7 +166,7 @@ a:hover {
     width: 100%;
     max-width: var(--r2f-max-width);
     margin: 0 auto;
-    padding: var(--r2f-spacing-lg) var(--r2f-spacing-md);
+    padding: var(--r2f-spacing-lg) 28px;
 }
 
 .content-narrow {
@@ -130,23 +174,33 @@ a:hover {
     margin: 0 auto;
 }
 
-/* ===== Header ===== */
-.site-header {
-    background: linear-gradient(135deg, var(--r2f-primary) 0%, var(--r2f-primary-dark) 100%);
-    color: var(--r2f-white);
-    padding: var(--r2f-spacing-md) var(--r2f-spacing-lg);
-    box-shadow: var(--r2f-shadow-lg);
-    position: relative;
+/* ===== Wordmark ===== */
+.wordmark {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.1rem;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    text-decoration: none;
+    white-space: nowrap;
 }
 
-.site-header::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, var(--r2f-france) 33%, var(--r2f-white) 33%, var(--r2f-white) 66%, var(--r2f-us) 66%);
+.wordmark:hover {
+    color: var(--ink);
+}
+
+.wordmark-2 {
+    color: var(--vine);
+}
+
+/* ===== Header ===== */
+/* Warm chrome, as the site's SiteNav: a hairline, no gradient, no stripe. */
+.site-header {
+    background: var(--ground);
+    color: var(--ink);
+    padding: 16px 28px;
+    border-bottom: 1px solid var(--rule-soft);
+    position: relative;
 }
 
 .header-inner {
@@ -155,10 +209,16 @@ a:hover {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    flex-wrap: wrap;
     gap: var(--r2f-spacing-md);
 }
 
+.header-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+/* Legacy branding block, kept for anything still calling relo2france_site_logo(). */
 .site-branding {
     display: flex;
     align-items: center;
@@ -166,15 +226,15 @@ a:hover {
 }
 
 .site-logo {
-    font-size: 2.5rem;
+    font-size: 2rem;
     line-height: 1;
 }
 
 .site-title {
     margin: 0;
-    font-size: 1.5rem;
+    font-size: 1.1rem;
     font-weight: 700;
-    color: var(--r2f-white);
+    color: var(--ink);
 }
 
 .site-title a {
@@ -184,9 +244,8 @@ a:hover {
 
 .site-description {
     margin: 0;
-    font-size: 0.875rem;
-    opacity: 0.9;
-    color: var(--r2f-white);
+    font-size: 0.85rem;
+    color: var(--muted);
 }
 
 /* ===== Navigation ===== */
@@ -198,249 +257,76 @@ a:hover {
 .main-navigation ul {
     list-style: none;
     display: flex;
-    gap: var(--r2f-spacing-md);
+    gap: 22px;
     margin: 0;
     padding: 0;
 }
 
 .main-navigation a {
-    color: var(--r2f-white);
-    font-size: 0.9375rem;
+    font-family: var(--font-ui);
+    color: var(--muted);
+    font-size: 0.86rem;
     font-weight: 500;
     padding: var(--r2f-spacing-xs) 0;
-    position: relative;
-    opacity: 0.9;
-    transition: opacity 0.2s ease;
+    transition: color 0.15s ease;
 }
 
 .main-navigation a:hover,
 .main-navigation .current-menu-item a {
-    opacity: 1;
-}
-
-.main-navigation a::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 0;
-    height: 2px;
-    background: var(--r2f-accent);
-    transition: width 0.2s ease;
-}
-
-.main-navigation a:hover::after,
-.main-navigation .current-menu-item a::after {
-    width: 100%;
+    color: var(--ink);
 }
 
 /* Mobile menu toggle */
 .menu-toggle {
     display: none;
     background: transparent;
-    border: none;
-    color: var(--r2f-white);
-    font-size: 1.5rem;
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-pill);
+    color: var(--ink);
+    font-size: 1.1rem;
+    line-height: 1;
     cursor: pointer;
-    padding: var(--r2f-spacing-xs);
+    padding: 6px 12px;
 }
 
 @media (max-width: 768px) {
     .menu-toggle {
         display: block;
     }
-    
+
     .main-navigation ul {
         display: none;
         position: absolute;
         top: 100%;
         left: 0;
         right: 0;
-        background: var(--r2f-primary-dark);
+        background: var(--card);
+        border-bottom: 1px solid var(--rule);
         flex-direction: column;
-        padding: var(--r2f-spacing-md);
-        gap: var(--r2f-spacing-sm);
+        padding: 12px 16px 16px;
+        gap: 4px;
         z-index: 1000;
     }
-    
+
+    .main-navigation ul a {
+        display: block;
+        padding: 10px 0;
+        font-size: 1rem;
+    }
+
     .main-navigation.toggled ul {
         display: flex;
     }
 }
 
-/* ===== New Centered Header (Front Page) ===== */
-.site-header-centered {
-    background: #ffffff;
-    border-bottom: 1px solid #e5e7eb;
-    padding: 48px 24px 56px;
-    text-align: center;
-}
-
-.header-centered-inner {
-    max-width: 800px;
-    margin: 0 auto;
-}
-
-.header-logo-large {
-    margin-bottom: 24px;
-}
-
-.header-logo-large img,
-.header-logo-large .custom-logo {
-    width: 160px;
-    height: 160px;
-    object-fit: contain;
-}
-
-.header-logo-large .custom-logo-link {
-    display: inline-block;
-}
-
-.header-logo-placeholder {
-    font-size: 8rem;
-    line-height: 1;
-}
-
-.header-site-title {
-    font-size: 2.5rem;
-    font-weight: 700;
-    color: #ffffff;
-    background: var(--r2f-primary);
-    display: inline-block;
-    padding: 8px 24px;
-    border-radius: 6px;
-    margin: 0 0 16px 0;
-    line-height: 1.2;
-    letter-spacing: -0.025em;
-}
-
-.header-site-title a {
-    color: #ffffff;
-    text-decoration: none;
-}
-
-.header-site-title a:hover {
-    color: #ffffff;
-    opacity: 0.9;
-}
-
-.header-tagline {
-    color: #ea580c;
-    font-weight: 600;
-    font-size: 0.875rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    margin: 0 0 20px 0;
-}
-
-.header-description {
-    color: #4b5563;
-    font-size: 1.125rem;
-    line-height: 1.75;
-    max-width: 640px;
-    margin: 0 auto;
-}
-
-/* Responsive centered header */
-@media (max-width: 768px) {
-    .site-header-centered {
-        padding: 32px 16px 40px;
-    }
-    
-    .header-logo-large img,
-    .header-logo-large .custom-logo {
-        width: 120px;
-        height: 120px;
-    }
-    
-    .header-logo-placeholder {
-        font-size: 6rem;
-    }
-    
-    .header-site-title {
-        font-size: 1.75rem;
-        padding: 6px 16px;
-    }
-    
-    .header-tagline {
-        font-size: 0.75rem;
-    }
-    
-    .header-description {
-        font-size: 1rem;
-    }
-}
-
-/* ===== Hero Section (Kept for backwards compatibility) ===== */
-.hero-section {
-    background: linear-gradient(135deg, var(--r2f-primary) 0%, #2c5282 100%);
-    color: var(--r2f-white);
-    padding: var(--r2f-spacing-xl) var(--r2f-spacing-lg);
-    text-align: center;
-    position: relative;
-    overflow: hidden;
-}
-
-.hero-section::before {
-    content: '🇫🇷';
-    position: absolute;
-    font-size: 20rem;
-    opacity: 0.05;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    pointer-events: none;
-}
-
-.hero-content {
-    position: relative;
-    z-index: 1;
-    max-width: 700px;
-    margin: 0 auto;
-}
-
-.hero-title {
-    font-size: 2.5rem;
-    margin-bottom: var(--r2f-spacing-md);
-    color: var(--r2f-white);
-}
-
-.hero-subtitle {
-    font-size: 1.25rem;
-    opacity: 0.9;
-    margin-bottom: var(--r2f-spacing-lg);
-}
-
-.hero-cta {
-    display: inline-block;
-    background: var(--r2f-accent);
-    color: var(--r2f-primary);
-    padding: var(--r2f-spacing-sm) var(--r2f-spacing-lg);
-    border-radius: var(--r2f-radius);
-    font-weight: 600;
-    font-size: 1.125rem;
-    transition: all 0.2s ease;
-}
-
-.hero-cta:hover {
-    background: var(--r2f-accent-hover);
-    color: var(--r2f-primary);
-    transform: translateY(-2px);
-    box-shadow: var(--r2f-shadow-lg);
-}
-
 /* ===== Cards ===== */
+/* Content is exact: a hairline, a radius, no shadow, no hover lift. */
 .card {
-    background: var(--r2f-white);
-    border-radius: var(--r2f-radius);
-    box-shadow: var(--r2f-shadow);
-    padding: var(--r2f-spacing-lg);
+    background: var(--card);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+    padding: 32px;
     margin-bottom: var(--r2f-spacing-lg);
-    transition: box-shadow 0.2s ease;
-}
-
-.card:hover {
-    box-shadow: var(--r2f-shadow-lg);
 }
 
 .card-grid {
@@ -450,55 +336,55 @@ a:hover {
 }
 
 /* ===== Buttons ===== */
+/* The site's two buttons: solid vine pill, and a ghost pill on a hairline. */
 .btn {
     display: inline-block;
-    padding: var(--r2f-spacing-sm) var(--r2f-spacing-md);
-    border-radius: var(--r2f-radius);
+    font-family: var(--font-ui);
+    padding: 9px 17px;
+    border-radius: var(--radius-pill);
     font-weight: 600;
-    font-size: 0.9375rem;
+    font-size: 0.83rem;
+    line-height: 1.4;
     text-align: center;
     cursor: pointer;
-    transition: all 0.2s ease;
-    border: none;
+    transition: opacity 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+    border: 1px solid transparent;
     text-decoration: none;
+    white-space: nowrap;
 }
 
-.btn-primary {
-    background: var(--r2f-primary);
-    color: var(--r2f-white);
-}
-
-.btn-primary:hover {
-    background: var(--r2f-primary-dark);
-    color: var(--r2f-white);
-}
-
+.btn-primary,
 .btn-accent {
-    background: var(--r2f-accent);
-    color: var(--r2f-primary);
+    background: var(--vine);
+    border-color: var(--vine);
+    color: var(--on-brand);
 }
 
+.btn-primary:hover,
 .btn-accent:hover {
-    background: var(--r2f-accent-hover);
-    color: var(--r2f-primary);
+    background: var(--vine);
+    color: var(--on-brand);
+    opacity: 0.9;
 }
 
 .btn-outline {
     background: transparent;
-    border: 2px solid var(--r2f-primary);
-    color: var(--r2f-primary);
+    border-color: var(--rule);
+    color: var(--ink);
 }
 
 .btn-outline:hover {
-    background: var(--r2f-primary);
-    color: var(--r2f-white);
+    background: var(--card-2);
+    color: var(--ink);
 }
 
 /* ===== Footer ===== */
+/* As the site's SiteFooter: quiet, on card-2, a hairline above. */
 .site-footer {
-    background: var(--r2f-primary-dark);
-    color: var(--r2f-white);
-    padding: var(--r2f-spacing-xl) var(--r2f-spacing-lg);
+    background: var(--card-2);
+    color: var(--muted);
+    border-top: 1px solid var(--rule);
+    padding: 36px 28px 28px;
     margin-top: auto;
 }
 
@@ -509,62 +395,91 @@ a:hover {
 
 .footer-content {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: var(--r2f-spacing-xl);
+    grid-template-columns: 1.4fr 1fr 1fr 1fr;
+    gap: var(--r2f-spacing-lg);
     margin-bottom: var(--r2f-spacing-lg);
 }
 
+.footer-brand .wordmark {
+    font-size: 1.05rem;
+}
+
+.footer-blurb {
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin: 8px 0 0;
+    max-width: 34ch;
+}
+
+.footer-checked {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    margin: 12px 0 0;
+}
+
+.footer-section h2,
 .footer-section h4 {
-    color: var(--r2f-accent);
-    margin-bottom: var(--r2f-spacing-md);
-    font-size: 1.125rem;
+    font-family: var(--font-ui);
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: var(--muted);
+    margin-bottom: 10px;
 }
 
 .footer-section p,
 .footer-section li {
-    opacity: 0.85;
-    font-size: 0.9375rem;
-    line-height: 1.7;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    color: var(--muted);
 }
 
 .footer-section ul {
     list-style: none;
-}
-
-.footer-section ul li {
-    margin-bottom: var(--r2f-spacing-xs);
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
 }
 
 .footer-section a {
-    color: var(--r2f-white);
-    opacity: 0.85;
+    color: var(--muted);
 }
 
 .footer-section a:hover {
-    opacity: 1;
-    color: var(--r2f-accent);
+    color: var(--ink);
 }
 
 .footer-bottom {
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    padding-top: var(--r2f-spacing-lg);
-    text-align: center;
-    font-size: 0.875rem;
-    opacity: 0.7;
+    border-top: 1px solid var(--rule-soft);
+    padding-top: 18px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 24px;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 0.78rem;
+    color: var(--muted);
 }
 
-.footer-flags {
-    font-size: 1.5rem;
-    margin-bottom: var(--r2f-spacing-sm);
+.footer-bottom p {
+    margin: 0;
+}
+
+.footer-disclaimer {
+    max-width: 62ch;
 }
 
 /* ===== Page Styles ===== */
 .page-header {
-    background: var(--r2f-white);
-    padding: var(--r2f-spacing-lg);
-    margin-bottom: var(--r2f-spacing-lg);
-    border-radius: var(--r2f-radius);
-    box-shadow: var(--r2f-shadow);
+    background: transparent;
+    padding: 0;
+    margin-bottom: var(--r2f-spacing-md);
+    border-radius: 0;
+    box-shadow: none;
 }
 
 .page-title {
@@ -572,15 +487,55 @@ a:hover {
 }
 
 .page-subtitle {
-    color: var(--r2f-text-light);
-    font-size: 1.125rem;
+    color: var(--muted);
+    font-size: 1.05rem;
+}
+
+/* Article bodies read at length in the serif, at a comfortable measure. */
+.entry-content {
+    font-family: var(--font-read);
+    font-size: 1.02rem;
+    line-height: 1.68;
+}
+
+.entry-content > * {
+    max-width: var(--measure);
+}
+
+.entry-content .fra-auth-container,
+.entry-content .fra-auth-container * {
+    max-width: none;
+}
+
+.entry-content ul,
+.entry-content ol {
+    padding-left: 1.4em;
+    margin-bottom: var(--r2f-spacing-sm);
+}
+
+.entry-content hr {
+    border: 0;
+    border-top: 1px solid var(--rule);
+    margin: var(--r2f-spacing-lg) 0;
+}
+
+.entry-content blockquote {
+    border-left: 2px solid var(--rule);
+    padding-left: 1rem;
+    color: var(--muted);
+}
+
+.entry-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--radius-sm);
 }
 
 /* ===== Blog/Post Styles ===== */
 .post-entry {
-    background: var(--r2f-white);
-    border-radius: var(--r2f-radius);
-    box-shadow: var(--r2f-shadow);
+    background: var(--card);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
     overflow: hidden;
     margin-bottom: var(--r2f-spacing-lg);
 }
@@ -596,8 +551,9 @@ a:hover {
 }
 
 .post-meta {
-    font-size: 0.875rem;
-    color: var(--r2f-text-light);
+    font-family: var(--font-ui);
+    font-size: 0.85rem;
+    color: var(--muted);
     margin-bottom: var(--r2f-spacing-sm);
 }
 
@@ -607,11 +563,11 @@ a:hover {
 }
 
 .entry-title a {
-    color: var(--r2f-primary);
+    color: var(--ink);
 }
 
 .entry-title a:hover {
-    color: var(--r2f-accent);
+    color: var(--vine);
 }
 
 /* ===== Assistant Container Override ===== */
@@ -641,30 +597,46 @@ a:hover {
 .hidden { display: none; }
 
 /* ===== Responsive ===== */
+@media (max-width: 900px) {
+    .footer-content {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
 @media (max-width: 768px) {
-    :root {
-        --r2f-font-size: 15px;
+    h1 { font-size: 1.8rem; }
+    h2 { font-size: 1.4rem; }
+    h3 { font-size: 1.15rem; }
+
+    .site-header {
+        padding: 12px 16px;
     }
-    
-    h1 { font-size: 2rem; }
-    h2 { font-size: 1.5rem; }
-    h3 { font-size: 1.25rem; }
-    
-    .hero-title {
-        font-size: 1.75rem;
-    }
-    
-    .hero-subtitle {
-        font-size: 1rem;
-    }
-    
-    .site-content {
-        padding: var(--r2f-spacing-md);
-    }
-    
+
     .header-inner {
-        flex-direction: column;
-        text-align: center;
+        gap: 12px;
+    }
+
+    .header-actions .btn-outline {
+        display: none;
+    }
+
+    .site-content {
+        padding: var(--r2f-spacing-md) 16px;
+    }
+
+    .card {
+        padding: 20px;
+    }
+
+    .site-footer {
+        padding: 28px 16px 20px;
+    }
+}
+
+@media (max-width: 560px) {
+    .footer-content {
+        grid-template-columns: 1fr;
+        gap: var(--r2f-spacing-md);
     }
 }
 
@@ -675,15 +647,15 @@ a:hover {
     .main-navigation {
         display: none;
     }
-    
+
     .site-content {
         padding: 0;
         max-width: 100%;
     }
-    
+
     .card {
         box-shadow: none;
-        border: 1px solid #ddd;
+        border: 1px solid var(--rule);
     }
 }
 
@@ -715,11 +687,11 @@ body.page-template-template-auth {
     min-height: 100vh;
 }
 
-/* Fallback auth wrapper if plugin styles don't load */
+/* Fallback auth wrapper if plugin styles don't load: the shell tone, flat. */
 .auth-page-content .fra-auth-wrapper {
-    font-family: var(--r2f-font);
+    font-family: var(--font-ui);
     min-height: 100vh;
-    background: linear-gradient(135deg, var(--r2f-auth-blue-dark) 0%, var(--r2f-auth-blue) 50%, var(--r2f-auth-blue-light) 100%);
+    background: var(--shell);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -727,9 +699,10 @@ body.page-template-template-auth {
 }
 
 .auth-page-content .fra-auth-card {
-    background: var(--r2f-white);
-    border-radius: 16px;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+    background: var(--card);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+    box-shadow: none;
     width: 100%;
     max-width: 420px;
     padding: 2.5rem;
@@ -744,44 +717,47 @@ body.page-template-template-auth {
 .auth-page-content input[type="email"],
 .auth-page-content input[type="password"] {
     width: 100%;
-    padding: 0.875rem 1rem;
-    border: 2px solid #e5e7eb;
-    border-radius: 8px;
+    padding: 0.8rem 1rem;
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-sm);
     font-size: 1rem;
-    font-family: var(--r2f-font);
-    transition: all 0.2s ease;
+    font-family: var(--font-ui);
+    background: var(--card);
+    color: var(--ink);
+    transition: border-color 0.15s ease;
 }
 
 .auth-page-content input[type="text"]:focus,
 .auth-page-content input[type="email"]:focus,
 .auth-page-content input[type="password"]:focus {
     outline: none;
-    border-color: var(--r2f-auth-blue);
-    box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
+    border-color: var(--vine);
+    box-shadow: 0 0 0 3px var(--vine-soft);
 }
 
 /* Auth submit button - fallback/enhancement */
 .auth-page-content input[type="submit"],
 .auth-page-content button[type="submit"] {
     width: 100%;
-    padding: 1rem 1.5rem;
-    background: var(--r2f-auth-orange);
-    color: var(--r2f-white);
+    padding: 0.85rem 1.5rem;
+    background: var(--vine);
+    color: var(--on-brand);
     border: none;
-    border-radius: 8px;
-    font-size: 1rem;
+    border-radius: var(--radius-pill);
+    font-size: 0.95rem;
     font-weight: 600;
-    font-family: var(--r2f-font);
+    font-family: var(--font-ui);
     cursor: pointer;
-    transition: all 0.2s ease;
-    box-shadow: 0 4px 15px rgba(249, 115, 22, 0.3);
+    transition: opacity 0.15s ease;
+    box-shadow: none;
 }
 
 .auth-page-content input[type="submit"]:hover,
 .auth-page-content button[type="submit"]:hover {
-    background: var(--r2f-auth-orange-hover);
-    transform: translateY(-1px);
-    box-shadow: 0 6px 20px rgba(249, 115, 22, 0.4);
+    background: var(--vine);
+    opacity: 0.9;
+    transform: none;
+    box-shadow: none;
 }
 
 /* Responsive auth pages */
@@ -789,7 +765,7 @@ body.page-template-template-auth {
     .auth-page-content .fra-auth-wrapper {
         padding: 1rem;
     }
-    
+
     .auth-page-content .fra-auth-card {
         padding: 1.5rem;
     }
@@ -800,7 +776,7 @@ body.page-template-template-auth {
    - Header is visible initially (NO auto-snap on load)
    - When user scrolls DOWN past header, app "locks" into full viewport
    - User can scroll UP to see header again, or DOWN to see footer
-   
+
    IMPORTANT: scroll-snap is disabled by default and enabled via JS
    after user interaction to prevent auto-snapping on page load.
    ======================================================= */

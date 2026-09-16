@@ -68,18 +68,19 @@ if (!defined('ABSPATH')) {
         /* Fallback styles if plugin CSS doesn't load */
         .r2f-auth-fallback {
             min-height: 100vh;
-            background: linear-gradient(135deg, var(--r2f-auth-blue-dark) 0%, var(--r2f-auth-blue) 50%, var(--r2f-auth-blue-light) 100%);
+            background: var(--shell, #23332c);
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 2rem;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: var(--font-ui, "Karla", "Helvetica Neue", Arial, sans-serif);
         }
 
         .r2f-auth-fallback-card {
-            background: var(--r2f-white);
-            border-radius: 16px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+            background: var(--card, #ffffff);
+            border: 1px solid var(--rule, #dde3de);
+            border-radius: var(--radius, 12px);
+            box-shadow: none;
             padding: 2.5rem;
             max-width: 420px;
             width: 100%;
@@ -87,7 +88,8 @@ if (!defined('ABSPATH')) {
         }
 
         .r2f-auth-fallback-card h1 {
-            color: var(--r2f-auth-blue);
+            font-family: var(--font-display, Georgia, serif);
+            color: var(--ink, #1c2420);
             font-size: 1.5rem;
             margin: 0 0 1rem 0;
         }
@@ -98,7 +100,7 @@ if (!defined('ABSPATH')) {
         }
 
         .r2f-auth-fallback-card a {
-            color: var(--r2f-auth-blue);
+            color: var(--vine, #2c5346);
         }
     </style>
 </head>

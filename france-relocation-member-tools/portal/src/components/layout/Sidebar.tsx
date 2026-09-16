@@ -129,7 +129,7 @@ export default function Sidebar() {
       style={sidebarStyle}
     >
       {/* Logo */}
-      <div className="flex items-center h-16 px-4 border-b border-gray-700/50">
+      <div className="flex items-center h-16 px-4 border-b border-white/10">
         {!sidebarCollapsed && (
           <div className="flex items-center gap-3">
             {settings.branding.logoUrl ? (
@@ -139,25 +139,22 @@ export default function Sidebar() {
                 className="h-8 w-auto"
               />
             ) : (
-              <div
-                className="w-8 h-8 rounded-lg flex items-center justify-center"
-                style={{ backgroundColor: settings.colors.primary }}
-              >
-                <span className="text-white font-bold text-sm">R2F</span>
-              </div>
+              /* The site's wordmark. The "2" is the dark-mode vine so it reads on the shell. */
+              <span className="font-display font-bold text-[1.1rem] tracking-[-0.02em] text-sidebar-textActive">
+                Relo<span style={{ color: '#7fbaa3' }}>2</span>France
+              </span>
             )}
-            <span className="font-semibold text-sidebar-textActive">
-              {settings.branding.title}
-            </span>
+            {settings.branding.logoUrl && (
+              <span className="font-semibold text-sidebar-textActive">
+                {settings.branding.title}
+              </span>
+            )}
           </div>
         )}
         {sidebarCollapsed && (
-          <div
-            className="w-8 h-8 rounded-lg flex items-center justify-center mx-auto"
-            style={{ backgroundColor: settings.colors.primary }}
-          >
-            <span className="text-white font-bold text-sm">R</span>
-          </div>
+          <span className="font-display font-bold text-[0.85rem] tracking-[-0.02em] text-sidebar-textActive mx-auto">
+            R2F
+          </span>
         )}
       </div>
 
@@ -166,7 +163,7 @@ export default function Sidebar() {
         {sections.map((section) => (
           <div key={section.id} className="mb-6">
             {!sidebarCollapsed && (
-              <h3 className="px-4 mb-2 text-xs font-semibold text-sidebar-text/60 uppercase tracking-wider">
+              <h3 className="eyebrow px-4 mb-2 text-sidebar-text/60">
                 {section.label}
               </h3>
             )}
@@ -210,7 +207,7 @@ export default function Sidebar() {
       <button
         onClick={toggleSidebar}
         className={clsx(
-          'flex items-center justify-center h-12 border-t border-gray-700/50 transition-colors',
+          'flex items-center justify-center h-12 border-t border-white/10 transition-colors',
           sidebarCollapsed
             ? 'text-sidebar-textActive hover:bg-sidebar-hover'
             : 'text-sidebar-text hover:text-sidebar-textActive'

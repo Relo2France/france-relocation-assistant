@@ -37,6 +37,7 @@
 @layer base {
   html {
     font-family: var(--font-ui);
+    font-size: 16px;
   }
 
   body {
@@ -48,7 +49,13 @@
   /* The public site sets headings in the display face; the portal follows. */
   h1, h2, h3 {
     font-family: var(--font-display);
+    font-weight: 600;
     letter-spacing: -0.018em;
+  }
+
+  h4, h5, h6 {
+    font-family: var(--font-ui);
+    font-weight: 600;
   }
 }
 
@@ -69,7 +76,7 @@
 
   /* Navigation item styles */
   .nav-item {
-    @apply flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors cursor-pointer;
+    @apply flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors cursor-pointer text-[0.9rem];
   }
 
   .nav-item:hover {
@@ -80,30 +87,32 @@
     @apply bg-sidebar-active text-sidebar-textActive;
   }
 
-  /* Card styles */
+  /* Card styles - exact, like the site's content: a hairline rule, no shadow. */
   .card {
-    @apply bg-white rounded-xl shadow-sm border border-gray-200;
+    @apply bg-card border border-rule rounded-lg;
   }
 
   .card-header {
-    @apply px-6 py-4 border-b border-gray-200;
+    @apply px-6 py-4 border-b border-rule;
+  }
+
+  /* The small uppercase eyebrow the site uses for section labels. */
+  .eyebrow {
+    @apply font-sans text-[0.67rem] font-bold uppercase tracking-[0.15em] text-gray-600;
   }
 
   .card-body {
     @apply p-6;
   }
 
-  /* Button styles */
+  /* Button styles - pills, as on the site. */
   .btn {
-    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2;
+    @apply inline-flex items-center justify-center gap-2 px-[18px] py-[9px] rounded-full font-semibold text-sm transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500;
   }
 
-  .btn-secondary {
-    @apply bg-gray-100 text-gray-700 hover:bg-gray-200 focus:ring-gray-500;
-  }
-
+  .btn-secondary,
   .btn-ghost {
-    @apply bg-transparent text-gray-600 hover:bg-gray-100 focus:ring-gray-500;
+    @apply bg-transparent border border-rule text-ink hover:bg-card-2;
   }
 
   .btn-sm {
@@ -188,21 +197,21 @@
 
   /* Input styles */
   .input {
-    @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent;
+    @apply w-full px-4 py-2 border border-rule rounded-[10px] bg-card focus:outline focus:outline-2 focus:outline-primary-500 focus:outline-offset-2;
   }
 
   .input-error {
-    @apply border-red-500 focus:ring-red-500;
+    @apply border-red-500 focus:outline-red-500;
   }
 
   /* Select styles */
   .select {
-    @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white;
+    @apply w-full px-4 py-2 border border-rule rounded-[10px] bg-card focus:outline focus:outline-2 focus:outline-primary-500 focus:outline-offset-2;
   }
 
   /* Textarea styles */
   .textarea {
-    @apply w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none;
+    @apply w-full px-4 py-3 border border-rule rounded-[10px] bg-card focus:outline focus:outline-2 focus:outline-primary-500 focus:outline-offset-2 resize-none;
   }
 }
 

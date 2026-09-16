@@ -9,7 +9,7 @@
  * @author      Relo2France
  * @copyright   2024 Relo2France
  * @license     GPL-2.0-or-later
- * @version     1.2.4
+ * @version     2.0.0
  */
 
 // Prevent direct access.
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Theme version.
-define( 'R2F_VERSION', '1.2.4' );
+define( 'R2F_VERSION', '2.0.0' );
 
 /**
  * Sets up theme defaults and registers support for various WordPress features.
@@ -68,11 +68,28 @@ add_action('after_setup_theme', 'relo2france_setup');
  * @return void
  */
 function relo2france_scripts() {
+    // The same faces the public site loads, so the two read as one product.
+    wp_enqueue_style(
+        'relo2france-fonts',
+        'https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Karla:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap',
+        array(),
+        null
+    );
+
+    // Design tokens: a byte-for-byte copy of site/src/styles/tokens.css, kept
+    // identical by a test in the site package. Edit them there, then copy.
+    wp_enqueue_style(
+        'relo2france-tokens',
+        get_template_directory_uri() . '/assets/css/tokens.css',
+        array(),
+        R2F_VERSION
+    );
+
     // Main stylesheet
     wp_enqueue_style(
         'relo2france-style',
         get_stylesheet_uri(),
-        array(),
+        array( 'relo2france-fonts', 'relo2france-tokens' ),
         R2F_VERSION
     );
     

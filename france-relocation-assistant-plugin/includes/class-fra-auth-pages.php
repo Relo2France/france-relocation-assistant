@@ -73,9 +73,14 @@ class FRA_Auth_Pages {
         <style id="fra-auth-pages-css">
         /* ============================================================
            RELO2FRANCE AUTH PAGES - In-Template Cards
-           Works within your existing site header/footer
+           Styled on the public site's tokens (relo2france-theme loads
+           them on :root). Every var() carries a fallback so the cards
+           still read correctly if the theme is ever swapped.
+
+           Chrome is warm, content is exact. Vine is the only action
+           colour. Honey is never a price, a button or a badge.
            ============================================================ */
-        
+
         /* === HIDE DUPLICATE MEMBERPRESS FORMS === */
         /* Hide any MemberPress login forms that appear AFTER our container */
         .fra-auth-container ~ .mepr-login-form,
@@ -92,7 +97,7 @@ class FRA_Auth_Pages {
         body:has(.fra-auth-container) article > .mepr-login-form {
             display: none !important;
         }
-        
+
         /* Alternative: hide all MemberPress forms except ours */
         body:has(.fra-auth-container) .mepr-login-form {
             display: none !important;
@@ -100,61 +105,76 @@ class FRA_Auth_Pages {
         body:has(.fra-auth-container) .fra-auth-form-wrap .mepr-login-form {
             display: block !important;
         }
-        
-        /* === AUTH CONTAINER === */
+
+        /* === CONTAINER === */
         .fra-auth-container {
-            max-width: 480px;
-            margin: 2rem auto;
+            max-width: 440px;
+            margin: 40px auto;
             padding: 0 1rem;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            font-family: var(--font-ui, Karla, "Helvetica Neue", Arial, sans-serif);
+            color: var(--ink, #1c2420);
             -webkit-font-smoothing: antialiased;
         }
-        
+
         .fra-auth-container * {
             box-sizing: border-box;
         }
-        
+
         .fra-auth-container-wide {
-            max-width: 540px;
+            max-width: 560px;
         }
-        
+
         /* === CARD === */
         .fra-auth-card {
-            background: #fff;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-            padding: 2rem;
-            border: 1px solid #e5e7eb;
+            background: var(--card, #ffffff);
+            border: 1px solid var(--rule, #dde3de);
+            border-radius: var(--radius, 12px);
+            padding: 32px;
         }
-        
+
         /* === CARD HEADER === */
         .fra-auth-card-header {
             text-align: center;
-            margin-bottom: 1.5rem;
+            margin-bottom: 24px;
         }
-        
+
         .fra-auth-card-header h1 {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #1e3a5f;
-            margin: 0 0 0.5rem 0;
-            line-height: 1.3;
+            font-family: var(--font-display, Fraunces, Georgia, serif);
+            font-size: 1.6rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            line-height: 1.2;
+            color: var(--ink, #1c2420);
+            margin: 0 0 8px 0;
         }
-        
+
         .fra-auth-card-header p {
-            color: #6b7280;
-            font-size: 0.9375rem;
-            margin: 0;
+            font-family: var(--font-ui, Karla, Arial, sans-serif);
+            font-size: 0.95rem;
             line-height: 1.5;
+            color: var(--muted, #5f6e66);
+            margin: 0;
         }
-        
-        /* === FORM STYLES === */
+
+        /* === EYEBROW === */
+        .fra-auth-eyebrow,
+        .fra-auth-benefits-title {
+            font-family: var(--font-ui, Karla, Arial, sans-serif);
+            font-size: 0.67rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: var(--muted, #5f6e66);
+        }
+
+        /* === FORM WRAP === */
         .fra-auth-form-wrap {
             margin: 0;
         }
-        
+
         /* MemberPress form resets */
         .fra-auth-form-wrap form,
+        .fra-auth-form-wrap .mepr-form,
         .fra-auth-form-wrap .mepr-login-form,
         .fra-auth-form-wrap .mp-form {
             margin: 0 !important;
@@ -163,279 +183,549 @@ class FRA_Auth_Pages {
             border: none !important;
             box-shadow: none !important;
         }
-        
-        .fra-auth-form-wrap h3,
-        .fra-auth-form-wrap .mp-form-label {
+
+        .fra-auth-form-wrap h3 {
             display: none !important;
         }
-        
+
         .fra-auth-form-wrap .mp-form-row,
         .fra-auth-form-wrap .mepr-form-row {
-            margin-bottom: 1rem !important;
+            margin: 0 0 16px 0 !important;
+            padding: 0 !important;
         }
-        
+
+        .fra-auth-form-wrap .mp-spacer,
+        .fra-auth-form-wrap .mepr_spacer {
+            height: 8px;
+        }
+
+        .fra-auth-form-wrap .mp-form-label {
+            display: block !important;
+            margin: 0 0 6px 0 !important;
+        }
+
         .fra-auth-form-wrap label {
             display: block !important;
-            font-size: 0.875rem !important;
+            font-family: var(--font-ui, Karla, Arial, sans-serif) !important;
+            font-size: 0.8rem !important;
             font-weight: 600 !important;
-            color: #374151 !important;
-            margin-bottom: 0.375rem !important;
+            color: var(--ink, #1c2420) !important;
+            margin: 0 0 6px 0 !important;
         }
-        
+
+        .fra-auth-form-wrap .mepr-field-required label::after {
+            content: " *";
+            color: var(--muted, #5f6e66);
+            font-weight: 400;
+        }
+
         .fra-auth-form-wrap input[type="text"],
         .fra-auth-form-wrap input[type="email"],
         .fra-auth-form-wrap input[type="password"],
         .fra-auth-form-wrap input[type="tel"],
+        .fra-auth-form-wrap input[type="url"],
+        .fra-auth-form-wrap input[type="number"],
         .fra-auth-form-wrap textarea,
-        .fra-auth-form-wrap select {
+        .fra-auth-form-wrap select,
+        .fra-auth-form-wrap .mepr-form-input {
             width: 100% !important;
-            padding: 0.75rem 1rem !important;
-            border: 1px solid #d1d5db !important;
-            border-radius: 8px !important;
-            font-size: 1rem !important;
+            padding: 10px 14px !important;
+            border: 1px solid var(--rule, #dde3de) !important;
+            border-radius: var(--radius-sm, 10px) !important;
             font-family: inherit !important;
-            background: #fff !important;
-            color: #1f2937 !important;
-            transition: border-color 0.15s, box-shadow 0.15s !important;
+            font-size: 1rem !important;
+            line-height: 1.4 !important;
+            background: var(--card, #ffffff) !important;
+            color: var(--ink, #1c2420) !important;
+            box-shadow: none !important;
+            transition: border-color 0.15s !important;
         }
-        
-        .fra-auth-form-wrap input:focus {
-            outline: none !important;
-            border-color: #3b82f6 !important;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+
+        .fra-auth-form-wrap input:focus,
+        .fra-auth-form-wrap textarea:focus,
+        .fra-auth-form-wrap select:focus {
+            outline: 2px solid var(--vine, #2c5346) !important;
+            outline-offset: 2px !important;
+            border-color: var(--rule, #dde3de) !important;
+            box-shadow: none !important;
         }
-        
-        .fra-auth-form-wrap input::placeholder {
-            color: #9ca3af !important;
+
+        .fra-auth-form-wrap input::placeholder,
+        .fra-auth-form-wrap textarea::placeholder {
+            color: var(--muted, #5f6e66) !important;
+            opacity: 0.7 !important;
         }
-        
-        /* Checkbox */
-        .fra-auth-form-wrap input[type="checkbox"] {
+
+        /* Checkbox and radio */
+        .fra-auth-form-wrap input[type="checkbox"],
+        .fra-auth-form-wrap input[type="radio"] {
             width: 1rem !important;
             height: 1rem !important;
-            margin: 0 0.5rem 0 0 !important;
-            accent-color: #1e3a5f !important;
+            margin: 0 8px 0 0 !important;
+            accent-color: var(--vine, #2c5346) !important;
+            vertical-align: middle;
         }
-        
-        .fra-auth-form-wrap .mp-form-row-checkbox {
+
+        .fra-auth-form-wrap .mp-form-row-checkbox,
+        .fra-auth-form-wrap .mepr-form-row-checkbox {
             display: flex !important;
             align-items: center !important;
         }
-        
-        .fra-auth-form-wrap .mp-form-row-checkbox label {
+
+        .fra-auth-form-wrap .mp-form-row-checkbox label,
+        .fra-auth-form-wrap .mepr-form-row-checkbox label {
             display: inline !important;
             font-weight: 400 !important;
             margin: 0 !important;
         }
-        
-        /* Submit button - Orange like site CTA */
+
+        /* Hide the "show password" toggle and stray dashicons */
+        .fra-auth-form-wrap .mp-hide-pw,
+        .fra-auth-form-wrap .dashicons {
+            display: none !important;
+        }
+
+        /* Password strength meter */
+        .fra-auth-form-wrap .mp-password-strength-display,
+        .fra-auth-form-wrap .mp-pass-strength {
+            font-size: 0.78rem !important;
+            color: var(--muted, #5f6e66) !important;
+            margin-top: 6px !important;
+        }
+
+        /* === BUTTONS === */
         .fra-auth-form-wrap input[type="submit"],
         .fra-auth-form-wrap button[type="submit"],
-        .fra-auth-form-wrap .mepr-submit {
+        .fra-auth-form-wrap .mepr-submit,
+        .fra-auth-form-wrap .mepr-share-button,
+        .fra-auth-btn {
+            display: inline-block;
             width: 100% !important;
-            padding: 0.875rem 1.5rem !important;
-            background: #ea580c !important;
-            color: #fff !important;
-            border: none !important;
-            border-radius: 8px !important;
-            font-size: 1rem !important;
+            padding: 10px 18px !important;
+            border: 1px solid var(--vine, #2c5346) !important;
+            border-radius: var(--radius-pill, 100px) !important;
+            background: var(--vine, #2c5346) !important;
+            color: var(--on-brand, #ffffff) !important;
+            font-family: var(--font-ui, Karla, Arial, sans-serif) !important;
+            font-size: 0.85rem !important;
             font-weight: 600 !important;
+            line-height: 1.4 !important;
+            text-align: center !important;
+            text-decoration: none !important;
             cursor: pointer !important;
-            transition: background 0.15s !important;
-            margin-top: 0.5rem !important;
+            box-shadow: none !important;
+            transition: opacity 0.15s !important;
+            margin-top: 8px !important;
         }
-        
+
         .fra-auth-form-wrap input[type="submit"]:hover,
-        .fra-auth-form-wrap button[type="submit"]:hover {
-            background: #c2410c !important;
-        }
-        
-        /* Links in form */
-        .fra-auth-form-wrap a {
-            color: #1e3a5f !important;
+        .fra-auth-form-wrap button[type="submit"]:hover,
+        .fra-auth-form-wrap .mepr-submit:hover,
+        .fra-auth-btn-primary:hover {
+            opacity: 0.9;
+            color: var(--on-brand, #ffffff) !important;
             text-decoration: none !important;
         }
-        
+
+        .fra-auth-form-wrap .mp-form-submit {
+            margin-top: 8px !important;
+        }
+
+        .fra-auth-btn-primary {
+            background: var(--vine, #2c5346);
+            color: var(--on-brand, #ffffff);
+        }
+
+        .fra-auth-btn-secondary {
+            background: transparent !important;
+            color: var(--ink, #1c2420) !important;
+            border-color: var(--rule, #dde3de) !important;
+        }
+
+        .fra-auth-btn-secondary:hover {
+            background: var(--card-2, #f4f6f4) !important;
+            color: var(--ink, #1c2420) !important;
+            text-decoration: none !important;
+        }
+
+        .fra-auth-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 24px;
+        }
+
+        /* === LINKS === */
+        .fra-auth-form-wrap a,
+        .fra-auth-form-wrap .mepr-login-actions a {
+            color: var(--vine, #2c5346) !important;
+            text-decoration: none !important;
+            font-size: 0.85rem;
+        }
+
         .fra-auth-form-wrap a:hover {
             text-decoration: underline !important;
         }
-        
-        /* Hide ugly elements and duplicate links */
-        .fra-auth-form-wrap .mp-hide-pw,
-        .fra-auth-form-wrap .dashicons,
+
+        .fra-auth-form-wrap .mepr-login-actions {
+            text-align: center;
+            margin-top: 12px;
+        }
+
+        /* We link "Forgot your password?" ourselves in the card footer */
         .fra-auth-form-wrap .mepr-forgot-password,
         .fra-auth-form-wrap a[href*="forgot_password"],
         .fra-auth-form-wrap a[href*="lost-password"] {
             display: none !important;
         }
-        
-        /* === CARD FOOTER LINKS === */
+
+        /* === CARD FOOTER === */
         .fra-auth-card-footer {
             text-align: center;
-            margin-top: 1.5rem;
-            padding-top: 1.5rem;
-            border-top: 1px solid #e5e7eb;
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid var(--rule-soft, #ebefeb);
         }
-        
+
         .fra-auth-card-footer a {
-            color: #1e3a5f;
+            color: var(--vine, #2c5346);
+            font-size: 0.85rem;
             text-decoration: none;
-            font-size: 0.875rem;
         }
-        
+
         .fra-auth-card-footer a:hover {
             text-decoration: underline;
         }
-        
+
         .fra-auth-card-footer p {
-            color: #6b7280;
-            font-size: 0.875rem;
-            margin: 0.5rem 0;
+            color: var(--muted, #5f6e66);
+            font-size: 0.85rem;
+            margin: 8px 0;
         }
-        
-        /* === PRICE BADGE === */
+
+        .fra-auth-card-footer strong {
+            font-weight: 600;
+        }
+
+        .fra-auth-sep {
+            color: var(--rule, #dde3de);
+            margin: 0 8px;
+        }
+
+        /* === PRICE === */
         .fra-auth-price {
             text-align: center;
-            margin-bottom: 1.25rem;
+            margin-bottom: 20px;
         }
-        
+
         .fra-auth-price-badge {
             display: inline-block;
-            background: #ea580c;
-            color: #fff;
-            padding: 0.5rem 1.25rem;
-            border-radius: 50px;
-            font-weight: 700;
-            font-size: 1rem;
+            background: var(--vine-soft, #e7efea);
+            color: var(--vine, #2c5346);
+            padding: 6px 16px;
+            border-radius: var(--radius-pill, 100px);
+            font-family: var(--font-ui, Karla, Arial, sans-serif);
+            font-weight: 600;
+            font-size: 0.9rem;
         }
-        
+
         .fra-auth-price-note {
             display: block;
-            color: #6b7280;
+            color: var(--muted, #5f6e66);
             font-size: 0.8rem;
-            margin-top: 0.25rem;
+            margin-top: 6px;
         }
-        
-        /* === BENEFITS LIST === */
+
+        /* === BENEFITS === */
         .fra-auth-benefits {
-            background: #f8fafc;
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            padding: 1rem 1.25rem;
-            margin-bottom: 1.5rem;
+            background: var(--card-2, #f4f6f4);
+            border: 1px solid var(--rule, #dde3de);
+            border-radius: var(--radius-sm, 10px);
+            padding: 16px 20px;
+            margin-bottom: 24px;
         }
-        
+
         .fra-auth-benefits-title {
-            font-size: 0.7rem;
-            font-weight: 700;
-            color: #6b7280;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin-bottom: 0.75rem;
+            margin-bottom: 10px;
         }
-        
+
         .fra-auth-benefits ul {
             list-style: none;
             padding: 0;
             margin: 0;
         }
-        
+
         .fra-auth-benefits li {
             display: flex;
             align-items: flex-start;
-            gap: 0.5rem;
+            gap: 8px;
             font-size: 0.875rem;
-            color: #374151;
-            padding: 0.25rem 0;
+            line-height: 1.5;
+            color: var(--ink, #1c2420);
+            padding: 3px 0;
         }
-        
+
         .fra-auth-benefits li::before {
             content: '✓';
-            color: #16a34a;
+            color: var(--vine, #2c5346);
             font-weight: 700;
             flex-shrink: 0;
         }
-        
-        /* === SUCCESS/ICON === */
-        .fra-auth-icon {
+
+        /* === ICON === */
+        .fra-auth-icon,
+        .fra-auth-icon-blue {
             width: 64px;
             height: 64px;
-            background: #dcfce7;
+            background: var(--vine-soft, #e7efea);
+            color: var(--vine, #2c5346);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto 1rem;
+            margin: 0 auto 16px;
             font-size: 1.75rem;
         }
-        
-        .fra-auth-icon-blue {
-            background: #dbeafe;
-        }
-        
-        /* === ACTION BUTTONS === */
-        .fra-auth-actions {
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-            margin-top: 1.5rem;
-        }
-        
-        .fra-auth-btn {
-            display: block;
-            width: 100%;
-            padding: 0.875rem 1.5rem;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 600;
-            text-align: center;
-            text-decoration: none;
-            transition: all 0.15s;
-            border: none;
-            cursor: pointer;
-        }
-        
-        .fra-auth-btn-primary {
-            background: #ea580c;
-            color: #fff;
-        }
-        
-        .fra-auth-btn-primary:hover {
-            background: #c2410c;
-            color: #fff;
-            text-decoration: none;
-        }
-        
-        .fra-auth-btn-secondary {
-            background: #f3f4f6;
-            color: #374151;
-        }
-        
-        .fra-auth-btn-secondary:hover {
-            background: #e5e7eb;
-            color: #374151;
-            text-decoration: none;
-        }
-        
+
+        /* === SECURITY NOTE === */
         .fra-auth-security {
             text-align: center;
-            color: #9ca3af;
-            font-size: 0.75rem;
-            margin-top: 1rem;
+            font-family: var(--font-mono, "IBM Plex Mono", ui-monospace, Menlo, monospace);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--muted, #5f6e66);
+            margin-top: 16px;
         }
-        
+
+        /* === NOTICES === */
+        .fra-auth-notice,
+        .fra-auth-form-wrap .mepr-unauthorized-message {
+            background: var(--card-2, #f4f6f4);
+            border: 1px solid var(--rule, #dde3de);
+            border-radius: var(--radius-sm, 10px);
+            padding: 12px 16px;
+            font-size: 0.875rem;
+            color: var(--ink, #1c2420);
+            text-align: center;
+            margin: 0 0 16px 0;
+        }
+
+        /* Errors: brick, matching the portal's red - never honey */
+        .fra-auth-error,
+        .fra-auth-form-wrap .mepr-form-has-errors,
+        .fra-auth-form-wrap .mepr_error,
+        .fra-auth-form-wrap .mepr-error,
+        .fra-auth-form-wrap .mepr-stripe-card-errors:not(:empty),
+        .fra-auth-form-wrap .cc-error:not(:empty) {
+            display: block;
+            background: #fdf4f2;
+            border: 1px solid #f2c9c1;
+            border-radius: var(--radius-sm, 10px);
+            color: #b4432f;
+            font-size: 0.85rem;
+            padding: 10px 14px;
+            margin: 0 0 16px 0;
+        }
+
+        .fra-auth-form-wrap .mepr-form-has-errors ul {
+            margin: 0;
+            padding-left: 18px;
+        }
+
+        .fra-auth-form-wrap .cc-error:not(:empty) {
+            padding: 6px 10px;
+            margin: 6px 0 0 0;
+        }
+
+        /* === MEMBERPRESS CHECKOUT === */
+        /* Price line at the top of the signup form */
+        .fra-auth-form-wrap .mp-form-row.mepr_price {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 12px;
+            padding: 12px 0 !important;
+            border-top: 1px solid var(--rule-soft, #ebefeb);
+            border-bottom: 1px solid var(--rule-soft, #ebefeb);
+            margin-bottom: 20px !important;
+            font-weight: 600;
+        }
+
+        .fra-auth-form-wrap .mepr_price_cell_label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--muted, #5f6e66);
+        }
+
+        .fra-auth-form-wrap .mepr_price_cell,
+        .fra-auth-form-wrap .mp-currency-cell {
+            font-family: var(--font-mono, "IBM Plex Mono", ui-monospace, Menlo, monospace);
+            font-size: 0.95rem;
+            color: var(--ink, #1c2420);
+        }
+
+        /* Invoice table */
+        .fra-auth-form-wrap .mepr-transaction-invoice-wrapper {
+            margin: 0 0 20px 0;
+        }
+
+        .fra-auth-form-wrap table.mp-table,
+        .fra-auth-form-wrap table {
+            width: 100% !important;
+            border-collapse: collapse !important;
+            border: none !important;
+            font-size: 0.85rem !important;
+            background: transparent !important;
+        }
+
+        .fra-auth-form-wrap table th,
+        .fra-auth-form-wrap table td {
+            padding: 8px 4px !important;
+            border: none !important;
+            border-bottom: 1px solid var(--rule-soft, #ebefeb) !important;
+            text-align: left !important;
+            vertical-align: top !important;
+            background: transparent !important;
+            color: var(--ink, #1c2420);
+        }
+
+        .fra-auth-form-wrap table th {
+            font-size: 0.67rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--muted, #5f6e66);
+        }
+
+        .fra-auth-form-wrap table td.mp-currency-cell,
+        .fra-auth-form-wrap table td.mepr_price_cell {
+            text-align: right !important;
+        }
+
+        /* Payment method block */
+        .fra-auth-form-wrap .mepr-payment-methods-wrapper {
+            margin: 4px 0 16px 0;
+        }
+
+        .fra-auth-form-wrap .mepr-payment-method {
+            border: 1px solid var(--rule, #dde3de);
+            border-radius: var(--radius-sm, 10px);
+            padding: 14px 16px;
+            background: var(--card, #ffffff);
+        }
+
+        .fra-auth-form-wrap .mepr-payment-option-label {
+            display: flex !important;
+            align-items: center !important;
+            gap: 8px;
+            font-size: 0.85rem !important;
+            font-weight: 600 !important;
+            margin: 0 0 10px 0 !important;
+        }
+
+        .fra-auth-form-wrap .mepr-payment-method-icon img,
+        .fra-auth-form-wrap .mepr-payment-methods-icons img {
+            height: 20px;
+            width: auto;
+        }
+
+        .fra-auth-form-wrap .mepr-payment-method-desc-text {
+            font-size: 0.8rem;
+            color: var(--muted, #5f6e66);
+            margin: 0 0 10px 0;
+        }
+
+        .fra-auth-form-wrap .mepr-stripe-card-element,
+        .fra-auth-form-wrap .mepr-stripe-elements {
+            padding: 10px 14px;
+            border: 1px solid var(--rule, #dde3de);
+            border-radius: var(--radius-sm, 10px);
+            background: var(--card, #ffffff);
+        }
+
+        /* Coupon row: quieter than the rest */
+        .fra-auth-form-wrap .mp-form-row.mepr_coupon label {
+            color: var(--muted, #5f6e66) !important;
+            font-weight: 500 !important;
+        }
+
+        .fra-auth-form-wrap .mepr-loading-gif,
+        .fra-auth-form-wrap .mepr-coupon-loader,
+        .fra-auth-form-wrap .mepr-invoice-loader {
+            margin-left: 8px;
+        }
+
+        /* === MEMBERPRESS ACCOUNT === */
+        .fra-auth-form-wrap #mepr-account-nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px 18px;
+            justify-content: center;
+            margin: 0 0 24px 0;
+            padding: 0 0 16px 0;
+            border-bottom: 1px solid var(--rule-soft, #ebefeb);
+        }
+
+        .fra-auth-form-wrap #mepr-account-nav .mepr-nav-item {
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .fra-auth-form-wrap #mepr-account-nav .mepr-nav-item a {
+            color: var(--muted, #5f6e66) !important;
+            font-size: 0.85rem;
+        }
+
+        .fra-auth-form-wrap #mepr-account-nav .mepr-nav-item a:hover,
+        .fra-auth-form-wrap #mepr-account-nav .mepr-active-nav-tab a {
+            color: var(--ink, #1c2420) !important;
+            text-decoration: none !important;
+        }
+
+        .fra-auth-form-wrap #mepr-account-nav .mepr-active-nav-tab a {
+            font-weight: 600;
+            border-bottom: 2px solid var(--vine, #2c5346);
+            padding-bottom: 4px;
+        }
+
+        .fra-auth-form-wrap .mepr-account-change-password,
+        .fra-auth-form-wrap #mepr-account-change-password {
+            margin-top: 16px;
+        }
+
+        .fra-auth-form-wrap .mepr-account-change-password a {
+            font-size: 0.85rem;
+        }
+
+        .fra-auth-form-wrap .mp-table-wrap {
+            overflow-x: auto;
+        }
+
+        .fra-auth-card-centered {
+            text-align: center;
+        }
+
+        .fra-auth-card-centered .fra-auth-benefits {
+            text-align: left;
+        }
+
         /* === RESPONSIVE === */
         @media (max-width: 480px) {
             .fra-auth-container {
-                margin: 1rem auto;
+                margin: 16px auto;
             }
-            
+
             .fra-auth-card {
-                padding: 1.5rem;
+                padding: 24px;
             }
-            
+
             .fra-auth-card-header h1 {
-                font-size: 1.25rem;
+                font-size: 1.35rem;
+            }
+
+            .fra-auth-form-wrap #mepr-account-nav {
+                gap: 4px 14px;
             }
         }
         </style>
@@ -518,7 +808,7 @@ class FRA_Auth_Pages {
                     if (!empty($atts['membership_id'])) {
                         echo do_shortcode('[mepr-membership-registration-form id="' . esc_attr($atts['membership_id']) . '"]');
                     } else {
-                        echo '<p style="color: #dc2626; text-align: center; padding: 1rem; background: #fef2f2; border-radius: 8px;">Add membership_id to shortcode</p>';
+                        echo '<p class="fra-auth-error">Add membership_id to shortcode</p>';
                     }
                     ?>
                 </div>
@@ -544,7 +834,7 @@ class FRA_Auth_Pages {
         ob_start();
         ?>
         <div class="fra-auth-container">
-            <div class="fra-auth-card" style="text-align: center;">
+            <div class="fra-auth-card fra-auth-card-centered">
                 <div class="fra-auth-icon">✓</div>
                 
                 <div class="fra-auth-card-header">
@@ -584,7 +874,7 @@ class FRA_Auth_Pages {
                 
                 <div class="fra-auth-card-footer">
                     <a href="<?php echo esc_url(home_url('/')); ?>">← Back to Home</a>
-                    <span style="color: #d1d5db; margin: 0 0.5rem;">|</span>
+                    <span class="fra-auth-sep">|</span>
                     <a href="<?php echo esc_url(wp_logout_url(home_url('/logged-out/'))); ?>">Log Out</a>
                 </div>
             </div>
@@ -603,7 +893,7 @@ class FRA_Auth_Pages {
         ob_start();
         ?>
         <div class="fra-auth-container">
-            <div class="fra-auth-card" style="text-align: center;">
+            <div class="fra-auth-card fra-auth-card-centered">
                 <div class="fra-auth-icon fra-auth-icon-blue">🎉</div>
                 
                 <div class="fra-auth-card-header">
@@ -611,7 +901,7 @@ class FRA_Auth_Pages {
                     <p><?php echo esc_html($subtitle); ?></p>
                 </div>
                 
-                <div class="fra-auth-benefits" style="text-align: left;">
+                <div class="fra-auth-benefits">
                     <div class="fra-auth-benefits-title">What's Next</div>
                     <ul>
                         <li>Explore the AI-powered relocation guide</li>
