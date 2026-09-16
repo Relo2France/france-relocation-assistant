@@ -24,7 +24,9 @@ export default function ChecklistsView() {
   // Data
   const { data: dashboard, isLoading: dashboardLoading } = useDashboard();
   const visaType = dashboard?.project?.visa_type;
-  const { data: checklists = [], isLoading: checklistsLoading } = useChecklists(visaType);
+  const { data: checklistsRaw = [], isLoading: checklistsLoading } = useChecklists(visaType);
+  // Never trust the wire: an older plugin build sends summaries without items.
+  const checklists: Checklist[] = checklistsRaw.map((c) => ({ ...c, items: Array.isArray(c.items) ? c.items : [] }));
   const updateChecklistItem = useUpdateChecklistItem();
 
   // Every list the API returns, ordered by the journey stage it belongs to.

@@ -10,6 +10,7 @@ import { clsx } from 'clsx';
 import { AlertTriangle, Calendar, CheckCircle2, Circle } from 'lucide-react';
 import Jargon from '@/components/shared/Jargon';
 import Modal from '@/components/shared/Modal';
+import ProfessionalsCard from '@/components/shared/ProfessionalsCard';
 import { useChecklist, useDashboard, useFamilyMembers, useTasks, useUpdateProject } from '@/hooks/useApi';
 import { JOURNEY, currentStage, progressFor, stageById, stageForTask, stageWhen, timeToGo } from '@/journey/journey';
 import { usePortalStore } from '@/store';
@@ -258,12 +259,22 @@ export default function Dashboard() {
               <div className="flex flex-col min-w-0"><span className="font-semibold text-[0.95rem]">{m.name}</span><span className="text-[0.8rem] text-gray-500 capitalize">{m.relationship} · own visa file</span></div>
             </div>
           ))}
-          <p className="text-[0.82rem] text-gray-500 leading-snug">Each person applies separately. Their steps are dated from the same move.</p>
+          <p className="text-[0.82rem] text-gray-500 leading-snug">
+            {data.household?.partner && data.household.partner.userId > 0
+              ? `${data.household.partner.name.split(' ')[0]} has their own sign-in. Hand steps over from Family plans.`
+              : 'Each person applies separately. Their steps are dated from the same move.'}
+          </p>
           <button onClick={() => setActiveView('family')} className="text-sm font-semibold text-primary-500 hover:text-primary-700 self-start">
             {members.length ? 'Family plans' : 'Add a family member'}
           </button>
         </div>
       </div>
+
+      {(data.professionals ?? []).some((p) => p.stage === nowId) ? (
+        <div className="px-6 md:px-8 pt-5 pb-6">
+          <ProfessionalsCard prompts={(data.professionals ?? []).filter((p) => p.stage === nowId)} compact />
+        </div>
+      ) : null}
     </div>
   );
 }

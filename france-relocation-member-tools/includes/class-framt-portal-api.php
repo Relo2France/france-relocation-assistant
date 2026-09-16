@@ -614,6 +614,23 @@ class FRAMT_Portal_API {
 
         register_rest_route(
             self::NAMESPACE,
+            '/family/(?P<member_id>\d+)/invite',
+            array(
+                array(
+                    'methods'             => 'POST',
+                    'callback'            => array( $this, 'invite_family_member' ),
+                    'permission_callback' => array( $this, 'check_family_owner_permission' ),
+                ),
+                array(
+                    'methods'             => 'DELETE',
+                    'callback'            => array( $this, 'revoke_family_invite' ),
+                    'permission_callback' => array( $this, 'check_family_owner_permission' ),
+                ),
+            )
+        );
+
+        register_rest_route(
+            self::NAMESPACE,
             '/family/feature-status',
             array(
                 'methods'             => 'GET',
@@ -1135,6 +1152,105 @@ class FRAMT_Portal_API {
      *
      * @return bool|WP_Error
      */
+    /**
+     * Whose file a request works on.
+     *
+     * A partner invited from the Family plan signs in with their own account
+     * but works on the household's single file, so every handler resolves the
+     * owner here instead of the raw current user. The link is honoured only
+     * while the owner still lists that partner, so revoking an invite is
+     * enough to close the door.
+     *
+     * @return int User ID whose data the request reads and writes.
+     */
+    private function acting_user_id() {
+        $current = get_current_user_id();
+        if ( ! $current ) {
+            return 0;
+        }
+        static $cache = array();
+        if ( isset( $cache[ $current ] ) ) {
+            return $cache[ $current ];
+        }
+        $resolved = $current;
+        $owner    = (int) get_user_meta( $current, 'framt_household_owner', true );
+        if ( $owner > 0 && $owner !== $current ) {
+            $members = get_user_meta( $owner, 'framt_family_members', true );
+            if ( is_array( $members ) ) {
+                foreach ( $members as $index => $member ) {
+                    if ( (int) ( $member['invitedUserId'] ?? 0 ) === $current ) {
+                        $resolved = $owner;
+                        if ( 'joined' !== ( $member['inviteStatus'] ?? '' ) ) {
+                            $members[ $index ]['inviteStatus'] = 'joined';
+                            $members[ $index ]['joinedAt']     = current_time( 'mysql' );
+                            update_user_meta( $owner, 'framt_family_members', $members );
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+        $cache[ $current ] = $resolved;
+        return $resolved;
+    }
+
+    /**
+     * Whether a user id is the owner or an invited partner of the household.
+     *
+     * @param int $user_id Candidate.
+     * @return bool
+     */
+    private function is_household_user( $user_id ) {
+        $owner = $this->acting_user_id();
+        if ( (int) $user_id === (int) $owner ) {
+            return true;
+        }
+        $members = get_user_meta( $owner, 'framt_family_members', true );
+        if ( is_array( $members ) ) {
+            foreach ( $members as $member ) {
+                if ( (int) ( $member['invitedUserId'] ?? 0 ) === (int) $user_id ) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * The household a signed-in person belongs to, for the portal chrome.
+     *
+     * @return array role, owner and partner details.
+     */
+    private function household_for_current_user() {
+        $current = get_current_user_id();
+        $owner   = $this->acting_user_id();
+        $members = get_user_meta( $owner, 'framt_family_members', true );
+        $partner = null;
+        if ( is_array( $members ) ) {
+            foreach ( $members as $member ) {
+                if ( 'spouse' === ( $member['relationship'] ?? '' ) ) {
+                    $partner = array(
+                        'id'           => (int) $member['id'],
+                        'name'         => $member['name'] ?? '',
+                        'email'        => $member['email'] ?? '',
+                        'inviteStatus' => $member['inviteStatus'] ?? 'none',
+                        'userId'       => (int) ( $member['invitedUserId'] ?? 0 ),
+                    );
+                    break;
+                }
+            }
+        }
+        $owner_user = get_userdata( $owner );
+        $owner_name = $owner_user ? ( $owner_user->first_name ?: strtok( $owner_user->display_name, ' ' ) ) : '';
+        return array(
+            'role'       => $owner === $current ? 'owner' : 'partner',
+            'ownerId'    => $owner,
+            'ownerName'  => $owner_name,
+            'userId'     => $current,
+            'partner'    => $partner,
+        );
+    }
+
     public function check_member_permission() {
         if ( ! is_user_logged_in() ) {
             return new WP_Error(
@@ -1145,7 +1261,7 @@ class FRAMT_Portal_API {
         }
 
         // Check if user has active membership (optional - can be customized)
-        $user_id = get_current_user_id();
+        $user_id = $this->acting_user_id();
 
         // For now, any logged-in user can access the portal
         // Add MemberPress checks here if needed
@@ -1166,7 +1282,7 @@ class FRAMT_Portal_API {
 
         $project_id = (int) $request->get_param( 'id' );
         $project    = new FRAMT_Project( $project_id );
-        $user_id    = get_current_user_id();
+        $user_id    = $this->acting_user_id();
 
         if ( ! $project->id ) {
             return new WP_Error(
@@ -1216,7 +1332,7 @@ class FRAMT_Portal_API {
             );
         }
 
-        if ( (int) $project->user_id !== (int) get_current_user_id() && ! current_user_can( 'manage_options' ) ) {
+        if ( (int) $project->user_id !== (int) $this->acting_user_id() && ! current_user_can( 'manage_options' ) ) {
             return new WP_Error(
                 'rest_forbidden',
                 'You do not have permission to access this project.',
@@ -1250,7 +1366,7 @@ class FRAMT_Portal_API {
             );
         }
 
-        if ( (int) $task->user_id !== (int) get_current_user_id() && ! current_user_can( 'manage_options' ) ) {
+        if ( (int) $task->user_id !== (int) $this->acting_user_id() && ! current_user_can( 'manage_options' ) ) {
             return new WP_Error(
                 'rest_forbidden',
                 'You do not have permission to access this task.',
@@ -1284,7 +1400,7 @@ class FRAMT_Portal_API {
             );
         }
 
-        if ( (int) $task->user_id !== (int) get_current_user_id() && ! current_user_can( 'manage_options' ) ) {
+        if ( (int) $task->user_id !== (int) $this->acting_user_id() && ! current_user_can( 'manage_options' ) ) {
             return new WP_Error(
                 'rest_forbidden',
                 'You do not have permission to access this task.',
@@ -1302,7 +1418,7 @@ class FRAMT_Portal_API {
      * @return WP_REST_Response
      */
     public function get_dashboard( $request ) {
-        $user_id = get_current_user_id();
+        $user_id = $this->acting_user_id();
         $project = FRAMT_Project::get_or_create( $user_id );
 
         // Get user's visa type from their profile
@@ -1342,6 +1458,8 @@ class FRAMT_Portal_API {
                 ? $visa_type_labels[ $profile_visa_type ]
                 : null,
             'welcome_banner'       => $welcome_banner,
+            'household'            => $this->household_for_current_user(),
+            'professionals'        => $this->get_professional_prompts( $user_id ),
             'upcoming_tasks'       => array_map(
                 function( $task ) {
                     return $task->to_array();
@@ -1372,7 +1490,7 @@ class FRAMT_Portal_API {
      * @return WP_REST_Response
      */
     public function dismiss_welcome_banner( $request ) {
-        $user_id = get_current_user_id();
+        $user_id = $this->acting_user_id();
         update_user_meta( $user_id, 'framt_welcome_banner_dismissed', true );
 
         return rest_ensure_response( array( 'success' => true ) );
@@ -1385,7 +1503,7 @@ class FRAMT_Portal_API {
      * @return WP_REST_Response
      */
     public function get_projects( $request ) {
-        $user_id  = get_current_user_id();
+        $user_id  = $this->acting_user_id();
         $projects = FRAMT_Project::get_all_by_user( $user_id );
 
         return rest_ensure_response(
@@ -1422,7 +1540,7 @@ class FRAMT_Portal_API {
      * @return WP_REST_Response|WP_Error
      */
     public function create_project( $request ) {
-        $user_id = get_current_user_id();
+        $user_id = $this->acting_user_id();
         $params  = $request->get_json_params();
 
         $project              = new FRAMT_Project();
@@ -1589,7 +1707,7 @@ class FRAMT_Portal_API {
 
         $task             = new FRAMT_Task();
         $task->project_id = $project_id;
-        $task->user_id    = get_current_user_id();
+        $task->user_id    = $this->acting_user_id();
         $task->title      = sanitize_text_field( $params['title'] ?? '' );
 
         if ( empty( $task->title ) ) {
@@ -1677,6 +1795,30 @@ class FRAMT_Portal_API {
         }
         if ( isset( $params['sort_order'] ) ) {
             $task->sort_order = (int) $params['sort_order'];
+        }
+
+        // Who does it: the owner, or the partner invited from the Family plan.
+        if ( array_key_exists( 'assignee_id', $params ) ) {
+            $assignee = (int) $params['assignee_id'];
+            if ( 0 === $assignee ) {
+                $task->assignee_id = null;
+            } elseif ( $this->is_household_user( $assignee ) ) {
+                $task->assignee_id = $assignee;
+            } else {
+                return new WP_Error( 'rest_bad_assignee', 'Tasks can only be assigned to people in your household.', array( 'status' => 400 ) );
+            }
+        }
+
+        // Who it is for: 'you', 'partner', 'children' or a child record id.
+        if ( array_key_exists( 'person', $params ) ) {
+            $metadata = is_array( $task->metadata ) ? $task->metadata : array();
+            $person   = sanitize_text_field( (string) $params['person'] );
+            if ( '' === $person ) {
+                unset( $metadata['person'] );
+            } else {
+                $metadata['person'] = $person;
+            }
+            $task->metadata = $metadata;
         }
 
         $result = $task->save();
@@ -1859,7 +2001,7 @@ class FRAMT_Portal_API {
      * @return WP_REST_Response
      */
     public function get_site_member( $request ) {
-        $user_id = get_current_user_id();
+        $user_id = $this->acting_user_id();
         $user    = wp_get_current_user();
         $project = FRAMT_Project::get_or_create( $user_id );
 
@@ -1920,6 +2062,7 @@ class FRAMT_Portal_API {
 
         return rest_ensure_response( array(
             'firstName'   => $first_name,
+            'household'   => $this->household_for_current_user(),
             'destination' => (string) get_user_meta( $user_id, 'fra_target_location', true ),
             'visaType'    => (string) $visa_label,
             'moveDate'    => (string) $move_date,
@@ -1938,7 +2081,7 @@ class FRAMT_Portal_API {
      * @return WP_REST_Response|WP_Error
      */
     public function update_current_user( $request ) {
-        $user_id = get_current_user_id();
+        $user_id = $this->acting_user_id();
         $params  = $request->get_json_params();
 
         $user_data = array( 'ID' => $user_id );
@@ -1972,7 +2115,7 @@ class FRAMT_Portal_API {
      * @return WP_REST_Response
      */
     public function get_user_settings( $request ) {
-        $user_id = get_current_user_id();
+        $user_id = $this->acting_user_id();
 
         $defaults = array(
             'email_notifications' => true,
@@ -1999,7 +2142,7 @@ class FRAMT_Portal_API {
      * @return WP_REST_Response|WP_Error
      */
     public function update_user_settings( $request ) {
-        $user_id = get_current_user_id();
+        $user_id = $this->acting_user_id();
         $params  = $request->get_json_params();
 
         // Get existing settings
@@ -2079,7 +2222,7 @@ class FRAMT_Portal_API {
             );
         }
 
-        if ( (int) $file->user_id !== get_current_user_id() && ! current_user_can( 'manage_options' ) ) {
+        if ( (int) $file->user_id !== $this->acting_user_id() && ! current_user_can( 'manage_options' ) ) {
             return new WP_Error(
                 'rest_forbidden',
                 'You do not have permission to access this file.',
@@ -2151,7 +2294,7 @@ class FRAMT_Portal_API {
         global $wpdb;
 
         $project_id = $request->get_param( 'project_id' );
-        $user_id    = get_current_user_id();
+        $user_id    = $this->acting_user_id();
         $files      = $request->get_file_params();
 
         if ( empty( $files['file'] ) ) {
@@ -2293,7 +2436,7 @@ class FRAMT_Portal_API {
         }
 
         // Log activity
-        FRAMT_Activity::log( $file->project_id, get_current_user_id(), 'file_deleted', 'file', $file_id, $file->original_name );
+        FRAMT_Activity::log( $file->project_id, $this->acting_user_id(), 'file_deleted', 'file', $file_id, $file->original_name );
 
         // Delete from database
         $wpdb->delete( $table, array( 'id' => $file_id ), array( '%d' ) );
@@ -2491,7 +2634,7 @@ class FRAMT_Portal_API {
             );
         }
 
-        if ( (int) $note->user_id !== get_current_user_id() && ! current_user_can( 'manage_options' ) ) {
+        if ( (int) $note->user_id !== $this->acting_user_id() && ! current_user_can( 'manage_options' ) ) {
             return new WP_Error(
                 'rest_forbidden',
                 'You do not have permission to access this note.',
@@ -2590,7 +2733,7 @@ class FRAMT_Portal_API {
             $table,
             array(
                 'project_id' => $project_id,
-                'user_id'    => get_current_user_id(),
+                'user_id'    => $this->acting_user_id(),
                 'task_id'    => $task_id ?: null,
                 'content'    => wp_kses_post( $content ),
                 'visibility' => $visibility,
@@ -2615,7 +2758,7 @@ class FRAMT_Portal_API {
         // Log activity
         FRAMT_Activity::log(
             $project_id,
-            get_current_user_id(),
+            $this->acting_user_id(),
             'note_created',
             'note',
             $note_id,
@@ -2775,7 +2918,7 @@ class FRAMT_Portal_API {
      * @return WP_REST_Response
      */
     public function get_member_profile( $request ) {
-        $user_id = get_current_user_id();
+        $user_id = $this->acting_user_id();
         $user    = get_userdata( $user_id );
 
         // Get all profile meta - using frontend field names
@@ -2844,7 +2987,7 @@ class FRAMT_Portal_API {
      * @return WP_REST_Response|WP_Error
      */
     public function update_member_profile( $request ) {
-        $user_id = get_current_user_id();
+        $user_id = $this->acting_user_id();
         $params  = $request->get_json_params();
 
         // All fields that can be updated - matches frontend field names
@@ -2944,6 +3087,12 @@ class FRAMT_Portal_API {
             'new_applicants' => $new_applicants,
         ) );
 
+        // The rest of the profile drives tasks too: housing, work, money.
+        $this->generate_profile_tasks( $user_id );
+
+        // Who is moving becomes a file per person on the Family plan.
+        $this->sync_family_from_profile( $user_id );
+
         // Recalculate task due dates if move date changed
         if ( ! empty( $new_target_move_date ) && $new_target_move_date !== $old_target_move_date ) {
             // Sync move date to project
@@ -2966,7 +3115,7 @@ class FRAMT_Portal_API {
      * @return WP_REST_Response
      */
     public function get_profile_completion( $request ) {
-        $user_id = get_current_user_id();
+        $user_id = $this->acting_user_id();
 
         // Define required fields that count toward completion - using new field names
         $required_fields = array(
@@ -3030,7 +3179,7 @@ class FRAMT_Portal_API {
      * @return WP_REST_Response
      */
     public function get_checklists( $request ) {
-        $user_id = get_current_user_id();
+        $user_id = $this->acting_user_id();
 
         // Define available checklist types
         $checklist_types = array(
@@ -3082,15 +3231,16 @@ class FRAMT_Portal_API {
         $response  = array();
         $visa_type = (string) get_user_meta( $user_id, 'fra_visa_type', true );
         foreach ( $checklist_types as $type => $checklist ) {
-            $progress = get_user_meta( $user_id, 'fra_checklist_' . $type, true ) ?: array();
-            $items    = $this->get_checklist_items( $type, $visa_type );
+            $items = $this->resolve_checklist_items( $user_id, $type, $visa_type );
 
             $completed = 0;
             foreach ( $items as $item ) {
-                if ( ! empty( $progress[ $item['id'] ]['completed'] ) ) {
+                if ( ! empty( $item['completed'] ) ) {
                     $completed++;
                 }
             }
+
+            $checklist['items']           = $items;
 
             $checklist['total_items']     = count( $items );
             $checklist['completed_items'] = $completed;
@@ -3108,20 +3258,24 @@ class FRAMT_Portal_API {
      * @param WP_REST_Request $request Request object
      * @return WP_REST_Response|WP_Error
      */
-    public function get_checklist( $request ) {
-        $user_id   = get_current_user_id();
-        $type      = $request->get_param( 'type' );
-        $visa_type = (string) get_user_meta( $user_id, 'fra_visa_type', true );
-
+    /**
+     * Checklist items for a member with their progress merged in.
+     *
+     * Both the list and the single-checklist endpoints return the same item
+     * shape, so the portal can render a checklist from either without a
+     * second request.
+     *
+     * @param int    $user_id   Member.
+     * @param string $type      Checklist type, e.g. visa-application.
+     * @param string $visa_type Member's visa route.
+     * @return array Items with completed/status/note fields.
+     */
+    private function resolve_checklist_items( $user_id, $type, $visa_type ) {
         $items    = $this->get_checklist_items( $type, $visa_type );
         $progress = get_user_meta( $user_id, 'fra_checklist_' . $type, true ) ?: array();
 
         if ( empty( $items ) ) {
-            return new WP_Error(
-                'rest_checklist_not_found',
-                'Checklist type not found.',
-                array( 'status' => 404 )
-            );
+            return array();
         }
 
         // The passport item can answer itself: the profile knows the expiry
@@ -3155,6 +3309,29 @@ class FRAMT_Portal_API {
             }
         }
 
+        // The certificate questions in the profile answer their own items.
+        $auto = array();
+        if ( 'visa-application' === $type ) {
+            $birth_apostilled    = (string) get_user_meta( $user_id, 'fra_birth_cert_apostilled', true );
+            $has_birth           = (string) get_user_meta( $user_id, 'fra_has_birth_cert', true );
+            $marriage_apostilled = (string) get_user_meta( $user_id, 'fra_marriage_cert_apostilled', true );
+            $has_marriage        = (string) get_user_meta( $user_id, 'fra_has_marriage_cert', true );
+            if ( 'yes' === $birth_apostilled ) {
+                $auto['birth-certificate-apostilled'] = array( true, 'Apostilled, from your profile' );
+            } elseif ( 'yes' === $has_birth ) {
+                $auto['birth-certificate-apostilled'] = array( false, 'You have the certificate · the apostille is still to do' );
+            } elseif ( 'no' === $has_birth ) {
+                $auto['birth-certificate-apostilled'] = array( false, 'Order a certified copy from your birth state first' );
+            }
+            if ( 'yes' === $marriage_apostilled ) {
+                $auto['marriage-certificate'] = array( true, 'Apostilled, from your profile' );
+            } elseif ( 'yes' === $has_marriage ) {
+                $auto['marriage-certificate'] = array( false, 'You have the certificate · the apostille is still to do' );
+            } elseif ( 'no' === $has_marriage ) {
+                $auto['marriage-certificate'] = array( false, 'Order a certified copy from the state you married in' );
+            }
+        }
+
         // Merge progress with items
         foreach ( $items as &$item ) {
             $own_tick             = ! empty( $progress[ $item['id'] ]['completed'] );
@@ -3169,9 +3346,33 @@ class FRAMT_Portal_API {
                     $item['completed'] = true;
                 }
             }
+            if ( isset( $auto[ $item['id'] ] ) ) {
+                $item['note'] = $auto[ $item['id'] ][1];
+                if ( $auto[ $item['id'] ][0] && ! $own_tick ) {
+                    $item['completed'] = true;
+                }
+            }
             $item['status'] = $item['completed'] ? 'complete' : 'pending';
         }
         unset( $item );
+
+        return $items;
+    }
+
+    public function get_checklist( $request ) {
+        $user_id   = $this->acting_user_id();
+        $type      = $request->get_param( 'type' );
+        $visa_type = (string) get_user_meta( $user_id, 'fra_visa_type', true );
+
+        $items = $this->resolve_checklist_items( $user_id, $type, $visa_type );
+
+        if ( empty( $items ) ) {
+            return new WP_Error(
+                'rest_checklist_not_found',
+                'Checklist type not found.',
+                array( 'status' => 404 )
+            );
+        }
 
         return rest_ensure_response( array(
             'type'  => $type,
@@ -3186,7 +3387,7 @@ class FRAMT_Portal_API {
      * @return WP_REST_Response|WP_Error
      */
     public function update_checklist_item( $request ) {
-        $user_id = get_current_user_id();
+        $user_id = $this->acting_user_id();
         $type    = $request->get_param( 'type' );
         $item_id = $request->get_param( 'item_id' );
         $params  = $request->get_json_params();
@@ -3556,7 +3757,7 @@ class FRAMT_Portal_API {
         $params   = $request->get_json_params();
         $type     = $params['type'] ?? '';
         $data     = $params['data'] ?? array();
-        $user_id  = get_current_user_id();
+        $user_id  = $this->acting_user_id();
 
         // Get user profile for merge
         $user = get_userdata( $user_id );
@@ -3596,7 +3797,7 @@ class FRAMT_Portal_API {
         $params     = $request->get_json_params();
         $type       = $params['type'] ?? '';
         $data       = $params['data'] ?? array();
-        $user_id    = get_current_user_id();
+        $user_id    = $this->acting_user_id();
 
         // Get user profile
         $user    = get_userdata( $user_id );
@@ -3758,7 +3959,7 @@ class FRAMT_Portal_API {
         if ( $table_exists ) {
             $doc = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE id = %d", $doc_id ) );
 
-            if ( ! $doc || (int) $doc->user_id !== get_current_user_id() ) {
+            if ( ! $doc || (int) $doc->user_id !== $this->acting_user_id() ) {
                 return new WP_Error( 'rest_doc_not_found', 'Document not found.', array( 'status' => 404 ) );
             }
 
@@ -3771,7 +3972,7 @@ class FRAMT_Portal_API {
         } else {
             $post = get_post( $doc_id );
 
-            if ( ! $post || (int) $post->post_author !== get_current_user_id() ) {
+            if ( ! $post || (int) $post->post_author !== $this->acting_user_id() ) {
                 return new WP_Error( 'rest_doc_not_found', 'Document not found.', array( 'status' => 404 ) );
             }
 
@@ -4023,7 +4224,7 @@ Signature:
      * @return WP_REST_Response|WP_Error
      */
     public function verify_document( $request ) {
-        $user_id = get_current_user_id();
+        $user_id = $this->acting_user_id();
 
         // Rate limiting check for AI operations
         $rate_check = $this->check_rate_limit(
@@ -4077,7 +4278,7 @@ Signature:
         $result = $this->perform_verification( $type, array( 'file' => $file ) );
 
         // Store verification result
-        $verifications = get_user_meta( get_current_user_id(), 'fra_verifications', true ) ?: array();
+        $verifications = get_user_meta( $this->acting_user_id(), 'fra_verifications', true ) ?: array();
         $verifications[] = array(
             'file_id'    => $file_id,
             'project_id' => $project_id,
@@ -4085,7 +4286,7 @@ Signature:
             'result'     => $result,
             'created_at' => current_time( 'mysql' ),
         );
-        update_user_meta( get_current_user_id(), 'fra_verifications', $verifications );
+        update_user_meta( $this->acting_user_id(), 'fra_verifications', $verifications );
 
         return rest_ensure_response( $result );
     }
@@ -4098,7 +4299,7 @@ Signature:
      */
     public function get_verification_history( $request ) {
         $project_id    = $request->get_param( 'project_id' );
-        $verifications = get_user_meta( get_current_user_id(), 'fra_verifications', true ) ?: array();
+        $verifications = get_user_meta( $this->acting_user_id(), 'fra_verifications', true ) ?: array();
 
         // Filter by project
         $filtered = array_filter( $verifications, function( $v ) use ( $project_id ) {
@@ -4236,7 +4437,7 @@ Signature:
      */
     public function get_personalized_guide( $request ): WP_REST_Response {
         $type    = $request->get_param( 'type' );
-        $user_id = get_current_user_id();
+        $user_id = $this->acting_user_id();
 
         // Get user's visa type from profile (uses fra_visa_type, not fra_visa_type_applying)
         $visa_type   = get_user_meta( $user_id, 'fra_visa_type', true ) ?: 'visitor';
@@ -4366,7 +4567,7 @@ Signature:
      * @return WP_REST_Response
      */
     public function send_chat_message( $request ): WP_REST_Response {
-        $user_id = get_current_user_id();
+        $user_id = $this->acting_user_id();
 
         // Rate limiting check
         $rate_check = $this->check_rate_limit(
@@ -5960,7 +6161,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
      * @return WP_REST_Response
      */
     public function get_membership_info( $request ) {
-        $user_id = get_current_user_id();
+        $user_id = $this->acting_user_id();
 
         $response = array(
             'user_id'     => $user_id,
@@ -6007,7 +6208,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
      * @return WP_REST_Response
      */
     public function get_subscriptions( $request ) {
-        $user_id = get_current_user_id();
+        $user_id = $this->acting_user_id();
 
         $subscriptions = array();
 
@@ -6042,7 +6243,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
      * @return WP_REST_Response
      */
     public function get_payments( $request ) {
-        $user_id = get_current_user_id();
+        $user_id = $this->acting_user_id();
 
         $payments = array();
 
@@ -6077,7 +6278,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
      */
     public function cancel_subscription( $request ) {
         $sub_id  = $request->get_param( 'id' );
-        $user_id = get_current_user_id();
+        $user_id = $this->acting_user_id();
 
         if ( ! class_exists( 'MeprSubscription' ) ) {
             return new WP_Error( 'memberpress_not_active', 'Membership system not available.', array( 'status' => 503 ) );
@@ -6107,7 +6308,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
      */
     public function suspend_subscription( $request ) {
         $sub_id  = $request->get_param( 'id' );
-        $user_id = get_current_user_id();
+        $user_id = $this->acting_user_id();
 
         if ( ! class_exists( 'MeprSubscription' ) ) {
             return new WP_Error( 'memberpress_not_active', 'Membership system not available.', array( 'status' => 503 ) );
@@ -6137,7 +6338,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
      */
     public function resume_subscription( $request ) {
         $sub_id  = $request->get_param( 'id' );
-        $user_id = get_current_user_id();
+        $user_id = $this->acting_user_id();
 
         if ( ! class_exists( 'MeprSubscription' ) ) {
             return new WP_Error( 'memberpress_not_active', 'Membership system not available.', array( 'status' => 503 ) );
@@ -6166,7 +6367,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
      * @return WP_REST_Response
      */
     public function get_upgrade_options( $request ) {
-        $user_id = get_current_user_id();
+        $user_id = $this->acting_user_id();
         $options = array();
 
         if ( class_exists( 'MeprProduct' ) ) {
@@ -6235,7 +6436,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
      * @return WP_REST_Response|WP_Error
      */
     public function reset_profile( $request ) {
-        $user_id = get_current_user_id();
+        $user_id = $this->acting_user_id();
 
         if ( ! $user_id ) {
             return new WP_Error(
@@ -6455,7 +6656,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
      * @return WP_REST_Response|WP_Error
      */
     public function delete_account( $request ) {
-        $user_id = get_current_user_id();
+        $user_id = $this->acting_user_id();
 
         if ( ! $user_id ) {
             return new WP_Error(
@@ -6955,6 +7156,266 @@ Focus on practical advice while being careful not to state incorrect facts. When
     }
 
     /**
+     * Tasks the rest of the profile calls for.
+     *
+     * Every answer a member gives should change what they are asked to do,
+     * or the question was not worth asking. These are idempotent on title, so
+     * saving the profile twice creates nothing twice.
+     *
+     * @param int $user_id Member.
+     * @return int Tasks created.
+     */
+    private function generate_profile_tasks( $user_id ) {
+        $project = FRAMT_Project::get_or_create( $user_id );
+        if ( ! $project || ! $project->id ) {
+            return 0;
+        }
+        $created = 0;
+        foreach ( $this->get_profile_task_templates( $user_id ) as $template ) {
+            if ( ! $this->task_exists( $project->id, $template['title'] ) ) {
+                $created += $this->create_task_from_template( $project->id, $user_id, $template );
+            }
+        }
+        return $created;
+    }
+
+    /**
+     * Templates keyed off the profile fields that used to go nowhere.
+     *
+     * @param int $user_id Member.
+     * @return array
+     */
+    private function get_profile_task_templates( $user_id ) {
+        $get = function ( $key ) use ( $user_id ) {
+            return (string) get_user_meta( $user_id, 'fra_' . $key, true );
+        };
+        $visa       = $get( 'visa_type' );
+        $housing    = $get( 'housing_plan' );
+        $mortgage   = $get( 'french_mortgage' );
+        $work       = $get( 'employment_status' );
+        $in_france  = $get( 'work_in_france' );
+        $employer   = trim( $get( 'employer_name' ) );
+        $job        = trim( $get( 'job_title' ) );
+        $who        = $get( 'applicants' );
+        $has_kids   = in_array( $who, array( 'spouse_kids', 'kids_only', 'family' ), true );
+        $templates  = array();
+
+        // Money: the year you move is the year to plan.
+        $templates[] = array(
+            'title'        => 'Talk to a cross-border tax professional before you move',
+            'description'  => 'US citizens keep filing US returns after they leave, and France taxes its residents on worldwide income. The treaty decides which country taxes what, and the year you become French tax resident is the one to plan, not the one after.',
+            'stage'        => 'pre-arrival',
+            'priority'     => 'high',
+            'days_offset'  => -120,
+            'professional' => 'tax',
+        );
+
+        // Housing.
+        if ( 'buying' === $housing || in_array( $mortgage, array( 'yes', 'maybe' ), true ) ) {
+            $templates[] = array(
+                'title'        => 'Get a mortgage agreement in principle (accord de principe)',
+                'description'  => 'French banks do lend to newcomers, but they want a larger deposit and proof of stable income, and they take their time. A courtier (mortgage broker) compares banks for you; the agreement in principle is what sellers ask to see with an offer.',
+                'stage'        => 'pre-arrival',
+                'priority'     => 'medium',
+                'days_offset'  => -150,
+                'professional' => 'courtier',
+            );
+            $templates[] = array(
+                'title'        => 'Budget for the notaire on a purchase',
+                'description'  => 'Every property sale in France goes through a notaire, and their fees and taxes come on top of the price. The notaire is neutral between buyer and seller, so buyers often appoint their own. Ask for the full cost before you sign a compromis de vente.',
+                'stage'        => 'pre-arrival',
+                'priority'     => 'medium',
+                'days_offset'  => -120,
+                'professional' => 'notaire',
+            );
+        }
+        if ( 'already_own' === $housing ) {
+            $templates[] = array(
+                'title'        => 'Check how owning French property affects your taxes and estate',
+                'description'  => 'Owning a home in France before you live there raises two questions a professional should answer: how it is taxed once you are resident, and how French inheritance rules apply to it. A notaire can answer both.',
+                'stage'        => 'pre-arrival',
+                'priority'     => 'medium',
+                'days_offset'  => -90,
+                'professional' => 'notaire',
+            );
+        }
+
+        // Work.
+        if ( 'yes_remote' === $in_france ) {
+            $templates[] = array(
+                'title'        => 'Confirm how remote work for a US employer is treated in France',
+                'description'  => 'Once you are French tax resident your salary is taxable in France even if the employer stays in the US, and the employer may have obligations of its own. Get a cross-border tax professional to look at the arrangement before you move, not after the first payslip.',
+                'stage'        => 'pre-arrival',
+                'priority'     => 'high',
+                'days_offset'  => -100,
+                'professional' => 'tax',
+            );
+        }
+        if ( 'yes_self' === $in_france || 'self_employed' === $work || 'entrepreneur' === $visa ) {
+            $templates[] = array(
+                'title'        => 'Choose a French business status and register with URSSAF',
+                'description'  => 'Working for yourself in France means registering an activity, as a micro-entrepreneur or through a company, and paying social charges through URSSAF. An expert-comptable can tell you which status fits your income, your visa and your US filing.',
+                'stage'        => 'settlement',
+                'priority'     => 'high',
+                'days_offset'  => 30,
+                'professional' => 'accountant',
+            );
+        }
+        if ( 'yes_local' === $in_france && in_array( $visa, array( 'employee', 'talent_passport' ), true ) ) {
+            $employer_label = '' !== $employer ? $employer : 'your employer';
+            $role_label     = '' !== $job ? ' as ' . $job : '';
+            $templates[] = array(
+                'title'       => 'Ask ' . $employer_label . ' for the consulate paperwork',
+                'description' => 'The employment contract' . $role_label . ' and the work authorisation are your employer\'s documents, and the consulate will not look at your file without them. Ask early: the authorisation is the slow part.',
+                'stage'       => 'pre-arrival',
+                'priority'    => 'high',
+                'days_offset' => -150,
+                'person'      => 'you',
+            );
+        }
+        if ( 'retiree' === $visa || 'retired' === $work ) {
+            $templates[] = array(
+                'title'        => 'Ask how your US pension and retirement accounts are taxed in France',
+                'description'  => 'Social Security, pensions, IRAs and 401(k)s are each treated differently under the US–France treaty, and withdrawals you planned around US rules may look different from France. A cross-border tax professional should go through them before you move.',
+                'stage'        => 'pre-arrival',
+                'priority'     => 'high',
+                'days_offset'  => -110,
+                'professional' => 'tax',
+            );
+        }
+
+        // Family.
+        if ( $has_kids ) {
+            $templates[] = array(
+                'title'        => 'Check how French inheritance rules affect your estate plan',
+                'description'  => 'France has forced-heirship rules that can override a US will for assets in France, and they matter more once you have children and a home here. A notaire or estate lawyer can tell you whether your plan needs changing.',
+                'stage'        => 'settlement',
+                'priority'     => 'low',
+                'days_offset'  => 120,
+                'professional' => 'notaire',
+                'person'       => 'you',
+            );
+        }
+
+        return $templates;
+    }
+
+    /**
+     * When a member should bring in a professional, and which one.
+     *
+     * The portal holds hands through the process, and part of that is saying
+     * plainly where the process stops being paperwork and starts being
+     * advice. Each prompt names the trigger from the profile so the member
+     * can see why it applies to them.
+     *
+     * @param int $user_id Member.
+     * @return array
+     */
+    private function get_professional_prompts( $user_id ) {
+        $get = function ( $key ) use ( $user_id ) {
+            return (string) get_user_meta( $user_id, 'fra_' . $key, true );
+        };
+        $visa      = $get( 'visa_type' );
+        $housing   = $get( 'housing_plan' );
+        $mortgage  = $get( 'french_mortgage' );
+        $work      = $get( 'employment_status' );
+        $in_france = $get( 'work_in_france' );
+        $who       = $get( 'applicants' );
+        $has_kids  = in_array( $who, array( 'spouse_kids', 'kids_only', 'family' ), true );
+        $prompts   = array();
+
+        $prompts[] = array(
+            'id'      => 'tax-residency',
+            'kind'    => 'tax',
+            'who'     => 'A cross-border tax professional',
+            'when'    => 'Before the year you move',
+            'stage'   => 'prepare',
+            'why'     => 'US citizens keep filing in the US; France taxes residents on worldwide income. The treaty decides who taxes what, and the year you move is the one to plan.',
+            'trigger' => 'Applies to every US citizen moving to France.',
+        );
+
+        if ( 'undecided' === $visa || '' === $visa ) {
+            $prompts[] = array(
+                'id'      => 'route-fit',
+                'kind'    => 'law',
+                'who'     => 'An immigration lawyer (avocat)',
+                'when'    => 'Before you spend on documents',
+                'stage'   => 'decide',
+                'why'     => 'If no route fits your situation cleanly, an hour with a lawyer is cheaper than an apostilled file for the wrong visa.',
+                'trigger' => 'You have not settled on a visa route yet.',
+            );
+        }
+
+        $prompts[] = array(
+            'id'      => 'refusal',
+            'kind'    => 'law',
+            'who'     => 'An immigration lawyer (avocat)',
+            'when'    => 'If the consulate refuses, or your history is complicated',
+            'stage'   => 'apply',
+            'why'     => 'A refusal can be appealed, but on a clock. A prior overstay, a criminal record or a situation that does not fit a route cleanly are all reasons to have a lawyer look before you apply.',
+            'trigger' => 'Applies to every application.',
+        );
+
+        if ( 'yes_remote' === $in_france ) {
+            $prompts[] = array(
+                'id'      => 'remote-work',
+                'kind'    => 'tax',
+                'who'     => 'A cross-border tax professional',
+                'when'    => 'Before your first French payslip',
+                'stage'   => 'prepare',
+                'why'     => 'Working from France for a US employer is taxable in France once you are resident, and the employer may have obligations too.',
+                'trigger' => 'Your profile says you will work remotely for a US employer.',
+            );
+        }
+        if ( 'yes_self' === $in_france || 'self_employed' === $work || 'entrepreneur' === $visa ) {
+            $prompts[] = array(
+                'id'      => 'business-status',
+                'kind'    => 'accountant',
+                'who'     => 'An expert-comptable',
+                'when'    => 'When you register your activity',
+                'stage'   => 'settle',
+                'why'     => 'Micro-entrepreneur or company, URSSAF charges, VAT and how it all sits with your US return: this is the accountant\'s job, not a form.',
+                'trigger' => 'Your profile says you will work for yourself.',
+            );
+        }
+        if ( 'retiree' === $visa || 'retired' === $work ) {
+            $prompts[] = array(
+                'id'      => 'pensions',
+                'kind'    => 'tax',
+                'who'     => 'A cross-border tax professional',
+                'when'    => 'Before you move',
+                'stage'   => 'prepare',
+                'why'     => 'Social Security, pensions, IRAs and 401(k)s are each treated differently under the treaty. Withdrawals planned around US rules can look different from France.',
+                'trigger' => 'Your profile says you are retired.',
+            );
+        }
+        if ( 'buying' === $housing || 'already_own' === $housing || in_array( $mortgage, array( 'yes', 'maybe' ), true ) ) {
+            $prompts[] = array(
+                'id'      => 'property',
+                'kind'    => 'notaire',
+                'who'     => 'A notaire, and a courtier for the mortgage',
+                'when'    => 'Before you sign a compromis de vente',
+                'stage'   => 'move',
+                'why'     => 'Every French property sale goes through a notaire; buyers can appoint their own. A courtier compares banks and knows which will lend to a newcomer.',
+                'trigger' => 'Your profile says you plan to buy or already own in France.',
+            );
+        }
+        if ( $has_kids || 'buying' === $housing || 'already_own' === $housing ) {
+            $prompts[] = array(
+                'id'      => 'estate',
+                'kind'    => 'notaire',
+                'who'     => 'A notaire or estate lawyer',
+                'when'    => 'Once you are settled',
+                'stage'   => 'settle',
+                'why'     => 'French forced-heirship rules can override a US will for assets in France. Whether that matters for you depends on what you own and who inherits.',
+                'trigger' => $has_kids ? 'You are moving with children.' : 'You will own property in France.',
+            );
+        }
+
+        return $prompts;
+    }
+
+    /**
      * Check if a task with given title already exists for a project
      *
      * @param int    $project_id Project ID
@@ -7001,9 +7462,17 @@ Focus on practical advice while being careful not to state incorrect facts. When
             $move_date = get_user_meta( $user_id, 'fra_target_move_date', true );
         }
 
+        $metadata = array( 'from_template' => true );
         if ( isset( $template['days_offset'] ) ) {
-            $task->metadata = array( 'days_offset' => (int) $template['days_offset'], 'from_template' => true );
+            $metadata['days_offset'] = (int) $template['days_offset'];
         }
+        if ( ! empty( $template['person'] ) ) {
+            $metadata['person'] = sanitize_key( $template['person'] );
+        }
+        if ( ! empty( $template['professional'] ) ) {
+            $metadata['professional'] = sanitize_key( $template['professional'] );
+        }
+        $task->metadata = $metadata;
 
         if ( ! empty( $move_date ) && isset( $template['days_offset'] ) ) {
             $task->due_date = $this->calculate_due_date( $move_date, $template['days_offset'] );
@@ -7443,6 +7912,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
         // days_offset: negative = days before move, positive = days after move
         return array(
             array(
+                'person'      => 'partner',
                 'title'       => 'Get marriage certificate apostilled',
                 'description' => 'Have your marriage certificate apostilled for French recognition.',
                 'stage'       => 'pre-arrival',
@@ -7451,6 +7921,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                 'days_offset' => -90, // 3 months before move
             ),
             array(
+                'person'      => 'partner',
                 'title'       => 'Translate marriage certificate',
                 'description' => 'Get a certified French translation of your marriage certificate.',
                 'stage'       => 'pre-arrival',
@@ -7459,6 +7930,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                 'days_offset' => -75, // 2.5 months before move (after apostille)
             ),
             array(
+                'person'      => 'partner',
                 'title'       => 'Gather spouse documents',
                 'description' => 'Collect passport, birth certificate, and other required documents for your spouse.',
                 'stage'       => 'pre-arrival',
@@ -7467,6 +7939,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                 'days_offset' => -120, // 4 months before move
             ),
             array(
+                'person'      => 'partner',
                 'title'       => 'Apply for spouse visa',
                 'description' => 'Submit visa application for your spouse (if required).',
                 'stage'       => 'pre-arrival',
@@ -7475,6 +7948,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                 'days_offset' => -60, // 2 months before move
             ),
             array(
+                'person'      => 'partner',
                 'title'       => 'Register spouse for social security',
                 'description' => 'Register your spouse as an ayant droit for health coverage.',
                 'stage'       => 'arrival',
@@ -7494,6 +7968,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
         // days_offset: negative = days before move, positive = days after move
         return array(
             array(
+                'person'      => 'children',
                 'title'       => 'Get birth certificates apostilled',
                 'description' => 'Have children\'s birth certificates apostilled for French recognition.',
                 'stage'       => 'pre-arrival',
@@ -7502,6 +7977,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                 'days_offset' => -90, // 3 months before move
             ),
             array(
+                'person'      => 'children',
                 'title'       => 'Translate birth certificates',
                 'description' => 'Get certified French translations of children\'s birth certificates.',
                 'stage'       => 'pre-arrival',
@@ -7510,6 +7986,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                 'days_offset' => -75, // 2.5 months before move
             ),
             array(
+                'person'      => 'children',
                 'title'       => 'Gather children vaccination records',
                 'description' => 'Collect immunization records - France requires specific vaccinations for school.',
                 'stage'       => 'pre-arrival',
@@ -7518,6 +7995,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                 'days_offset' => -60, // 2 months before move
             ),
             array(
+                'person'      => 'children',
                 'title'       => 'Research French schools',
                 'description' => 'Research public, private, and international school options in your target area.',
                 'stage'       => 'pre-arrival',
@@ -7526,6 +8004,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                 'days_offset' => -120, // 4 months before move (early research)
             ),
             array(
+                'person'      => 'children',
                 'title'       => 'Apply for child visas',
                 'description' => 'Submit visa applications for dependent children.',
                 'stage'       => 'pre-arrival',
@@ -7534,6 +8013,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                 'days_offset' => -60, // 2 months before move
             ),
             array(
+                'person'      => 'children',
                 'title'       => 'Enroll children in school',
                 'description' => 'Complete school registration with your local mairie or chosen private school.',
                 'stage'       => 'arrival',
@@ -7542,6 +8022,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                 'days_offset' => 7, // 1 week after move
             ),
             array(
+                'person'      => 'children',
                 'title'       => 'Apply for family CAF benefits',
                 'description' => 'Apply for allocations familiales and other family benefits through CAF.',
                 'stage'       => 'settlement',
@@ -7550,6 +8031,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                 'days_offset' => 45, // 1.5 months after move
             ),
             array(
+                'person'      => 'children',
                 'title'       => 'Register children for health coverage',
                 'description' => 'Add children as ayants droit for French health insurance.',
                 'days_offset' => 21, // 3 weeks after move
@@ -7773,7 +8255,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
 
             $document_id = null;
             if ( $save_to_docs ) {
-                $document_id = $this->save_report_link_to_documents( $cached_report['id'], get_current_user_id() );
+                $document_id = $this->save_report_link_to_documents( $cached_report['id'], $this->acting_user_id() );
             }
 
             return rest_ensure_response( array(
@@ -7820,7 +8302,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
 
         $document_id = null;
         if ( $save_to_docs ) {
-            $document_id = $this->save_report_link_to_documents( $report_id, get_current_user_id() );
+            $document_id = $this->save_report_link_to_documents( $report_id, $this->acting_user_id() );
         }
 
         return rest_ensure_response( array(
@@ -9214,7 +9696,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
      */
     public function save_report_to_documents( $request ) {
         $report_id = absint( $request->get_param( 'id' ) );
-        $user_id   = get_current_user_id();
+        $user_id   = $this->acting_user_id();
 
         global $wpdb;
         $table_name = $wpdb->prefix . 'framt_research_reports';
@@ -9248,7 +9730,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
      * @return WP_REST_Response
      */
     public function get_saved_research_reports( $request ) {
-        $user_id = get_current_user_id();
+        $user_id = $this->acting_user_id();
 
         global $wpdb;
         $links_table   = $wpdb->prefix . 'framt_research_report_links';
@@ -10196,7 +10678,7 @@ SECTIONS;
 
         global $wpdb;
         $ticket_id = (int) $request->get_param( 'id' );
-        $user_id   = get_current_user_id();
+        $user_id   = $this->acting_user_id();
 
         $ticket_user = $wpdb->get_var( $wpdb->prepare(
             "SELECT user_id FROM {$wpdb->prefix}framt_messages WHERE id = %d",
@@ -10230,7 +10712,7 @@ SECTIONS;
      */
     public function get_support_tickets( $request ) {
         global $wpdb;
-        $user_id = get_current_user_id();
+        $user_id = $this->acting_user_id();
         $table_messages = $wpdb->prefix . 'framt_messages';
         $table_replies  = $wpdb->prefix . 'framt_message_replies';
 
@@ -10238,7 +10720,8 @@ SECTIONS;
             "SELECT m.*,
                     (SELECT COUNT(*) FROM {$table_replies} WHERE message_id = m.id) as reply_count,
                     (SELECT content FROM {$table_replies} WHERE message_id = m.id ORDER BY created_at ASC LIMIT 1) as initial_message,
-                    (SELECT created_at FROM {$table_replies} WHERE message_id = m.id ORDER BY created_at DESC LIMIT 1) as last_reply_at
+                    (SELECT created_at FROM {$table_replies} WHERE message_id = m.id ORDER BY created_at DESC LIMIT 1) as last_reply_at,
+                    (SELECT is_admin FROM {$table_replies} WHERE message_id = m.id ORDER BY created_at ASC LIMIT 1) as from_site
              FROM {$table_messages} m
              WHERE m.user_id = %d
              ORDER BY m.updated_at DESC",
@@ -10251,6 +10734,7 @@ SECTIONS;
             $ticket['user_id']         = (int) $ticket['user_id'];
             $ticket['has_unread_user'] = (bool) $ticket['has_unread_user'];
             $ticket['reply_count']     = (int) $ticket['reply_count'];
+            $ticket['from_site']       = (bool) $ticket['from_site'];
             $ticket['relative_time']   = human_time_diff( strtotime( $ticket['updated_at'] ) ) . ' ago';
         }
 
@@ -10269,7 +10753,7 @@ SECTIONS;
     public function get_support_ticket( $request ) {
         global $wpdb;
         $ticket_id      = (int) $request->get_param( 'id' );
-        $user_id        = get_current_user_id();
+        $user_id        = $this->acting_user_id();
         $table_messages = $wpdb->prefix . 'framt_messages';
         $table_replies  = $wpdb->prefix . 'framt_message_replies';
 
@@ -10332,7 +10816,7 @@ SECTIONS;
      */
     public function create_support_ticket( $request ) {
         global $wpdb;
-        $user_id        = get_current_user_id();
+        $user_id        = $this->acting_user_id();
         $table_messages = $wpdb->prefix . 'framt_messages';
         $table_replies  = $wpdb->prefix . 'framt_message_replies';
 
@@ -10401,7 +10885,7 @@ SECTIONS;
     public function reply_to_support_ticket( $request ) {
         global $wpdb;
         $ticket_id      = (int) $request->get_param( 'id' );
-        $user_id        = get_current_user_id();
+        $user_id        = $this->acting_user_id();
         $table_messages = $wpdb->prefix . 'framt_messages';
         $table_replies  = $wpdb->prefix . 'framt_message_replies';
 
@@ -10500,7 +10984,7 @@ SECTIONS;
      * @return WP_REST_Response
      */
     public function get_support_unread_count( $request ) {
-        $user_id = get_current_user_id();
+        $user_id = $this->acting_user_id();
         return rest_ensure_response( array(
             'count' => $this->count_user_unread_tickets( $user_id ),
         ) );
@@ -10630,7 +11114,7 @@ SECTIONS;
 
         // Check if family feature is enabled for this user
         // TOGGLE POINT: Change this logic to check membership level
-        $user_id = get_current_user_id();
+        $user_id = $this->acting_user_id();
         $feature_enabled = $this->is_family_feature_enabled( $user_id );
 
         if ( ! $feature_enabled ) {
@@ -10652,7 +11136,7 @@ SECTIONS;
      * @return bool
      */
     private function is_family_feature_enabled( $user_id ) {
-        // Option 1: Check user meta flag (manual override)
+        // A manual override on the member wins either way.
         $manual_override = get_user_meta( $user_id, 'framt_family_feature_enabled', true );
         if ( '1' === $manual_override ) {
             return true;
@@ -10661,28 +11145,189 @@ SECTIONS;
             return false;
         }
 
-        // Option 2: Check global setting (enable for all members during beta)
-        $global_enabled = get_option( 'framt_family_feature_enabled', '1' ); // Default ON for now
-        if ( '1' === $global_enabled ) {
-            return true;
+        // The Family add-on is a one-time MemberPress product. Once its ID is
+        // set in Portal Settings the feature is paid; until then the global
+        // switch decides, so nothing breaks before the product exists.
+        $product_id = (int) get_option( 'framt_family_addon_product_id', 0 );
+        if ( $product_id > 0 ) {
+            if ( ! class_exists( 'MeprUser' ) ) {
+                return false;
+            }
+            $mepr_user = new MeprUser( $user_id );
+            $active    = method_exists( $mepr_user, 'active_product_subscriptions' )
+                ? (array) $mepr_user->active_product_subscriptions( 'ids' )
+                : array();
+            return in_array( $product_id, array_map( 'intval', $active ), true );
         }
 
-        // Option 3: Check MemberPress membership level (for future integration)
-        // Uncomment and modify when ready to integrate with MemberPress:
-        /*
-        if ( function_exists( 'mepr_get_current_user' ) ) {
-            $mepr_user = mepr_get_current_user();
-            $premium_levels = array( 'premium', 'family-plan', 'professional' );
-            foreach ( $mepr_user->active_product_subscriptions() as $product_id ) {
-                $product = new MeprProduct( $product_id );
-                if ( in_array( $product->post_name, $premium_levels, true ) ) {
-                    return true;
+        return '1' === get_option( 'framt_family_feature_enabled', '1' );
+    }
+
+    /**
+     * What the Family add-on costs and allows, for the portal to show.
+     *
+     * @return array
+     */
+    private function family_addon_details() {
+        $url = (string) get_option( 'framt_family_addon_url', '' );
+        if ( '' === $url ) {
+            $url = home_url( '/register/family-add-on/' );
+        }
+        return array(
+            'price'      => '$20',
+            'priceNote'  => 'once, alongside your membership',
+            'url'        => $url,
+            'limits'     => array( 'adults' => 1, 'children' => 4 ),
+            'configured' => (int) get_option( 'framt_family_addon_product_id', 0 ) > 0,
+        );
+    }
+
+    /**
+     * Who the profile says is moving, so the Family plan can mirror it even
+     * before the add-on is bought.
+     *
+     * @param int $user_id Member.
+     * @return array
+     */
+    private function household_from_profile( $user_id ) {
+        $who      = (string) get_user_meta( $user_id, 'fra_applicants', true );
+        $children = (int) get_user_meta( $user_id, 'fra_num_children', true );
+        $ages     = array_values( array_filter( array_map( 'trim', preg_split( '/[,\s]+/', (string) get_user_meta( $user_id, 'fra_children_ages', true ) ) ), 'strlen' ) );
+        $spouse   = trim( (string) get_user_meta( $user_id, 'fra_spouse_legal_first_name', true ) . ' ' . (string) get_user_meta( $user_id, 'fra_spouse_legal_last_name', true ) );
+        return array(
+            'hasPartner'    => in_array( $who, array( 'spouse', 'spouse_kids', 'family' ), true ),
+            'partnerName'   => $spouse,
+            'partnerDob'    => (string) get_user_meta( $user_id, 'fra_spouse_date_of_birth', true ),
+            'children'      => in_array( $who, array( 'spouse_kids', 'kids_only', 'family' ), true ) ? max( $children, count( $ages ) ) : 0,
+            'childrenAges'  => $ages,
+        );
+    }
+
+    /**
+     * Keep the Family plan in step with the profile.
+     *
+     * The profile asks who is moving and names the partner; the Family plan
+     * holds a file per person. Creating the records here means a member never
+     * types the same names twice, and the two views can't disagree. Records
+     * are only ever added or filled in, never removed: a member who removes a
+     * child from the profile still has that child's file until they delete it.
+     *
+     * @param int $user_id Member.
+     * @return void
+     */
+    private function sync_family_from_profile( $user_id ) {
+        $profile = $this->household_from_profile( $user_id );
+        $members = get_user_meta( $user_id, 'framt_family_members', true );
+        if ( ! is_array( $members ) ) {
+            $members = array();
+        }
+        $max_id = 0;
+        foreach ( $members as $m ) {
+            $max_id = max( $max_id, (int) ( $m['id'] ?? 0 ) );
+        }
+        $changed = false;
+        $now     = current_time( 'mysql' );
+
+        if ( $profile['hasPartner'] ) {
+            $found = false;
+            foreach ( $members as $i => $m ) {
+                if ( 'spouse' === ( $m['relationship'] ?? '' ) ) {
+                    $found = true;
+                    if ( '' === trim( (string) ( $m['name'] ?? '' ) ) && '' !== $profile['partnerName'] ) {
+                        $members[ $i ]['name'] = $profile['partnerName'];
+                        $changed = true;
+                    }
+                    if ( empty( $m['birthDate'] ) && '' !== $profile['partnerDob'] ) {
+                        $members[ $i ]['birthDate'] = $profile['partnerDob'];
+                        $changed = true;
+                    }
+                    break;
                 }
             }
+            if ( ! $found ) {
+                $members[] = array(
+                    'id'           => ++$max_id,
+                    'name'         => '' !== $profile['partnerName'] ? $profile['partnerName'] : 'Your partner',
+                    'relationship' => 'spouse',
+                    'birthDate'    => $profile['partnerDob'],
+                    'nationality'  => '',
+                    'visaStatus'   => 'pending',
+                    'documents'    => array( 'passport' => false, 'birthCertificate' => false, 'marriageCertificate' => false, 'photos' => false ),
+                    'notes'        => '',
+                    'source'       => 'profile',
+                    'created_at'   => $now,
+                    'updated_at'   => $now,
+                );
+                $changed = true;
+            }
         }
-        */
 
-        return false;
+        $existing_children = 0;
+        foreach ( $members as $m ) {
+            if ( 'child' === ( $m['relationship'] ?? '' ) ) {
+                $existing_children++;
+            }
+        }
+        $wanted = min( 4, (int) $profile['children'] );
+        for ( $n = $existing_children; $n < $wanted; $n++ ) {
+            $age       = $profile['childrenAges'][ $n ] ?? '';
+            $members[] = array(
+                'id'           => ++$max_id,
+                'name'         => 'Child ' . ( $n + 1 ),
+                'relationship' => 'child',
+                'birthDate'    => '',
+                'age'          => $age,
+                'nationality'  => '',
+                'visaStatus'   => 'pending',
+                'documents'    => array( 'passport' => false, 'birthCertificate' => false, 'photos' => false ),
+                'notes'        => '',
+                'source'       => 'profile',
+                'created_at'   => $now,
+                'updated_at'   => $now,
+            );
+            $changed = true;
+        }
+
+        if ( $changed ) {
+            update_user_meta( $user_id, 'framt_family_members', $members );
+        }
+    }
+
+    /**
+     * The add-on covers one adult and up to four children. Anything else is
+     * refused with a reason the portal can show.
+     *
+     * @param array  $members      Existing records.
+     * @param string $relationship Relationship being added.
+     * @param int    $ignore_id    Record being edited, if any.
+     * @return true|WP_Error
+     */
+    private function check_family_limits( $members, $relationship, $ignore_id = 0 ) {
+        if ( 'partner' === $relationship ) {
+            $relationship = 'spouse';
+        }
+        if ( ! in_array( $relationship, array( 'spouse', 'child' ), true ) ) {
+            return new WP_Error( 'family_relationship', 'The Family plan covers one partner and up to four children.', array( 'status' => 400 ) );
+        }
+        $adults = 0;
+        $kids   = 0;
+        foreach ( $members as $m ) {
+            if ( (int) ( $m['id'] ?? 0 ) === (int) $ignore_id ) {
+                continue;
+            }
+            if ( 'spouse' === ( $m['relationship'] ?? '' ) ) {
+                $adults++;
+            } elseif ( 'child' === ( $m['relationship'] ?? '' ) ) {
+                $kids++;
+            }
+        }
+        if ( 'spouse' === $relationship && $adults >= 1 ) {
+            return new WP_Error( 'family_limit', 'The plan covers one partner. Edit the existing partner instead.', array( 'status' => 400 ) );
+        }
+        if ( 'child' === $relationship && $kids >= 4 ) {
+            return new WP_Error( 'family_limit', 'The plan covers up to four children.', array( 'status' => 400 ) );
+        }
+        return true;
     }
 
     /**
@@ -10692,13 +11337,15 @@ SECTIONS;
      * @return WP_REST_Response
      */
     public function get_family_feature_status( $request ) {
-        $user_id = get_current_user_id();
+        $user_id = $this->acting_user_id();
         $enabled = $this->is_family_feature_enabled( $user_id );
 
+        $addon = $this->family_addon_details();
         return rest_ensure_response( array(
             'enabled'     => $enabled,
-            'upgrade_url' => $enabled ? null : home_url( '/membership/' ),
-            'message'     => $enabled ? null : 'Upgrade to Premium to manage family members.',
+            'upgrade_url' => $enabled ? null : $addon['url'],
+            'message'     => $enabled ? null : 'The Family add-on gives your partner and children their own files.',
+            'addon'       => $addon,
         ) );
     }
 
@@ -10709,7 +11356,7 @@ SECTIONS;
      * @return WP_REST_Response
      */
     public function get_family_members( $request ) {
-        $user_id = get_current_user_id();
+        $user_id = $this->acting_user_id();
         $members = get_user_meta( $user_id, 'framt_family_members', true );
 
         if ( empty( $members ) || ! is_array( $members ) ) {
@@ -10719,10 +11366,29 @@ SECTIONS;
         // Add feature status to response
         $feature_enabled = $this->is_family_feature_enabled( $user_id );
 
+        // Mirror the profile even before the add-on is bought, so the plan
+        // page can show who is moving and what each file would hold.
+        if ( $feature_enabled ) {
+            $this->sync_family_from_profile( $user_id );
+            $members = get_user_meta( $user_id, 'framt_family_members', true );
+            if ( empty( $members ) || ! is_array( $members ) ) {
+                $members = array();
+            }
+        }
+
+        $household = $this->household_for_current_user();
+        foreach ( $members as &$member ) {
+            $member['inviteStatus'] = $member['inviteStatus'] ?? 'none';
+        }
+        unset( $member );
+
         return rest_ensure_response( array(
             'members'         => array_values( $members ),
             'feature_enabled' => $feature_enabled,
-            'can_edit'        => $feature_enabled,
+            'can_edit'        => $feature_enabled && 'owner' === $household['role'],
+            'household'       => $household,
+            'profile'         => $this->household_from_profile( $user_id ),
+            'addon'           => $this->family_addon_details(),
         ) );
     }
 
@@ -10733,7 +11399,7 @@ SECTIONS;
      * @return WP_REST_Response|WP_Error
      */
     public function get_family_member( $request ) {
-        $user_id   = get_current_user_id();
+        $user_id   = $this->acting_user_id();
         $member_id = (int) $request->get_param( 'member_id' );
         $members   = get_user_meta( $user_id, 'framt_family_members', true );
 
@@ -10757,7 +11423,7 @@ SECTIONS;
      * @return WP_REST_Response|WP_Error
      */
     public function create_family_member( $request ) {
-        $user_id = get_current_user_id();
+        $user_id = $this->acting_user_id();
         $params  = $request->get_json_params();
 
         // Validate required fields
@@ -10770,6 +11436,16 @@ SECTIONS;
         if ( empty( $members ) || ! is_array( $members ) ) {
             $members = array();
         }
+
+        $relationship = sanitize_text_field( $params['relationship'] );
+        if ( 'partner' === $relationship ) {
+            $relationship = 'spouse';
+        }
+        $limit = $this->check_family_limits( $members, $relationship );
+        if ( is_wp_error( $limit ) ) {
+            return $limit;
+        }
+        $params['relationship'] = $relationship;
 
         // Generate new ID
         $max_id = 0;
@@ -10784,6 +11460,7 @@ SECTIONS;
             'name'         => sanitize_text_field( $params['name'] ),
             'relationship' => sanitize_text_field( $params['relationship'] ),
             'birthDate'    => sanitize_text_field( $params['birthDate'] ?? '' ),
+            'age'          => sanitize_text_field( $params['age'] ?? '' ),
             'nationality'  => sanitize_text_field( $params['nationality'] ?? '' ),
             'visaStatus'   => sanitize_text_field( $params['visaStatus'] ?? 'pending' ),
             'documents'    => array(
@@ -10793,6 +11470,7 @@ SECTIONS;
                 'photos'             => ! empty( $params['documents']['photos'] ),
             ),
             'notes'        => sanitize_textarea_field( $params['notes'] ?? '' ),
+            'inviteStatus' => 'none',
             'created_at'   => current_time( 'mysql' ),
             'updated_at'   => current_time( 'mysql' ),
         );
@@ -10810,7 +11488,7 @@ SECTIONS;
      * @return WP_REST_Response|WP_Error
      */
     public function update_family_member( $request ) {
-        $user_id   = get_current_user_id();
+        $user_id   = $this->acting_user_id();
         $member_id = (int) $request->get_param( 'member_id' );
         $params    = $request->get_json_params();
         $members   = get_user_meta( $user_id, 'framt_family_members', true );
@@ -10822,10 +11500,21 @@ SECTIONS;
         $found = false;
         foreach ( $members as $key => $member ) {
             if ( (int) $member['id'] === $member_id ) {
+                $relationship = sanitize_text_field( $params['relationship'] ?? $member['relationship'] );
+                if ( 'partner' === $relationship ) {
+                    $relationship = 'spouse';
+                }
+                if ( $relationship !== ( $member['relationship'] ?? '' ) ) {
+                    $limit = $this->check_family_limits( $members, $relationship, $member_id );
+                    if ( is_wp_error( $limit ) ) {
+                        return $limit;
+                    }
+                }
                 // Update fields
                 $members[ $key ] = array_merge( $member, array(
                     'name'         => sanitize_text_field( $params['name'] ?? $member['name'] ),
-                    'relationship' => sanitize_text_field( $params['relationship'] ?? $member['relationship'] ),
+                    'relationship' => $relationship,
+                    'age'          => sanitize_text_field( $params['age'] ?? ( $member['age'] ?? '' ) ),
                     'birthDate'    => sanitize_text_field( $params['birthDate'] ?? $member['birthDate'] ),
                     'nationality'  => sanitize_text_field( $params['nationality'] ?? $member['nationality'] ),
                     'visaStatus'   => sanitize_text_field( $params['visaStatus'] ?? $member['visaStatus'] ),
@@ -10864,7 +11553,7 @@ SECTIONS;
      * @return WP_REST_Response|WP_Error
      */
     public function delete_family_member( $request ) {
-        $user_id   = get_current_user_id();
+        $user_id   = $this->acting_user_id();
         $member_id = (int) $request->get_param( 'member_id' );
         $members   = get_user_meta( $user_id, 'framt_family_members', true );
 
@@ -10875,6 +11564,7 @@ SECTIONS;
         $found = false;
         foreach ( $members as $key => $member ) {
             if ( (int) $member['id'] === $member_id ) {
+                $this->unlink_household_user( (int) ( $member['invitedUserId'] ?? 0 ), $user_id );
                 unset( $members[ $key ] );
                 $found = true;
                 break;
@@ -10890,5 +11580,184 @@ SECTIONS;
         update_user_meta( $user_id, 'framt_family_members', $members );
 
         return rest_ensure_response( array( 'success' => true, 'message' => 'Family member deleted.' ) );
+    }
+
+    /**
+     * Only the account holder invites or revokes; a partner cannot invite
+     * someone else into the file they were invited to.
+     *
+     * @return true|WP_Error
+     */
+    public function check_family_owner_permission() {
+        $check = $this->check_family_feature_permission();
+        if ( is_wp_error( $check ) ) {
+            return $check;
+        }
+        if ( get_current_user_id() !== $this->acting_user_id() ) {
+            return new WP_Error( 'rest_forbidden', 'Only the account holder can manage invitations.', array( 'status' => 403 ) );
+        }
+        return true;
+    }
+
+    /**
+     * Give the partner their own sign-in to the household file.
+     *
+     * The account holder can do the whole file alone, or hand the partner's
+     * part (and the children's) to the partner. The partner gets a normal
+     * WordPress account tied to this household; nothing about the owner's
+     * membership changes.
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response|WP_Error
+     */
+    public function invite_family_member( $request ) {
+        $owner_id  = $this->acting_user_id();
+        $member_id = (int) $request->get_param( 'member_id' );
+        $params    = $request->get_json_params();
+        $email     = sanitize_email( (string) ( $params['email'] ?? '' ) );
+
+        if ( ! is_email( $email ) ) {
+            return new WP_Error( 'invite_email', 'Enter a valid email address.', array( 'status' => 400 ) );
+        }
+
+        $members = get_user_meta( $owner_id, 'framt_family_members', true );
+        if ( ! is_array( $members ) ) {
+            $members = array();
+        }
+        $index = null;
+        foreach ( $members as $i => $m ) {
+            if ( (int) ( $m['id'] ?? 0 ) === $member_id ) {
+                $index = $i;
+                break;
+            }
+        }
+        if ( null === $index ) {
+            return new WP_Error( 'not_found', 'Family member not found.', array( 'status' => 404 ) );
+        }
+        if ( 'spouse' !== ( $members[ $index ]['relationship'] ?? '' ) ) {
+            return new WP_Error( 'invite_relationship', 'Only your partner can have their own sign-in. Children\'s tasks can be assigned to either of you.', array( 'status' => 400 ) );
+        }
+
+        $owner = get_userdata( $owner_id );
+        if ( $owner && strtolower( $owner->user_email ) === strtolower( $email ) ) {
+            return new WP_Error( 'invite_self', 'That is your own address. Your partner needs a different one.', array( 'status' => 400 ) );
+        }
+
+        // Replacing an earlier invite closes the old door first.
+        $this->unlink_household_user( (int) ( $members[ $index ]['invitedUserId'] ?? 0 ), $owner_id );
+
+        $user   = get_user_by( 'email', $email );
+        $is_new = false;
+        if ( $user ) {
+            $other_owner = (int) get_user_meta( $user->ID, 'framt_household_owner', true );
+            if ( $other_owner && $other_owner !== $owner_id ) {
+                return new WP_Error( 'invite_taken', 'That address already belongs to another household\'s file.', array( 'status' => 400 ) );
+            }
+            $user_id = (int) $user->ID;
+        } else {
+            $name       = (string) ( $members[ $index ]['name'] ?? '' );
+            $first_name = trim( (string) strtok( $name, ' ' ) );
+            $login      = sanitize_user( strtok( $email, '@' ), true );
+            if ( '' === $login || username_exists( $login ) ) {
+                $login = sanitize_user( str_replace( '@', '.', $email ), true );
+            }
+            $user_id = wp_insert_user( array(
+                'user_login'   => $login,
+                'user_email'   => $email,
+                'user_pass'    => wp_generate_password( 24 ),
+                'display_name' => '' !== $name ? $name : $login,
+                'first_name'   => $first_name,
+                'role'         => 'subscriber',
+            ) );
+            if ( is_wp_error( $user_id ) ) {
+                return new WP_Error( 'invite_create', 'Could not create the sign-in: ' . $user_id->get_error_message(), array( 'status' => 500 ) );
+            }
+            $user   = get_userdata( $user_id );
+            $is_new = true;
+        }
+
+        update_user_meta( $user_id, 'framt_household_owner', $owner_id );
+
+        $members[ $index ]['email']         = $email;
+        $members[ $index ]['invitedUserId'] = (int) $user_id;
+        $members[ $index ]['inviteStatus']  = 'invited';
+        $members[ $index ]['invitedAt']     = current_time( 'mysql' );
+        $members[ $index ]['updated_at']    = current_time( 'mysql' );
+        update_user_meta( $owner_id, 'framt_family_members', $members );
+
+        // The email: a link that sets a password for a new account, or the
+        // portal for an existing one.
+        $owner_first = $owner ? ( $owner->first_name ?: strtok( $owner->display_name, ' ' ) ) : 'Your partner';
+        $portal_url  = home_url( '/portal/' );
+        if ( $is_new ) {
+            $key  = get_password_reset_key( $user );
+            $link = is_wp_error( $key ) ? wp_lostpassword_url() : network_site_url( 'wp-login.php?action=rp&key=' . $key . '&login=' . rawurlencode( $user->user_login ), 'login' );
+            $body = sprintf(
+                "%s added you to their move to France on Relo2France.\n\nYou have your own sign-in to the household file: the same tasks, documents and deadlines, with the parts that are yours marked for you.\n\nSet your password here:\n%s\n\nThen open the portal:\n%s\n",
+                $owner_first,
+                $link,
+                $portal_url
+            );
+        } else {
+            $body = sprintf(
+                "%s added you to their move to France on Relo2France.\n\nSign in with this address and you will see the household file: the same tasks, documents and deadlines, with the parts that are yours marked for you.\n\n%s\n",
+                $owner_first,
+                $portal_url
+            );
+        }
+        wp_mail( $email, sprintf( '%s added you to their move to France', $owner_first ), $body );
+
+        return rest_ensure_response( $members[ $index ] );
+    }
+
+    /**
+     * Close a partner's access without deleting their record or account.
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response|WP_Error
+     */
+    public function revoke_family_invite( $request ) {
+        $owner_id  = $this->acting_user_id();
+        $member_id = (int) $request->get_param( 'member_id' );
+        $members   = get_user_meta( $owner_id, 'framt_family_members', true );
+        if ( ! is_array( $members ) ) {
+            return new WP_Error( 'not_found', 'Family member not found.', array( 'status' => 404 ) );
+        }
+        foreach ( $members as $i => $m ) {
+            if ( (int) ( $m['id'] ?? 0 ) === $member_id ) {
+                $this->unlink_household_user( (int) ( $m['invitedUserId'] ?? 0 ), $owner_id );
+                unset( $members[ $i ]['invitedUserId'], $members[ $i ]['invitedAt'], $members[ $i ]['joinedAt'] );
+                $members[ $i ]['inviteStatus'] = 'none';
+                $members[ $i ]['updated_at']   = current_time( 'mysql' );
+                update_user_meta( $owner_id, 'framt_family_members', $members );
+                return rest_ensure_response( $members[ $i ] );
+            }
+        }
+        return new WP_Error( 'not_found', 'Family member not found.', array( 'status' => 404 ) );
+    }
+
+    /**
+     * Remove the household link from an invited account, and unassign any
+     * tasks that were theirs.
+     *
+     * @param int $user_id  Invited account.
+     * @param int $owner_id Household owner.
+     * @return void
+     */
+    private function unlink_household_user( $user_id, $owner_id ) {
+        if ( $user_id <= 0 ) {
+            return;
+        }
+        if ( (int) get_user_meta( $user_id, 'framt_household_owner', true ) === (int) $owner_id ) {
+            delete_user_meta( $user_id, 'framt_household_owner' );
+        }
+        global $wpdb;
+        $wpdb->update(
+            $wpdb->prefix . 'framt_tasks',
+            array( 'assignee_id' => null ),
+            array( 'assignee_id' => $user_id, 'user_id' => $owner_id ),
+            array( '%d' ),
+            array( '%d', '%d' )
+        );
     }
 }

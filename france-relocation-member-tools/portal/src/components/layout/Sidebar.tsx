@@ -15,12 +15,14 @@ import {
   FileText,
   Globe,
   HelpCircle,
+  LifeBuoy,
+  Mail,
   MessageSquare,
   Settings,
   User,
   Users,
 } from 'lucide-react';
-import { useDashboard, useTasks } from '@/hooks/useApi';
+import { useDashboard, useSupportTickets, useTasks } from '@/hooks/useApi';
 import { JOURNEY, type JourneyStage, currentStage, progressFor, timeToGo } from '@/journey/journey';
 import { usePortalStore } from '@/store';
 
@@ -49,17 +51,19 @@ function StageRing({ state }: { state: 'done' | 'now' | 'ahead' }) {
 }
 
 const TOOLS: { id: string; label: string; icon: typeof MessageSquare; views: string[] }[] = [
-  { id: 'chat', label: 'Ask about my case', icon: MessageSquare, views: ['chat', 'glossary', 'messages'] },
+  { id: 'chat', label: 'Ask about my case', icon: MessageSquare, views: ['chat', 'glossary'] },
   { id: 'documents', label: 'Documents & files', icon: FileText, views: ['documents', 'files'] },
   { id: 'family', label: 'Family plans', icon: Users, views: ['family'] },
   { id: 'deadlines', label: 'Deadlines', icon: Calendar, views: ['deadlines', 'timeline', 'tasks'] },
   { id: 'schengen', label: 'Schengen days', icon: Globe, views: ['schengen'] },
   { id: 'research', label: 'Explore France', icon: BookOpen, views: ['research', 'guides'] },
+  { id: 'messages', label: 'Messages', icon: Mail, views: ['messages'] },
 ];
 
 const ACCOUNT: { id: string; label: string; icon: typeof User }[] = [
   { id: 'profile', label: 'Profile', icon: User },
   { id: 'settings', label: 'Settings', icon: Settings },
+  { id: 'support', label: 'Support', icon: LifeBuoy },
   { id: 'help', label: 'Help', icon: HelpCircle },
 ];
 
@@ -69,6 +73,9 @@ export default function Sidebar() {
   const { data } = useDashboard();
   const project = data?.project;
   const { data: tasks } = useTasks(project?.id ?? 0);
+  const { data: ticketsData } = useSupportTickets();
+  const unreadMessages = (ticketsData?.tickets ?? []).filter((t) => t.from_site && t.has_unread_user).length;
+  const household = data?.household;
   const nowStage = project ? currentStage(project, data?.profile_visa_type) : 'decide';
   const nowIndex = JOURNEY.findIndex((s) => s.id === nowStage);
 
@@ -175,6 +182,9 @@ export default function Sidebar() {
                   >
                     <Icon className="w-[18px] h-[18px] flex-shrink-0" aria-hidden="true" />
                     {!sidebarCollapsed && <span className="text-[0.9rem]">{tool.label}</span>}
+                    {tool.id === 'messages' && unreadMessages > 0 ? (
+                      <span className={clsx('ml-auto font-mono text-[0.66rem] rounded-full px-1.5 py-0.5 bg-white/15 text-sidebar-textActive', sidebarCollapsed && 'absolute top-1 right-1 ml-0')} aria-label={`${unreadMessages} unread`}>{unreadMessages}</span>
+                    ) : null}
                   </button>
                 </li>
               );
@@ -185,9 +195,9 @@ export default function Sidebar() {
         {/* Account */}
         <div className="mt-4 px-2 pt-4 border-t border-white/10">
           <ul className="space-y-0.5">
-            {ACCOUNT.filter((a) => a.id === 'profile' || isMenuItemVisible(a.id)).map((item) => {
+            {ACCOUNT.filter((a) => a.id === 'profile' || a.id === 'support' || isMenuItemVisible(a.id)).map((item) => {
               const Icon = item.icon;
-              const active = [item.id, item.id === 'profile' ? 'membership' : '', item.id === 'help' ? 'support' : ''].includes(activeView);
+              const active = [item.id, item.id === 'profile' ? 'membership' : ''].includes(activeView);
               return (
                 <li key={item.id}>
                   <button
@@ -204,6 +214,16 @@ export default function Sidebar() {
           </ul>
         </div>
       </nav>
+
+      {household && household.role === 'partner' && !sidebarCollapsed ? (
+
+        <div className="mx-4 mb-2 px-3 py-2 rounded-lg bg-white/[0.06] text-[0.74rem] leading-snug text-sidebar-text">
+
+          Working on <span className="text-sidebar-textActive font-semibold">{household.ownerName}’s</span> household file
+
+        </div>
+
+      ) : null}
 
       {/* Collapse toggle */}
       <button

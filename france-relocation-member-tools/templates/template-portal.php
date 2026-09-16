@@ -22,7 +22,9 @@ $login_error = '';
 // Check for membership (optional - can be configured) - only if logged in
 $require_membership = get_option( 'framt_portal_require_membership', false );
 if ( $is_logged_in && $require_membership && class_exists( 'MeprUser' ) ) {
-    $mepr_user = new MeprUser( $current_user->ID );
+    // A partner invited from the Family plan is covered by the owner's membership.
+    $household_owner = (int) get_user_meta( $current_user->ID, 'framt_household_owner', true );
+    $mepr_user       = new MeprUser( $household_owner > 0 ? $household_owner : $current_user->ID );
     if ( empty( $mepr_user->active_product_subscriptions() ) ) {
         // Redirect to membership page
         $membership_url = get_option( 'fra_membership_url', '/membership/' );

@@ -386,6 +386,20 @@ views it owns; a new stage-specific feature goes on the stage page.
 - [ ] Import the icon from `lucide-react`
 - [ ] Add the item to `TOOLS` or `ACCOUNT` with its `views` list **← the rail highlights by view**
 - [ ] The item id must still be in the settings menu, since `isMenuItemVisible` gates it
+  (`profile` and `support` are deliberately ungated: a member can always reach
+  their profile and always write to us)
+
+Two things that look alike and are not: **Messages** (`messages`, a tool) is
+what the site and the team send the member, plus the alerts their own file
+raises; **Support** (`support`, under account) is what the member sends us.
+Both read the same `framt_messages` table; `from_site` on a ticket says who
+started the thread.
+
+A signed-in partner (Family add-on) works on the owner's file: every API
+handler resolves `acting_user_id()`, never the raw current user. Tasks carry
+`metadata.person` (`you` / `partner` / `children` / `child:<id>`) and
+`assignee_id` (owner or partner user id); `components/family/Assign.tsx` is
+the shared vocabulary for both.
 
 ### 4. React Frontend - Routes
 **File:** `france-relocation-member-tools/portal/src/App.tsx`

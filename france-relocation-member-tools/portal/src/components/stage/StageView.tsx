@@ -10,6 +10,8 @@ import { useState } from 'react';
 import { clsx } from 'clsx';
 import { ArrowRight, CheckCircle2, Circle } from 'lucide-react';
 import Jargon from '@/components/shared/Jargon';
+import { AssignSelect, PersonChip, personOf } from '@/components/family/Assign';
+import ProfessionalsCard from '@/components/shared/ProfessionalsCard';
 import { useDashboard, useFamilyMembers, useTasks, useUpdateTaskStatus } from '@/hooks/useApi';
 import { JOURNEY, currentStage, groupByLeadTime, progressFor, stageById, stageForTask, timeToGo } from '@/journey/journey';
 import { usePortalStore } from '@/store';
@@ -34,13 +36,26 @@ export default function StageView() {
   const updateStatus = useUpdateTaskStatus();
   const [person, setPerson] = useState<'me' | number>('me');
 
-  const own = (tasks ?? []).filter((t) => project && stageForTask(t, project) === stage.id);
+  const members = family?.members ?? [];
+  const household = data?.household ?? family?.household ?? null;
+  const inStage = (tasks ?? []).filter((t) => project && stageForTask(t, project) === stage.id);
+  // The person switcher narrows to that person's steps: the partner's, or a
+  // child's (children share their steps unless one is named on a task).
+  const forPerson = (t: Task) => {
+    if (person === 'me') return true;
+    const m = members.find((x) => x.id === person);
+    const p = personOf(t);
+    if (!m) return true;
+    if (m.relationship === 'spouse') return p === 'partner';
+    return p === 'children' || p === `child:${m.id}`;
+  };
+  const own = inStage.filter(forPerson);
   const groups = groupByLeadTime(own);
   const progress = project ? progressFor(stage, tasks ?? [], project) : { total: 0, completed: 0 };
   const pct = progress.total > 0 ? Math.round((progress.completed / progress.total) * 100) : 0;
   const nextHard = own.filter((t) => t.status !== 'done' && t.due_date).sort((a, b) => (a.due_date ?? '').localeCompare(b.due_date ?? ''))[0];
-  const members = family?.members ?? [];
   const isNow = stage.id === nowStage;
+  const professionals = (data?.professionals ?? []).filter((p) => p.stage === stage.id);
 
   return (
     <div className="flex flex-col">
@@ -79,7 +94,7 @@ export default function StageView() {
           {stage.id !== 'decide' && person !== 'me' ? (
             <div className="card p-5">
               <span className="eyebrow">Their file</span>
-              <p className="mt-2 text-sm text-gray-600">Each person applies separately. Their documents are tracked under Family plans; the dated steps below are the shared calendar.</p>
+              <p className="mt-2 text-sm text-gray-600">Only the steps that are theirs are shown below, dated from the same move. Their documents and who is doing what live under Family plans.</p>
               <button onClick={() => setActiveView('family')} className="btn btn-secondary mt-3">Open family plans</button>
             </div>
           ) : null}
@@ -115,8 +130,15 @@ export default function StageView() {
                           {task.description && !done ? (
                             <span className="text-[0.82rem] text-gray-500 line-clamp-1"><Jargon text={task.description} /></span>
                           ) : null}
+                          <span className="flex flex-wrap gap-x-3">
+                            <PersonChip task={task} members={members} household={household} />
+                            {typeof task.metadata?.professional === 'string' && !done ? (
+                              <span className="font-mono text-[0.66rem] uppercase tracking-wide text-gray-500">Bring in a professional</span>
+                            ) : null}
+                          </span>
                         </div>
                         <span className={clsx('font-mono text-[0.7rem]', task.is_overdue && !done ? 'text-accent-500' : 'text-gray-500')}>{dueLabel(task)}</span>
+                        <AssignSelect task={task} household={household} />
                         <button
                           onClick={() => { setTaskFilters({ stage: task.stage }); setActiveView('tasks'); }}
                           className="text-sm font-semibold text-primary-500 hover:text-primary-700"
@@ -144,6 +166,8 @@ export default function StageView() {
               <span className="text-xs text-gray-500">Official sources only, re-checked weekly</span>
             </div>
           ) : null}
+
+          {professionals.length > 0 ? <ProfessionalsCard prompts={professionals} /> : null}
 
           {stage.checklists.length > 0 ? (
             <div className="card p-5 flex flex-col gap-2">

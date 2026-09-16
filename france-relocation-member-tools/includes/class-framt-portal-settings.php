@@ -304,6 +304,27 @@ class FRAMT_Portal_Settings {
                 'default'           => false,
             )
         );
+
+        // The Family add-on: a one-time MemberPress product. Setting its ID
+        // makes the feature paid; leaving it empty keeps the global switch.
+        register_setting(
+            'framt_portal_settings_group',
+            'framt_family_addon_product_id',
+            array(
+                'type'              => 'integer',
+                'sanitize_callback' => 'absint',
+                'default'           => 0,
+            )
+        );
+        register_setting(
+            'framt_portal_settings_group',
+            'framt_family_addon_url',
+            array(
+                'type'              => 'string',
+                'sanitize_callback' => 'esc_url_raw',
+                'default'           => '',
+            )
+        );
     }
 
     /**
@@ -1317,6 +1338,25 @@ class FRAMT_Portal_Settings {
                         <p class="description">
                             <strong style="color: #dc3232;">For testing only!</strong> When enabled, all logged-in users can access the portal regardless of membership status.
                         </p>
+                    </td>
+                </tr>
+                <tr>
+                    <th>Family add-on product</th>
+                    <td>
+                        <input type="number" min="0" name="framt_family_addon_product_id" class="small-text"
+                               value="<?php echo esc_attr( (int) get_option( 'framt_family_addon_product_id', 0 ) ); ?>">
+                        <p class="description">
+                            The MemberPress product ID for the $20 one-time Family add-on (one partner, up to four children). Once set, only members who bought it can edit family files and invite a partner. Leave at 0 to keep the feature open to every member.
+                        </p>
+                    </td>
+                </tr>
+                <tr>
+                    <th>Family add-on checkout URL</th>
+                    <td>
+                        <input type="url" name="framt_family_addon_url" class="regular-text"
+                               value="<?php echo esc_attr( get_option( 'framt_family_addon_url', '' ) ); ?>"
+                               placeholder="<?php echo esc_attr( home_url( '/register/family-add-on/' ) ); ?>">
+                        <p class="description">Where the "Add the Family plan" button sends members. Defaults to /register/family-add-on/.</p>
                     </td>
                 </tr>
             </table>

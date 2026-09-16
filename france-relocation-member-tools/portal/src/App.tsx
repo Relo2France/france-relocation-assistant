@@ -18,6 +18,7 @@ const MessagesView = lazy(() => import('@/components/messages/MessagesView'));
 const TimelineView = lazy(() => import('@/components/timeline/TimelineView'));
 const SettingsView = lazy(() => import('@/components/settings/SettingsView'));
 const HelpView = lazy(() => import('@/components/help/HelpView'));
+const SupportView = lazy(() => import('@/components/support/SupportView'));
 const GuidesView = lazy(() => import('@/components/guides/GuidesView'));
 const FamilyView = lazy(() => import('@/components/family/FamilyView'));
 const ProfileView = lazy(() => import('@/components/profile/ProfileView'));
@@ -74,6 +75,8 @@ function ViewRouter() {
         return <SettingsView />;
       case 'help':
         return <HelpView />;
+      case 'support':
+        return <SupportView />;
       case 'profile':
         return <ProfileView />;
       case 'checklists':

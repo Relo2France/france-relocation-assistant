@@ -286,7 +286,7 @@ export const tasksApi = {
       body: JSON.stringify(data),
     }),
 
-  update: (id: number, data: Partial<Task>) =>
+  update: (id: number, data: Partial<Task> & { person?: string }) =>
     apiFetch<Task>(`/tasks/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
@@ -746,9 +746,31 @@ export const familyApi = {
   getFeatureStatus: () =>
     apiFetch<FamilyFeatureStatus>('/family/feature-status'),
 
-  // Get all family members
-  getAll: () =>
-    apiFetch<FamilyMembersResponse>('/family'),
+  // Get all family members. The API speaks snake_case; the portal camelCase.
+  getAll: async (): Promise<FamilyMembersResponse> => {
+    const raw = await apiFetch<Record<string, unknown>>('/family');
+    return {
+      members: (raw.members as FamilyMember[]) ?? [],
+      featureEnabled: Boolean(raw.feature_enabled ?? raw.featureEnabled),
+      canEdit: Boolean(raw.can_edit ?? raw.canEdit),
+      household: raw.household as FamilyMembersResponse['household'],
+      profile: raw.profile as FamilyMembersResponse['profile'],
+      addon: raw.addon as FamilyMembersResponse['addon'],
+    };
+  },
+
+  // Give the partner their own sign-in
+  invite: (memberId: number, email: string) =>
+    apiFetch<FamilyMember>(`/family/${memberId}/invite`, {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    }),
+
+  // Close that sign-in again
+  revokeInvite: (memberId: number) =>
+    apiFetch<FamilyMember>(`/family/${memberId}/invite`, {
+      method: 'DELETE',
+    }),
 
   // Get single family member
   get: (memberId: number) =>

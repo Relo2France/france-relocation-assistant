@@ -1,671 +1,392 @@
+/**
+ * Family plans
+ *
+ * One file per person. The account holder can work the whole household's
+ * file alone, or give their partner a sign-in and hand over the partner's
+ * steps and the children's. The profile decides who is moving; this view
+ * shows what each of them still needs and who is doing it.
+ *
+ * The Family add-on ($20, once) covers one partner and up to four children.
+ * Until it is bought the household is shown read-only from the profile.
+ */
 import { useState } from 'react';
 import { clsx } from 'clsx';
-import {
-  AlertCircle,
-  Baby,
-  Calendar,
-  CheckCircle,
-  Crown,
-  Edit2,
-  FileText,
-  Flag,
-  Heart,
-  Lock,
-  Trash2,
-  User,
-  UserPlus,
-  Users,
-  X,
-} from 'lucide-react';
+import { ArrowRight, Baby, CheckCircle2, Circle, Heart, Mail, Trash2, UserPlus } from 'lucide-react';
+import Jargon from '@/components/shared/Jargon';
 import {
   useCreateFamilyMember,
+  useDashboard,
   useDeleteFamilyMember,
   useFamilyMembers,
+  useInviteFamilyMember,
+  useRevokeFamilyInvite,
+  useTasks,
   useUpdateFamilyMember,
+  useUpdateTaskStatus,
 } from '@/hooks/useApi';
-import type { FamilyMember } from '@/types';
+import { usePortalStore } from '@/store';
+import type { FamilyMember, Household, Task } from '@/types';
+import { AssignSelect, PersonChip, personOf } from './Assign';
 
-const relationshipLabels: Record<string, string> = {
-  spouse: 'Spouse',
-  child: 'Child',
-  parent: 'Parent',
-  other: 'Other',
-};
+const DOCS: { key: keyof FamilyMember['documents']; label: string; partnerOnly?: boolean }[] = [
+  { key: 'passport', label: 'Passport, 6+ months valid' },
+  { key: 'birthCertificate', label: 'Birth certificate, apostilled' },
+  { key: 'marriageCertificate', label: 'Marriage certificate, apostilled', partnerOnly: true },
+  { key: 'photos', label: 'Visa photos (35×45mm)' },
+];
 
-const relationshipIcons: Record<string, React.ElementType> = {
-  spouse: Heart,
-  child: Baby,
-  parent: User,
-  other: User,
-};
+function tasksFor(member: FamilyMember, tasks: Task[]): Task[] {
+  if (member.relationship === 'spouse') return tasks.filter((t) => personOf(t) === 'partner');
+  return tasks.filter((t) => personOf(t) === 'children' || personOf(t) === `child:${member.id}`);
+}
 
-const visaStatusConfig: Record<string, { label: string; color: string; icon: React.ElementType }> = {
-  pending: { label: 'Pending', color: 'bg-gray-100 text-gray-600', icon: AlertCircle },
-  applied: { label: 'Applied', color: 'bg-blue-100 text-blue-600', icon: FileText },
-  approved: { label: 'Approved', color: 'bg-green-100 text-green-600', icon: CheckCircle },
-  not_required: { label: 'Not Required', color: 'bg-gray-100 text-gray-500', icon: CheckCircle },
-};
+function dueLabel(task: Task): string {
+  if (task.status === 'done') return 'DONE';
+  if (!task.due_date) return '';
+  const d = new Date(`${task.due_date.slice(0, 10)}T00:00:00Z`);
+  return d.toLocaleDateString('en-US', { day: 'numeric', month: 'short', timeZone: 'UTC' }).toUpperCase();
+}
 
 export default function FamilyView() {
-  const { data: familyData, isLoading, error } = useFamilyMembers();
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [editingMember, setEditingMember] = useState<FamilyMember | null>(null);
-  const [deletingMember, setDeletingMember] = useState<FamilyMember | null>(null);
+  const { data, isLoading, error } = useFamilyMembers();
+  const { data: dashboard } = useDashboard();
+  const { data: tasks = [] } = useTasks(dashboard?.project?.id ?? 0);
+  const { setActiveView } = usePortalStore();
+  const [adding, setAdding] = useState<'spouse' | 'child' | null>(null);
 
-  const familyMembers = familyData?.members || [];
-  const canEdit = familyData?.canEdit ?? false;
-  const featureEnabled = familyData?.featureEnabled ?? false;
-
-  if (isLoading) {
-    return <FamilyViewSkeleton />;
-  }
-
-  if (error) {
+  if (isLoading) return <div className="p-6 md:p-8"><div className="card h-40 animate-pulse" /></div>;
+  if (error || !data) {
     return (
-      <div className="p-6">
-        <div className="card p-8 text-center">
-          <AlertCircle className="w-12 h-12 mx-auto mb-4 text-red-400" />
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">Error Loading Family Members</h2>
-          <p className="text-gray-600">Please try refreshing the page.</p>
+      <div className="p-6 md:p-8">
+        <div className="card p-6">
+          <p className="font-display font-semibold text-lg">Family plans could not load.</p>
+          <p className="text-sm text-gray-600 mt-1">Refresh the page. If it keeps happening, tell us from Support.</p>
         </div>
       </div>
     );
   }
 
-  const documentsComplete = familyMembers.filter((m) => {
-    const docs = m.documents;
-    return docs.passport && docs.birthCertificate && docs.photos &&
-           (m.relationship !== 'spouse' || docs.marriageCertificate);
-  }).length;
-
-  const visaApproved = familyMembers.filter((m) =>
-    m.visaStatus === 'approved' || m.visaStatus === 'not_required'
-  ).length;
+  const { members, featureEnabled, canEdit, household, profile, addon } = data;
+  const partner = members.find((m) => m.relationship === 'spouse') ?? null;
+  const children = members.filter((m) => m.relationship === 'child');
+  const isPartner = household?.role === 'partner';
 
   return (
-    <div className="p-6">
-      {/* Page header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Family Members</h1>
-          <p className="text-gray-600 mt-1">
-            Manage your family&apos;s relocation details and documents
+    <div className="flex flex-col">
+      <header className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 px-6 md:px-8 pt-6 pb-5 bg-card border-b border-rule">
+        <div className="flex flex-col gap-1.5">
+          <span className="eyebrow">Family plans</span>
+          <h2 className="font-display text-[1.75rem] font-semibold tracking-[-0.018em] leading-tight">One file per person.</h2>
+          <p className="text-ink/80 max-w-[64ch]">
+            {isPartner
+              ? `You are working on ${household.ownerName}'s household file. The steps marked for you are yours; everything else is shared.`
+              : 'Do the whole household yourself, or give your partner their own sign-in and hand them their steps and the children’s.'}
           </p>
         </div>
-        {canEdit ? (
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="btn btn-primary flex items-center gap-2"
-          >
-            <UserPlus className="w-4 h-4" />
-            Add Member
-          </button>
+        {featureEnabled && canEdit ? (
+          <div className="flex gap-2">
+            {!partner && adding !== 'spouse' ? (
+              <button className="btn btn-secondary" onClick={() => setAdding('spouse')}><Heart className="w-4 h-4" /> Add your partner</button>
+            ) : null}
+            {children.length < addon.limits.children && adding !== 'child' ? (
+              <button className="btn btn-secondary" onClick={() => setAdding('child')}><Baby className="w-4 h-4" /> Add a child</button>
+            ) : null}
+          </div>
+        ) : null}
+      </header>
+
+      <div className="px-6 md:px-8 py-5 flex flex-col gap-5">
+        {!featureEnabled ? <LockedHousehold profile={profile} addonUrl={addon.url} price={addon.price} priceNote={addon.priceNote} /> : null}
+
+        {adding ? <AddPersonForm kind={adding} onDone={() => setAdding(null)} /> : null}
+
+        {featureEnabled ? (
+          <div className="grid md:grid-cols-2 gap-5">
+            <OwnerCard household={household} tasks={tasks} />
+            {partner ? <PersonCard member={partner} tasks={tasksFor(partner, tasks)} household={household} canEdit={canEdit} /> : null}
+            {children.map((child) => (
+              <PersonCard key={child.id} member={child} tasks={tasksFor(child, tasks)} household={household} canEdit={canEdit} />
+            ))}
+            {!partner && children.length === 0 && !adding ? (
+              <div className="card p-5 border-dashed flex flex-col gap-2">
+                <span className="eyebrow">Nobody else yet</span>
+                <p className="text-sm text-gray-600">Say who is moving with you in your profile and their files appear here, or add them directly.</p>
+                <button onClick={() => setActiveView('profile')} className="text-sm font-semibold text-primary-500 hover:text-primary-700 self-start">Open profile</button>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+
+        {featureEnabled ? <HouseholdSteps members={members} tasks={tasks} household={household} /> : null}
+      </div>
+    </div>
+  );
+}
+
+function LockedHousehold({ profile, addonUrl, price, priceNote }: { profile: FamilyMembersResponseProfile; addonUrl: string; price: string; priceNote: string }) {
+  const { setActiveView } = usePortalStore();
+  const rows: string[] = ['You · account holder'];
+  if (profile.hasPartner) rows.push(`${profile.partnerName || 'Your partner'} · partner`);
+  for (let i = 0; i < profile.children; i++) {
+    const age = profile.childrenAges[i];
+    rows.push(`Child ${i + 1}${age ? ` · age ${age}` : ''}`);
+  }
+  return (
+    <div className="grid md:grid-cols-[minmax(0,1fr)_320px] gap-5">
+      <div className="card p-5 flex flex-col gap-3">
+        <span className="eyebrow">Who’s moving, from your profile</span>
+        <ul className="divide-y divide-rule-soft">
+          {rows.map((r) => (
+            <li key={r} className="py-2 text-[0.95rem]">{r}</li>
+          ))}
+        </ul>
+        <p className="text-[0.82rem] text-gray-500">Each person applies separately and each needs their own documents. Their steps are already on your calendar; the add-on gives each of them a file of their own.</p>
+        <button onClick={() => setActiveView('profile')} className="text-sm font-semibold text-primary-500 hover:text-primary-700 self-start">Change who’s moving</button>
+      </div>
+      <div className="card p-6 border-primary-500 bg-primary-100/30 flex flex-col gap-3 self-start">
+        <span className="eyebrow text-primary-500">Family add-on</span>
+        <p className="font-display font-semibold text-[2.2rem] leading-none tracking-[-0.03em] m-0">{price}</p>
+        <p className="text-[0.85rem] text-gray-600 m-0">{priceNote}</p>
+        <ul className="text-sm flex flex-col gap-1.5 mt-1">
+          <li className="flex gap-2"><CheckCircle2 className="w-4 h-4 text-primary-500 flex-shrink-0 mt-0.5" /> Your partner’s own file and their own sign-in</li>
+          <li className="flex gap-2"><CheckCircle2 className="w-4 h-4 text-primary-500 flex-shrink-0 mt-0.5" /> A file for each child, up to four</li>
+          <li className="flex gap-2"><CheckCircle2 className="w-4 h-4 text-primary-500 flex-shrink-0 mt-0.5" /> Hand any step to either of you</li>
+        </ul>
+        <a href={addonUrl} className="btn btn-primary mt-2 justify-center">Add the Family plan <ArrowRight className="w-4 h-4" /></a>
+        <p className="text-[0.74rem] text-gray-500 text-center m-0">One payment. Covers this move.</p>
+      </div>
+    </div>
+  );
+}
+
+type FamilyMembersResponseProfile = NonNullable<ReturnType<typeof useFamilyMembers>['data']>['profile'];
+
+function OwnerCard({ household, tasks }: { household: Household; tasks: Task[] }) {
+  const own = tasks.filter((t) => personOf(t) === 'you' || personOf(t) === '');
+  const done = own.filter((t) => t.status === 'done').length;
+  const mine = household.role === 'owner';
+  return (
+    <div className="card p-5 flex flex-col gap-3">
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-full bg-primary-100 text-primary-500 font-bold flex items-center justify-center">{mine ? 'You' : household.ownerName.slice(0, 1)}</div>
+        <div className="flex flex-col min-w-0">
+          <span className="font-display font-semibold text-[1.05rem]">{mine ? 'You' : household.ownerName}</span>
+          <span className="text-[0.8rem] text-gray-500">Account holder · main applicant</span>
+        </div>
+      </div>
+      <div className="flex justify-between items-baseline"><span className="eyebrow">Steps</span><span className="font-mono text-xs text-gray-500">{done} / {own.length}</span></div>
+      <div className="progress-bar"><div className="progress-bar-fill" style={{ width: `${own.length ? Math.round((done / own.length) * 100) : 0}%` }} /></div>
+      <p className="text-[0.82rem] text-gray-500 m-0">The main visa file. Everyone else’s application hangs off it.</p>
+    </div>
+  );
+}
+
+function PersonCard({ member, tasks, household, canEdit }: { member: FamilyMember; tasks: Task[]; household: Household; canEdit: boolean }) {
+  const update = useUpdateFamilyMember();
+  const remove = useDeleteFamilyMember();
+  const invite = useInviteFamilyMember();
+  const revoke = useRevokeFamilyInvite();
+  const [email, setEmail] = useState(member.email ?? '');
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(member.name);
+  const [age, setAge] = useState(member.age ?? '');
+  const [birthDate, setBirthDate] = useState(member.birthDate ?? '');
+  const isPartner = member.relationship === 'spouse';
+  const docs = DOCS.filter((d) => !d.partnerOnly || isPartner);
+  const docsDone = docs.filter((d) => member.documents[d.key]).length;
+  const done = tasks.filter((t) => t.status === 'done').length;
+  const inviteError = invite.error instanceof Error ? invite.error.message : null;
+
+  const toggleDoc = (key: keyof FamilyMember['documents']) => {
+    if (!canEdit) return;
+    update.mutate({ memberId: member.id, data: { documents: { ...member.documents, [key]: !member.documents[key] } } });
+  };
+
+  const saveDetails = () => {
+    update.mutate({ memberId: member.id, data: { name: name.trim() || member.name, age, birthDate } }, { onSuccess: () => setEditing(false) });
+  };
+
+  return (
+    <div className="card p-5 flex flex-col gap-3">
+      <div className="flex items-start gap-3">
+        <div className="w-10 h-10 rounded-full bg-card-2 text-ink font-bold flex items-center justify-center flex-shrink-0">{member.name.slice(0, 1).toUpperCase()}</div>
+        <div className="flex flex-col min-w-0 flex-1">
+          {editing ? (
+            <div className="flex flex-col gap-2">
+              <input className="input" value={name} onChange={(e) => setName(e.target.value)} aria-label="Name" placeholder="Name" />
+              {isPartner ? (
+                <input className="input" type="date" value={birthDate} onChange={(e) => setBirthDate(e.target.value)} aria-label="Date of birth" />
+              ) : (
+                <input className="input" value={age} onChange={(e) => setAge(e.target.value)} aria-label="Age" placeholder="Age" />
+              )}
+              <div className="flex gap-2">
+                <button className="btn btn-primary" onClick={saveDetails} disabled={update.isPending}>Save</button>
+                <button className="btn btn-ghost" onClick={() => setEditing(false)}>Cancel</button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <span className="font-display font-semibold text-[1.05rem] truncate">{member.name}</span>
+              <span className="text-[0.8rem] text-gray-500">
+                {isPartner ? 'Partner' : 'Child'}
+                {isPartner && member.birthDate ? ` · born ${member.birthDate.slice(0, 10)}` : ''}
+                {!isPartner && member.age ? ` · age ${member.age}` : ''}
+                {' · own visa file'}
+              </span>
+            </>
+          )}
+        </div>
+        {canEdit && !editing ? (
+          <div className="flex gap-1">
+            <button className="text-xs text-gray-500 hover:text-ink" onClick={() => setEditing(true)}>Edit</button>
+            <button
+              className="text-gray-400 hover:text-accent-500"
+              aria-label={`Remove ${member.name}`}
+              onClick={() => { if (window.confirm(`Remove ${member.name}'s file? Their steps stay on the calendar.`)) remove.mutate(member.id); }}
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+        ) : null}
+      </div>
+
+      <div>
+        <div className="flex justify-between items-baseline"><span className="eyebrow">Their documents</span><span className="font-mono text-xs text-gray-500">{docsDone} / {docs.length}</span></div>
+        <ul className="mt-1.5 flex flex-col gap-1">
+          {docs.map((d) => {
+            const has = member.documents[d.key];
+            return (
+              <li key={d.key}>
+                <button onClick={() => toggleDoc(d.key)} disabled={!canEdit} className="flex items-center gap-2 text-left text-[0.9rem] disabled:cursor-default">
+                  {has ? <CheckCircle2 className="w-4 h-4 text-primary-500" /> : <Circle className="w-4 h-4 text-gray-300" />}
+                  <span className={clsx(has && 'text-gray-500 line-through')}><Jargon text={d.label} /></span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+
+      <div className="flex justify-between items-baseline"><span className="eyebrow">Steps</span><span className="font-mono text-xs text-gray-500">{done} / {tasks.length}</span></div>
+      <div className="progress-bar"><div className="progress-bar-fill" style={{ width: `${tasks.length ? Math.round((done / tasks.length) * 100) : 0}%` }} /></div>
+
+      {isPartner && household.role === 'owner' ? (
+        <div className="border-t border-rule-soft pt-3 flex flex-col gap-2">
+          <span className="eyebrow">Their sign-in</span>
+          {member.inviteStatus === 'joined' ? (
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-sm text-gray-600 flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-primary-500" /> Signed in as {member.email}</span>
+              <button className="text-xs text-gray-500 hover:text-accent-500" onClick={() => revoke.mutate(member.id)} disabled={revoke.isPending}>Remove access</button>
+            </div>
+          ) : member.inviteStatus === 'invited' ? (
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-sm text-gray-600 flex items-center gap-1.5"><Mail className="w-4 h-4 text-gray-400" /> Invited · {member.email}</span>
+              <div className="flex gap-2">
+                <button className="text-xs text-primary-500 hover:text-primary-700" onClick={() => invite.mutate({ memberId: member.id, email: member.email ?? '' })} disabled={invite.isPending}>Resend</button>
+                <button className="text-xs text-gray-500 hover:text-accent-500" onClick={() => revoke.mutate(member.id)} disabled={revoke.isPending}>Cancel</button>
+              </div>
+            </div>
+          ) : (
+            <form
+              className="flex gap-2"
+              onSubmit={(e) => { e.preventDefault(); if (email.trim()) invite.mutate({ memberId: member.id, email: email.trim() }); }}
+            >
+              <input className="input flex-1" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="their@email.com" aria-label={`${member.name}'s email`} required />
+              <button className="btn btn-secondary" type="submit" disabled={invite.isPending}><UserPlus className="w-4 h-4" /> Invite</button>
+            </form>
+          )}
+          {inviteError ? <p className="text-xs text-accent-500 m-0">{inviteError}</p> : null}
+          {member.inviteStatus === 'none' ? <p className="text-[0.78rem] text-gray-500 m-0">They get their own password and see this same file, with their steps marked. You can also just do it all yourself.</p> : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function AddPersonForm({ kind, onDone }: { kind: 'spouse' | 'child'; onDone: () => void }) {
+  const create = useCreateFamilyMember();
+  const [name, setName] = useState('');
+  const [age, setAge] = useState('');
+  const [birthDate, setBirthDate] = useState('');
+  const err = create.error instanceof Error ? create.error.message : null;
+  return (
+    <form
+      className="card p-5 flex flex-col gap-3"
+      onSubmit={(e) => {
+        e.preventDefault();
+        create.mutate(
+          {
+            name: name.trim(),
+            relationship: kind,
+            birthDate,
+            age,
+            nationality: '',
+            visaStatus: 'pending',
+            documents: { passport: false, birthCertificate: false, marriageCertificate: false, photos: false },
+          },
+          { onSuccess: onDone }
+        );
+      }}
+    >
+      <span className="eyebrow">{kind === 'spouse' ? 'Your partner' : 'A child'}</span>
+      <div className="grid sm:grid-cols-2 gap-3">
+        <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Full name as on their passport" aria-label="Name" required />
+        {kind === 'spouse' ? (
+          <input className="input" type="date" value={birthDate} onChange={(e) => setBirthDate(e.target.value)} aria-label="Date of birth" />
         ) : (
-          <UpgradeButton />
+          <input className="input" value={age} onChange={(e) => setAge(e.target.value)} placeholder="Age" aria-label="Age" />
         )}
       </div>
+      {err ? <p className="text-xs text-accent-500 m-0">{err}</p> : null}
+      <div className="flex gap-2">
+        <button className="btn btn-primary" type="submit" disabled={create.isPending}>Add</button>
+        <button className="btn btn-ghost" type="button" onClick={onDone}>Cancel</button>
+      </div>
+    </form>
+  );
+}
 
-      {/* Feature locked notice */}
-      {!featureEnabled && (
-        <div className="mb-6 p-4 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl">
-          <div className="flex items-start gap-3">
-            <div className="p-2 bg-amber-100 rounded-lg">
-              <Crown className="w-5 h-5 text-amber-600" />
-            </div>
-            <div className="flex-1">
-              <h3 className="font-semibold text-amber-900">Premium Feature</h3>
-              <p className="text-sm text-amber-700 mt-1">
-                Family member management is available with our Premium plan.
-                Upgrade to add, edit, and track visa applications for your family members.
-              </p>
-              <a
-                href="/membership/"
-                className="inline-flex items-center gap-1 mt-2 text-sm font-medium text-amber-700 hover:text-amber-800"
+/**
+ * Every step that belongs to someone other than the account holder, with the
+ * control to hand it to the partner. This is the "assign the kids' actions"
+ * table: the family view is where the split of work is decided.
+ */
+function HouseholdSteps({ members, tasks, household }: { members: FamilyMember[]; tasks: Task[]; household: Household }) {
+  const updateStatus = useUpdateTaskStatus();
+  const others = tasks.filter((t) => personOf(t) !== 'you' && personOf(t) !== '').sort((a, b) => (a.due_date ?? '9').localeCompare(b.due_date ?? '9'));
+  if (others.length === 0) return null;
+  const hasPartner = Boolean(household.partner && household.partner.userId > 0);
+  return (
+    <div className="card overflow-hidden">
+      <div className="flex justify-between items-baseline px-5 py-3.5 bg-card-2 border-b border-rule">
+        <span className="font-display font-semibold">Their steps, on the shared calendar</span>
+        <span className="font-mono text-[0.7rem] text-gray-500 uppercase">{others.filter((t) => t.status === 'done').length} of {others.length} done</span>
+      </div>
+      {!hasPartner && household.role === 'owner' ? (
+        <p className="px-5 pt-3 text-[0.82rem] text-gray-500 m-0">Invite your partner above and a “who does this” choice appears on each step.</p>
+      ) : null}
+      <ul className="divide-y divide-rule-soft">
+        {others.map((task) => {
+          const done = task.status === 'done';
+          return (
+            <li key={task.id} className="flex items-center gap-3.5 px-5 py-3">
+              <button
+                onClick={() => updateStatus.mutate({ id: task.id, status: done ? 'todo' : 'done' })}
+                aria-label={done ? `Mark "${task.title}" not done` : `Mark "${task.title}" done`}
+                className="flex-shrink-0 text-primary-500"
               >
-                Learn about Premium →
-              </a>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <div className="card p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-primary-100 rounded-lg">
-              <Users className="w-5 h-5 text-primary-600" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-gray-900">{familyMembers.length}</p>
-              <p className="text-sm text-gray-500">Family Members</p>
-            </div>
-          </div>
-        </div>
-        <div className="card p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <FileText className="w-5 h-5 text-green-600" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-gray-900">
-                {documentsComplete}/{familyMembers.length}
-              </p>
-              <p className="text-sm text-gray-500">Documents Complete</p>
-            </div>
-          </div>
-        </div>
-        <div className="card p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <CheckCircle className="w-5 h-5 text-blue-600" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-gray-900">
-                {visaApproved}/{familyMembers.length}
-              </p>
-              <p className="text-sm text-gray-500">Visas Ready</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Family members list */}
-      {familyMembers.length === 0 ? (
-        <div className="card p-12 text-center">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
-            <Users className="w-8 h-8 text-gray-400" />
-          </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">No family members added</h3>
-          <p className="text-gray-600 mb-4">
-            Add family members to track their visa applications and documents
-          </p>
-          {canEdit ? (
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="btn btn-primary inline-flex items-center gap-2"
-            >
-              <UserPlus className="w-4 h-4" />
-              Add First Member
-            </button>
-          ) : (
-            <UpgradeButton />
-          )}
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {familyMembers.map((member) => (
-            <FamilyMemberCard
-              key={member.id}
-              member={member}
-              canEdit={canEdit}
-              onEdit={() => setEditingMember(member)}
-              onDelete={() => setDeletingMember(member)}
-            />
-          ))}
-        </div>
-      )}
-
-      {/* Add/Edit Modal */}
-      {(showAddModal || editingMember) && canEdit && (
-        <FamilyMemberModal
-          member={editingMember}
-          onClose={() => {
-            setShowAddModal(false);
-            setEditingMember(null);
-          }}
-        />
-      )}
-
-      {/* Delete Confirmation Modal */}
-      {deletingMember && canEdit && (
-        <DeleteConfirmModal
-          member={deletingMember}
-          onClose={() => setDeletingMember(null)}
-        />
-      )}
-    </div>
-  );
-}
-
-function UpgradeButton() {
-  return (
-    <a
-      href="/membership/"
-      className="btn bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600 flex items-center gap-2"
-    >
-      <Crown className="w-4 h-4" />
-      Upgrade to Add Members
-    </a>
-  );
-}
-
-interface FamilyMemberCardProps {
-  member: FamilyMember;
-  canEdit: boolean;
-  onEdit: () => void;
-  onDelete: () => void;
-}
-
-function FamilyMemberCard({ member, canEdit, onEdit, onDelete }: FamilyMemberCardProps) {
-  const RelationshipIcon = relationshipIcons[member.relationship] || User;
-  const visaConfig = visaStatusConfig[member.visaStatus] || visaStatusConfig.pending;
-  const VisaIcon = visaConfig.icon;
-
-  const calculateAge = (birthDate: string) => {
-    if (!birthDate) return null;
-    const birth = new Date(birthDate);
-    const today = new Date();
-    let age = today.getFullYear() - birth.getFullYear();
-    const monthDiff = today.getMonth() - birth.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-      age--;
-    }
-    return age;
-  };
-
-  const documentsList = [
-    { key: 'passport', label: 'Passport' },
-    { key: 'birthCertificate', label: 'Birth Certificate' },
-    ...(member.relationship === 'spouse' ? [{ key: 'marriageCertificate', label: 'Marriage Certificate' }] : []),
-    { key: 'photos', label: 'Photos' },
-  ];
-
-  const completedDocs = documentsList.filter(
-    (doc) => member.documents[doc.key as keyof typeof member.documents]
-  ).length;
-
-  const age = calculateAge(member.birthDate);
-
-  return (
-    <div className="card p-5">
-      <div className="flex items-start gap-4">
-        {/* Avatar/Icon */}
-        <div className="p-3 bg-primary-50 rounded-full">
-          <RelationshipIcon className="w-6 h-6 text-primary-600" />
-        </div>
-
-        {/* Main content */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between">
-            <div>
-              <h3 className="font-semibold text-gray-900">{member.name}</h3>
-              <p className="text-sm text-gray-500">
-                {relationshipLabels[member.relationship] || member.relationship}
-                {age !== null && ` · ${age} years old`}
-              </p>
-            </div>
-            {canEdit && (
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={onEdit}
-                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                  title="Edit"
-                >
-                  <Edit2 className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={onDelete}
-                  className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                  title="Delete"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                {done ? <CheckCircle2 className="w-5 h-5" /> : <Circle className={clsx('w-5 h-5', task.is_overdue ? 'text-accent-500' : 'text-gray-300')} />}
+              </button>
+              <div className="flex flex-col min-w-0 flex-1">
+                <span className={clsx('text-[0.95rem]', done ? 'text-gray-500 line-through' : 'font-semibold')}><Jargon text={task.title} /></span>
+                <PersonChip task={task} members={members} household={household} />
               </div>
-            )}
-            {!canEdit && (
-              <div className="p-2 text-gray-300" title="Upgrade to edit">
-                <Lock className="w-4 h-4" />
-              </div>
-            )}
-          </div>
-
-          {/* Info row */}
-          <div className="flex flex-wrap items-center gap-4 mt-3 text-sm">
-            {member.nationality && (
-              <div className="flex items-center gap-1 text-gray-600">
-                <Flag className="w-4 h-4" />
-                {member.nationality}
-              </div>
-            )}
-            {member.birthDate && (
-              <div className="flex items-center gap-1 text-gray-600">
-                <Calendar className="w-4 h-4" />
-                {new Date(member.birthDate).toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric',
-                })}
-              </div>
-            )}
-            <div className={clsx('flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium', visaConfig.color)}>
-              <VisaIcon className="w-3 h-3" />
-              {visaConfig.label}
-            </div>
-          </div>
-
-          {/* Documents progress */}
-          <div className="mt-4">
-            <div className="flex items-center justify-between text-sm mb-2">
-              <span className="text-gray-600">Documents</span>
-              <span className="font-medium text-gray-900">
-                {completedDocs}/{documentsList.length} complete
-              </span>
-            </div>
-            <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-              <div
-                className={clsx(
-                  'h-full rounded-full transition-all',
-                  completedDocs === documentsList.length ? 'bg-green-500' : 'bg-primary-500'
-                )}
-                style={{ width: `${(completedDocs / documentsList.length) * 100}%` }}
-              />
-            </div>
-            <div className="flex flex-wrap gap-2 mt-2">
-              {documentsList.map((doc) => {
-                const isComplete = member.documents[doc.key as keyof typeof member.documents];
-                return (
-                  <span
-                    key={doc.key}
-                    className={clsx(
-                      'text-xs px-2 py-1 rounded-full',
-                      isComplete
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-red-100 text-red-600'
-                    )}
-                  >
-                    {isComplete ? '✓' : '!'} {doc.label}
-                  </span>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Notes */}
-          {member.notes && (
-            <div className="mt-3 p-3 bg-yellow-50 rounded-lg">
-              <p className="text-sm text-yellow-800">{member.notes}</p>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-interface FamilyMemberModalProps {
-  member: FamilyMember | null;
-  onClose: () => void;
-}
-
-function FamilyMemberModal({ member, onClose }: FamilyMemberModalProps) {
-  const createMutation = useCreateFamilyMember();
-  const updateMutation = useUpdateFamilyMember();
-  const isLoading = createMutation.isPending || updateMutation.isPending;
-
-  const [formData, setFormData] = useState({
-    name: member?.name || '',
-    relationship: member?.relationship || 'spouse' as FamilyMember['relationship'],
-    birthDate: member?.birthDate || '',
-    nationality: member?.nationality || '',
-    visaStatus: member?.visaStatus || 'pending' as FamilyMember['visaStatus'],
-    notes: member?.notes || '',
-    documents: member?.documents || {
-      passport: false,
-      birthCertificate: false,
-      marriageCertificate: false,
-      photos: false,
-    },
-  });
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    try {
-      if (member) {
-        await updateMutation.mutateAsync({
-          memberId: member.id,
-          data: formData,
-        });
-      } else {
-        await createMutation.mutateAsync(formData);
-      }
-      onClose();
-    } catch (error) {
-      console.error('Failed to save family member:', error);
-    }
-  };
-
-  const toggleDocument = (key: keyof typeof formData.documents) => {
-    setFormData({
-      ...formData,
-      documents: {
-        ...formData.documents,
-        [key]: !formData.documents[key],
-      },
-    });
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-4 border-b">
-          <h2 className="text-lg font-semibold text-gray-900">
-            {member ? 'Edit Family Member' : 'Add Family Member'}
-          </h2>
-          <button
-            onClick={onClose}
-            className="p-2 text-gray-400 hover:text-gray-600 rounded-lg"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="p-4 space-y-4">
-          <div>
-            <label htmlFor="family-member-name" className="block text-sm font-medium text-gray-700 mb-1">
-              Full Name
-            </label>
-            <input
-              id="family-member-name"
-              type="text"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-              required
-            />
-          </div>
-
-          <div>
-            <label htmlFor="family-member-relationship" className="block text-sm font-medium text-gray-700 mb-1">
-              Relationship
-            </label>
-            <select
-              id="family-member-relationship"
-              value={formData.relationship}
-              onChange={(e) => setFormData({ ...formData, relationship: e.target.value as FamilyMember['relationship'] })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-            >
-              <option value="spouse">Spouse</option>
-              <option value="child">Child</option>
-              <option value="parent">Parent</option>
-              <option value="other">Other</option>
-            </select>
-          </div>
-
-          <div>
-            <label htmlFor="family-member-birthdate" className="block text-sm font-medium text-gray-700 mb-1">
-              Date of Birth
-            </label>
-            <input
-              id="family-member-birthdate"
-              type="date"
-              value={formData.birthDate}
-              onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="family-member-nationality" className="block text-sm font-medium text-gray-700 mb-1">
-              Nationality
-            </label>
-            <input
-              id="family-member-nationality"
-              type="text"
-              value={formData.nationality}
-              onChange={(e) => setFormData({ ...formData, nationality: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="family-member-visa-status" className="block text-sm font-medium text-gray-700 mb-1">
-              Visa Status
-            </label>
-            <select
-              id="family-member-visa-status"
-              value={formData.visaStatus}
-              onChange={(e) => setFormData({ ...formData, visaStatus: e.target.value as FamilyMember['visaStatus'] })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-            >
-              <option value="pending">Pending</option>
-              <option value="applied">Applied</option>
-              <option value="approved">Approved</option>
-              <option value="not_required">Not Required</option>
-            </select>
-          </div>
-
-          <fieldset>
-            <legend className="block text-sm font-medium text-gray-700 mb-2">
-              Documents
-            </legend>
-            <div className="space-y-2">
-              {[
-                { key: 'passport' as const, label: 'Passport' },
-                { key: 'birthCertificate' as const, label: 'Birth Certificate' },
-                { key: 'marriageCertificate' as const, label: 'Marriage Certificate' },
-                { key: 'photos' as const, label: 'Visa Photos' },
-              ].map((doc) => (
-                <label key={doc.key} className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formData.documents[doc.key] || false}
-                    onChange={() => toggleDocument(doc.key)}
-                    className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                  />
-                  <span className="text-sm text-gray-700">{doc.label}</span>
-                </label>
-              ))}
-            </div>
-          </fieldset>
-
-          <div>
-            <label htmlFor="family-member-notes" className="block text-sm font-medium text-gray-700 mb-1">
-              Notes (optional)
-            </label>
-            <textarea
-              id="family-member-notes"
-              value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-            />
-          </div>
-
-          <div className="flex gap-3 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-              disabled={isLoading}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="flex-1 btn btn-primary"
-              disabled={isLoading}
-            >
-              {isLoading ? 'Saving...' : member ? 'Save Changes' : 'Add Member'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-}
-
-interface DeleteConfirmModalProps {
-  member: FamilyMember;
-  onClose: () => void;
-}
-
-function DeleteConfirmModal({ member, onClose }: DeleteConfirmModalProps) {
-  const deleteMutation = useDeleteFamilyMember();
-
-  const handleDelete = async () => {
-    try {
-      await deleteMutation.mutateAsync(member.id);
-      onClose();
-    } catch (error) {
-      console.error('Failed to delete family member:', error);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl max-w-sm w-full">
-        <div className="p-6">
-          <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
-            <Trash2 className="w-6 h-6 text-red-600" />
-          </div>
-          <h3 className="text-lg font-semibold text-gray-900 text-center mb-2">
-            Remove Family Member?
-          </h3>
-          <p className="text-gray-600 text-center mb-6">
-            Are you sure you want to remove <strong>{member.name}</strong>? This action cannot be undone.
-          </p>
-          <div className="flex gap-3">
-            <button
-              onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-              disabled={deleteMutation.isPending}
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleDelete}
-              className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
-              disabled={deleteMutation.isPending}
-            >
-              {deleteMutation.isPending ? 'Removing...' : 'Remove'}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function FamilyViewSkeleton() {
-  return (
-    <div className="p-6">
-      <div className="h-8 w-48 bg-gray-200 rounded animate-pulse mb-6" />
-      <div className="grid grid-cols-3 gap-4 mb-6">
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="card p-4">
-            <div className="h-12 bg-gray-200 rounded animate-pulse" />
-          </div>
-        ))}
-      </div>
-      <div className="space-y-4">
-        {[1, 2].map((i) => (
-          <div key={i} className="card p-5">
-            <div className="h-24 bg-gray-200 rounded animate-pulse" />
-          </div>
-        ))}
-      </div>
+              <span className={clsx('font-mono text-[0.7rem]', task.is_overdue && !done ? 'text-accent-500' : 'text-gray-500')}>{dueLabel(task)}</span>
+              <AssignSelect task={task} household={household} />
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }

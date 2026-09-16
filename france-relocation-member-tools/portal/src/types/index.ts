@@ -113,6 +113,8 @@ export interface DashboardData {
   profile_visa_type: string | null;
   profile_visa_label: string | null;
   welcome_banner: WelcomeBanner | null;
+  household?: Household;
+  professionals?: ProfessionalPrompt[];
   upcoming_tasks: Task[];
   overdue_tasks: Task[];
   recent_activity: Activity[];
@@ -778,6 +780,8 @@ export interface SupportTicket {
   priority: TicketPriority;
   has_unread_user: boolean;
   reply_count: number;
+  /** True when the site or the team started the thread; false when the member did. */
+  from_site?: boolean;
   initial_message?: string;
   created_at: string;
   updated_at: string;
@@ -1003,6 +1007,8 @@ export interface FamilyMember {
   name: string;
   relationship: 'spouse' | 'child' | 'parent' | 'other';
   birthDate: string;
+  /** Children from the profile carry an age rather than a date of birth. */
+  age?: string;
   nationality: string;
   visaStatus: 'pending' | 'applied' | 'approved' | 'not_required';
   documents: {
@@ -1012,20 +1018,66 @@ export interface FamilyMember {
     photos: boolean;
   };
   notes?: string;
+  /** Partner sign-in: their address, and whether they have used it yet. */
+  email?: string;
+  inviteStatus?: 'none' | 'invited' | 'joined';
+  invitedUserId?: number;
+  source?: 'profile';
   createdAt?: string;
   updatedAt?: string;
+}
+
+/** Who is signed in, relative to the household file they are looking at. */
+export interface Household {
+  role: 'owner' | 'partner';
+  ownerId: number;
+  ownerName: string;
+  userId: number;
+  partner: { id: number; name: string; email: string; inviteStatus: 'none' | 'invited' | 'joined'; userId: number } | null;
+}
+
+export interface FamilyAddon {
+  price: string;
+  priceNote: string;
+  url: string;
+  limits: { adults: number; children: number };
+  configured: boolean;
+}
+
+/** What the profile says about who is moving, before any file exists. */
+export interface HouseholdProfile {
+  hasPartner: boolean;
+  partnerName: string;
+  partnerDob: string;
+  children: number;
+  childrenAges: string[];
 }
 
 export interface FamilyMembersResponse {
   members: FamilyMember[];
   featureEnabled: boolean;
   canEdit: boolean;
+  household: Household;
+  profile: HouseholdProfile;
+  addon: FamilyAddon;
 }
 
 export interface FamilyFeatureStatus {
   enabled: boolean;
   upgradeUrl: string | null;
   message: string | null;
+  addon?: FamilyAddon;
+}
+
+/** When to bring in a professional, and why it applies to this member. */
+export interface ProfessionalPrompt {
+  id: string;
+  kind: 'tax' | 'law' | 'notaire' | 'accountant' | 'courtier';
+  who: string;
+  when: string;
+  stage: string;
+  why: string;
+  trigger: string;
 }
 
 // ============================================

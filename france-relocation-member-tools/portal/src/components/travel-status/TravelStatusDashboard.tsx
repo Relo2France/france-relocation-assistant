@@ -152,6 +152,12 @@ export default function TravelStatusDashboard() {
 
   return (
     <div className="p-6 space-y-6">
+      <div className="card p-4 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 border-primary-500">
+        <span className="eyebrow text-primary-500 whitespace-nowrap">Coming soon</span>
+        <p className="text-sm text-gray-600 m-0">
+          The Schengen tracker is becoming its own app, and it will live here inside your membership when it launches. Until then this version keeps counting; nothing you log is lost.
+        </p>
+      </div>
       {/* Page header */}
       <div className="flex items-center justify-between">
         <div>

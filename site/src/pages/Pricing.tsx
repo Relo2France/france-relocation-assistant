@@ -1,5 +1,5 @@
 import { Button, Label, Requirement, Requirements, SiteNav } from '../components';
-import { external, PRICE, PRICE_NOTE } from '../content/links';
+import { external, FAMILY_ADDON_NOTE, FAMILY_ADDON_PRICE, GUARANTEE, PRICE, PRICE_NOTE, REFUND_DAYS } from '../content/links';
 import { portalFeatures } from '../content/portal';
 import { coverage, totalTopics } from '../content/coverage';
 import { useMember } from '../member';
@@ -18,8 +18,12 @@ const questions = [
     a: 'If you only need to know what is required, no — read the guides and keep your money. The membership is for the sequencing: what to start now, what depends on what, and what your own file still lacks.',
   },
   {
+    q: 'What if it is not for me?',
+    a: `Email us within ${REFUND_DAYS} days of joining and you get a full refund. No form, no reason needed, no partial amounts.`,
+  },
+  {
     q: 'Does it cover my whole family?',
-    a: 'Yes. One account tracks every applicant moving with you, with their own documents and deadlines.',
+    a: `Membership tracks you and dates every step for the people moving with you. The Family add-on (${FAMILY_ADDON_PRICE}, ${FAMILY_ADDON_NOTE}) gives each of them a file of their own, and your partner their own sign-in so you can split the work, or do it all yourself.`,
   },
   {
     q: 'Is this legal advice?',
@@ -73,6 +77,14 @@ export function Pricing() {
             <p className="font-ui text-[0.76rem] text-muted text-center mt-3 mb-0">
               {member ? 'You’re a member. This is what you have.' : 'Secure checkout · card payment'}
             </p>
+            {member ? null : (
+              <p className="font-ui text-[0.8rem] text-ink text-center mt-3 mb-0 pt-3 border-t border-rule-soft">
+                {GUARANTEE}
+              </p>
+            )}
+            <p className="font-ui text-[0.76rem] text-muted mt-4 mb-0 pt-3 border-t border-rule-soft">
+              <span className="font-bold text-ink">Family add-on · {FAMILY_ADDON_PRICE}</span> {FAMILY_ADDON_NOTE}
+            </p>
           </div>
 
           <div>
@@ -90,7 +102,14 @@ export function Pricing() {
                 The full knowledge base — {totalTopics} topics across {coverage.length} areas, kept
                 current
               </Requirement>
-              <Requirement>Every applicant in your household on one account</Requirement>
+              <Requirement>
+                Every applicant in your household on one account — and with the Family add-on, a
+                file each and a sign-in for your partner
+              </Requirement>
+              <Requirement>
+                Told plainly when a step needs a tax professional, a lawyer or a notaire, and why it
+                applies to your file
+              </Requirement>
             </Requirements>
           </div>
         </div>

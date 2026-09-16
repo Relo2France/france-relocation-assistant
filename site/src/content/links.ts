@@ -22,3 +22,14 @@ export const external = {
  */
 export const PRICE = '$35';
 export const PRICE_NOTE = 'once, for life. No subscription, no renewal.';
+
+/**
+ * The guarantee, in one place for the same reason. Thirty days, full refund,
+ * no form to fill in: an email is enough.
+ */
+export const REFUND_DAYS = 30;
+export const GUARANTEE = `${REFUND_DAYS}-day money-back guarantee. Email us within ${REFUND_DAYS} days and you get every cent back.`;
+
+/** The Family add-on: one partner and up to four children, each with their own file. */
+export const FAMILY_ADDON_PRICE = '$20';
+export const FAMILY_ADDON_NOTE = 'once, on top of membership, for one partner and up to four children.';

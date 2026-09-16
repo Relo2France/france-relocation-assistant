@@ -271,7 +271,7 @@ export function useUpdateTask() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Partial<Task> }) =>
+    mutationFn: ({ id, data }: { id: number; data: Partial<Task> & { person?: string } }) =>
       tasksApi.update(id, data),
     onSuccess: (updatedTask) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.tasks(updatedTask.project_id) });
@@ -969,6 +969,31 @@ export function useDeleteFamilyMember() {
     mutationFn: familyApi.delete,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.familyMembers });
+      queryClient.invalidateQueries({ queryKey: queryKeys.dashboard });
+    },
+  });
+}
+
+export function useInviteFamilyMember() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ memberId, email }: { memberId: number; email: string }) => familyApi.invite(memberId, email),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.familyMembers });
+      queryClient.invalidateQueries({ queryKey: queryKeys.dashboard });
+    },
+  });
+}
+
+export function useRevokeFamilyInvite() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (memberId: number) => familyApi.revokeInvite(memberId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.familyMembers });
+      queryClient.invalidateQueries({ queryKey: queryKeys.dashboard });
     },
   });
 }
