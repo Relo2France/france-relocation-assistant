@@ -1123,7 +1123,10 @@ For example, for Visitor Visa:
         }
         
         update_option('fra_knowledge_base', $knowledge_base);
-        
+
+        // Member tools drafts a notice for the members this topic applies to.
+        do_action('fra_topic_updated', $category, $topic, $review, $old_content, $new_content);
+
         return true;
     }
     

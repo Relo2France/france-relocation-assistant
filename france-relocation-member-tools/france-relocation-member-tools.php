@@ -14,7 +14,7 @@
  * Plugin Name: France Relocation Member Tools
  * Plugin URI:  https://relo2france.com
  * Description: Premium member features including the Members Portal with project management, task tracking, document generation, checklists, guides, and personalized relocation planning.
- * Version:     2.6.3
+ * Version:     2.7.0
  * Author:      Relo2France
  * Author URI:  https://relo2france.com
  * License:     GPL v2 or later
@@ -31,7 +31,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Plugin constants.
-define( 'FRAMT_VERSION', '2.6.3' );
+define( 'FRAMT_VERSION', '2.7.0' );
 define('FRAMT_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('FRAMT_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('FRAMT_PLUGIN_BASENAME', plugin_basename(__FILE__));
@@ -322,6 +322,7 @@ final class FRA_Member_Tools {
             'includes/class-framt-document-generator.php',
             'includes/class-framt-ai-verification.php',
             'includes/class-framt-messages.php',
+            'includes/class-framt-member-notices.php',
             'includes/class-framt-main-plugin-bridge.php',
             // Portal v2.0 classes
             'includes/class-framt-portal-schema.php',
@@ -366,6 +367,7 @@ final class FRA_Member_Tools {
             'chat_handler' => 'FRAMT_Chat_Handler',
             'doc_generator' => 'FRAMT_Document_Generator',
             'ai_verification' => 'FRAMT_AI_Verification',
+            'member_notices' => 'FRAMT_Member_Notices',
         );
 
         foreach ($component_classes as $key => $class) {

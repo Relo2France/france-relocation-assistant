@@ -69,6 +69,7 @@ class FRAMT_Messages {
         // MemberPress signup hook for welcome message
         add_action('mepr-signup', array($this, 'send_welcome_message'), 10, 1);
         add_action('mepr_after_signup', array($this, 'send_welcome_message'), 10, 1);
+        add_action('mepr-txn-status-complete', array($this, 'maybe_send_family_plan_message'), 10, 1);
         
         // Fallback: WordPress user registration
         add_action('user_register', array($this, 'maybe_send_welcome_on_register'), 20, 1);
@@ -608,10 +609,15 @@ class FRAMT_Messages {
         $replies = $this->get_replies($message_id);
         $is_first = count($replies) <= 1;
 
+        // A message that opens with its own greeting does not get a second one.
+        $content = wp_unslash($reply_content);
+        $greets  = (bool) preg_match('/^\s*(hello|hi|hey|dear|bonjour)\b/i', $content);
+        $lead    = $greets ? '' : ($is_first ? 'Hello ' . $first . ',' : 'Hello ' . $first . ', there is a reply to "' . $message['subject'] . '".');
+
         $html = self::render_email(
             $message['subject'],
-            $is_first ? 'Hello ' . $first . ',' : 'Hello ' . $first . ', there is a reply to "' . $message['subject'] . '".',
-            self::markdown_to_html(wp_unslash($reply_content)),
+            $lead,
+            self::markdown_to_html($content),
             'Open in the portal',
             home_url('/portal/?view=messages')
         );
@@ -1139,6 +1145,12 @@ Relo2France";
             return;
         }
 
+        // Buying the Family add-on is not joining: that gets its own message.
+        $addon_id = (int) get_option('framt_family_addon_product_id', 0);
+        if ($addon_id > 0 && is_object($txn_or_user) && isset($txn_or_user->product_id) && (int) $txn_or_user->product_id === $addon_id) {
+            return;
+        }
+
         // Get user ID from transaction or user object
         $user_id = null;
         if (is_object($txn_or_user)) {
@@ -1189,6 +1201,69 @@ Relo2France";
             // Mark welcome as sent
             update_user_meta($user_id, '_framt_welcome_sent', time());
         }
+    }
+
+    /**
+     * The Family plan gets its own message: what just switched on and how to
+     * use it, not a second welcome.
+     *
+     * @param MeprTransaction $txn Completed transaction.
+     * @return void
+     */
+    public function maybe_send_family_plan_message($txn) {
+        $addon_id = (int) get_option('framt_family_addon_product_id', 0);
+        if ($addon_id <= 0 || !is_object($txn) || (int) ($txn->product_id ?? 0) !== $addon_id) {
+            return;
+        }
+        $user_id = (int) ($txn->user_id ?? 0);
+        if (!$user_id || get_user_meta($user_id, '_framt_family_plan_sent', true)) {
+            return;
+        }
+        $user = get_user_by('id', $user_id);
+        if (!$user) {
+            return;
+        }
+        $first   = $user->first_name ?: strtok($user->display_name, ' ');
+        $message = $this->get_family_plan_message();
+        $message = str_replace('{first_name}', $first, $message);
+
+        $admins   = get_users(array('role' => 'administrator', 'number' => 1, 'fields' => 'ID'));
+        $admin_id = !empty($admins) ? (int) $admins[0] : 1;
+        if ($this->create_admin_message($user_id, 'Your Family plan is on', $message, $admin_id)) {
+            update_user_meta($user_id, '_framt_family_plan_sent', time());
+        }
+    }
+
+    /**
+     * The Family plan message.
+     *
+     * @return string
+     */
+    public function get_family_plan_message() {
+        return "Hello {first_name},
+
+The Family plan is on your account. Here is what changed.
+
+**A file for each person**
+
+Family plans now shows a card for your partner and for each child, up to four. Each has its own document list and its own steps, dated from the same move. Names and ages come from your profile; edit them on the card.
+
+**Your partner's own sign-in**
+
+On your partner's card, enter their email and press Invite. They get their own password and see the same household file, with the steps that are theirs marked. You can also leave that empty and do everything yourself.
+
+**Hand over the children's steps**
+
+Once your partner has signed in, every step for the children gets a small choice: you, or them. Change it on the step, or from the list at the bottom of Family plans.
+
+**Nothing else moves**
+
+Your dossier, your dates and your stages are unchanged. The plan adds people; it does not reset anything.
+
+If something does not look right, write to us from Support.
+
+Kevin
+Relo2France";
     }
 
     /**
@@ -1247,6 +1322,7 @@ Relo2France";
         ?>
         <div class="wrap framt-messages-admin">
             <h1>Member Messages</h1>
+            <?php do_action('framt_messages_admin_top'); ?>
             
             <!-- Tab Navigation -->
             <nav class="nav-tab-wrapper framt-admin-tabs">
