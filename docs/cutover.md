@@ -132,12 +132,29 @@ check of a proxied path must send that header:
 
     curl -H "Sec-Fetch-Mode: navigate" -H "Sec-Fetch-Dest: document" -I https://relo2france.com/portal/
 
+The second one was `/_static`. WordPress.com concatenates CSS and JS into
+`/_static/??...` bundles, and that prefix was not in the Worker's WordPress
+path list, so every bundle came back as our 404 page and proxied pages
+rendered unstyled. It hid for a day because the theme had a single
+stylesheet and nothing to concatenate; adding a second one triggered the
+bundling. To audit the list, take every same-origin URL the proxied pages
+reference and check its first path segment is in `WORDPRESS_PATHS`:
+
+    curl -s --resolve relo2france.com:443:<edge ip> -H "Sec-Fetch-Mode: navigate" https://relo2france.com/login/ \
+      | grep -oE "https://relo2france\.com/[^\"'?# ]+" | awk -F/ '{print "/"$4}' | sort | uniq -c
+
 Also: a home router can keep serving the pre-cutover addresses for a long
 while after public resolvers have moved. Pin curl to the edge with
 `--resolve relo2france.com:443:<edge ip>` (from `dig @clara.ns.cloudflare.com`)
 before concluding anything about the Worker.
 
 ## After cutover
+
+The WordPress theme, the plugin's auth cards and the portal were brought
+onto the site's design the same day (commits d45ed72 through a8b20fa).
+The theme loads a copy of the site's tokens, pinned identical by a test.
+WordPress code deploys from `main` via the GitHub Sync plugin, which
+polls every 15 minutes or runs from Tools → GitHub Sync in wp-admin.
 
 The staging Worker keeps its `workers.dev` address and no route. The
 `test.relo2france.com` A record and its route were removed once the apex
