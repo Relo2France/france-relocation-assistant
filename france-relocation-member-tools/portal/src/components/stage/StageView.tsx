@@ -10,13 +10,11 @@ import { useState } from 'react';
 import { clsx } from 'clsx';
 import { ArrowRight, CheckCircle2, Circle } from 'lucide-react';
 import Jargon from '@/components/shared/Jargon';
-import DecideLanding from './DecideLanding';
 import { useDashboard, useFamilyMembers, useTasks, useUpdateTaskStatus } from '@/hooks/useApi';
 import { JOURNEY, currentStage, groupByLeadTime, progressFor, stageById, stageForTask, timeToGo } from '@/journey/journey';
 import { usePortalStore } from '@/store';
 import type { Task } from '@/types';
-
-const SITE = 'https://relo2france.com';
+import DecideLanding from './DecideLanding';
 
 function dueLabel(task: Task): string {
   if (task.status === 'done') return 'DONE';
@@ -26,7 +24,7 @@ function dueLabel(task: Task): string {
 }
 
 export default function StageView() {
-  const { activeStage, setActiveView, setActiveStage, setTaskFilters } = usePortalStore();
+  const { activeStage, setActiveView, setActiveStage, setTaskFilters, setActiveGuide } = usePortalStore();
   const { data } = useDashboard();
   const stage = stageById(activeStage) ?? JOURNEY[0];
   const project = data?.project;
@@ -139,9 +137,9 @@ export default function StageView() {
             <div className="card p-5 flex flex-col gap-2.5">
               <span className="eyebrow">Guides for this stage</span>
               {stage.guides.map((g) => (
-                <a key={g.slug + g.title} href={`${SITE}/guides/${g.slug}/`} target="_blank" rel="noopener noreferrer" className="text-[0.95rem] font-semibold text-primary-500 hover:text-primary-700">
+                <button key={g.slug + g.title} onClick={() => { setActiveGuide(g.slug); setActiveView('guide'); }} className="text-left text-[0.95rem] font-semibold text-primary-500 hover:text-primary-700">
                   {g.title}
-                </a>
+                </button>
               ))}
               <span className="text-xs text-gray-500">Official sources only, re-checked weekly</span>
             </div>

@@ -79,6 +79,9 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      // The public site's guide content, rendered inside the portal too. One
+      // source: the site's tests (sourcing rule, pinned slugs) guard it.
+      '@site-guides': path.resolve(__dirname, '../../site/src/content/guides.ts'),
     },
   },
   server: {

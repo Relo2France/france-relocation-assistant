@@ -28,6 +28,7 @@ const MembershipView = lazy(() => import('@/components/membership/MembershipView
 const ResearchView = lazy(() => import('@/components/research/ResearchView'));
 const TravelStatusDashboard = lazy(() => import('@/components/travel-status/TravelStatusDashboard'));
 const StageView = lazy(() => import('@/components/stage/StageView'));
+const GuideView = lazy(() => import('@/components/guide/GuideView'));
 
 // Loading fallback component
 function ViewLoadingFallback() {
@@ -88,6 +89,8 @@ function ViewRouter() {
         return <TravelStatusDashboard />;
       case 'stage':
         return <StageView />;
+      case 'guide':
+        return <GuideView />;
       default:
         return <Dashboard />;
     }

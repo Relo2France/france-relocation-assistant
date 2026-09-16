@@ -101,6 +101,14 @@ interface PortalState {
   activeStage: string | null;
   setActiveStage: (stage: string | null) => void;
 
+  // Which guide the guide page shows, by slug
+  activeGuide: string | null;
+  setActiveGuide: (slug: string | null) => void;
+
+  // A question handed to the assistant by another view, consumed on open
+  chatDraft: string | null;
+  setChatDraft: (draft: string | null) => void;
+
   // Settings tab navigation
   settingsTab: string | null;
   setSettingsTab: (tab: string | null) => void;
@@ -166,6 +174,10 @@ export const usePortalStore = create<PortalState>((set, get) => {
     setActiveView: (activeView) => set({ activeView }),
     activeStage: null,
     setActiveStage: (activeStage) => set({ activeStage }),
+    activeGuide: null,
+    setActiveGuide: (activeGuide) => set({ activeGuide }),
+    chatDraft: null,
+    setChatDraft: (chatDraft) => set({ chatDraft }),
 
     // Settings tab navigation
     settingsTab: null,

@@ -12,20 +12,19 @@ import { useFamilyMembers, useMemberProfile } from '@/hooks/useApi';
 import { usePortalStore } from '@/store';
 import type { Project } from '@/types';
 
-const SITE = 'https://relo2france.com';
-
 interface Block {
   id: string;
   title: string;
   body: string;
   done: boolean;
   doneNote?: string;
-  primary: { label: string; onClick?: () => void; href?: string };
-  secondary?: { label: string; href: string };
+  primary: { label: string; onClick: () => void };
+  secondary?: { label: string; onClick: () => void };
 }
 
 export default function DecideLanding({ project, visaType }: { project: Project; visaType: string | null }) {
-  const { setActiveView, setSettingsTab } = usePortalStore();
+  const { setActiveView, setSettingsTab, setActiveGuide } = usePortalStore();
+  const openGuide = (slug: string) => () => { setActiveGuide(slug); setActiveView('guide'); };
   const { data: profile } = useMemberProfile();
   const { data: family } = useFamilyMembers();
 
@@ -44,7 +43,7 @@ export default function DecideLanding({ project, visaType }: { project: Project;
       done: routeChosen,
       doneNote: routeChosen ? project.visa_type_label : undefined,
       primary: { label: routeChosen ? 'Change my route' : 'Set my route', onClick: () => { setSettingsTab('visa-profile'); setActiveView('profile'); } },
-      secondary: { label: 'Read the overview', href: `${SITE}/guides/long-stay-visa-overview/` },
+      secondary: { label: 'Read the overview', onClick: openGuide('long-stay-visa-overview') },
     },
     {
       id: 'where',
@@ -59,8 +58,8 @@ export default function DecideLanding({ project, visaType }: { project: Project;
       title: 'What will it cost, and what must we show?',
       body: 'The fee, the resources benchmark, the insurance rule, and the lead times from the States.',
       done: false,
-      primary: { label: 'What each document needs', href: `${SITE}/guides/visa-application-timeline/` },
-      secondary: { label: 'The visitor route in full', href: `${SITE}/guides/visitor-visa-requirements/` },
+      primary: { label: 'What each document needs', onClick: openGuide('visa-application-timeline') },
+      secondary: { label: 'The visitor route in full', onClick: openGuide('visitor-visa-requirements') },
     },
     {
       id: 'who',
@@ -116,15 +115,11 @@ export default function DecideLanding({ project, visaType }: { project: Project;
                 <h3 className="font-display text-[1.1rem] font-semibold tracking-[-0.018em] leading-snug">{b.title}</h3>
                 <p className="text-sm text-gray-600 m-0 flex-grow">{b.body}</p>
                 <div className="flex flex-wrap gap-2 mt-1">
-                  {b.primary.href ? (
-                    <a href={b.primary.href} target="_blank" rel="noreferrer" className={state === 'next' ? 'btn btn-primary' : 'btn btn-secondary'}>{b.primary.label}</a>
-                  ) : (
-                    <button onClick={b.primary.onClick} className={clsx(state === 'next' ? 'btn btn-primary' : 'btn btn-secondary', 'gap-1.5')}>
-                      {b.primary.label} <ArrowRight className="w-4 h-4" aria-hidden="true" />
-                    </button>
-                  )}
+                  <button onClick={b.primary.onClick} className={clsx(state === 'next' ? 'btn btn-primary' : 'btn btn-secondary', 'gap-1.5')}>
+                    {b.primary.label} <ArrowRight className="w-4 h-4" aria-hidden="true" />
+                  </button>
                   {b.secondary ? (
-                    <a href={b.secondary.href} target="_blank" rel="noreferrer" className="btn btn-ghost">{b.secondary.label}</a>
+                    <button onClick={b.secondary.onClick} className="btn btn-ghost">{b.secondary.label}</button>
                   ) : null}
                 </div>
               </div>

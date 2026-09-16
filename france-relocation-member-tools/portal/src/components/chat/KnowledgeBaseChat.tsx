@@ -27,6 +27,7 @@ import {
   useSearchChatTopics,
   useSendChatMessage,
 } from '@/hooks/useApi';
+import { usePortalStore } from '@/store';
 import type { ChatMessage as ChatMessageType, ChatSource } from '@/types';
 import MarkdownMessage from '../shared/MarkdownMessage';
 
@@ -54,7 +55,17 @@ const suggestedQuestions = [
 
 export default function KnowledgeBaseChat() {
   const [messages, setMessages] = useState<ChatMessageType[]>([]);
-  const [inputValue, setInputValue] = useState('');
+  const { chatDraft, setChatDraft } = usePortalStore();
+  const [inputValue, setInputValue] = useState(chatDraft ?? '');
+  // A guide or a stage can hand the assistant a question. Take it once.
+  useEffect(() => {
+    if (chatDraft) {
+      setInputValue(chatDraft);
+      setChatDraft(null);
+      inputRef.current?.focus();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [includePractice, setIncludePractice] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(true);
