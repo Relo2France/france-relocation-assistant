@@ -10,6 +10,7 @@ import { useState } from 'react';
 import { clsx } from 'clsx';
 import { ArrowRight, CheckCircle2, Circle } from 'lucide-react';
 import Jargon from '@/components/shared/Jargon';
+import DecideLanding from './DecideLanding';
 import { useDashboard, useFamilyMembers, useTasks, useUpdateTaskStatus } from '@/hooks/useApi';
 import { JOURNEY, currentStage, groupByLeadTime, progressFor, stageById, stageForTask, timeToGo } from '@/journey/journey';
 import { usePortalStore } from '@/store';
@@ -53,14 +54,16 @@ export default function StageView() {
           <h2 className="font-display text-[1.75rem] font-semibold tracking-[-0.018em] leading-tight">{stage.name}</h2>
           <p className="text-ink/80 max-w-[64ch]">{stage.question}</p>
         </div>
+        {stage.id !== 'decide' ? (
         <div className="flex flex-col items-start md:items-end gap-1.5 md:min-w-[220px]">
           <div className="flex justify-between w-full md:w-[220px]"><span className="eyebrow">Progress</span><span className="font-mono text-xs text-gray-500">{progress.completed} / {progress.total}</span></div>
           <div className="progress-bar w-full md:w-[220px]"><div className="progress-bar-fill" style={{ width: `${pct}%` }} /></div>
           {nextHard ? <span className="font-mono text-[0.7rem] uppercase text-accent-500">Next hard date · {dueLabel(nextHard)}</span> : null}
         </div>
+        ) : null}
       </header>
 
-      {members.length > 0 ? (
+      {members.length > 0 && stage.id !== 'decide' ? (
         <div className="flex flex-wrap gap-2 px-6 md:px-8 pt-4">
           <button onClick={() => setPerson('me')} className={clsx('badge h-7 px-3', person === 'me' ? 'bg-primary-500 text-white' : 'bg-card border border-rule text-ink')}>You</button>
           {members.map((m) => (
@@ -74,7 +77,8 @@ export default function StageView() {
 
       <div className="grid md:grid-cols-[minmax(0,1fr)_300px] gap-5 px-6 md:px-8 py-5">
         <div className="flex flex-col gap-5">
-          {person !== 'me' ? (
+          {stage.id === 'decide' && project ? <DecideLanding project={project} visaType={data?.profile_visa_type ?? null} /> : null}
+          {stage.id !== 'decide' && person !== 'me' ? (
             <div className="card p-5">
               <span className="eyebrow">Their file</span>
               <p className="mt-2 text-sm text-gray-600">Each person applies separately. Their documents are tracked under Family plans; the dated steps below are the shared calendar.</p>
@@ -82,7 +86,7 @@ export default function StageView() {
             </div>
           ) : null}
 
-          {groups.length === 0 ? (
+          {stage.id === 'decide' ? null : groups.length === 0 ? (
             <div className="card p-6">
               <p className="font-display font-semibold text-lg">Nothing dated here yet.</p>
               <p className="text-sm text-gray-600 mt-1">Set your move date and this stage fills in, counted back from it.</p>
@@ -151,13 +155,6 @@ export default function StageView() {
             </div>
           ) : null}
 
-          {stage.id === 'decide' ? (
-            <div className="card p-5 flex flex-col gap-2">
-              <span className="eyebrow">Where in France</span>
-              <p className="text-sm text-gray-600">Regions, cost of living and the questions to ask before you pick a town.</p>
-              <button onClick={() => setActiveView('research')} className="btn btn-secondary self-start mt-1">Explore France</button>
-            </div>
-          ) : null}
 
           <div className="card p-5 flex flex-col gap-2">
             <span className="eyebrow">Ask about this stage</span>
