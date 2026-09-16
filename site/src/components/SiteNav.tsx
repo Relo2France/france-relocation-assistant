@@ -1,8 +1,15 @@
 import { Button } from './Button';
 import { external } from '../content/links';
+import { useMember } from '../member';
 
-/** Warm chrome. Nothing in the navigation is ever a legal requirement. */
+/**
+ * Warm chrome. Nothing in the navigation is ever a legal requirement.
+ *
+ * A signed-in member is not asked to sign in: they get their account and
+ * their portal, the same pair the WordPress header shows them.
+ */
 export function SiteNav({ cta = 'Get started' }: { cta?: string }) {
+  const member = useMember();
   return (
     <nav className="flex items-center justify-between gap-4 px-7 py-4 border-b border-rule-soft">
       <a href="/" className="font-display font-bold text-[1.1rem] tracking-[-0.02em] text-ink no-underline">
@@ -22,9 +29,18 @@ export function SiteNav({ cta = 'Get started' }: { cta?: string }) {
         ))}
       </ul>
       <div className="flex gap-2">
-        {/* Sign-in still lives on WordPress until the portal is ported. */}
-        <Button href={external.signIn} variant="ghost">Sign in</Button>
-        <Button href="/pricing/">{cta}</Button>
+        {member ? (
+          <>
+            <Button href={external.account} variant="ghost">Account</Button>
+            <Button href={external.portal}>Member portal</Button>
+          </>
+        ) : (
+          <>
+            {/* Sign-in still lives on WordPress until the portal is ported. */}
+            <Button href={external.signIn} variant="ghost">Sign in</Button>
+            <Button href="/pricing/">{cta}</Button>
+          </>
+        )}
       </div>
     </nav>
   );

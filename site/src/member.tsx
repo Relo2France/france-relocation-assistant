@@ -59,7 +59,19 @@ async function loadMember(): Promise<Member | null> {
   }
 
   try {
-    const response = await fetch('/wp-json/fra-portal/v1/me', { credentials: 'same-origin' });
+    // WordPress only trusts the login cookie on a REST request that also
+    // carries a nonce, and this static page has none baked in. Core's
+    // rest-nonce action hands one out on the strength of the cookie alone;
+    // signed out, it answers "0" and the member request would 401 anyway.
+    const nonce = await (
+      await fetch('/wp-admin/admin-ajax.php?action=rest-nonce', { credentials: 'same-origin' })
+    ).text();
+    if (!nonce || nonce === '0') return null;
+
+    const response = await fetch('/wp-json/fra-portal/v1/site-member', {
+      credentials: 'same-origin',
+      headers: { 'X-WP-Nonce': nonce.trim() },
+    });
     if (!response.ok) return null;
     return (await response.json()) as Member;
   } catch {

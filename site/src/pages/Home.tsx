@@ -38,9 +38,9 @@ export function Hero() {
         </h1>
         {member ? (
           <p className="text-muted text-[1.05rem] max-w-[42ch]" data-personal="hero">
-            Your file is dated back from {moveDate}
-            {days !== null ? `, ${days} days from now` : ''}. Every requirement,
-            re-checked against official French sources every week.
+            {days !== null
+              ? `Your file is dated back from ${moveDate}, ${days} days from now. Every requirement, re-checked against official French sources every week.`
+              : 'Set your move date in your dossier and this timeline dates itself back from it.'}
           </p>
         ) : (
           <p className="text-muted text-[1.05rem] max-w-[42ch]">

@@ -393,6 +393,18 @@ class FRAMT_Portal_API {
             )
         );
 
+        // What the public site needs to personalise itself for a signed-in
+        // member: one small, stable shape rather than the portal's internals.
+        register_rest_route(
+            self::NAMESPACE,
+            '/site-member',
+            array(
+                'methods'             => 'GET',
+                'callback'            => array( $this, 'get_site_member' ),
+                'permission_callback' => array( $this, 'check_member_permission' ),
+            )
+        );
+
         // User settings endpoint
         register_rest_route(
             self::NAMESPACE,
@@ -1832,6 +1844,72 @@ class FRAMT_Portal_API {
         }
 
         return rest_ensure_response( $response );
+    }
+
+    /**
+     * The member as the public site sees them.
+     *
+     * The site's home page and guides personalise after hydration from this:
+     * a first name, where and when they are moving, which visa route, how
+     * many people are applying, how far the visa dossier has got, and the
+     * next thing to do. Shape matches site/src/member.tsx `Member`. Fields
+     * the member has not filled in come back empty, never invented.
+     *
+     * @param WP_REST_Request $request Request object
+     * @return WP_REST_Response
+     */
+    public function get_site_member( $request ) {
+        $user_id = get_current_user_id();
+        $user    = wp_get_current_user();
+        $project = FRAMT_Project::get_or_create( $user_id );
+
+        $first_name = $user->first_name;
+        if ( '' === $first_name ) {
+            $first_name = (string) strtok( $user->display_name, ' ' );
+        }
+
+        $move_date = $project->target_move_date ?: get_user_meta( $user_id, 'fra_target_move_date', true );
+        $move_date = is_string( $move_date ) ? substr( $move_date, 0, 10 ) : '';
+
+        $visa_key   = $project->visa_type ?: get_user_meta( $user_id, 'fra_visa_type', true );
+        $visa_label = FRAMT_Project::$visa_types[ $visa_key ] ?? ( $visa_key ?: '' );
+
+        $applicants = 1;
+        if ( '' !== (string) get_user_meta( $user_id, 'fra_spouse_legal_first_name', true ) ) {
+            $applicants++;
+        }
+        $applicants += (int) get_user_meta( $user_id, 'fra_num_children', true );
+
+        // The visa dossier: the visa-application checklist is the one that
+        // maps onto "documents the consulate will want".
+        $items    = $this->get_checklist_items( 'visa-application' );
+        $progress = get_user_meta( $user_id, 'fra_checklist_visa-application', true ) ?: array();
+        $ready    = 0;
+        foreach ( $items as $item ) {
+            if ( ! empty( $progress[ $item['id'] ]['completed'] ) ) {
+                $ready++;
+            }
+        }
+
+        $next = null;
+        foreach ( array( FRAMT_Task::get_overdue( $project->id ), FRAMT_Task::get_upcoming( $project->id, 60, 1 ) ) as $tasks ) {
+            if ( ! empty( $tasks ) ) {
+                $next = $tasks[0];
+                break;
+            }
+        }
+
+        return rest_ensure_response( array(
+            'firstName'   => $first_name,
+            'destination' => (string) get_user_meta( $user_id, 'fra_target_location', true ),
+            'visaType'    => (string) $visa_label,
+            'moveDate'    => (string) $move_date,
+            'applicants'  => $applicants,
+            'dossier'     => array( 'ready' => $ready, 'total' => count( $items ) ),
+            'nextAction'  => $next
+                ? array( 'what' => $next->title, 'note' => (string) $next->description )
+                : array( 'what' => 'Set your move date', 'note' => 'Your tasks are dated back from it.' ),
+        ) );
     }
 
     /**
