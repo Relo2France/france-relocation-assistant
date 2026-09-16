@@ -547,9 +547,7 @@ class FRA_Auth_Pages {
         .fra-auth-error,
         .fra-auth-form-wrap .mepr-form-has-errors,
         .fra-auth-form-wrap .mepr_error,
-        .fra-auth-form-wrap .mepr-error,
-        .fra-auth-form-wrap .mepr-stripe-card-errors:not(:empty),
-        .fra-auth-form-wrap .cc-error:not(:empty) {
+        .fra-auth-form-wrap .mepr-error {
             display: block;
             background: #fdf4f2;
             border: 1px solid #f2c9c1;
@@ -565,9 +563,22 @@ class FRA_Auth_Pages {
             padding-left: 18px;
         }
 
-        .fra-auth-form-wrap .cc-error:not(:empty) {
+        /* Per-field messages. MemberPress renders every one of these with its
+           text already in place and hides them until validation fails, so
+           this rule must never set display - it would show "First Name
+           Required" under every field on first load. Style only. */
+        .fra-auth-form-wrap .cc-error,
+        .fra-auth-form-wrap .mepr-stripe-card-errors {
+            background: #fdf4f2;
+            border: 1px solid #f2c9c1;
+            border-radius: var(--radius-sm, 10px);
+            color: #b4432f;
+            font-size: 0.85rem;
             padding: 6px 10px;
             margin: 6px 0 0 0;
+        }
+        .fra-auth-form-wrap .mepr-stripe-card-errors:empty {
+            display: none;
         }
 
         /* === MEMBERPRESS CHECKOUT === */
