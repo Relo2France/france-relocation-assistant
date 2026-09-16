@@ -14,7 +14,7 @@
  * Plugin Name: France Relocation Member Tools
  * Plugin URI:  https://relo2france.com
  * Description: Premium member features including the Members Portal with project management, task tracking, document generation, checklists, guides, and personalized relocation planning.
- * Version:     2.7.0
+ * Version:     2.7.1
  * Author:      Relo2France
  * Author URI:  https://relo2france.com
  * License:     GPL v2 or later
@@ -31,7 +31,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Plugin constants.
-define( 'FRAMT_VERSION', '2.7.0' );
+define( 'FRAMT_VERSION', '2.7.1' );
 define('FRAMT_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('FRAMT_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('FRAMT_PLUGIN_BASENAME', plugin_basename(__FILE__));
@@ -4035,67 +4035,29 @@ Please provide a helpful, accurate answer about their health insurance coverage 
             </div>
             
             <div class="card" style="max-width: 800px; padding: 20px; margin-top: 20px;">
-                <h2 style="margin-top: 0;"><?php esc_html_e('Member Tools Overview', 'fra-member-tools'); ?></h2>
-                <p><?php esc_html_e('This plugin provides premium features for your members:', 'fra-member-tools'); ?></p>
-                
-                <table class="widefat" style="margin-top: 15px;">
-                    <thead>
-                        <tr>
-                            <th><?php esc_html_e('Feature', 'fra-member-tools'); ?></th>
-                            <th><?php esc_html_e('Description', 'fra-member-tools'); ?></th>
-                            <th><?php esc_html_e('Status', 'fra-member-tools'); ?></th>
-                        </tr>
-                    </thead>
+                <h2 style="margin-top: 0;"><?php esc_html_e('What this plugin runs', 'fra-member-tools'); ?></h2>
+                <p><?php esc_html_e('The member portal at /portal/: a React app served by the Portal page template, backed by the REST API in this plugin.', 'fra-member-tools'); ?></p>
+                <table class="widefat striped">
+                    <thead><tr><th><?php esc_html_e('Part', 'fra-member-tools'); ?></th><th><?php esc_html_e('What it does', 'fra-member-tools'); ?></th><th><?php esc_html_e('Where to manage it', 'fra-member-tools'); ?></th></tr></thead>
                     <tbody>
-                        <tr>
-                            <td><strong><?php esc_html_e('Member Dashboard', 'fra-member-tools'); ?></strong></td>
-                            <td><?php esc_html_e('Personalized dashboard showing relocation progress', 'fra-member-tools'); ?></td>
-                            <td><span style="color: #46b450;">✓ <?php esc_html_e('Active', 'fra-member-tools'); ?></span></td>
-                        </tr>
-                        <tr>
-                            <td><strong><?php esc_html_e('Profile Management', 'fra-member-tools'); ?></strong></td>
-                            <td><?php esc_html_e('Collect and store member relocation details', 'fra-member-tools'); ?></td>
-                            <td><span style="color: #46b450;">✓ <?php esc_html_e('Active', 'fra-member-tools'); ?></span></td>
-                        </tr>
-                        <tr>
-                            <td><strong><?php esc_html_e('Document Creation', 'fra-member-tools'); ?></strong></td>
-                            <td><?php esc_html_e('AI-assisted document generation for visa applications', 'fra-member-tools'); ?></td>
-                            <td><span style="color: #46b450;">✓ <?php esc_html_e('Active', 'fra-member-tools'); ?></span></td>
-                        </tr>
-                        <tr>
-                            <td><strong><?php esc_html_e('Health Insurance Verification', 'fra-member-tools'); ?></strong></td>
-                            <td><?php esc_html_e('AI analysis of health insurance certificates', 'fra-member-tools'); ?></td>
-                            <td>
-                                <?php if ($api_configured) : ?>
-                                    <span style="color: #46b450;">✓ <?php esc_html_e('Active', 'fra-member-tools'); ?></span>
-                                <?php else : ?>
-                                    <span style="color: #dc3232;">✗ <?php esc_html_e('Needs API Key', 'fra-member-tools'); ?></span>
-                                <?php endif; ?>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td><strong><?php esc_html_e('Interactive Checklists', 'fra-member-tools'); ?></strong></td>
-                            <td><?php esc_html_e('Step-by-step visa application checklists', 'fra-member-tools'); ?></td>
-                            <td><span style="color: #46b450;">✓ <?php esc_html_e('Active', 'fra-member-tools'); ?></span></td>
-                        </tr>
-                        <tr>
-                            <td><strong><?php esc_html_e('Glossary', 'fra-member-tools'); ?></strong></td>
-                            <td><?php esc_html_e('French administrative terms and definitions', 'fra-member-tools'); ?></td>
-                            <td><span style="color: #46b450;">✓ <?php esc_html_e('Active', 'fra-member-tools'); ?></span></td>
-                        </tr>
-                        <tr>
-                            <td><strong><?php esc_html_e('Step-by-Step Guides', 'fra-member-tools'); ?></strong></td>
-                            <td><?php esc_html_e('Detailed guides for common relocation tasks', 'fra-member-tools'); ?></td>
-                            <td><span style="color: #46b450;">✓ <?php esc_html_e('Active', 'fra-member-tools'); ?></span></td>
-                        </tr>
+                        <tr><td><strong>The six stages</strong></td><td>Decide, Prepare, Apply, Move, Arrive, Settle &amp; renew. Every step is dated back from the member's move date and driven by their profile.</td><td>Task templates live in code; the profile drives which appear.</td></tr>
+                        <tr><td><strong>Dossier and files</strong></td><td>The document list per visa route, per person, with uploads attached to items and certificate answers ticked from the profile.</td><td>Portal Settings &rarr; Features (uploads on/off).</td></tr>
+                        <tr><td><strong>Ask about my case</strong></td><td>Answers against the member's file and the knowledge base, with sources.</td><td>FR Assistant &rarr; API Settings; the knowledge base under Expand KB and AI Review.</td></tr>
+                        <tr><td><strong>Family plans</strong></td><td>One file per person; a partner sign-in; steps handed between the account holder and the partner. The $20 add-on gates it.</td><td>Portal Settings &rarr; Features (product ID and checkout URL).</td></tr>
+                        <tr><td><strong>Messages and Support</strong></td><td>Messages: what the site sends members, including notices drafted from knowledge-base changes. Support: what members send you.</td><td>Member Messages (drafts wait for approval at the top of that page).</td></tr>
+                        <tr><td><strong>Professional prompts</strong></td><td>Tells members when a tax professional, lawyer, notaire, accountant or mortgage broker should look, and why it applies to them.</td><td>Rules in code, keyed to the profile.</td></tr>
+                        <tr><td><strong>Schengen days</strong></td><td>The 90/180 tracker. Staying as is with a coming-soon note until it becomes its own app.</td><td>Left alone for now.</td></tr>
+                        <tr><td><strong>Health insurance check</strong></td><td>AI reading of an uploaded insurance certificate against the visa requirement.</td><td><?php echo $api_configured ? '<span style="color:#46b450;">Active</span>' : '<span style="color:#dc3232;">Needs the API key in FR Assistant &rarr; API Settings</span>'; ?></td></tr>
                     </tbody>
                 </table>
             </div>
-            
+
             <div class="card" style="max-width: 800px; padding: 20px; margin-top: 20px;">
-                <h2 style="margin-top: 0;"><?php esc_html_e('Usage', 'fra-member-tools'); ?></h2>
-                <p><?php esc_html_e('Members access the Member Tools through the [fra_member_tools] shortcode. Add this shortcode to any page to display the member dashboard.', 'fra-member-tools'); ?></p>
-                <p><code>[fra_member_tools]</code></p>
+                <h2 style="margin-top: 0;"><?php esc_html_e('Where members go', 'fra-member-tools'); ?></h2>
+                <p><?php esc_html_e('The portal is the page using the Portal template, at /portal/. Sign-in, checkout and the account page are MemberPress pages styled by the assistant plugin. The public site (guides, pricing, about) is served by the Cloudflare Worker in front of this WordPress.', 'fra-member-tools'); ?></p>
+                <p><a class="button" href="<?php echo esc_url( home_url( '/portal/' ) ); ?>" target="_blank" rel="noopener"><?php esc_html_e('Open the portal', 'fra-member-tools'); ?></a>
+                   <a class="button" href="<?php echo esc_url( admin_url( 'admin.php?page=framt-portal-settings' ) ); ?>"><?php esc_html_e('Portal Settings', 'fra-member-tools'); ?></a>
+                   <a class="button" href="<?php echo esc_url( admin_url( 'admin.php?page=fra-messages' ) ); ?>"><?php esc_html_e('Member Messages', 'fra-member-tools'); ?></a></p>
             </div>
         </div>
         <?php

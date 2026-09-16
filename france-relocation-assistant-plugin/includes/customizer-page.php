@@ -389,7 +389,8 @@ if (isset($_POST['fra_reset_customizer']) && check_admin_referer('fra_customizer
             <div class="fra-customizer-grid">
                 <!-- Enable/Disable -->
                 <div class="fra-card fra-card-full">
-                    <h2><?php _e('🌐 WordPress Site Header', 'france-relocation-assistant'); ?></h2>
+                    <h2><?php _e('WordPress Site Header', 'france-relocation-assistant'); ?></h2>
+                    <div class="notice notice-warning inline" style="margin: 0 0 12px;"><p><?php _e('The Relo2France theme now draws the site header itself and switches this plugin header off (the fra_site_header_enabled filter). The settings below are kept for sites without that theme and have no effect here.', 'france-relocation-assistant'); ?></p></div>
                     <p class="description"><?php _e('Customize your site\'s main header that appears on all pages. This replaces your theme\'s default header.', 'france-relocation-assistant'); ?></p>
                     
                     <table class="form-table">

@@ -1326,9 +1326,9 @@ Relo2France";
             
             <!-- Tab Navigation -->
             <nav class="nav-tab-wrapper framt-admin-tabs">
-                <a href="#inbox" class="nav-tab nav-tab-active" data-tab="inbox">📥 Inbox</a>
-                <a href="#compose" class="nav-tab" data-tab="compose">✉️ Compose</a>
-                <a href="#auto" class="nav-tab" data-tab="auto">🤖 Auto Messages</a>
+                <a href="#inbox" class="nav-tab nav-tab-active" data-tab="inbox">Inbox</a>
+                <a href="#compose" class="nav-tab" data-tab="compose">Compose</a>
+                <a href="#auto" class="nav-tab" data-tab="auto">Automatic messages</a>
             </nav>
             
             <div id="framt-messages-app">
@@ -1615,7 +1615,7 @@ You can use **bold** and other markdown formatting."></textarea>
                 html += '<div class="framt-replies">';
                 replies.forEach(function(reply) {
                     var typeClass = reply.is_admin == 1 ? 'admin' : 'user';
-                    var authorLabel = reply.is_admin == 1 ? '👤 Admin' : escapeHtml(reply.author_name);
+                    var authorLabel = reply.is_admin == 1 ? 'Relo2France' : escapeHtml(reply.author_name);
                     html += '<div class="framt-reply ' + typeClass + '">' +
                         '<div class="framt-reply-meta">' + authorLabel + ' &bull; ' + formatDate(reply.created_at) + '</div>' +
                         '<div class="framt-reply-content">' + escapeHtml(reply.content) + '</div>' +
@@ -1865,7 +1865,7 @@ You can use **bold** and other markdown formatting."></textarea>
             <div class="framt-messages-header">
                 <h3>My Messages</h3>
                 <button type="button" class="framt-btn framt-btn-primary framt-compose-btn">
-                    ✉️ New Message
+                    New message
                 </button>
             </div>
 

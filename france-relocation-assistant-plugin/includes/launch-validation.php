@@ -437,7 +437,10 @@ function fra_add_validation_menu() {
         'fra_render_validation_page'
     );
 }
-add_action('admin_menu', 'fra_add_validation_menu');
+// Retired from the menu: it was a pre-launch checklist and its page no
+// longer renders under the current menu registration. The checks still run
+// on activation.
+// add_action('admin_menu', 'fra_add_validation_menu');
 
 /**
  * Run validation on plugin activation

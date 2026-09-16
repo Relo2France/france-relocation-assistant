@@ -99,20 +99,20 @@ class FRAMT_Portal_Settings {
         'menu_help'           => true,
 
         // Menu Labels - customizable names
-        'label_dashboard'     => 'Dashboard',
-        'label_tasks'         => 'Tasks',
+        'label_dashboard'     => 'Where you are',
+        'label_tasks'         => 'Steps',
         'label_checklists'    => 'Checklists',
-        'label_timeline'      => 'Timeline',
+        'label_timeline'      => 'Deadlines',
         'label_messages'      => 'Messages',
-        'label_chat'          => 'Ask AI',
-        'label_documents'     => 'Documents',
+        'label_chat'          => 'Ask about my case',
+        'label_documents'     => 'Documents & files',
         'label_guides'        => 'Guides',
         'label_glossary'      => 'Glossary',
         'label_research'      => 'Explore France',
         'label_files'         => 'Files',
-        'label_profile'       => 'My Profile',
-        'label_family'        => 'Family Members',
-        'label_schengen'      => 'Schengen Tracker',
+        'label_profile'       => 'Profile',
+        'label_family'        => 'Family plans',
+        'label_schengen'      => 'Schengen days',
         'label_membership'    => 'Membership',
         'label_settings'      => 'Settings',
         'label_help'          => 'Help',
@@ -896,24 +896,26 @@ class FRAMT_Portal_Settings {
      */
     private function render_menu_tab( $settings ) {
         // Define all menu items with their defaults
+        // Names are product copy owned by the portal build; this screen shows
+        // them and where each thing lives, and lets you hide a tool.
         $all_menu_items = array(
-            'dashboard'  => array( 'default_label' => 'Dashboard', 'default_icon' => 'LayoutDashboard' ),
-            'tasks'      => array( 'default_label' => 'Tasks', 'default_icon' => 'CheckSquare' ),
-            'checklists' => array( 'default_label' => 'Checklists', 'default_icon' => 'ClipboardList' ),
-            'timeline'   => array( 'default_label' => 'Timeline', 'default_icon' => 'Calendar' ),
-            'messages'   => array( 'default_label' => 'Messages', 'default_icon' => 'MessageSquare' ),
-            'chat'       => array( 'default_label' => 'Ask AI', 'default_icon' => 'Bot' ),
-            'documents'  => array( 'default_label' => 'Documents', 'default_icon' => 'FileText' ),
-            'guides'     => array( 'default_label' => 'Guides', 'default_icon' => 'BookOpen' ),
-            'glossary'   => array( 'default_label' => 'Glossary', 'default_icon' => 'BookMarked' ),
-            'research'   => array( 'default_label' => 'Explore France', 'default_icon' => 'MapPin' ),
-            'files'      => array( 'default_label' => 'Files', 'default_icon' => 'FolderOpen' ),
-            'profile'    => array( 'default_label' => 'My Profile', 'default_icon' => 'User' ),
-            'family'     => array( 'default_label' => 'Family Members', 'default_icon' => 'Users' ),
-            'schengen'   => array( 'default_label' => 'Schengen Tracker', 'default_icon' => 'Globe' ),
-            'membership' => array( 'default_label' => 'Membership', 'default_icon' => 'CreditCard' ),
-            'settings'   => array( 'default_label' => 'Settings', 'default_icon' => 'Settings' ),
-            'help'       => array( 'default_label' => 'Help', 'default_icon' => 'HelpCircle' ),
+            'dashboard'  => array( 'default_label' => 'Where you are', 'default_icon' => 'LayoutDashboard', 'where' => 'Home' ),
+            'tasks'      => array( 'default_label' => 'Steps', 'default_icon' => 'CheckSquare', 'where' => 'Inside each stage; also gates Deadlines' ),
+            'checklists' => array( 'default_label' => 'Checklists', 'default_icon' => 'ClipboardList', 'where' => 'Inside each stage' ),
+            'timeline'   => array( 'default_label' => 'Deadlines', 'default_icon' => 'Calendar', 'where' => 'Tools' ),
+            'messages'   => array( 'default_label' => 'Messages', 'default_icon' => 'Mail', 'where' => 'Tools: what the site sends the member' ),
+            'chat'       => array( 'default_label' => 'Ask about my case', 'default_icon' => 'MessageSquare', 'where' => 'Tools' ),
+            'documents'  => array( 'default_label' => 'Documents & files', 'default_icon' => 'FileText', 'where' => 'Tools' ),
+            'guides'     => array( 'default_label' => 'Guides', 'default_icon' => 'BookOpen', 'where' => 'Inside each stage and Explore France' ),
+            'glossary'   => array( 'default_label' => 'Glossary', 'default_icon' => 'BookMarked', 'where' => 'Inside Ask about my case' ),
+            'research'   => array( 'default_label' => 'Explore France', 'default_icon' => 'BookOpen', 'where' => 'Tools' ),
+            'files'      => array( 'default_label' => 'Files', 'default_icon' => 'FolderOpen', 'where' => 'Part of Documents & files' ),
+            'profile'    => array( 'default_label' => 'Profile', 'default_icon' => 'User', 'where' => 'Account (always shown)' ),
+            'family'     => array( 'default_label' => 'Family plans', 'default_icon' => 'Users', 'where' => 'Tools' ),
+            'schengen'   => array( 'default_label' => 'Schengen days', 'default_icon' => 'Globe', 'where' => 'Tools (coming as its own app)' ),
+            'membership' => array( 'default_label' => 'Membership', 'default_icon' => 'CreditCard', 'where' => 'Inside Profile' ),
+            'settings'   => array( 'default_label' => 'Settings', 'default_icon' => 'Settings', 'where' => 'Account' ),
+            'help'       => array( 'default_label' => 'Help', 'default_icon' => 'HelpCircle', 'where' => 'Account; Support sits beside it and is always shown' ),
         );
 
         // Define sections with their default items
@@ -951,35 +953,12 @@ class FRAMT_Portal_Settings {
 
         <div class="framt-settings-card">
             <h2>Menu Configuration</h2>
-            <p>Customize your portal sidebar menu. Drag items to reorder within each section. Toggle visibility, customize labels, and choose icons.</p>
+            <p>The portal rail has a fixed shape: home, the six stages of the move, then the tools that cut across every stage, then the account. Steps, checklists and guides live inside the stage they belong to and have no door of their own. Use the switches to hide a tool from members; the names and icons below are set in the portal build and shown here for reference. Order within a section is kept for the old sidebar and does not change the rail.</p>
 
-            <!-- Section Labels -->
-            <div style="margin-bottom: 30px; padding: 15px; background: #f0f0f1; border-radius: 4px;">
-                <h3 style="margin-top: 0;">Section Labels</h3>
-                <div style="display: flex; gap: 20px; flex-wrap: wrap;">
-                    <div>
-                        <label for="section_label_project"><strong>Project Section:</strong></label><br>
-                        <input type="text" id="section_label_project"
-                               name="<?php echo self::OPTION_NAME; ?>[section_label_project]"
-                               value="<?php echo esc_attr( $settings['section_label_project'] ); ?>"
-                               placeholder="PROJECT" style="width: 150px;">
-                    </div>
-                    <div>
-                        <label for="section_label_resources"><strong>Resources Section:</strong></label><br>
-                        <input type="text" id="section_label_resources"
-                               name="<?php echo self::OPTION_NAME; ?>[section_label_resources]"
-                               value="<?php echo esc_attr( $settings['section_label_resources'] ); ?>"
-                               placeholder="RESOURCES" style="width: 150px;">
-                    </div>
-                    <div>
-                        <label for="section_label_account"><strong>Account Section:</strong></label><br>
-                        <input type="text" id="section_label_account"
-                               name="<?php echo self::OPTION_NAME; ?>[section_label_account]"
-                               value="<?php echo esc_attr( $settings['section_label_account'] ); ?>"
-                               placeholder="ACCOUNT" style="width: 150px;">
-                    </div>
-                </div>
-            </div>
+            <!-- Section labels are not used by the rail; kept for the legacy sidebar only. -->
+            <input type="hidden" name="<?php echo self::OPTION_NAME; ?>[section_label_project]" value="<?php echo esc_attr( $settings['section_label_project'] ); ?>">
+            <input type="hidden" name="<?php echo self::OPTION_NAME; ?>[section_label_resources]" value="<?php echo esc_attr( $settings['section_label_resources'] ); ?>">
+            <input type="hidden" name="<?php echo self::OPTION_NAME; ?>[section_label_account]" value="<?php echo esc_attr( $settings['section_label_account'] ); ?>">
 
             <?php foreach ( $sections as $section_id => $section ) : ?>
             <div class="framt-menu-section" data-section="<?php echo esc_attr( $section_id ); ?>">
@@ -1028,10 +1007,11 @@ class FRAMT_Portal_Settings {
                         </div>
 
                         <div class="framt-menu-label-input">
-                            <input type="text"
+                            <strong><?php echo esc_html( $item['default_label'] ); ?></strong>
+                            <span style="display:block;color:#5f6e66;font-size:12px;"><?php echo esc_html( $item['where'] ?? '' ); ?></span>
+                            <input type="hidden"
                                    name="<?php echo self::OPTION_NAME; ?>[label_<?php echo esc_attr( $item_id ); ?>]"
-                                   value="<?php echo esc_attr( $label ); ?>"
-                                   placeholder="<?php echo esc_attr( $item['default_label'] ); ?>">
+                                   value="<?php echo esc_attr( $item['default_label'] ); ?>">
                         </div>
 
                         <div class="framt-menu-item-id">
