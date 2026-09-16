@@ -13,6 +13,23 @@ function authHeaders(env: Env): HeadersInit {
   };
 }
 
+/**
+ * Tell WordPress a run started or finished, so its AI Review screen shows
+ * this run rather than the last one WordPress ran itself. Best effort: a
+ * failure here is logged, never allowed to fail the run it describes.
+ */
+export async function postRunReport(env: Env, report: Record<string, unknown>): Promise<void> {
+  const url = `${env.WP_BASE_URL}/wp-json/fra/v1/review/runs`;
+  try {
+    const response = await fetch(url, { method: 'POST', headers: authHeaders(env), body: JSON.stringify(report) });
+    if (!response.ok) {
+      console.warn('run report rejected', { status: response.status, body: (await response.text()).slice(0, 300) });
+    }
+  } catch (error) {
+    console.warn('run report failed', { error: error instanceof Error ? error.message : String(error) });
+  }
+}
+
 export async function fetchTopics(env: Env): Promise<Topic[]> {
   const url = `${env.WP_BASE_URL}/wp-json/fra/v1/review/topics`;
   const response = await fetch(url, { headers: authHeaders(env) });

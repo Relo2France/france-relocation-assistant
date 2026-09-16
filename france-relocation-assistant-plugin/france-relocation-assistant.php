@@ -15,7 +15,7 @@
  * Plugin Name: France Relocation Assistant
  * Plugin URI:  https://relo2france.com
  * Description: AI-powered US to France relocation guidance with visa info, property guides, healthcare, taxes, and practical insights. Features weekly auto-updates, "In Practice" real-world advice, and comprehensive knowledge base.
- * Version:     3.13.2
+ * Version:     3.13.3
  * Author:      Relo2France
  * Author URI:  https://relo2france.com
  * License:     GPL v2 or later
@@ -36,7 +36,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 | Plugin Constants
 |--------------------------------------------------------------------------
 */
-define( 'FRA_VERSION', '3.13.2' );
+define( 'FRA_VERSION', '3.13.3' );
 define( 'FRA_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FRA_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'FRA_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
@@ -215,8 +215,10 @@ class France_Relocation_Assistant {
         add_shortcode('fra_mepr_subscriptions', array($this, 'render_mepr_subscriptions'));
         add_shortcode('fra_mepr_payments', array($this, 'render_mepr_payments'));
         
-        // Scheduled tasks
-        add_action(self::CRON_HOOK, array($this, 'run_weekly_update'));
+        // The weekly scraper that wrote regex matches straight into the
+        // knowledge base is retired: the review worker proposes changes and a
+        // person approves them. Anything still scheduled is cleared.
+        add_action('init', array($this, 'retire_weekly_update'));
         
         // Admin interface
         add_action('admin_menu', array($this, 'add_admin_menu'));
@@ -662,11 +664,9 @@ class France_Relocation_Assistant {
             $this->initialize_knowledge_base();
         }
         
-        // Schedule weekly cron job for Sunday at 1:00 AM
-        if (!wp_next_scheduled(self::CRON_HOOK)) {
-            $next_sunday = $this->get_next_sunday_1am();
-            wp_schedule_event($next_sunday, 'weekly', self::CRON_HOOK);
-        }
+        // No weekly scraper: the review worker and the approval queue own
+        // knowledge-base changes.
+        wp_clear_scheduled_hook(self::CRON_HOOK);
         
         // Log activation
         update_option(self::LAST_UPDATE_OPTION, array(
@@ -1091,6 +1091,15 @@ class France_Relocation_Assistant {
         include FRA_PLUGIN_DIR . 'includes/settings-page.php';
     }
     
+    /**
+     * Clear the retired weekly scraper if an older version left it scheduled.
+     */
+    public function retire_weekly_update() {
+        if (wp_next_scheduled(self::CRON_HOOK)) {
+            wp_clear_scheduled_hook(self::CRON_HOOK);
+        }
+    }
+
     /**
      * Render admin page
      */

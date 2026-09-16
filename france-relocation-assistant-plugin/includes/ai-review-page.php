@@ -202,7 +202,17 @@ foreach ($reviewable_topics as $cat => $topics) {
                 <?php if ($bg_status['errors'] > 0): ?>
                 • <?php echo intval($bg_status['errors']); ?> errors
                 <?php endif; ?>
+                <?php if (!empty($bg_status['trigger']) && false !== strpos($bg_status['trigger'], 'worker')): ?>
+                • <?php echo esc_html('worker (dry run)' === $bg_status['trigger'] ? 'Cloudflare worker, dry run (nothing written)' : 'run by the Cloudflare worker'); ?>
+                <?php endif; ?>
             </p>
+            <?php if (!empty($bg_status['error_messages'])): ?>
+            <ul style="margin: 8px 0 0 18px; color: #155724; font-size: 12px;">
+                <?php foreach (array_slice((array) $bg_status['error_messages'], 0, 10) as $msg): ?>
+                <li><?php echo esc_html($msg); ?></li>
+                <?php endforeach; ?>
+            </ul>
+            <?php endif; ?>
         </div>
         <?php endif; ?>
         

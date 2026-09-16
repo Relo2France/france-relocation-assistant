@@ -16,7 +16,7 @@
 import { WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep } from 'cloudflare:workers';
 import { isRetryable } from './retry';
 import { reviewTopic } from './review';
-import { fetchTopics } from './wordpress';
+import { fetchTopics, postRunReport } from './wordpress';
 import type { Env } from './types';
 
 export interface ReviewParams {
@@ -60,6 +60,15 @@ export class ReviewWorkflow extends WorkflowEntrypoint<Env, ReviewParams> {
     });
 
     const targets = plan.targets;
+
+    await step.do('report start', async () => {
+      await postRunReport(this.env, {
+        state: 'started',
+        instance_id: event.instanceId,
+        requested: targets.length,
+        dry_run: Boolean(params.dryRun),
+      });
+    });
 
     const outcomes: TopicOutcome[] = [];
 
@@ -136,6 +145,12 @@ export class ReviewWorkflow extends WorkflowEntrypoint<Env, ReviewParams> {
       };
 
       console.log('review workflow complete', summary);
+      await postRunReport(this.env, {
+        state: 'completed',
+        instance_id: event.instanceId,
+        only: params.only ?? [],
+        ...summary,
+      });
       return summary;
     });
   }

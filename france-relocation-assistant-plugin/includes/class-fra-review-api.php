@@ -145,6 +145,102 @@ class FRA_Review_API {
             'callback'            => array($this, 'create_gap_draft'),
             'permission_callback' => array($this, 'authenticate'),
         ));
+
+        // The worker reports the start and end of a run here, so the AI
+        // Review screen shows what actually happened rather than the last
+        // time WordPress ran the job itself.
+        register_rest_route(self::NS, '/review/runs', array(
+            'methods'             => WP_REST_Server::CREATABLE,
+            'callback'            => array($this, 'record_run'),
+            'permission_callback' => array($this, 'authenticate'),
+        ));
+    }
+
+    /**
+     * Record a worker run in the same status and history the screen reads.
+     *
+     * state=started sets the in-progress block; state=completed fills the
+     * summary and appends to Review History. Dry runs are labelled and never
+     * counted as a real pass.
+     *
+     * @param WP_REST_Request $request Request
+     * @return WP_REST_Response
+     */
+    public function record_run($request) {
+        $state   = sanitize_key((string) $request->get_param('state'));
+        $dry_run = (bool) $request->get_param('dry_run');
+        $status  = get_option('fra_review_status', array());
+        if (!is_array($status)) {
+            $status = array();
+        }
+
+        if ('started' === $state) {
+            $status = array_merge($status, array(
+                'running'        => true,
+                'trigger'        => $dry_run ? 'worker (dry run)' : 'worker',
+                'total_topics'   => (int) $request->get_param('requested'),
+                'processed'      => 0,
+                'succeeded'      => 0,
+                'changes_found'  => 0,
+                'errors'         => 0,
+                'current_topic'  => '',
+                'started_at'     => current_time('mysql'),
+                'completed_at'   => null,
+                'error_messages' => array(),
+                'instance_id'    => sanitize_text_field((string) $request->get_param('instance_id')),
+            ));
+            update_option('fra_review_status', $status);
+            return rest_ensure_response(array('recorded' => 'started'));
+        }
+
+        if ('completed' !== $state) {
+            return new WP_Error('bad_state', 'state must be started or completed', array('status' => 400));
+        }
+
+        $failures = (array) $request->get_param('failures');
+        $messages = array();
+        foreach ($failures as $f) {
+            if (is_array($f) && !empty($f['topic'])) {
+                $messages[] = sanitize_text_field($f['topic'] . ': ' . ($f['error'] ?? 'failed'));
+            }
+        }
+        $attempted = (int) $request->get_param('attempted');
+        $reviewed  = (int) $request->get_param('reviewed');
+        $posted    = (int) $request->get_param('suggestions_posted');
+        $failed    = (int) $request->get_param('failed');
+
+        $status = array_merge($status, array(
+            'running'        => false,
+            'trigger'        => $dry_run ? 'worker (dry run)' : 'worker',
+            'total_topics'   => $attempted,
+            'processed'      => $attempted,
+            'succeeded'      => $reviewed,
+            'changes_found'  => $posted,
+            'errors'         => $failed,
+            'current_topic'  => '',
+            'completed_at'   => current_time('mysql'),
+            'error_messages' => $messages,
+            'instance_id'    => sanitize_text_field((string) $request->get_param('instance_id')),
+        ));
+        update_option('fra_review_status', $status);
+
+        $history = get_option('fra_review_history', array());
+        if (!is_array($history)) {
+            $history = array();
+        }
+        $only = (array) $request->get_param('only');
+        $history[] = array(
+            'timestamp'     => time(),
+            'date'          => current_time('mysql'),
+            'reviewed'      => $reviewed,
+            'changes_found' => $posted,
+            'errors'        => $failed,
+            'filter'        => (!empty($only) ? count($only) . ' topic' . (1 === count($only) ? '' : 's') : 'all') . ($dry_run ? ' (worker, dry run)' : ' (worker)'),
+            'trigger'       => $dry_run ? 'worker (dry run)' : 'worker',
+        );
+        update_option('fra_review_history', array_slice($history, -20));
+
+        return rest_ensure_response(array('recorded' => 'completed', 'pending' => count((array) get_option('fra_pending_reviews', array()))));
     }
 
     /* ---------------------------------------------------------------------
