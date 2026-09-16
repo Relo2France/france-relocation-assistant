@@ -1008,6 +1008,17 @@ class FRA_Auth_Pages {
                     </ul>
                 </div>
                 
+                <?php if ($this->offer_family_addon()) : ?>
+                <div class="fra-auth-benefits">
+                    <div class="fra-auth-benefits-title">Moving with family?</div>
+                    <ul>
+                        <li>The Family plan gives your partner and each child (up to four) a file of their own, for $20 once</li>
+                        <li>Your partner gets their own sign-in, so you can split the work or do it all yourself</li>
+                    </ul>
+                    <p style="margin:12px 0 0"><a href="<?php echo esc_url($this->family_addon_url()); ?>">Add the Family plan</a> · or later, from Family plans in the portal</p>
+                </div>
+                <?php endif; ?>
+
                 <div class="fra-auth-actions">
                     <a href="<?php echo esc_url(home_url('/portal/')); ?>" class="fra-auth-btn fra-auth-btn-primary">Open my portal</a>
                     <a href="<?php echo esc_url(home_url('/account/')); ?>" class="fra-auth-btn fra-auth-btn-secondary">Your account</a>
@@ -1016,6 +1027,34 @@ class FRA_Auth_Pages {
         </div>
         <?php
         return ob_get_clean();
+    }
+
+    /**
+     * Offer the Family add-on on the thank-you page when it exists and the
+     * new member does not already hold it. Stands in for a checkout order
+     * bump, which MemberPress reserves for its Pro tier.
+     *
+     * @return bool
+     */
+    private function offer_family_addon() {
+        $addon_id = (int) get_option('framt_family_addon_product_id', 0);
+        if ($addon_id <= 0 || !is_user_logged_in() || !class_exists('MeprUser')) {
+            return false;
+        }
+        $mepr_user = new MeprUser(get_current_user_id());
+        $active = array_map('intval', (array) $mepr_user->active_product_subscriptions('ids'));
+        return !in_array($addon_id, $active, true);
+    }
+
+    /**
+     * Where "Add the Family plan" goes: the member tools setting, or the
+     * product's default registration slug.
+     *
+     * @return string
+     */
+    private function family_addon_url() {
+        $url = (string) get_option('framt_family_addon_url', '');
+        return '' !== $url ? $url : home_url('/register/family-add-on/');
     }
 }
 
