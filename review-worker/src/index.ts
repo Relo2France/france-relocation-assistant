@@ -71,6 +71,12 @@ export default {
 
       if (url.pathname === '/topics') {
         const topics = await fetchTopics(env);
+        // ?full=1 returns the text and its declared sources. The public
+        // site's guides may state only what the knowledge base states, so
+        // whoever writes one needs the topic verbatim, not a summary of it.
+        if (url.searchParams.get('full') === '1') {
+          return json({ count: topics.length, topics });
+        }
         return json({
           count: topics.length,
           topics: topics.map((t) => ({
