@@ -45,7 +45,9 @@
   --radius: 12px;
   --radius-sm: 10px;
   --radius-pill: 100px;
-  --measure: 64ch;
+  /* In rem, not ch: a ch is the width of "0", and in Newsreader that is
+     narrow enough that 64ch was ~470px - a short line with a void beside it. */
+  --measure: 40rem;
 }
 
 @media (prefers-color-scheme: dark) {

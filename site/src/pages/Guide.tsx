@@ -35,8 +35,8 @@ export function Guide({ guide }: { guide: GuideDoc }) {
         </div>
       </header>
 
-      <div className="grid md:grid-cols-[1fr_252px] border-t border-rule-soft">
-        <article className="prose-exact px-7 py-7 pb-9">
+      <div className="grid md:grid-cols-[1fr_284px] border-t border-rule-soft">
+        <article className="prose-exact px-7 md:px-9 py-7 pb-9">
           <PersonalLead topic={guide.title.toLowerCase()} />
           {guide.sections.map((section) => (
             <section key={section.heading}>
