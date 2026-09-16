@@ -3,6 +3,9 @@
   "name": "relo2france-site-staging",
   "compatibility_date": "2026-09-01",
   "main": "./src/worker.ts",
+  // Keep the workers.dev address as the staging URL. Without this, a deploy
+  // that passes --routes on the command line switches it off.
+  "workers_dev": true,
 
   // WordPress still owns the portal, sign-in and checkout. The Worker proxies
   // those paths so the browser sees one origin and the portal's nonce auth
@@ -16,6 +19,11 @@
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",
+    // Without this, the asset layer answers browser navigations to any path
+    // that is not an asset with the 404 page BEFORE the Worker runs, so
+    // /portal/ and /login/ 404 in a browser while curl, which sends no
+    // Sec-Fetch-Mode header, reaches WordPress. Found the hard way at cutover.
+    "run_worker_first": true,
     // Serve our own 404.html for unmatched paths rather than the platform's.
     // Without this the prerendered 404 never appears.
     "not_found_handling": "404-page",
@@ -24,5 +32,20 @@
     "html_handling": "auto-trailing-slash"
   },
 
-  "observability": { "enabled": true }
+  "observability": { "enabled": true },
+
+  // Production. `npx wrangler deploy --env production` after a build with
+  // SITE_ENV unset, so pages carry no noindex. The route only takes effect
+  // once the apex A records are proxied - see docs/cutover.md step 4.
+  "env": {
+    "production": {
+      "name": "relo2france-site",
+      "workers_dev": false,
+      "routes": [{ "pattern": "relo2france.com/*", "zone_name": "relo2france.com" }],
+      "vars": {
+        "WP_ORIGIN": "https://relo2france.com",
+        "WP_RESOLVE_OVERRIDE": "wp.relo2france.com"
+      }
+    }
+  }
 }

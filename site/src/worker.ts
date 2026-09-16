@@ -40,6 +40,19 @@ export function isWordPressPath(pathname: string): boolean {
   );
 }
 
+/**
+ * URLs the old site had in its sitemap that the new site does not serve.
+ * WordPress generated a category archive for each guide taxonomy term; the
+ * new guides index is one page. A 301 keeps whatever those pages had earned
+ * with search engines and sends the visitor somewhere useful, rather than a
+ * 404 that costs both. Returns the destination, or null if the path is not a
+ * legacy URL.
+ */
+export function legacyRedirect(pathname: string): string | null {
+  if (/^\/guides\/category\/[^/]+\/?$/.test(pathname)) return '/guides/';
+  return null;
+}
+
 interface Env {
   ASSETS: { fetch: (request: Request) => Promise<Response> };
   /** Origin that still runs WordPress, e.g. https://relo2france.com */
@@ -97,6 +110,11 @@ async function proxy(request: Request, origin: string, resolveOverride?: string)
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
+
+    const redirect = legacyRedirect(url.pathname);
+    if (redirect) {
+      return Response.redirect(new URL(redirect, url.origin).toString(), 301);
+    }
 
     if (isWordPressPath(url.pathname)) {
       const origin = env.WP_ORIGIN;

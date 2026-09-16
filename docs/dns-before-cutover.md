@@ -34,6 +34,14 @@ relo2france.com.	300	IN	A	192.0.78.222
 relo2france.com.	300	IN	A	192.0.78.171
 ```
 
+## Found by Cloudflare's scan on 2026-09-16, missed above
+```
+portal.relo2france.com.	IN	CNAME	lb.wordpress.com.
+_dmarc.relo2france.com.	IN	TXT	"v=DMARC1;p=none;"
+```
+`portal` answers with a 307 from WordPress.com. Nothing in the repo links to
+it, but it was live, so it was carried over rather than dropped.
+
 ## Where the site actually lives
 ```
 WordPress.com Atomic (x-ac header shows _atomic_)
