@@ -69,6 +69,16 @@ add_action('after_setup_theme', 'relo2france_setup');
 add_filter('fra_site_header_enabled', '__return_false');
 
 /**
+ * Members never see the WordPress toolbar. Administrators keep it on
+ * WordPress pages, where the Edit link is useful; the portal switches it
+ * off for everyone in its own template.
+ */
+function relo2france_toolbar_for_admins_only($show) {
+    return current_user_can('manage_options') ? $show : false;
+}
+add_filter('show_admin_bar', 'relo2france_toolbar_for_admins_only');
+
+/**
  * Never a comment form under a payment form. MemberPress products are a
  * post type with comments open by default, and both single.php and page.php
  * render the comments template when they are.

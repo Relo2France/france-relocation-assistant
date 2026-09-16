@@ -19,6 +19,9 @@ const viewTitles: Record<string, string> = {
   glossary: 'Glossary',
   chat: 'Ask AI',
   membership: 'Membership',
+  research: 'Explore France',
+  schengen: 'Schengen days',
+  stage: 'Your move',
 };
 
 export default function Header() {

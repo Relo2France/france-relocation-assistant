@@ -241,6 +241,10 @@ $react_settings = array(
     <link rel="apple-touch-icon" href="<?php echo esc_url( FRAMT_PLUGIN_URL . 'assets/images/pwa-icon-192.png' ); ?>">
 
     <?php
+    // The portal is an app, not a WordPress page: no admin bar for anyone,
+    // admins included. wp-admin is one URL away.
+    add_filter( 'show_admin_bar', '__return_false' );
+
     // The theme's stylesheet is for WordPress pages, not this app. Since the
     // theme moved onto the site's tokens its generic classes (.card, .btn)
     // follow dark mode, and they collide with the portal's own classes of

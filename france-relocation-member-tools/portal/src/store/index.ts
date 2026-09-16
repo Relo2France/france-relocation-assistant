@@ -97,6 +97,10 @@ interface PortalState {
   activeView: string;
   setActiveView: (view: string) => void;
 
+  // Which journey stage the stage page shows
+  activeStage: string | null;
+  setActiveStage: (stage: string | null) => void;
+
   // Settings tab navigation
   settingsTab: string | null;
   setSettingsTab: (tab: string | null) => void;
@@ -160,6 +164,8 @@ export const usePortalStore = create<PortalState>((set, get) => {
     // Active view - initialized from URL ?view= parameter
     activeView: getInitialView(),
     setActiveView: (activeView) => set({ activeView }),
+    activeStage: null,
+    setActiveStage: (activeStage) => set({ activeStage }),
 
     // Settings tab navigation
     settingsTab: null,

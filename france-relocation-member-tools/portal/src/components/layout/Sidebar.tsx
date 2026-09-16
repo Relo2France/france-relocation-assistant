@@ -1,229 +1,222 @@
+/**
+ * Sidebar
+ *
+ * The rail is the journey: home, the six stages with their progress, then
+ * the tools that cut across every stage, then the account. Tasks, checklists
+ * and guides no longer have their own doors; they live inside the stage they
+ * belong to.
+ */
 import { clsx } from 'clsx';
 import {
-  BookMarked,
   BookOpen,
-  Bot,
   Calendar,
-  CheckSquare,
   ChevronLeft,
   ChevronRight,
-  ClipboardList,
-  CreditCard,
   FileText,
-  FolderOpen,
   Globe,
-  Headphones,
   HelpCircle,
-  LayoutDashboard,
-  LucideIcon,
-  MapPin,
   MessageSquare,
   Settings,
   User,
   Users,
 } from 'lucide-react';
-import { useUserSettings } from '@/hooks/useApi';
+import { useDashboard } from '@/hooks/useApi';
+import { JOURNEY, type JourneyStage, currentStage, progressFor, timeToGo } from '@/journey/journey';
 import { usePortalStore } from '@/store';
-import type { MenuItem, MenuSectionOrder } from '@/types';
 
-// Map icon names to components
-const iconComponents: Record<string, LucideIcon> = {
-  LayoutDashboard,
-  CheckSquare,
-  FileText,
-  MessageSquare,
-  Users,
-  Settings,
-  HelpCircle,
-  FolderOpen,
-  FolderKanban: FolderOpen,
-  BookOpen,
-  Calendar,
-  // New icons for added features
-  ClipboardList,
-  BookMarked,
-  Bot,
-  User,
-  CreditCard,
-  MapPin,
-  Headphones,
-  Globe,
-};
+function StageRing({ state }: { state: 'done' | 'now' | 'ahead' }) {
+  if (state === 'done') {
+    return (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="12" cy="12" r="10" stroke="#7fbaa3" strokeWidth="2" />
+        <path d="M8 12.5l2.5 2.5L16 9.5" stroke="#7fbaa3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    );
+  }
+  if (state === 'now') {
+    return (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="12" cy="12" r="10" stroke="#7fbaa3" strokeWidth="2" />
+        <path d="M12 6a6 6 0 0 1 0 12z" fill="#7fbaa3" />
+      </svg>
+    );
+  }
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="12" cy="12" r="10" stroke="rgba(214,223,217,0.35)" strokeWidth="2" />
+    </svg>
+  );
+}
 
-// Default section order
-const defaultSectionOrder: MenuSectionOrder = {
-  project: ['dashboard', 'tasks', 'checklists', 'timeline', 'messages'],
-  resources: ['research', 'chat', 'documents', 'guides', 'glossary', 'schengen', 'files'],
-  account: ['profile', 'family', 'membership', 'support', 'settings', 'help'],
-};
+const TOOLS: { id: string; label: string; icon: typeof MessageSquare; views: string[] }[] = [
+  { id: 'chat', label: 'Ask about my case', icon: MessageSquare, views: ['chat', 'glossary', 'messages'] },
+  { id: 'documents', label: 'Documents & files', icon: FileText, views: ['documents', 'files'] },
+  { id: 'family', label: 'Family plans', icon: Users, views: ['family'] },
+  { id: 'timeline', label: 'Deadlines', icon: Calendar, views: ['timeline', 'tasks'] },
+  { id: 'schengen', label: 'Schengen days', icon: Globe, views: ['schengen'] },
+  { id: 'research', label: 'Explore France', icon: BookOpen, views: ['research', 'guides'] },
+];
 
-// Merge custom order with defaults to ensure new items appear
-const mergeWithDefaults = (customOrder: MenuSectionOrder | undefined): MenuSectionOrder => {
-  if (!customOrder) return defaultSectionOrder;
-
-  // Ensure all default items are present in each section
-  return {
-    project: [...customOrder.project, ...defaultSectionOrder.project.filter(id => !customOrder.project.includes(id))],
-    resources: [...customOrder.resources, ...defaultSectionOrder.resources.filter(id => !customOrder.resources.includes(id))],
-    account: [...customOrder.account, ...defaultSectionOrder.account.filter(id => !customOrder.account.includes(id))],
-  };
-};
-
-// Group menu items into sections for display
-const groupMenuItems = (items: MenuItem[], customOrder?: MenuSectionOrder) => {
-  const order = mergeWithDefaults(customOrder);
-
-  const sections = [
-    {
-      id: 'project',
-      label: 'PROJECT',
-      itemIds: order.project,
-    },
-    {
-      id: 'resources',
-      label: 'RESOURCES',
-      itemIds: order.resources,
-    },
-    {
-      id: 'account',
-      label: 'ACCOUNT',
-      itemIds: order.account,
-    },
-  ];
-
-  // Create a map for quick item lookup
-  const itemsMap = items.reduce((acc, item) => {
-    acc[item.id] = item;
-    return acc;
-  }, {} as Record<string, MenuItem>);
-
-  return sections
-    .map((section) => ({
-      ...section,
-      // Map itemIds to actual items in order, filtering out any missing items
-      items: section.itemIds
-        .map((id) => itemsMap[id])
-        .filter((item): item is MenuItem => item !== undefined),
-    }))
-    .filter((section) => section.items.length > 0);
-};
+const ACCOUNT: { id: string; label: string; icon: typeof User }[] = [
+  { id: 'profile', label: 'Profile', icon: User },
+  { id: 'settings', label: 'Settings', icon: Settings },
+  { id: 'help', label: 'Help', icon: HelpCircle },
+];
 
 export default function Sidebar() {
-  const { sidebarCollapsed, toggleSidebar, activeView, setActiveView, settings } = usePortalStore();
-  const { data: userSettings } = useUserSettings();
-  const menuItems = settings.menu;
-  const sections = groupMenuItems(menuItems, userSettings?.menu_order);
+  const { sidebarCollapsed, toggleSidebar, activeView, setActiveView, activeStage, setActiveStage, settings, isMenuItemVisible } =
+    usePortalStore();
+  const { data } = useDashboard();
 
-  // Apply custom colors from settings
+  const project = data?.project;
+  const nowStage = project ? currentStage(project) : 'decide';
+  const nowIndex = JOURNEY.findIndex((s) => s.id === nowStage);
+
   const sidebarStyle = {
     '--sidebar-bg': settings.colors.sidebarBg,
     '--sidebar-text': settings.colors.sidebarText,
   } as React.CSSProperties;
 
+  const openStage = (stage: JourneyStage) => {
+    setActiveStage(stage.id);
+    setActiveView('stage');
+  };
+
+  const isTool = (views: string[]) => views.includes(activeView);
+
   return (
     <aside
-      className={clsx(
-        'sidebar flex flex-col',
-        sidebarCollapsed ? 'sidebar-collapsed' : 'sidebar-expanded'
-      )}
+      className={clsx('sidebar flex flex-col', sidebarCollapsed ? 'sidebar-collapsed' : 'sidebar-expanded')}
       style={sidebarStyle}
     >
-      {/* Logo */}
+      {/* Wordmark */}
       <div className="flex items-center h-16 px-4 border-b border-white/10">
-        {!sidebarCollapsed && (
-          <div className="flex items-center gap-3">
-            {settings.branding.logoUrl ? (
-              <img
-                src={settings.branding.logoUrl}
-                alt={settings.branding.title}
-                className="h-8 w-auto"
-              />
-            ) : (
-              /* The site's wordmark. The "2" is the dark-mode vine so it reads on the shell. */
-              <span className="font-display font-bold text-[1.1rem] tracking-[-0.02em] text-sidebar-textActive">
-                Relo<span style={{ color: '#7fbaa3' }}>2</span>France
-              </span>
-            )}
-            {settings.branding.logoUrl && (
-              <span className="font-semibold text-sidebar-textActive">
-                {settings.branding.title}
-              </span>
-            )}
-          </div>
-        )}
-        {sidebarCollapsed && (
-          <span className="font-display font-bold text-[0.85rem] tracking-[-0.02em] text-sidebar-textActive mx-auto">
-            R2F
+        {!sidebarCollapsed ? (
+          <span className="font-display font-bold text-[1.1rem] tracking-[-0.02em] text-sidebar-textActive">
+            Relo<span style={{ color: '#7fbaa3' }}>2</span>France
           </span>
+        ) : (
+          <span className="font-display font-bold text-[0.85rem] tracking-[-0.02em] text-sidebar-textActive mx-auto">R2F</span>
         )}
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-4 scrollbar-thin">
-        {sections.map((section) => (
-          <div key={section.id} className="mb-6">
-            {!sidebarCollapsed && (
-              <h3 className="eyebrow px-4 mb-2 text-sidebar-text/60">
-                {section.label}
-              </h3>
-            )}
-            <ul className="space-y-1 px-2">
-              {section.items.map((item) => {
-                const Icon = iconComponents[item.icon] || LayoutDashboard;
-                const isActive = activeView === item.id;
+      <nav className="flex-1 overflow-y-auto py-3 scrollbar-thin">
+        {/* Home */}
+        <div className="px-2">
+          <button
+            onClick={() => setActiveView('dashboard')}
+            className={clsx('nav-item w-full', activeView === 'dashboard' && 'nav-item-active', sidebarCollapsed && 'justify-center px-2')}
+            title={sidebarCollapsed ? 'Where you are' : undefined}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="flex-shrink-0">
+              <path d="M4 11l8-7 8 7v9H4z" /><path d="M10 20v-6h4v6" />
+            </svg>
+            {!sidebarCollapsed && <span>Where you are</span>}
+          </button>
+        </div>
 
-                // Dashboard click triggers full page refresh to ensure fresh data
-                const handleClick = () => {
-                  if (item.id === 'dashboard') {
-                    window.location.reload();
-                  } else {
-                    setActiveView(item.id);
-                  }
-                };
+        {/* The journey */}
+        <div className="mt-4 px-2">
+          {!sidebarCollapsed && (
+            <div className="flex items-baseline justify-between px-2 mb-2">
+              <span className="eyebrow text-sidebar-text/60">Your move</span>
+              {project ? <span className="font-mono text-[0.72rem] text-sidebar-text/70">{timeToGo(project)}</span> : null}
+            </div>
+          )}
+          <ul className="space-y-1">
+            {JOURNEY.map((stage, i) => {
+              const state: 'done' | 'now' | 'ahead' = i < nowIndex ? 'done' : i === nowIndex ? 'now' : 'ahead';
+              const isActive = activeView === 'stage' && activeStage === stage.id;
+              const progress = data ? progressFor(stage, data.stages) : { total: 0, completed: 0 };
+              const sub =
+                state === 'done'
+                  ? 'Done'
+                  : progress.total > 0
+                    ? `${progress.completed} of ${progress.total} steps`
+                    : stage.blurb;
+              return (
+                <li key={stage.id}>
+                  <button
+                    onClick={() => openStage(stage)}
+                    className={clsx(
+                      'w-full flex items-center gap-3 rounded-lg px-2 py-2 text-left transition-colors',
+                      isActive ? 'bg-sidebar-active text-sidebar-textActive' : state === 'now' ? 'bg-white/[0.05] text-sidebar-textActive hover:bg-sidebar-hover' : 'text-sidebar-text hover:bg-sidebar-hover hover:text-sidebar-textActive',
+                      sidebarCollapsed && 'justify-center px-2'
+                    )}
+                    title={sidebarCollapsed ? `${stage.number} · ${stage.name}` : undefined}
+                    aria-current={state === 'now' ? 'step' : undefined}
+                  >
+                    <StageRing state={state} />
+                    {!sidebarCollapsed && (
+                      <span className="flex flex-col min-w-0">
+                        <span className="text-[0.9rem] font-semibold leading-tight truncate">{stage.number} · {stage.name}</span>
+                        <span className="text-[0.76rem] opacity-70 leading-tight truncate">{sub}</span>
+                      </span>
+                    )}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
 
-                return (
-                  <li key={item.id}>
-                    <button
-                      onClick={handleClick}
-                      className={clsx(
-                        'nav-item w-full',
-                        isActive && 'nav-item-active',
-                        sidebarCollapsed && 'justify-center px-2'
-                      )}
-                      title={sidebarCollapsed ? item.label : undefined}
-                    >
-                      <Icon className="w-5 h-5 flex-shrink-0" />
-                      {!sidebarCollapsed && <span>{item.label}</span>}
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        ))}
+        {/* Tools */}
+        <div className="mt-5 px-2 pt-4 border-t border-white/10">
+          {!sidebarCollapsed && <span className="eyebrow block px-2 mb-2 text-sidebar-text/60">Tools</span>}
+          <ul className="space-y-0.5">
+            {TOOLS.filter((t) => isMenuItemVisible(t.id)).map((tool) => {
+              const Icon = tool.icon;
+              return (
+                <li key={tool.id}>
+                  <button
+                    onClick={() => setActiveView(tool.id)}
+                    className={clsx('nav-item w-full py-2', isTool(tool.views) && 'nav-item-active', sidebarCollapsed && 'justify-center px-2')}
+                    title={sidebarCollapsed ? tool.label : undefined}
+                  >
+                    <Icon className="w-[18px] h-[18px] flex-shrink-0" aria-hidden="true" />
+                    {!sidebarCollapsed && <span className="text-[0.9rem]">{tool.label}</span>}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+
+        {/* Account */}
+        <div className="mt-4 px-2 pt-4 border-t border-white/10">
+          <ul className="space-y-0.5">
+            {ACCOUNT.filter((a) => isMenuItemVisible(a.id)).map((item) => {
+              const Icon = item.icon;
+              const active = [item.id, item.id === 'profile' ? 'membership' : '', item.id === 'help' ? 'support' : ''].includes(activeView);
+              return (
+                <li key={item.id}>
+                  <button
+                    onClick={() => setActiveView(item.id)}
+                    className={clsx('nav-item w-full py-1.5', active && 'nav-item-active', sidebarCollapsed && 'justify-center px-2')}
+                    title={sidebarCollapsed ? item.label : undefined}
+                  >
+                    <Icon className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
+                    {!sidebarCollapsed && <span className="text-[0.85rem]">{item.label}</span>}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
       </nav>
 
-      {/* Collapse toggle - always visible */}
+      {/* Collapse toggle */}
       <button
         onClick={toggleSidebar}
         className={clsx(
           'flex items-center justify-center h-12 border-t border-white/10 transition-colors',
-          sidebarCollapsed
-            ? 'text-sidebar-textActive hover:bg-sidebar-hover'
-            : 'text-sidebar-text hover:text-sidebar-textActive'
+          sidebarCollapsed ? 'text-sidebar-textActive hover:bg-sidebar-hover' : 'text-sidebar-text hover:text-sidebar-textActive'
         )}
         title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         aria-expanded={!sidebarCollapsed}
       >
-        {sidebarCollapsed ? (
-          <ChevronRight className="w-6 h-6" />
-        ) : (
-          <>
-            <ChevronLeft className="w-5 h-5" />
-            <span className="ml-2 text-sm">Collapse</span>
-          </>
-        )}
+        {sidebarCollapsed ? <ChevronRight className="w-6 h-6" /> : (<><ChevronLeft className="w-5 h-5" /><span className="ml-2 text-sm">Collapse</span></>)}
       </button>
     </aside>
   );

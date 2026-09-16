@@ -377,9 +377,15 @@ When adding a new menu item to the portal sidebar, ALL of the following location
 ### 3. React Frontend - Sidebar Component
 **File:** `france-relocation-member-tools/portal/src/components/layout/Sidebar.tsx`
 
-- [ ] Import the icon from `lucide-react` (~line 2-25)
-- [ ] Add icon to `iconComponents` map (~line 30-52)
-- [ ] Add `'{item}'` to appropriate section in `defaultSectionOrder` (~line 54-58) **← CRITICAL: often missed!**
+The rail is the journey (six stages from `src/journey/journey.ts`), then a
+`TOOLS` group, then an `ACCOUNT` group. Tasks, checklists and guides have no
+menu entry of their own: they live inside the stage they belong to
+(`StageView`). A new cross-cutting tool goes in the `TOOLS` array with the
+views it owns; a new stage-specific feature goes on the stage page.
+
+- [ ] Import the icon from `lucide-react`
+- [ ] Add the item to `TOOLS` or `ACCOUNT` with its `views` list **← the rail highlights by view**
+- [ ] The item id must still be in the settings menu, since `isMenuItemVisible` gates it
 
 ### 4. React Frontend - Routes
 **File:** `france-relocation-member-tools/portal/src/App.tsx`
@@ -392,7 +398,7 @@ When adding a new menu item to the portal sidebar, ALL of the following location
 
 ### Common Issues
 
-1. **Menu item enabled but not showing in sidebar**: Check `defaultSectionOrder` in `Sidebar.tsx`
+1. **Menu item enabled but not showing in sidebar**: Check the `TOOLS` / `ACCOUNT` arrays in `Sidebar.tsx`
 2. **Menu item not preserved when saving other tabs**: Check `$tab_fields['menu']` visibility array
 3. **Icon not rendering**: Check icon import and `iconComponents` map in `Sidebar.tsx`
 4. **404 when clicking menu item**: Check route exists in `App.tsx`
