@@ -22,8 +22,9 @@ describe('Jargon', () => {
     glossary.data = [
       { id: 'docs', title: 'Documents', terms: [{ term: 'Apostille', definition: 'A certificate that authenticates a document.' }, { definition: 'no name' }, null] },
     ];
-    render(<Jargon text="Order the apostille for your certificate" />);
+    render(<Jargon text="Get your certificate apostilled" />);
     expect(screen.getByRole('button', { name: /what is apostille/i })).toBeInTheDocument();
+    expect(screen.getByText(/apostilled/)).toBeInTheDocument();
   });
 
   it('also reads the older title/short shape', () => {

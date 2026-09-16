@@ -51,7 +51,9 @@ function buildIndex(categories: unknown): { terms: GlossaryTerm[]; pattern: RegE
     .sort((a, b) => b.length - a.length)
     .map(escapeRegExp);
   try {
-    return { terms, pattern: new RegExp(`(?<![\\p{L}])(${names.join('|')})(?![\\p{L}])`, 'giu') };
+    // A term followed by a plain suffix still is the term: "apostilled",
+    // "apostilles", "notaires". The suffix is matched but not looked up.
+    return { terms, pattern: new RegExp(`(?<![\\p{L}])(${names.join('|')})(s|es|d|ed)?(?![\\p{L}])`, 'giu') };
   } catch {
     return { terms, pattern: null };
   }
@@ -121,7 +123,7 @@ export default function Jargon({ text, className }: { text: string; className?: 
     let last = 0;
     for (const m of text.matchAll(index.pattern)) {
       const start = m.index ?? 0;
-      const term = findTerm(index.terms, m[0]);
+      const term = findTerm(index.terms, m[1]);
       if (!term) continue;
       if (start > last) out.push(text.slice(last, start));
       out.push({ term, word: m[0] });
