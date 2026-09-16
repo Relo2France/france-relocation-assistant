@@ -52,7 +52,11 @@ const built = existsSync(resolve(DIST, 'index.html'));
   it('contains no member data', () => {
     for (const file of files) {
       const html = readFileSync(resolve(DIST, file), 'utf8');
-      for (const leak of ['Kevin', 'Monsac', 'DAYS TO MONSAC', 'data-personal="lead"', 'data-personal="next"']) {
+      for (const leak of [
+        'Kevin', 'Monsac', 'DAYS TO MONSAC', 'data-personal="lead"', 'data-personal="next"',
+        // The hero may not tell a stranger when they are moving, or where they are.
+        'moving to France in', 'you are here',
+      ]) {
         expect(html.includes(leak), `${file} leaked "${leak}" into static HTML`).toBe(false);
       }
     }
