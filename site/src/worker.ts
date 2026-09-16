@@ -25,6 +25,11 @@ const WORDPRESS_PATHS = [
   '/my-travel-status',
   '/travel-status-test',
   '/wp-admin',
+  // WordPress.com concatenates CSS and JS into /_static/??... bundles. Miss
+  // this and every proxied page loads with no styles: the theme, MemberPress
+  // and core CSS all arrive as our 404 page. Single files under /wp-content
+  // still work, which is exactly why this was not caught on staging.
+  '/_static',
   '/wp-content',
   '/wp-includes',
   '/wp-json',

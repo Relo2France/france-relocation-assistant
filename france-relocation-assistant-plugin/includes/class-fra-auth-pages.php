@@ -544,11 +544,18 @@ class FRA_Auth_Pages {
         }
 
         /* Errors: brick, matching the portal's red - never honey */
+        /* .mepr-form-has-errors is the "Please fix the errors above" span
+           MemberPress renders hidden and shows on failed submit, so it is
+           styled but never given a display here. */
+        .fra-auth-error,
+        .fra-auth-form-wrap .mepr_error,
+        .fra-auth-form-wrap .mepr-error {
+            display: block;
+        }
         .fra-auth-error,
         .fra-auth-form-wrap .mepr-form-has-errors,
         .fra-auth-form-wrap .mepr_error,
         .fra-auth-form-wrap .mepr-error {
-            display: block;
             background: #fdf4f2;
             border: 1px solid #f2c9c1;
             border-radius: var(--radius-sm, 10px);

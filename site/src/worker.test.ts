@@ -20,6 +20,10 @@ describe('routing between the new site and WordPress', () => {
       '/wp-admin/options.php', '/wp-login.php',
       '/wp-json/fra-portal/v1/dashboard',
       '/wp-content/plugins/france-relocation-member-tools/assets/portal/js/main.js',
+      // WordPress.com's concatenated asset bundles. Without this, proxied
+      // pages render unstyled because every bundle 404s.
+      '/_static/??wp-content/themes/relo2france-theme/style.css',
+      '/_static/??-eJwrL9BNzs8rSc0r0S',
     ]) {
       expect(isWordPressPath(path), path).toBe(true);
     }
