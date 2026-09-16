@@ -21,7 +21,6 @@ const WORDPRESS_PATHS = [
   '/account',
   '/register',
   '/thank-you',
-  '/about',
   '/my-travel-status',
   '/travel-status-test',
   '/wp-admin',

@@ -1,5 +1,5 @@
 import { Button, Label, PracticeNote, Requirement, Requirements, SiteNav } from '../components';
-import { external, PRICE } from '../content/links';
+import { PRICE } from '../content/links';
 import { portalFeatures } from '../content/portal';
 
 const steps = [
@@ -126,9 +126,9 @@ export function HowItWorks() {
             middle of one are the last thing anybody needs.
           </p>
           <div className="flex gap-[10px] flex-wrap items-center">
-            <Button href={external.join}>Get started — {PRICE}</Button>
-            <Button href="/pricing/" variant="ghost">
-              What is included
+            <Button href="/pricing/">See pricing — {PRICE}, once</Button>
+            <Button href="/guides/" variant="ghost">
+              Read the guides first
             </Button>
           </div>
         </div>

@@ -42,6 +42,27 @@ class FRA_Auth_Pages {
         $defaults = array(
             'auth_pages_enabled' => false,
             'auth_logo_url' => '',
+            'auth_site_name' => 'Relo2France',
+            'auth_login_title' => 'Welcome back',
+            'auth_login_subtitle' => 'Your file is where you left it.',
+            'auth_signup_title' => 'One payment, for the whole move',
+            'auth_signup_subtitle' => 'Lifetime access to your own dated file, the documents, and the assistant.',
+            'auth_signup_price' => '$35 once, for life',
+            'auth_signup_price_note' => 'No subscription, no renewal.',
+            'auth_signup_benefits' => "Ask about your own situation\nYour dossier, tracked per person\nTasks and deadlines dated from your move\nCover letters and declarations drafted with your details\nThe full knowledge base, re-checked weekly",
+            'auth_logout_title' => 'You’re signed out',
+            'auth_logout_subtitle' => 'Your file is saved. Sign back in whenever you’re ready.',
+            'auth_account_title' => 'Your account',
+            'auth_account_subtitle' => 'Membership, profile and sign-in details.',
+            'auth_thankyou_title' => 'Welcome to Relo2France',
+            'auth_thankyou_subtitle' => 'Your account is ready. The first stage is deciding: your route, where in France, who is moving, and when.',
+        );
+
+        // Values saved by the old customizer are the old product's voice
+        // ("Welcome Back", "Start Your France Journey"). Treat a saved value
+        // that still equals an old default as unset, so the new copy wins
+        // without wiping anything a person deliberately wrote.
+        $old_defaults = array(
             'auth_site_name' => 'relo2France',
             'auth_login_title' => 'Welcome Back',
             'auth_login_subtitle' => 'Sign in to access your relocation dashboard',
@@ -57,6 +78,11 @@ class FRA_Auth_Pages {
             'auth_thankyou_title' => 'Welcome to Relo2France!',
             'auth_thankyou_subtitle' => 'Your account has been created successfully.',
         );
+        foreach ( $old_defaults as $key => $old ) {
+            if ( isset( $saved[ $key ] ) && trim( (string) $saved[ $key ] ) === $old ) {
+                unset( $saved[ $key ] );
+            }
+        }
         
         $this->settings = wp_parse_args($saved, $defaults);
     }
@@ -804,7 +830,7 @@ class FRA_Auth_Pages {
                 
                 <div class="fra-auth-card-footer">
                     <a href="<?php echo esc_url(wp_lostpassword_url()); ?>">Forgot your password?</a>
-                    <p>Don't have an account? <a href="<?php echo esc_url(home_url('/register/lifetime-membership/')); ?>"><strong>Get Started</strong></a></p>
+                    <p>Not a member yet? <a href="<?php echo esc_url(home_url('/pricing/')); ?>"><strong>See what membership is</strong></a></p>
                 </div>
             </div>
         </div>
@@ -844,7 +870,7 @@ class FRA_Auth_Pages {
                 
                 <?php if (!empty($benefits)) : ?>
                 <div class="fra-auth-benefits">
-                    <div class="fra-auth-benefits-title">What's Included</div>
+                    <div class="fra-auth-benefits-title">What members get</div>
                     <ul>
                         <?php foreach ($benefits as $benefit) : ?>
                             <li><?php echo esc_html($benefit); ?></li>
@@ -866,7 +892,7 @@ class FRA_Auth_Pages {
                 <div class="fra-auth-security">🔒 Secure payment via Stripe</div>
                 
                 <div class="fra-auth-card-footer">
-                    <p>Already have an account? <a href="<?php echo esc_url(home_url('/login/')); ?>"><strong>Sign In</strong></a></p>
+                    <p>Already a member? <a href="<?php echo esc_url(home_url('/login/')); ?>"><strong>Sign in</strong></a></p>
                 </div>
             </div>
         </div>
@@ -893,8 +919,8 @@ class FRA_Auth_Pages {
                 </div>
                 
                 <div class="fra-auth-actions">
-                    <a href="<?php echo esc_url(home_url('/login/')); ?>" class="fra-auth-btn fra-auth-btn-primary">Sign Back In</a>
-                    <a href="<?php echo esc_url(home_url('/')); ?>" class="fra-auth-btn fra-auth-btn-secondary">Go to Homepage</a>
+                    <a href="<?php echo esc_url(home_url('/login/')); ?>" class="fra-auth-btn fra-auth-btn-primary">Sign back in</a>
+                    <a href="<?php echo esc_url(home_url('/')); ?>" class="fra-auth-btn fra-auth-btn-secondary">Back to the site</a>
                 </div>
             </div>
         </div>
@@ -906,6 +932,27 @@ class FRA_Auth_Pages {
      * Render account page
      */
     public function render_account_page($atts = array()) {
+        if ( ! is_user_logged_in() ) {
+            ob_start();
+            ?>
+            <div class="fra-auth-container">
+                <div class="fra-auth-card">
+                    <div class="fra-auth-card-header">
+                        <h1>Sign in to see your account</h1>
+                        <p>Membership, profile and sign-in details live behind your login.</p>
+                    </div>
+                    <div class="fra-auth-form-wrap">
+                        <?php echo do_shortcode('[mepr-login-form]'); ?>
+                    </div>
+                    <div class="fra-auth-card-footer">
+                        <p>Not a member yet? <a href="<?php echo esc_url(home_url('/pricing/')); ?>"><strong>See what membership is</strong></a></p>
+                    </div>
+                </div>
+            </div>
+            <?php
+            return ob_get_clean();
+        }
+
         $title = $this->get('auth_account_title');
         $subtitle = $this->get('auth_account_subtitle');
         
@@ -952,18 +999,18 @@ class FRA_Auth_Pages {
                 </div>
                 
                 <div class="fra-auth-benefits">
-                    <div class="fra-auth-benefits-title">What's Next</div>
+                    <div class="fra-auth-benefits-title">What happens next</div>
                     <ul>
-                        <li>Explore the AI-powered relocation guide</li>
-                        <li>Set up your 183-day Schengen counter</li>
-                        <li>Start your visa application checklist</li>
-                        <li>Generate document templates</li>
+                        <li>Decide: your visa route, where in France, who is moving, and when</li>
+                        <li>Your stages fill in, dated back from your move</li>
+                        <li>Your dossier lists what the consulate will want, per person</li>
+                        <li>Ask the assistant about your own situation, any time</li>
                     </ul>
                 </div>
                 
                 <div class="fra-auth-actions">
-                    <a href="<?php echo esc_url(home_url('/')); ?>" class="fra-auth-btn fra-auth-btn-primary">Start Exploring</a>
-                    <a href="<?php echo esc_url(home_url('/account/')); ?>" class="fra-auth-btn fra-auth-btn-secondary">View My Account</a>
+                    <a href="<?php echo esc_url(home_url('/portal/')); ?>" class="fra-auth-btn fra-auth-btn-primary">Open my portal</a>
+                    <a href="<?php echo esc_url(home_url('/account/')); ?>" class="fra-auth-btn fra-auth-btn-secondary">Your account</a>
                 </div>
             </div>
         </div>

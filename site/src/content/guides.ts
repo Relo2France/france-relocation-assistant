@@ -1041,6 +1041,7 @@ export const routes: string[] = [
   '/',
   '/how-it-works/',
   '/pricing/',
+  '/about/',
   '/guides/',
   ...guides.map((g) => `/guides/${g.slug}/`),
 ];

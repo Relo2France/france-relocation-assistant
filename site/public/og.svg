@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <rect width="1200" height="630" fill="#fcfcfb"/>
+  <rect x="0" y="0" width="1200" height="8" fill="#2c5346"/>
+  <text x="80" y="200" font-family="Georgia, 'Times New Roman', serif" font-weight="700" font-size="76" fill="#1c2420" letter-spacing="-2">Relo<tspan fill="#2c5346">2</tspan>France</text>
+  <text x="80" y="300" font-family="Georgia, 'Times New Roman', serif" font-weight="600" font-size="46" fill="#1c2420">Every requirement for your move to France,</text>
+  <text x="80" y="360" font-family="Georgia, 'Times New Roman', serif" font-weight="600" font-size="46" fill="#1c2420">in the order you’ll need it.</text>
+  <text x="80" y="470" font-family="Helvetica, Arial, sans-serif" font-size="24" fill="#5f6e66">Official French sources only · re-checked every week · $35 once, for life</text>
+  <rect x="80" y="520" width="380" height="4" fill="#2c5346"/>
+  <rect x="460" y="520" width="660" height="4" fill="#b87a21"/>
+</svg>

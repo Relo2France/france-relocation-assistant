@@ -287,8 +287,10 @@ describe('internal links', () => {
       for (const m of html.matchAll(/href="(\/[^"#?]*)"/g)) {
         const href = m[1]!;
         const clean = href.endsWith('/') ? href : `${href}/`;
-        // Assets are emitted by the bundler, not routed.
+        // Assets are emitted by the bundler, not routed; static files in
+        // public/ (favicon, social image) are copied into dist and served as-is.
         if (href.startsWith('/assets/')) continue;
+        if (/\.[a-z0-9]+$/i.test(href) && existsSync(resolve(DIST, href.slice(1)))) continue;
         if (!known.has(clean)) broken.push(`${route} -> ${href}`);
       }
     }

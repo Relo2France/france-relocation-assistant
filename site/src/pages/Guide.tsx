@@ -3,6 +3,8 @@ import {
   SiteNav, SourceChip,
 } from '../components';
 import type { GuideDoc } from '../content/guides';
+import { guides } from '../content/guides';
+import { stageOfGuide } from '../content/stages';
 
 /** {{...}} marks a number someone would check twice, anywhere in a section. */
 function withFigures(text: string) {
@@ -76,8 +78,33 @@ export function Guide({ guide }: { guide: GuideDoc }) {
 
         <aside className="border-t md:border-t-0 md:border-l border-rule-soft px-[22px] py-[26px] bg-card-2">
           <PersonalNext />
+          <StageGuides slug={guide.slug} />
         </aside>
       </div>
     </>
+  );
+}
+
+/** The other guides on the same stage, so a reader can keep going in order. */
+function StageGuides({ slug }: { slug: string }) {
+  const stage = stageOfGuide(slug);
+  if (!stage) return null;
+  const others = stage.slugs.filter((x) => x !== slug).map((x) => guides.find((g) => g.slug === x)).filter((g): g is GuideDoc => !!g);
+  if (others.length === 0) return null;
+  return (
+    <div className="mt-6 pt-5 border-t border-rule-soft" data-kind="stage-guides">
+      <span className="block mb-2 font-ui text-[0.67rem] font-bold uppercase tracking-[0.15em] text-muted">
+        Guides on this stage · {stage.name}
+      </span>
+      <ul className="list-none m-0 p-0 flex flex-col gap-[7px]">
+        {others.map((g) => (
+          <li key={g.slug}>
+            <a href={`/guides/${g.slug}/`} className="font-ui text-[0.88rem] font-semibold text-vine no-underline hover:text-ink">
+              {g.title}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }

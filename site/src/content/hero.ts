@@ -19,7 +19,7 @@ export const HERO_STEPS: HeroStep[] = [
   { when: 'On arrival', what: 'Validate through ANEF', note: 'Within three months, or the visa lapses.' },
 ];
 
-export const GENERIC_HEADLINE = 'Moving to France? Here’s what to do first, in order.';
+export const GENERIC_HEADLINE = 'Every requirement for your move to France, in the order you’ll need it.';
 
 /** Whole months from `now` to the move; negative once it has passed. */
 export function monthsUntil(iso: string, now: Date): number | null {

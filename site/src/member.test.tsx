@@ -11,6 +11,7 @@ import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { PersonalLead, PersonalNext } from './components';
 import { Hero } from './pages/Home';
+import { Pricing } from './pages/Pricing';
 import { MemberContext, daysUntil, type Member } from './member';
 
 describe('daysUntil', () => {
@@ -54,8 +55,8 @@ describe('the home hero', () => {
 
   it('shows a stranger an example, labelled as one, with nothing marked and no way into the portal', () => {
     const { container } = render(<Hero />);
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/moving to France\?/i);
-    expect(screen.getByText(/example · a move/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/every requirement for your move to France/i);
+    expect(screen.getByText(/what a move looks like/i)).toBeInTheDocument();
     expect(container.querySelector('[aria-current="step"]')).toBeNull();
     expect(screen.getByRole('link', { name: /browse the guides/i })).toHaveAttribute('href', '/guides/');
     expect(screen.getByRole('link', { name: /plan my move/i })).toHaveAttribute('href', '/pricing/');
@@ -73,6 +74,40 @@ describe('the home hero', () => {
     expect(container.querySelector('[aria-current="step"]')).not.toBeNull();
     expect(screen.getByRole('link', { name: /open my dossier/i })).toHaveAttribute('href', expect.stringContaining('/portal/'));
     expect(screen.queryByRole('link', { name: /plan my move/i })).toBeNull();
+  });
+});
+
+/**
+ * Only the pricing page sends anyone to checkout, and never a member: they
+ * already paid, so its buttons open their dossier instead of selling again.
+ */
+describe('the pricing page', () => {
+  const member: Member = {
+    firstName: 'Kevin', destination: 'Monsac', visaType: 'Visitor', moveDate: '2099-03-15',
+    applicants: 1, dossier: { ready: 0, total: 1 }, nextAction: { what: 'x', note: 'y' },
+  };
+
+  it('sends a stranger to checkout, labelled with the price', () => {
+    render(<Pricing />);
+    // The nav's "Join" pill points at this page; the page's own two go to checkout.
+    const joins = screen.getAllByRole('link', { name: /join — \$35/i }).filter((j) => j.getAttribute('href') !== '/pricing/');
+    expect(joins.length).toBe(2);
+    for (const j of joins) expect(j).toHaveAttribute('href', expect.stringContaining('/register/'));
+    // The nav has one and the page's foot has one: both go to sign-in.
+    expect(screen.getAllByRole('link', { name: /^sign in$/i }).length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('opens a member’s dossier instead, and stops asking them to sign in', () => {
+    render(
+      <MemberContext.Provider value={member}>
+        <Pricing />
+      </MemberContext.Provider>
+    );
+    expect(screen.queryByRole('link', { name: /join — \$35/i })).toBeNull();
+    for (const l of screen.getAllByRole('link', { name: /open my dossier/i })) {
+      expect(l).toHaveAttribute('href', expect.stringContaining('/portal/'));
+    }
+    expect(screen.queryByText(/already a member/i)).toBeNull();
   });
 });
 

@@ -79,6 +79,19 @@ function relo2france_toolbar_for_admins_only($show) {
 add_filter('show_admin_bar', 'relo2france_toolbar_for_admins_only');
 
 /**
+ * Sign-in, account, logged-out and thank-you are states, not pages. Keep
+ * them out of the index so the public guides are what ranks.
+ */
+function relo2france_noindex_state_pages($robots) {
+    if (is_page(array('login', 'account', 'logged-out', 'thank-you'))) {
+        $robots['noindex'] = true;
+        $robots['nofollow'] = true;
+    }
+    return $robots;
+}
+add_filter('wp_robots', 'relo2france_noindex_state_pages');
+
+/**
  * Never a comment form under a payment form. MemberPress products are a
  * post type with comments open by default, and both single.php and page.php
  * render the comments template when they are.

@@ -9,6 +9,7 @@ export interface Guide {
 export function GuideCard({ guide }: { guide: Guide }) {
   return (
     <a
+      data-kind="guide-card"
       href={guide.href}
       className="border border-rule rounded p-4 flex flex-col gap-1 no-underline text-ink hover:border-vine transition-colors"
     >

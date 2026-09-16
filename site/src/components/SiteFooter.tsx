@@ -63,7 +63,7 @@ export function SiteFooter() {
         </Column>
 
         <Column title="Relo2France">
-          <Item href={external.about}>About</Item>
+          <Item href={'/about/'}>About</Item>
           <Item href={external.portal}>Member portal</Item>
         </Column>
       </div>

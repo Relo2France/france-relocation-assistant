@@ -2,6 +2,7 @@ import { Button, Label, Requirement, Requirements, SiteNav } from '../components
 import { external, PRICE, PRICE_NOTE } from '../content/links';
 import { portalFeatures } from '../content/portal';
 import { coverage, totalTopics } from '../content/coverage';
+import { useMember } from '../member';
 
 const questions = [
   {
@@ -26,7 +27,13 @@ const questions = [
   },
 ];
 
+/**
+ * The one page whose buttons go to checkout. Everywhere else, "Get started"
+ * lands here first, so nobody is sent to a payment form before the price.
+ * A signed-in member is not sold to again: the buttons open their dossier.
+ */
 export function Pricing() {
+  const member = useMember();
   return (
     <>
       <SiteNav cta={`Join — ${PRICE}`} />
@@ -54,11 +61,17 @@ export function Pricing() {
               {PRICE}
             </p>
             <p className="text-[0.88rem] text-muted mt-0 mb-5">{PRICE_NOTE}</p>
-            <Button href={external.join} full>
-              Get started
-            </Button>
+            {member ? (
+              <Button href={external.portal} full>
+                Open my dossier
+              </Button>
+            ) : (
+              <Button href={external.join} full>
+                Join — {PRICE}
+              </Button>
+            )}
             <p className="font-ui text-[0.76rem] text-muted text-center mt-3 mb-0">
-              Secure checkout · card payment
+              {member ? 'You’re a member. This is what you have.' : 'Secure checkout · card payment'}
             </p>
           </div>
 
@@ -99,14 +112,22 @@ export function Pricing() {
 
       <section className="px-7 pb-10">
         <div className="flex gap-[10px] flex-wrap items-center">
-          <Button href={external.join}>Get started — {PRICE}</Button>
+          {member ? (
+            <Button href={external.portal}>Open my dossier</Button>
+          ) : (
+            <Button href={external.join}>Join — {PRICE}</Button>
+          )}
           <Button href="/how-it-works/" variant="ghost">
             See how it works
           </Button>
-          <span className="text-[0.82rem] text-muted">Already a member? </span>
-          <a href={external.signIn} className="text-[0.82rem] text-vine">
-            Sign in
-          </a>
+          {member ? null : (
+            <>
+              <span className="text-[0.82rem] text-muted">Already a member? </span>
+              <a href={external.signIn} className="text-[0.82rem] text-vine">
+                Sign in
+              </a>
+            </>
+          )}
         </div>
       </section>
     </>

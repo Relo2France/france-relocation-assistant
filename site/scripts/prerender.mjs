@@ -41,6 +41,8 @@ function buildHead(meta) {
     `<meta property="og:title" content="${escapeHtml(meta.title)}">`,
     `<meta property="og:description" content="${escapeHtml(meta.description)}">`,
     `<meta property="og:url" content="${escapeHtml(meta.canonical)}">`,
+    `<meta property="og:image" content="https://relo2france.com/og.png">`,
+    `<meta name="twitter:card" content="summary_large_image">`,
   ];
 
   if (meta.noindex || IS_STAGING) {

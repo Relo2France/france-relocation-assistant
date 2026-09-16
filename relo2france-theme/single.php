@@ -9,7 +9,26 @@
 // routes it here, but it is a page in every sense that matters: no date, no
 // previous/next post, and never a comment form under the payment form.
 if (get_post_type() === 'memberpressproduct') {
-    get_template_part('page');
+    get_header();
+    ?>
+    <div class="content-narrow">
+        <?php
+        while (have_posts()) :
+            the_post();
+            $r2f_content = get_the_content();
+            // The product's own content is the bare MemberPress form. Unless
+            // someone has placed the signup card shortcode on it, render the
+            // card: the price framed, what is included, then the form.
+            if (has_shortcode($r2f_content, 'fra_signup_page')) {
+                the_content();
+            } else {
+                echo do_shortcode('[fra_signup_page membership_id="' . (int) get_the_ID() . '"]');
+            }
+        endwhile;
+        ?>
+    </div>
+    <?php
+    get_footer();
     return;
 }
 

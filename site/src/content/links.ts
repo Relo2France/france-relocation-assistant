@@ -14,7 +14,6 @@ export const external = {
   join: `${WP_ORIGIN}/register/lifetime-membership/`,
   portal: `${WP_ORIGIN}/portal/`,
   account: `${WP_ORIGIN}/account/`,
-  about: `${WP_ORIGIN}/about/`,
 } as const;
 
 /**

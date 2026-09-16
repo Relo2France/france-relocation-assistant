@@ -67,7 +67,7 @@ export function Hero() {
       <div>
         <span className="block mb-3">
           <Label tone={member ? 'honey' : 'muted'}>
-            {member ? 'Where you are' : 'Example · a move, counted back from the date'}
+            {member ? 'Where you are' : 'What a move looks like, counted back from the date'}
           </Label>
         </span>
         <Timeline steps={steps} />
@@ -107,7 +107,7 @@ export function Home() {
       </section>
 
       <section className="px-7 py-9 border-t border-rule-soft">
-        <Label tone="honey">Members</Label>
+        <Label tone="vine">Members</Label>
         <h2 className="font-display font-semibold text-[1.5rem] tracking-[-0.012em] mt-2 mb-2 text-balance">
           The guides tell you what is required. The portal does it with you.
         </h2>
@@ -149,6 +149,11 @@ export function Home() {
             />
           ))}
         </div>
+        <p className="mt-4 mb-0">
+          <a href="/guides/" className="font-ui text-[0.9rem] font-semibold text-vine no-underline hover:text-ink">
+            All {guides.length} guides →
+          </a>
+        </p>
       </section>
     </>
   );

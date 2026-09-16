@@ -5,6 +5,7 @@ import { Guide } from './pages/Guide';
 import { NotFound } from './pages/NotFound';
 import { HowItWorks } from './pages/HowItWorks';
 import { Pricing } from './pages/Pricing';
+import { About } from './pages/About';
 import { guideBySlug } from './content/guides';
 
 export interface PageMeta {
@@ -96,6 +97,19 @@ export function resolveRoute(path: string): { element: ReactElement; meta: PageM
             availability: 'https://schema.org/InStock',
           },
         },
+      },
+    };
+  }
+
+  if (clean === '/about/') {
+    return {
+      element: <About />,
+      meta: {
+        title: `About — ${SITE_NAME}`,
+        description:
+          'What Relo2France is, where its information comes from, what membership is, and what it is not.',
+        canonical: `${SITE}/about/`,
+        jsonLd: null,
       },
     };
   }
