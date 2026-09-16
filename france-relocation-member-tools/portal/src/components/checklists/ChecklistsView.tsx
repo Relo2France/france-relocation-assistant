@@ -10,6 +10,7 @@ import {
   X,
 } from 'lucide-react';
 import { useChecklists, useDashboard, useUpdateChecklistItem } from '@/hooks/useApi';
+import { JOURNEY } from '@/journey/journey';
 import type { Checklist, ChecklistItemStatus, ChecklistItem as ChecklistItemType } from '@/types';
 import ChecklistItem from './ChecklistItem';
 
@@ -26,9 +27,9 @@ export default function ChecklistsView() {
   const { data: checklists = [], isLoading: checklistsLoading } = useChecklists(visaType);
   const updateChecklistItem = useUpdateChecklistItem();
 
-  // Separate checklists
-  const visaChecklist = checklists.find(c => c.type === 'visa-application');
-  const relocationChecklist = checklists.find(c => c.type === 'relocation');
+  // Every list the API returns, ordered by the journey stage it belongs to.
+  const stageFor = (type: string) => JOURNEY.find((j) => j.checklists.includes(type));
+  const ordered = [...checklists].sort((a, b) => (stageFor(a.type)?.number ?? 99) - (stageFor(b.type)?.number ?? 99));
 
   // Filter and sort items
   const filterAndSortItems = (items: ChecklistItemType[]) => {
@@ -73,19 +74,17 @@ export default function ChecklistsView() {
     return filtered;
   };
 
-  const filteredVisaItems = visaChecklist ? filterAndSortItems(visaChecklist.items) : [];
-  const filteredRelocationItems = relocationChecklist ? filterAndSortItems(relocationChecklist.items) : [];
+  const sections = ordered.map((c) => ({ checklist: c, items: filterAndSortItems(c.items), stage: stageFor(c.type) }));
 
-  // Overall stats
-  const totalItems = (visaChecklist?.items.length || 0) + (relocationChecklist?.items.length || 0);
-  const completedItems =
-    (visaChecklist?.items.filter(i => i.status === 'complete').length || 0) +
-    (relocationChecklist?.items.filter(i => i.status === 'complete').length || 0);
+  // Overall stats, over every list
+  const totalItems = checklists.reduce((n, c) => n + c.items.length, 0);
+  const completedItems = checklists.reduce((n, c) => n + c.items.filter(i => i.status === 'complete').length, 0);
   const overallPercentage = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
+  const anyShown = sections.some((x) => x.items.length > 0);
 
   // Handle item update
   const handleUpdateItem = (
-    checklistType: 'visa-application' | 'relocation',
+    checklistType: string,
     itemId: string,
     data: { status?: ChecklistItemStatus; handled_own?: boolean; notes?: string }
   ) => {
@@ -118,9 +117,9 @@ export default function ChecklistsView() {
     <div className="p-6">
       {/* Page header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Checklists</h1>
+        <h1 className="font-display text-2xl font-semibold tracking-[-0.018em] text-ink">Checklists</h1>
         <p className="text-gray-600 mt-1">
-          Track your visa application and relocation document preparation
+          The document lists for each stage, ticked off as they come in
         </p>
       </div>
 
@@ -233,37 +232,25 @@ export default function ChecklistsView() {
         </div>
       </div>
 
-      {/* Checklists */}
+      {/* Checklists, one per list, titled with the stage they belong to */}
       <div className="space-y-6">
-        {/* Visa Application Checklist */}
-        {visaChecklist && (
+        {sections.map(({ checklist, items, stage }) => (
           <ChecklistSection
-            checklist={visaChecklist}
-            filteredItems={filteredVisaItems}
-            icon={Plane}
-            iconColor="text-blue-600"
-            iconBg="bg-blue-100"
-            onUpdateItem={(itemId, data) => handleUpdateItem('visa-application', itemId, data)}
+            key={checklist.type}
+            checklist={checklist}
+            filteredItems={items}
+            stageLabel={stage ? `${stage.number} · ${stage.name}` : undefined}
+            icon={checklist.type === 'visa-application' ? Plane : FileText}
+            iconColor="text-primary-500"
+            iconBg="bg-primary-100"
+            onUpdateItem={(itemId, data) => handleUpdateItem(checklist.type, itemId, data)}
             isUpdating={updateChecklistItem.isPending}
           />
-        )}
-
-        {/* Relocation Document Checklist */}
-        {relocationChecklist && (
-          <ChecklistSection
-            checklist={relocationChecklist}
-            filteredItems={filteredRelocationItems}
-            icon={FileText}
-            iconColor="text-purple-600"
-            iconBg="bg-purple-100"
-            onUpdateItem={(itemId, data) => handleUpdateItem('relocation', itemId, data)}
-            isUpdating={updateChecklistItem.isPending}
-          />
-        )}
+        ))}
       </div>
 
       {/* Empty state when filters return no results */}
-      {filteredVisaItems.length === 0 && filteredRelocationItems.length === 0 && totalItems > 0 && (
+      {!anyShown && totalItems > 0 && (
         <div className="card p-8 text-center mt-6">
           <Circle className="w-12 h-12 text-gray-300 mx-auto mb-3" />
           <p className="text-gray-500 mb-2">No items match your filters</p>
@@ -299,6 +286,7 @@ export default function ChecklistsView() {
 interface ChecklistSectionProps {
   checklist: Checklist;
   filteredItems: ChecklistItemType[];
+  stageLabel?: string;
   icon: React.ComponentType<{ className?: string }>;
   iconColor: string;
   iconBg: string;
@@ -312,6 +300,7 @@ interface ChecklistSectionProps {
 function ChecklistSection({
   checklist,
   filteredItems,
+  stageLabel,
   icon: Icon,
   iconColor,
   iconBg,
@@ -332,7 +321,10 @@ function ChecklistSection({
               <Icon className={clsx('w-5 h-5', iconColor)} />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">{checklist.title}</h2>
+              <h2 className="font-display text-lg font-semibold text-ink">
+                {stageLabel ? <span className="font-mono text-[0.68rem] text-gray-500 uppercase mr-2 align-middle">{stageLabel}</span> : null}
+                {checklist.title}
+              </h2>
               <p className="text-sm text-gray-600">
                 {completed} of {total} items complete
               </p>

@@ -1,15 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
-import { AlertTriangle, Bell, CheckCircle, Info, Search, User, X } from 'lucide-react';
+import { AlertTriangle, Bell, CheckCircle, Info, User, X } from 'lucide-react';
 import { useCurrentUser, useDashboard } from '@/hooks/useApi';
 import { usePortalStore } from '@/store';
 
 const viewTitles: Record<string, string> = {
-  dashboard: 'Dashboard',
+  dashboard: 'Where you are',
   tasks: 'Tasks',
   timeline: 'Timeline',
   messages: 'Messages',
   documents: 'Documents',
   guides: 'Guides',
+  deadlines: 'Deadlines',
+  support: 'Support',
   files: 'Files',
   family: 'Family Members',
   settings: 'Settings',
@@ -17,7 +19,7 @@ const viewTitles: Record<string, string> = {
   profile: 'My Profile',
   checklists: 'Checklists',
   glossary: 'Glossary',
-  chat: 'Ask AI',
+  chat: 'Ask about my case',
   membership: 'Membership',
   research: 'Explore France',
   schengen: 'Schengen days',
@@ -90,17 +92,6 @@ export default function Header() {
 
       {/* Right side */}
       <div className="flex items-center gap-4">
-        {/* Search */}
-        <div className="relative hidden md:block">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" aria-hidden="true" />
-          <input
-            type="search"
-            placeholder="Search..."
-            aria-label="Search across portal"
-            className="w-64 pl-10 pr-4 py-2 bg-card-2 border-0 rounded-full text-sm focus:outline focus:outline-2 focus:outline-primary-500 focus:outline-offset-2"
-          />
-        </div>
-
         {/* Notifications */}
         <div className="relative" ref={notificationRef}>
           <button

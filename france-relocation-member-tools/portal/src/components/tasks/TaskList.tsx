@@ -15,6 +15,12 @@ import type { Task, TaskStatus } from '@/types';
 interface TaskListProps {
   tasks: Task[];
   groupBy?: 'stage' | 'status' | 'none';
+  /** Which group a task belongs to when grouping by stage; defaults to task.stage. */
+  resolveStage?: (task: Task) => string;
+  /** Titles for stage group keys; falls back to a capitalised key. */
+  stageTitles?: Record<string, string>;
+  /** Display order of stage groups; unknown keys go last. */
+  stageOrder?: string[];
   onTaskClick?: (task: Task) => void;
   onStatusChange?: (taskId: number, status: TaskStatus) => void;
   onAddTask?: (stage?: string) => void;
@@ -30,6 +36,9 @@ const statusConfig: Record<TaskStatus, { icon: typeof Circle; color: string; bgC
 export default function TaskList({
   tasks,
   groupBy = 'none',
+  resolveStage,
+  stageTitles,
+  stageOrder,
   onTaskClick,
   onStatusChange,
   onAddTask,
@@ -83,14 +92,20 @@ export default function TaskList({
   }
 
   // Group tasks
-  const groups = groupTasks(tasks, groupBy);
+  const groups = groupTasks(tasks, groupBy, resolveStage);
+  const order = (key: string) => {
+    if (groupBy !== 'stage' || !stageOrder) return 0;
+    const i = stageOrder.indexOf(key);
+    return i === -1 ? stageOrder.length : i;
+  };
+  const entries = Object.entries(groups).sort(([a], [b]) => order(a) - order(b));
 
   return (
     <div className="space-y-6">
-      {Object.entries(groups).map(([groupKey, groupTasks]) => (
+      {entries.map(([groupKey, groupTasks]) => (
         <TaskGroup
           key={groupKey}
-          title={formatGroupTitle(groupKey, groupBy)}
+          title={(groupBy === 'stage' && stageTitles?.[groupKey]) || formatGroupTitle(groupKey, groupBy)}
           tasks={groupTasks}
           groupKey={groupKey}
           onTaskClick={onTaskClick}
@@ -288,9 +303,9 @@ function PriorityBadge({ priority }: { priority: string }) {
   );
 }
 
-function groupTasks(tasks: Task[], groupBy: 'stage' | 'status'): Record<string, Task[]> {
+function groupTasks(tasks: Task[], groupBy: 'stage' | 'status', resolveStage?: (task: Task) => string): Record<string, Task[]> {
   return tasks.reduce((acc, task) => {
-    const key = groupBy === 'stage' ? (task.stage || 'unassigned') : task.status;
+    const key = groupBy === 'stage' ? (resolveStage ? resolveStage(task) : task.stage || 'unassigned') : task.status;
     if (!acc[key]) {
       acc[key] = [];
     }

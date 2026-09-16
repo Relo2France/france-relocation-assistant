@@ -7,7 +7,7 @@ import {
   Search,
   X,
 } from 'lucide-react';
-import type { StageProgress, TaskStatus } from '@/types';
+import type { TaskStatus } from '@/types';
 
 interface FilterBarProps {
   view: 'list' | 'board';
@@ -21,7 +21,7 @@ interface FilterBarProps {
   };
   onFilterChange: (filters: Partial<FilterBarProps['filters']>) => void;
   onClearFilters: () => void;
-  stages: StageProgress[];
+  stages: { slug: string; title: string }[];
   onAddTask: () => void;
   totalTasks: number;
   filteredTasks: number;

@@ -12,6 +12,8 @@ import { FRANCE_DEPARTMENTS, FRANCE_REGIONS } from '@/config/research';
 import type { FranceCommune, FranceDepartment, FranceRegion, ResearchLevel } from '@/types';
 
 interface LocationSearchProps {
+  /** Starts the box with the member's target area so results are waiting */
+  initialQuery?: string;
   onSelect: (
     result: FranceRegion | FranceDepartment | FranceCommune,
     type: ResearchLevel
@@ -26,8 +28,8 @@ interface SearchResult {
   data: FranceRegion | FranceDepartment | FranceCommune;
 }
 
-export default function LocationSearch({ onSelect }: LocationSearchProps) {
-  const [query, setQuery] = useState('');
+export default function LocationSearch({ onSelect, initialQuery = '' }: LocationSearchProps) {
+  const [query, setQuery] = useState(initialQuery);
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);

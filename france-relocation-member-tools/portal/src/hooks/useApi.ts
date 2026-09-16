@@ -20,6 +20,7 @@ import {
   userApi,
   verificationApi,
 } from '@/api/client';
+import type { FileUploadData } from '@/api/client';
 import { REFETCH_INTERVAL, SEARCH, STALE_TIME } from '@/constants';
 import type {
   ChatRequest,
@@ -340,11 +341,16 @@ export function useUploadFile(projectId: number) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ file, data }: { file: File; data?: { category?: FileCategory; description?: string } }) =>
+    mutationFn: ({ file, data }: { file: File; data?: FileUploadData }) =>
       filesApi.upload(projectId, file, data),
-    onSuccess: () => {
+    onSuccess: (_result, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.files(projectId) });
       queryClient.invalidateQueries({ queryKey: queryKeys.dashboard });
+      if (variables.data?.checklist_type) {
+        // The upload just completed a dossier item
+        queryClient.invalidateQueries({ queryKey: queryKeys.checklist(variables.data.checklist_type) });
+        queryClient.invalidateQueries({ queryKey: ['checklists'] });
+      }
     },
   });
 }

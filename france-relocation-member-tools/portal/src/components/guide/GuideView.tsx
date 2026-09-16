@@ -11,7 +11,7 @@
 import { type GuideDoc, guideBySlug, guides } from '@site-guides';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import Jargon from '@/components/shared/Jargon';
-import { useDashboard, useMemberProfile } from '@/hooks/useApi';
+import { useCurrentUser, useDashboard, useMemberProfile } from '@/hooks/useApi';
 import { JOURNEY, timeToGo } from '@/journey/journey';
 import { usePortalStore } from '@/store';
 
@@ -34,6 +34,7 @@ export default function GuideView() {
   const { activeGuide, setActiveView, setActiveStage, setChatDraft, setActiveGuide } = usePortalStore();
   const { data } = useDashboard();
   const { data: profile } = useMemberProfile();
+  const { data: me } = useCurrentUser();
   const guide: GuideDoc | undefined = guideBySlug(activeGuide ?? '');
   const project = data?.project;
   const stage = activeGuide ? stageOf(activeGuide) : undefined;
@@ -54,7 +55,7 @@ export default function GuideView() {
   }
 
   const p = (profile ?? {}) as { target_location?: string; applicants?: string };
-  const route = data?.profile_visa_label ?? null;
+  const route = data?.profile_visa_type && data.profile_visa_type !== 'undecided' ? data.profile_visa_label : null;
   const destination = p.target_location?.trim() || null;
   const applicants = p.applicants ?? '';
   const withFamily = applicants && applicants !== 'self' && applicants !== 'me' && applicants !== 'unknown';
@@ -91,7 +92,7 @@ export default function GuideView() {
         <article className="max-w-[42rem] font-serif text-[1.06rem] leading-[1.7]">
           {(route || destination || project?.target_move_date) ? (
             <p className="font-sans text-[0.95rem] bg-primary-100 text-ink rounded-lg px-4 py-3 mb-6 border-l-2 border-primary-500">
-              <strong>{data?.project.title?.replace(/'s France Relocation$/, '') || 'You'}</strong>
+              <strong>{me?.first_name || me?.display_name || 'You'}</strong>
               {route ? <> — you’re on the <strong>{route}</strong> route</> : <> — no route chosen yet</>}
               {destination ? <> to <strong>{destination}</strong></> : null}
               {project?.target_move_date ? <>, {timeToGo(project)}</> : null}

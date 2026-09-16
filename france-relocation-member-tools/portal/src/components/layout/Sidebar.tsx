@@ -52,7 +52,7 @@ const TOOLS: { id: string; label: string; icon: typeof MessageSquare; views: str
   { id: 'chat', label: 'Ask about my case', icon: MessageSquare, views: ['chat', 'glossary', 'messages'] },
   { id: 'documents', label: 'Documents & files', icon: FileText, views: ['documents', 'files'] },
   { id: 'family', label: 'Family plans', icon: Users, views: ['family'] },
-  { id: 'timeline', label: 'Deadlines', icon: Calendar, views: ['timeline', 'tasks'] },
+  { id: 'deadlines', label: 'Deadlines', icon: Calendar, views: ['deadlines', 'timeline', 'tasks'] },
   { id: 'schengen', label: 'Schengen days', icon: Globe, views: ['schengen'] },
   { id: 'research', label: 'Explore France', icon: BookOpen, views: ['research', 'guides'] },
 ];
@@ -164,7 +164,7 @@ export default function Sidebar() {
         <div className="mt-5 px-2 pt-4 border-t border-white/10">
           {!sidebarCollapsed && <span className="eyebrow block px-2 mb-2 text-sidebar-text/60">Tools</span>}
           <ul className="space-y-0.5">
-            {TOOLS.filter((t) => isMenuItemVisible(t.id)).map((tool) => {
+            {TOOLS.filter((t) => t.id === 'deadlines' ? isMenuItemVisible('timeline') || isMenuItemVisible('tasks') : isMenuItemVisible(t.id)).map((tool) => {
               const Icon = tool.icon;
               return (
                 <li key={tool.id}>
@@ -185,7 +185,7 @@ export default function Sidebar() {
         {/* Account */}
         <div className="mt-4 px-2 pt-4 border-t border-white/10">
           <ul className="space-y-0.5">
-            {ACCOUNT.filter((a) => isMenuItemVisible(a.id)).map((item) => {
+            {ACCOUNT.filter((a) => a.id === 'profile' || isMenuItemVisible(a.id)).map((item) => {
               const Icon = item.icon;
               const active = [item.id, item.id === 'profile' ? 'membership' : '', item.id === 'help' ? 'support' : ''].includes(activeView);
               return (

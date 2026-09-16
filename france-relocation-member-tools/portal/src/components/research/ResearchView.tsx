@@ -8,6 +8,7 @@
 
 import { useCallback, useState } from 'react';
 import { ChevronRight, FileText, MapPin } from 'lucide-react';
+import { useMemberProfile } from '@/hooks/useApi';
 import type { FranceCommune, FranceDepartment, FranceRegion, LocationBreadcrumb, ResearchLevel } from '@/types';
 import DepartmentView from './DepartmentView';
 import FranceMap from './FranceMap';
@@ -25,6 +26,8 @@ interface SelectedLocation {
 }
 
 export default function ResearchView() {
+  const { data: profile } = useMemberProfile();
+  const targetArea = (profile?.target_location ?? '').trim();
   const [selectedLocation, setSelectedLocation] = useState<SelectedLocation>({ level: 'france' });
   const [breadcrumbs, setBreadcrumbs] = useState<LocationBreadcrumb[]>([]);
   const [showReportModal, setShowReportModal] = useState(false);
@@ -143,10 +146,12 @@ export default function ResearchView() {
               Explore France
             </h1>
             <p className="mt-1 text-gray-600">
-              Discover regions, departments, and towns. Generate detailed relocation reports.
+              {targetArea
+                ? `Your area · ${targetArea}. Compare it with the rest of France, then generate a report.`
+                : 'Discover regions, departments, and towns. Generate detailed relocation reports.'}
             </p>
           </div>
-          <LocationSearch onSelect={handleSearchSelect} />
+          <LocationSearch key={targetArea} initialQuery={targetArea} onSelect={handleSearchSelect} />
         </div>
       </div>
 

@@ -49,7 +49,7 @@ class FRAMT_Document_Generator {
      * Generate cover letter
      */
     private function generate_cover_letter($answers, $profile, $language) {
-        $use_placeholders = ($answers['privacy_choice'] ?? 'placeholders') === 'placeholders';
+        $use_placeholders = $this->use_placeholders($answers, $profile);
         
         // Get names
         $applicant_name = $use_placeholders ? '[YOUR FULL NAME]' : $this->get_user_name();
@@ -219,7 +219,7 @@ class FRAMT_Document_Generator {
      * Generate financial statement
      */
     private function generate_financial_statement($answers, $profile, $language) {
-        $use_placeholders = ($answers['privacy_choice'] ?? 'placeholders') === 'placeholders';
+        $use_placeholders = $this->use_placeholders($answers, $profile);
         $include_table = ($answers['include_table'] ?? 'yes') === 'yes';
 
         $content = array(
@@ -325,10 +325,38 @@ class FRAMT_Document_Generator {
     }
 
     /**
-     * Get current user's name
+     * Placeholders or real details. The member's explicit answer wins. With
+     * no answer, a profile that holds a legal first and last name gets the
+     * real details, since the letter is theirs to file; anything less gets
+     * placeholders so nothing half-filled goes to a consulate.
+     *
+     * @param array $answers Answers collected for this document
+     * @param array $profile Portal profile
+     * @return bool True to use placeholders
+     */
+    private function use_placeholders($answers, $profile) {
+        $choice = $answers['privacy_choice'] ?? '';
+        if ('placeholders' === $choice) {
+            return true;
+        }
+        if ('actual' === $choice) {
+            return false;
+        }
+        $has_legal_name = !empty($profile['legal_first_name']) && !empty($profile['legal_last_name']);
+        return !$has_legal_name;
+    }
+
+    /**
+     * Get current user's name: the legal name from the profile first, since
+     * that is what the passport says, then the WordPress name.
      */
     private function get_user_name() {
         $user = wp_get_current_user();
+        $first = (string) get_user_meta($user->ID, 'fra_legal_first_name', true);
+        $last  = (string) get_user_meta($user->ID, 'fra_legal_last_name', true);
+        if ($first && $last) {
+            return $first . ' ' . $last;
+        }
         if ($user->first_name && $user->last_name) {
             return $user->first_name . ' ' . $user->last_name;
         }

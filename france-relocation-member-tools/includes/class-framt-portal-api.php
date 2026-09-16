@@ -1874,15 +1874,34 @@ class FRAMT_Portal_API {
         $visa_key   = $project->visa_type ?: get_user_meta( $user_id, 'fra_visa_type', true );
         $visa_label = FRAMT_Project::$visa_types[ $visa_key ] ?? ( $visa_key ?: '' );
 
-        $applicants = 1;
-        if ( '' !== (string) get_user_meta( $user_id, 'fra_spouse_legal_first_name', true ) ) {
-            $applicants++;
+        // Who is applying is the member's own answer first; the name fields
+        // are a fallback for profiles that predate the question.
+        $children   = (int) get_user_meta( $user_id, 'fra_num_children', true );
+        $who        = (string) get_user_meta( $user_id, 'fra_applicants', true );
+        switch ( $who ) {
+            case 'alone':
+                $applicants = 1;
+                break;
+            case 'spouse':
+                $applicants = 2;
+                break;
+            case 'spouse_kids':
+                $applicants = 2 + $children;
+                break;
+            case 'kids_only':
+                $applicants = 1 + $children;
+                break;
+            default:
+                $applicants = 1;
+                if ( '' !== (string) get_user_meta( $user_id, 'fra_spouse_legal_first_name', true ) ) {
+                    $applicants++;
+                }
+                $applicants += $children;
         }
-        $applicants += (int) get_user_meta( $user_id, 'fra_num_children', true );
 
         // The visa dossier: the visa-application checklist is the one that
         // maps onto "documents the consulate will want".
-        $items    = $this->get_checklist_items( 'visa-application' );
+        $items    = $this->get_checklist_items( 'visa-application', (string) $visa_key );
         $progress = get_user_meta( $user_id, 'fra_checklist_visa-application', true ) ?: array();
         $ready    = 0;
         foreach ( $items as $item ) {
@@ -2204,9 +2223,15 @@ class FRAMT_Portal_API {
         }
 
         // Get category from request params
-        $params   = $request->get_params();
-        $category = sanitize_key( $params['category'] ?? 'upload' );
-        $task_id  = isset( $params['task_id'] ) ? (int) $params['task_id'] : null;
+        $params         = $request->get_params();
+        $category       = sanitize_key( $params['category'] ?? 'upload' );
+        $task_id        = isset( $params['task_id'] ) ? (int) $params['task_id'] : null;
+        $checklist_type = isset( $params['checklist_type'] ) ? sanitize_key( $params['checklist_type'] ) : '';
+        $item_id        = isset( $params['item_id'] ) ? sanitize_key( $params['item_id'] ) : '';
+        $file_metadata  = array();
+        if ( $checklist_type && $item_id ) {
+            $file_metadata = array( 'checklist_type' => $checklist_type, 'item_id' => $item_id );
+        }
 
         // Get file type from extension
         $file_type = $this->get_file_type_from_extension( $ext );
@@ -2227,11 +2252,18 @@ class FRAMT_Portal_API {
                 'file_path'     => $filepath,
                 'category'      => $category,
                 'visibility'    => 'private',
+                'metadata'      => wp_json_encode( $file_metadata ),
             ),
-            array( '%d', '%d', '%d', '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%s' )
+            array( '%d', '%d', '%d', '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%s', '%s' )
         );
 
         $file_id = $wpdb->insert_id;
+
+        // An upload attached to a dossier item is the evidence for it: tick
+        // the item and remember which file did it.
+        if ( $file_id && $checklist_type && $item_id ) {
+            $this->complete_checklist_item_with_file( $user_id, $checklist_type, $item_id, $file_id );
+        }
 
         // Log activity
         FRAMT_Activity::log( $project_id, $user_id, 'file_uploaded', 'file', $file_id, $uploaded_file['name'] );
@@ -2900,6 +2932,7 @@ class FRAMT_Portal_API {
         // Sync project visa type and generate tasks if visa type changed
         if ( ! empty( $new_visa_type ) && $new_visa_type !== $old_visa_type ) {
             $this->sync_project_visa_type( $user_id, $new_visa_type );
+            $this->remove_stale_route_tasks( $user_id, $old_visa_type, $new_visa_type );
             $this->generate_visa_tasks( $user_id, $new_visa_type );
         }
 
@@ -3046,10 +3079,11 @@ class FRAMT_Portal_API {
         );
 
         // Get user progress for each checklist
-        $response = array();
+        $response  = array();
+        $visa_type = (string) get_user_meta( $user_id, 'fra_visa_type', true );
         foreach ( $checklist_types as $type => $checklist ) {
             $progress = get_user_meta( $user_id, 'fra_checklist_' . $type, true ) ?: array();
-            $items    = $this->get_checklist_items( $type );
+            $items    = $this->get_checklist_items( $type, $visa_type );
 
             $completed = 0;
             foreach ( $items as $item ) {
@@ -3075,10 +3109,11 @@ class FRAMT_Portal_API {
      * @return WP_REST_Response|WP_Error
      */
     public function get_checklist( $request ) {
-        $user_id = get_current_user_id();
-        $type    = $request->get_param( 'type' );
+        $user_id   = get_current_user_id();
+        $type      = $request->get_param( 'type' );
+        $visa_type = (string) get_user_meta( $user_id, 'fra_visa_type', true );
 
-        $items    = $this->get_checklist_items( $type );
+        $items    = $this->get_checklist_items( $type, $visa_type );
         $progress = get_user_meta( $user_id, 'fra_checklist_' . $type, true ) ?: array();
 
         if ( empty( $items ) ) {
@@ -3089,12 +3124,54 @@ class FRAMT_Portal_API {
             );
         }
 
+        // The passport item can answer itself: the profile knows the expiry
+        // and the project knows the move. A member's own tick is never
+        // overwritten; the note is added either way.
+        $passport_note   = '';
+        $passport_ok     = null;
+        if ( 'visa-application' === $type ) {
+            $expiry  = (string) get_user_meta( $user_id, 'fra_passport_expiry', true );
+            $project = FRAMT_Project::get_or_create( $user_id );
+            $move    = $project && $project->target_move_date ? $project->target_move_date : (string) get_user_meta( $user_id, 'fra_target_move_date', true );
+            if ( $expiry && $move ) {
+                try {
+                    $expiry_date = new DateTime( substr( $expiry, 0, 10 ) );
+                    $move_date   = new DateTime( substr( $move, 0, 10 ) );
+                    $months      = ( $expiry_date->getTimestamp() - $move_date->getTimestamp() ) / ( 86400 * 30.44 );
+                    $months_int  = (int) floor( abs( $months ) );
+                    if ( $months >= 6 ) {
+                        $passport_ok   = true;
+                        $passport_note = sprintf( 'Valid until %s · %d months after your move', $expiry_date->format( 'F Y' ), $months_int );
+                    } elseif ( $months >= 0 ) {
+                        $passport_ok   = false;
+                        $passport_note = sprintf( 'Expires %d month%s after your move · renew it, the consulate wants 6+', $months_int, 1 === $months_int ? '' : 's' );
+                    } else {
+                        $passport_ok   = false;
+                        $passport_note = sprintf( 'Expires %d month%s before your move · renew it now', $months_int, 1 === $months_int ? '' : 's' );
+                    }
+                } catch ( Exception $e ) {
+                    $passport_note = '';
+                }
+            }
+        }
+
         // Merge progress with items
         foreach ( $items as &$item ) {
-            $item['completed']    = ! empty( $progress[ $item['id'] ]['completed'] );
+            $own_tick             = ! empty( $progress[ $item['id'] ]['completed'] );
+            $item['completed']    = $own_tick;
             $item['completed_at'] = $progress[ $item['id'] ]['completed_at'] ?? null;
             $item['notes']        = $progress[ $item['id'] ]['notes'] ?? '';
+            $item['file_id']      = $progress[ $item['id'] ]['file_id'] ?? null;
+            $item['note']         = '';
+            if ( 'passport-valid' === $item['id'] && '' !== $passport_note ) {
+                $item['note'] = $passport_note;
+                if ( true === $passport_ok && ! $own_tick ) {
+                    $item['completed'] = true;
+                }
+            }
+            $item['status'] = $item['completed'] ? 'complete' : 'pending';
         }
+        unset( $item );
 
         return rest_ensure_response( array(
             'type'  => $type,
@@ -3139,17 +3216,95 @@ class FRAMT_Portal_API {
     }
 
     /**
+     * Mark a checklist item complete because a file now backs it.
+     *
+     * @param int    $user_id        User ID
+     * @param string $checklist_type Checklist type, e.g. visa-application
+     * @param string $item_id        Item id within that checklist
+     * @param int    $file_id        The file that completes it
+     * @return void
+     */
+    public function complete_checklist_item_with_file( $user_id, $checklist_type, $item_id, $file_id ) {
+        $meta_key = 'fra_checklist_' . sanitize_key( $checklist_type );
+        $progress = get_user_meta( $user_id, $meta_key, true ) ?: array();
+        if ( ! isset( $progress[ $item_id ] ) || ! is_array( $progress[ $item_id ] ) ) {
+            $progress[ $item_id ] = array();
+        }
+        $progress[ $item_id ]['completed']    = true;
+        $progress[ $item_id ]['completed_at'] = current_time( 'mysql' );
+        $progress[ $item_id ]['file_id']      = (int) $file_id;
+        update_user_meta( $user_id, $meta_key, $progress );
+    }
+
+    /**
      * Get checklist items for a type (with caching)
      *
      * @param string $type Checklist type.
      * @return array Checklist items.
      */
-    private function get_checklist_items( string $type ): array {
-        $cache_key = 'fra_checklist_items_' . sanitize_key( $type );
+    private function get_checklist_items( string $type, string $visa_type = '' ): array {
+        $visa_type = sanitize_key( $visa_type );
+        $cache_key = 'fra_checklist_items_' . sanitize_key( $type ) . ( $visa_type ? '_' . $visa_type : '' );
 
-        return $this->get_cached_data( $cache_key, function() use ( $type ) {
-            return $this->get_checklist_items_data( $type );
+        return $this->get_cached_data( $cache_key, function() use ( $type, $visa_type ) {
+            return $this->get_checklist_items_data( $type, $visa_type );
         }, self::CACHE_CHECKLISTS_DURATION );
+    }
+
+    /**
+     * The visa dossier for a route. Shared items every consulate asks for,
+     * then the items the knowledge base's visa topics name for that route.
+     * Nothing here is written from memory: each route-specific line mirrors
+     * the requirement stated in visas/* or visa_application_guide.
+     *
+     * @param string $visa_type Profile visa type key.
+     * @return array Checklist items.
+     */
+    private function get_visa_dossier_items( string $visa_type ): array {
+        $shared = array(
+            array( 'id' => 'passport-valid', 'title' => 'Valid passport, 6+ months beyond your stay', 'lead_time' => 180, 'priority' => 'high' ),
+            array( 'id' => 'passport-photos', 'title' => 'Passport photos (35x45mm)', 'lead_time' => 14, 'priority' => 'high' ),
+            array( 'id' => 'application-form', 'title' => 'Completed France-Visas application, printed and signed', 'lead_time' => 7, 'priority' => 'high' ),
+            array( 'id' => 'proof-accommodation', 'title' => 'Proof of accommodation in France', 'lead_time' => 30, 'priority' => 'high' ),
+            array( 'id' => 'proof-funds', 'title' => 'Proof of financial means (3 months of bank statements)', 'lead_time' => 30, 'priority' => 'high' ),
+            array( 'id' => 'travel-insurance', 'title' => 'Health insurance covering the full stay', 'lead_time' => 14, 'priority' => 'high' ),
+            array( 'id' => 'birth-certificate-apostilled', 'title' => 'Birth certificate, apostilled', 'lead_time' => 60, 'priority' => 'high' ),
+            array( 'id' => 'certified-translations', 'title' => 'Certified French translations (traducteur assermenté)', 'lead_time' => 21, 'priority' => 'high' ),
+            array( 'id' => 'cover-letter', 'title' => 'Cover letter explaining purpose', 'lead_time' => 7, 'priority' => 'medium' ),
+        );
+
+        $by_route = array(
+            'visitor' => array(
+                array( 'id' => 'declaration-no-work', 'title' => 'Signed declaration of no professional activity (attestation sur l\'honneur)', 'lead_time' => 30, 'priority' => 'high' ),
+            ),
+            'retiree' => array(
+                array( 'id' => 'declaration-no-work', 'title' => 'Signed declaration of no professional activity (attestation sur l\'honneur)', 'lead_time' => 30, 'priority' => 'high' ),
+            ),
+            'employee' => array(
+                array( 'id' => 'work-contract', 'title' => 'Signed work contract or detailed job offer', 'lead_time' => 60, 'priority' => 'high' ),
+                array( 'id' => 'work-authorisation', 'title' => 'Employer\'s work authorisation approval (DREETS via ANEF)', 'lead_time' => 90, 'priority' => 'high' ),
+                array( 'id' => 'qualifications', 'title' => 'Proof of qualifications, with certified translations', 'lead_time' => 45, 'priority' => 'high' ),
+                array( 'id' => 'background-check', 'title' => 'Clean criminal background check, apostilled', 'lead_time' => 90, 'priority' => 'high' ),
+            ),
+            'talent_passport' => array(
+                array( 'id' => 'category-proof', 'title' => 'Proof of qualification for your category (contract, business plan or project documentation)', 'lead_time' => 60, 'priority' => 'high' ),
+            ),
+            'student' => array(
+                array( 'id' => 'acceptance-letter', 'title' => 'Acceptance letter from the French institution', 'lead_time' => 120, 'priority' => 'high' ),
+                array( 'id' => 'proof-funds-studies', 'title' => 'Proof of funds for studies', 'lead_time' => 30, 'priority' => 'high' ),
+            ),
+            'spouse_french' => array(
+                array( 'id' => 'marriage-certificate', 'title' => 'Marriage certificate, apostilled', 'lead_time' => 60, 'priority' => 'high' ),
+                array( 'id' => 'spouse-french-id', 'title' => 'Your spouse\'s French identity document', 'lead_time' => 14, 'priority' => 'high' ),
+                array( 'id' => 'relationship-proof', 'title' => 'Proof the relationship is genuine', 'lead_time' => 30, 'priority' => 'high' ),
+            ),
+        );
+        $by_route['family'] = $by_route['spouse_french'];
+        // Older profiles may hold the short keys.
+        $by_route['talent'] = $by_route['talent_passport'];
+        $by_route['work']   = $by_route['employee'];
+
+        return array_merge( $shared, $by_route[ $visa_type ] ?? array() );
     }
 
     /**
@@ -3158,20 +3313,9 @@ class FRAMT_Portal_API {
      * @param string $type Checklist type.
      * @return array Checklist items.
      */
-    private function get_checklist_items_data( string $type ): array {
+    private function get_checklist_items_data( string $type, string $visa_type = '' ): array {
         $checklists = array(
-            'visa-application' => array(
-                array( 'id' => 'passport-valid', 'title' => 'Valid passport (6+ months)', 'lead_time' => 180, 'priority' => 'high' ),
-                array( 'id' => 'passport-photos', 'title' => 'Passport photos (35x45mm)', 'lead_time' => 14, 'priority' => 'high' ),
-                array( 'id' => 'application-form', 'title' => 'Completed application form', 'lead_time' => 7, 'priority' => 'high' ),
-                array( 'id' => 'proof-accommodation', 'title' => 'Proof of accommodation in France', 'lead_time' => 30, 'priority' => 'high' ),
-                array( 'id' => 'proof-funds', 'title' => 'Proof of sufficient funds', 'lead_time' => 30, 'priority' => 'high' ),
-                array( 'id' => 'travel-insurance', 'title' => 'Travel/health insurance certificate', 'lead_time' => 14, 'priority' => 'high' ),
-                array( 'id' => 'flight-reservation', 'title' => 'Flight reservation/itinerary', 'lead_time' => 14, 'priority' => 'medium' ),
-                array( 'id' => 'cover-letter', 'title' => 'Cover letter explaining purpose', 'lead_time' => 7, 'priority' => 'medium' ),
-                array( 'id' => 'employment-proof', 'title' => 'Employment/income proof', 'lead_time' => 14, 'priority' => 'medium' ),
-                array( 'id' => 'bank-statements', 'title' => 'Bank statements (3-6 months)', 'lead_time' => 7, 'priority' => 'high' ),
-            ),
+            'visa-application' => $this->get_visa_dossier_items( $visa_type ),
             'pre-departure' => array(
                 array( 'id' => 'visa-received', 'title' => 'Visa received and verified', 'lead_time' => 30, 'priority' => 'high' ),
                 array( 'id' => 'flights-booked', 'title' => 'Flights booked', 'lead_time' => 60, 'priority' => 'high' ),
@@ -3520,6 +3664,12 @@ class FRAMT_Portal_API {
             $doc_id,
             'Generated ' . $this->get_document_title( $type )
         );
+
+        // A generated document is part of the file, not a side product:
+        // it goes into the vault and completes the dossier item it answers.
+        if ( class_exists( 'FRAMT_Documents' ) ) {
+            FRAMT_Documents::file_generated_document( $user_id, (int) $project_id, $type, $this->get_document_title( $type ), (string) $content, (int) $doc_id );
+        }
 
         return rest_ensure_response( array(
             'id'      => $doc_id,
@@ -6555,6 +6705,12 @@ Focus on practical advice while being careful not to state incorrect facts. When
             $task->priority   = sanitize_key( $template['priority'] ?? 'medium' );
             $task->task_type  = sanitize_key( $template['task_type'] ?? 'task' );
 
+            // Keep the template's offset on the task, so a move-date change
+            // can re-date it even after the member renames it.
+            if ( isset( $template['days_offset'] ) ) {
+                $task->metadata = array( 'days_offset' => (int) $template['days_offset'], 'from_template' => true );
+            }
+
             // Calculate due date if move date exists and template has days_offset
             if ( ! empty( $move_date ) && isset( $template['days_offset'] ) ) {
                 $task->due_date = $this->calculate_due_date( $move_date, $template['days_offset'] );
@@ -6566,6 +6722,59 @@ Focus on practical advice while being careful not to state incorrect facts. When
         }
 
         return $tasks_created;
+    }
+
+    /**
+     * When the visa route changes, the previous route's undone steps must go,
+     * or a member who moves from visitor to student carries both plans. Only
+     * tasks still marked todo are removed, and only those whose title belongs
+     * to the old route's templates and not the new one's.
+     *
+     * @param int    $user_id  User ID
+     * @param string $old_type Previous visa type
+     * @param string $new_type New visa type
+     * @return int Tasks removed
+     */
+    private function remove_stale_route_tasks( $user_id, $old_type, $new_type ) {
+        global $wpdb;
+
+        if ( empty( $old_type ) || $old_type === $new_type ) {
+            return 0;
+        }
+
+        $project = FRAMT_Project::get_or_create( $user_id );
+        if ( ! $project || ! $project->id ) {
+            return 0;
+        }
+
+        $old_titles = array_column( $this->get_visa_task_templates( $old_type ), 'title' );
+        $new_titles = array_column( $this->get_visa_task_templates( $new_type ), 'title' );
+        $stale      = array_values( array_diff( $old_titles, $new_titles ) );
+
+        if ( empty( $stale ) ) {
+            return 0;
+        }
+
+        $placeholders = implode( ',', array_fill( 0, count( $stale ), '%s' ) );
+        $removed      = $wpdb->query(
+            $wpdb->prepare(
+                "DELETE FROM {$wpdb->prefix}framt_tasks WHERE project_id = %d AND status = 'todo' AND title IN ($placeholders)",
+                array_merge( array( $project->id ), $stale )
+            )
+        );
+
+        if ( $removed && class_exists( 'FRAMT_Activity' ) ) {
+            FRAMT_Activity::log(
+                $project->id,
+                $user_id,
+                'tasks_removed',
+                'task',
+                0,
+                sprintf( 'Removed %d steps that belonged to the %s route', $removed, $old_type )
+            );
+        }
+
+        return (int) $removed;
     }
 
     /**
@@ -6608,7 +6817,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
         // Get all incomplete tasks for this project
         $tasks = $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT id, title, stage FROM {$wpdb->prefix}framt_tasks
+                "SELECT id, title, stage, metadata FROM {$wpdb->prefix}framt_tasks
                 WHERE project_id = %d AND status != 'done'",
                 $project->id
             )
@@ -6624,9 +6833,19 @@ Focus on practical advice while being careful not to state incorrect facts. When
         $tasks_updated = 0;
 
         foreach ( $tasks as $task_row ) {
-            // Look up the offset for this task
-            if ( isset( $offset_map[ $task_row->title ] ) ) {
-                $offset   = $offset_map[ $task_row->title ];
+            // The offset stored at creation wins; the title map is the
+            // fallback for tasks created before offsets were kept.
+            $offset = null;
+            if ( ! empty( $task_row->metadata ) ) {
+                $meta = json_decode( $task_row->metadata, true );
+                if ( is_array( $meta ) && isset( $meta['days_offset'] ) && is_numeric( $meta['days_offset'] ) ) {
+                    $offset = (int) $meta['days_offset'];
+                }
+            }
+            if ( null === $offset && isset( $offset_map[ $task_row->title ] ) ) {
+                $offset = $offset_map[ $task_row->title ];
+            }
+            if ( null !== $offset ) {
                 $due_date = $this->calculate_due_date( $move_date, $offset );
 
                 $wpdb->update(
@@ -6652,7 +6871,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
         $offset_map = array();
 
         // Get templates from all visa types and conditional tasks
-        $visa_types = array( 'visitor', 'talent_passport', 'employee', 'entrepreneur', 'student', 'retiree', 'undecided' );
+        $visa_types = array( 'visitor', 'talent_passport', 'employee', 'entrepreneur', 'student', 'retiree', 'spouse_french', 'family', 'undecided' );
 
         foreach ( $visa_types as $visa_type ) {
             $templates = $this->get_visa_task_templates( $visa_type );
@@ -6710,8 +6929,9 @@ Focus on practical advice while being careful not to state incorrect facts. When
         $new_applicants = $changes['new_applicants'] ?? '';
 
         if ( $new_applicants !== $old_applicants ) {
-            // Check for spouse
-            if ( in_array( $new_applicants, array( 'spouse', 'family' ), true ) ) {
+            // The profile stores alone | spouse | spouse_kids | kids_only.
+            // A couple with children is a spouse AND children.
+            if ( in_array( $new_applicants, array( 'spouse', 'spouse_kids', 'family' ), true ) ) {
                 $spouse_tasks = $this->get_spouse_task_templates();
                 foreach ( $spouse_tasks as $template ) {
                     if ( ! $this->task_exists( $project->id, $template['title'] ) ) {
@@ -6720,8 +6940,8 @@ Focus on practical advice while being careful not to state incorrect facts. When
                 }
             }
 
-            // Check for children (family includes children)
-            if ( 'family' === $new_applicants ) {
+            // Children, with or without a spouse
+            if ( in_array( $new_applicants, array( 'spouse_kids', 'kids_only', 'family' ), true ) ) {
                 $child_tasks = $this->get_children_task_templates();
                 foreach ( $child_tasks as $template ) {
                     if ( ! $this->task_exists( $project->id, $template['title'] ) ) {
@@ -6779,6 +6999,10 @@ Focus on practical advice while being careful not to state incorrect facts. When
         $move_date = $project->target_move_date;
         if ( empty( $move_date ) ) {
             $move_date = get_user_meta( $user_id, 'fra_target_move_date', true );
+        }
+
+        if ( isset( $template['days_offset'] ) ) {
+            $task->metadata = array( 'days_offset' => (int) $template['days_offset'], 'from_template' => true );
         }
 
         if ( ! empty( $move_date ) && isset( $template['days_offset'] ) ) {
@@ -7128,6 +7352,19 @@ Focus on practical advice while being careful not to state incorrect facts. When
                         'days_offset' => -90, // 3 months before move
                     ),
                 );
+                break;
+
+            case 'spouse_french':
+            case 'family':
+                // Joining a French spouse or family: the shared document work
+                // plus the marriage-certificate steps. No route-specific legal
+                // content is written here; the knowledge base does not yet
+                // hold a dedicated topic for these routes.
+                foreach ( $this->get_spouse_task_templates() as $template ) {
+                    if ( false !== stripos( $template['title'], 'marriage certificate' ) ) {
+                        $visa_specific_tasks[] = $template;
+                    }
+                }
                 break;
 
             default:

@@ -1,13 +1,15 @@
 import { useCallback, useRef, useState } from 'react';
 import { clsx } from 'clsx';
 import { AlertCircle, CheckCircle, File, Upload, X } from 'lucide-react';
-import { useUploadFile } from '@/hooks/useApi';
+import { useChecklist, useUploadFile } from '@/hooks/useApi';
 import type { FileCategory } from '@/types';
 
 interface FileUploadProps {
   projectId: number;
   onUploadComplete?: () => void;
   className?: string;
+  /** Pre-select a dossier item, e.g. when the upload was started from the checklist */
+  defaultItemId?: string;
 }
 
 interface UploadingFile {
@@ -17,6 +19,7 @@ interface UploadingFile {
   status: 'pending' | 'uploading' | 'success' | 'error';
   error?: string;
   category?: FileCategory;
+  itemId?: string;
 }
 
 const ALLOWED_TYPES = [
@@ -35,11 +38,14 @@ const ALLOWED_TYPES = [
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
-export default function FileUpload({ projectId, onUploadComplete, className }: FileUploadProps) {
+export default function FileUpload({ projectId, onUploadComplete, className, defaultItemId = '' }: FileUploadProps) {
   const [isDragOver, setIsDragOver] = useState(false);
   const [uploadQueue, setUploadQueue] = useState<UploadingFile[]>([]);
+  const [itemId, setItemId] = useState(defaultItemId);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadFile = useUploadFile(projectId);
+  const { data: dossier } = useChecklist('visa-application');
+  const dossierItems = dossier?.items ?? [];
 
   const validateFile = (file: File): string | null => {
     if (!ALLOWED_TYPES.includes(file.type)) {
@@ -61,7 +67,10 @@ export default function FileUpload({ projectId, onUploadComplete, className }: F
     try {
       await uploadFile.mutateAsync({
         file: upload.file,
-        data: { category: upload.category },
+        data: {
+          category: upload.category,
+          ...(upload.itemId ? { checklist_type: 'visa-application', item_id: upload.itemId } : {}),
+        },
       });
 
       setUploadQueue((prev) =>
@@ -102,6 +111,7 @@ export default function FileUpload({ projectId, onUploadComplete, className }: F
         progress: 0,
         status: error ? 'error' : 'pending',
         error: error || undefined,
+        itemId: itemId || undefined,
       };
     });
 
@@ -111,7 +121,7 @@ export default function FileUpload({ projectId, onUploadComplete, className }: F
     newUploads.filter((u) => u.status === 'pending').forEach((upload) => {
       processUpload(upload);
     });
-  }, [processUpload]);
+  }, [processUpload, itemId]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -156,6 +166,31 @@ export default function FileUpload({ projectId, onUploadComplete, className }: F
 
   return (
     <div className={className}>
+      {/* Which dossier item this upload proves. Attaching ticks the item. */}
+      {dossierItems.length > 0 && (
+        <label className="mb-3 flex flex-col gap-1 text-sm">
+          <span className="text-gray-700 font-medium">Attach to a dossier item</span>
+          <select
+            value={itemId}
+            onChange={(e) => setItemId(e.target.value)}
+            className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
+          >
+            <option value="">Not part of the visa dossier</option>
+            {dossierItems.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.title}
+                {item.status === 'complete' ? ' · done' : ''}
+              </option>
+            ))}
+          </select>
+          {itemId && (
+            <span className="text-xs text-gray-500">
+              The item is marked complete once the file is uploaded.
+            </span>
+          )}
+        </label>
+      )}
+
       {/* Drop zone */}
       <div
         onClick={handleClick}

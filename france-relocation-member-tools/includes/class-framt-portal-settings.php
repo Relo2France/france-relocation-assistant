@@ -157,7 +157,7 @@ class FRAMT_Portal_Settings {
         // Welcome Banner
         'welcome_banner_enabled'      => true,
         'welcome_banner_title'        => 'Welcome to Your Relocation Portal!',
-        'welcome_banner_message'      => 'This portal is your central hub for managing your move to France. Track your tasks, upload documents, access helpful guides, and stay organized throughout your relocation journey. Start by completing your profile and exploring the different sections in the sidebar.',
+        'welcome_banner_message'      => 'Start with the five questions under Decide: your route, where in France, what it takes, who is moving, and when. Everything after that is dated from your answers.',
         'welcome_banner_bg_color'     => '#ecfdf5',
         'welcome_banner_border_color' => '#10b981',
     );

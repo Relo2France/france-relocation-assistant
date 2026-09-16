@@ -354,6 +354,14 @@ export const userApi = {
 };
 
 // Files API
+/** Extra fields an upload can carry. Attaching to a dossier item marks that item complete. */
+export interface FileUploadData {
+  category?: FileCategory;
+  description?: string;
+  checklist_type?: string;
+  item_id?: string;
+}
+
 export const filesApi = {
   list: (projectId: number, filters?: FileFilters) => {
     const params = new URLSearchParams();
@@ -375,13 +383,17 @@ export const filesApi = {
   upload: (
     projectId: number,
     file: File,
-    data?: { category?: FileCategory; description?: string },
+    data?: FileUploadData,
     signal?: AbortSignal
   ) => {
     const formData = new FormData();
     formData.append('file', file);
     if (data?.category) formData.append('category', data.category);
     if (data?.description) formData.append('description', data.description);
+    if (data?.checklist_type && data?.item_id) {
+      formData.append('checklist_type', data.checklist_type);
+      formData.append('item_id', data.item_id);
+    }
 
     return apiFormDataFetch<PortalFile>(`/projects/${projectId}/files`, formData, signal);
   },

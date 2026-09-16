@@ -404,6 +404,10 @@ export interface ChecklistItem {
   status: ChecklistItemStatus;
   handled_own: boolean;
   notes: string;
+  /** Set by the server when the profile answers the item, e.g. passport validity */
+  note?: string;
+  /** The upload or generated document that completed this item */
+  file_id?: number | null;
   due_date?: string;
   completed_at?: string;
   sort_order: number;

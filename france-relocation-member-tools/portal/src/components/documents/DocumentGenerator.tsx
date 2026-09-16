@@ -69,7 +69,19 @@ export default function DocumentGenerator({
         }
       });
 
-      setAnswers((prev: Record<string, string>) => ({ ...prev, ...prefilled }));
+      // A profile with a legal name gets the real details; the member can
+      // still switch to placeholders. Anything less stays on placeholders.
+      if (questions.some((q) => q.id === 'privacy_choice')) {
+        const hasLegalName = Boolean(profile.legal_first_name && profile.legal_last_name);
+        prefilled.privacy_choice = hasLegalName ? 'actual' : 'placeholders';
+      }
+
+      setAnswers((prev: Record<string, string>) => ({
+        ...prev,
+        ...prefilled,
+        // A privacy choice the member already made stays theirs
+        ...(prev.privacy_choice ? { privacy_choice: prev.privacy_choice } : {}),
+      }));
     }
   }, [selectedType, profile]);
 

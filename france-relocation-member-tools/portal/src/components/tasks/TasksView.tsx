@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useDashboard, useTasks, useUpdateTaskStatus } from '@/hooks/useApi';
+import { JOURNEY, stageForTask } from '@/journey/journey';
 import { usePortalStore } from '@/store';
 import type { Task, TaskStatus } from '@/types';
 import FilterBar from './FilterBar';
@@ -12,7 +13,7 @@ export default function TasksView() {
   // View state
   const [view, setView] = useState<'list' | 'board'>('board');
   const [searchQuery, setSearchQuery] = useState('');
-  const { taskFilters, setTaskFilters, resetTaskFilters } = usePortalStore();
+  const { taskFilters, setTaskFilters, resetTaskFilters, setActiveView, setActiveStage } = usePortalStore();
 
   // Modal state
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -46,7 +47,12 @@ export default function TasksView() {
 
     // Stage filter
     if (taskFilters.stage) {
-      result = result.filter((task) => task.stage === taskFilters.stage);
+      const wanted = taskFilters.stage;
+      const project = dashboard?.project;
+      // A journey stage id, or a raw template/database stage from an "Open" link.
+      result = result.filter((task) =>
+        task.stage === wanted || (project ? stageForTask(task, project) === wanted : false)
+      );
     }
 
     // Status filter
@@ -60,7 +66,7 @@ export default function TasksView() {
     }
 
     return result;
-  }, [tasks, searchQuery, taskFilters]);
+  }, [tasks, searchQuery, taskFilters, dashboard?.project]);
 
   // Handlers
   const handleTaskClick = (task: Task) => {
@@ -98,15 +104,16 @@ export default function TasksView() {
     );
   }
 
-  const { project, stages } = dashboard;
+  const { project } = dashboard;
+  const journeyStages = JOURNEY.map((j) => ({ slug: j.id, title: `${j.number} · ${j.name}` }));
 
   return (
     <div className="p-6">
       {/* Page header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Tasks</h1>
+        <h1 className="font-display text-2xl font-semibold tracking-[-0.018em] text-ink">Tasks</h1>
         <p className="text-gray-600 mt-1">
-          Manage your relocation tasks across all stages
+          Every step, across all six stages
         </p>
       </div>
 
@@ -121,7 +128,7 @@ export default function TasksView() {
             filters={taskFilters}
             onFilterChange={setTaskFilters}
             onClearFilters={resetTaskFilters}
-            stages={stages}
+            stages={journeyStages}
             onAddTask={() => handleAddTask()}
             totalTasks={tasks.length}
             filteredTasks={filteredTasks.length}
@@ -141,6 +148,9 @@ export default function TasksView() {
         <TaskList
           tasks={filteredTasks}
           groupBy="stage"
+          resolveStage={(task) => stageForTask(task, project)}
+          stageTitles={Object.fromEntries(JOURNEY.map((j) => [j.id, `${j.number} · ${j.name}`]))}
+          stageOrder={JOURNEY.map((j) => j.id)}
           onTaskClick={handleTaskClick}
           onStatusChange={handleStatusChange}
           onAddTask={(stage) => handleAddTask(undefined, stage)}
@@ -167,12 +177,12 @@ export default function TasksView() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
             </svg>
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">No tasks yet</h3>
+          <h3 className="font-display text-lg font-semibold text-ink mb-2">No steps yet</h3>
           <p className="text-gray-600 mb-4">
-            Create your first task to start tracking your relocation progress
+            Your steps appear here once you set a route and a move date.
           </p>
-          <button onClick={() => handleAddTask()} className="btn btn-primary">
-            Create Your First Task
+          <button onClick={() => { setActiveStage('decide'); setActiveView('stage'); }} className="btn btn-primary">
+            Start with Decide
           </button>
         </div>
       )}
@@ -191,7 +201,7 @@ export default function TasksView() {
         projectId={project.id}
         defaultStatus={addTaskDefaults.status}
         defaultStage={addTaskDefaults.stage}
-        stages={stages}
+        stages={journeyStages}
       />
     </div>
   );

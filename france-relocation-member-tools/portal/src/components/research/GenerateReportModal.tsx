@@ -6,7 +6,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { AlertCircle, CheckCircle, Clock, FileText, Loader2, RefreshCw, Save, X } from 'lucide-react';
+import { AlertCircle, CheckCircle, Clock, FileText, Loader2, MapPin, RefreshCw, Save, X } from 'lucide-react';
 import { researchApi } from '@/api/client';
 import type { ResearchLevel } from '@/types';
 
@@ -45,6 +45,19 @@ function getPlaceholderMessage(reason: string | null): string {
       return 'This is a template report with generic information. Click "Generate AI Report" to get location-specific data.';
   }
 }
+
+const REPORT_SECTIONS = [
+  'Geography and landscape',
+  'Climate and weather patterns',
+  'Economy and job market',
+  'Housing and real estate',
+  'Food and wine culture',
+  'Culture and lifestyle',
+  'Quality of life: healthcare, education',
+  'Transport options',
+  'Environment and outdoor activities',
+  'Practical information',
+];
 
 export default function GenerateReportModal({
   isOpen,
@@ -181,16 +194,12 @@ export default function GenerateReportModal({
               <div className="bg-gray-50 rounded-lg p-4 mb-6 text-left">
                 <h4 className="font-medium text-gray-900 mb-2">Report includes:</h4>
                 <ul className="text-sm text-gray-600 space-y-1">
-                  <li>🗺️ Geography & landscape overview</li>
-                  <li>🌡️ Climate and weather patterns</li>
-                  <li>📈 Economy and job market</li>
-                  <li>🏠 Housing and real estate</li>
-                  <li>🍷 Food and wine culture</li>
-                  <li>🎭 Culture and lifestyle</li>
-                  <li>❤️ Quality of life (healthcare, education)</li>
-                  <li>🚆 Transportation options</li>
-                  <li>🌲 Environment and outdoor activities</li>
-                  <li>ℹ️ Practical information</li>
+                  {REPORT_SECTIONS.map((section) => (
+                    <li key={section} className="flex items-start gap-2">
+                      <MapPin className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-primary-600" aria-hidden="true" />
+                      <span>{section}</span>
+                    </li>
+                  ))}
                 </ul>
               </div>
 

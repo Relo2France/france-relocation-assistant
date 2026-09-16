@@ -254,7 +254,135 @@ class FRAMT_Documents {
         }
 
         $wpdb->insert($this->table_name, $document_data);
-        return $wpdb->insert_id ?: false;
+        $document_id = $wpdb->insert_id ?: false;
+
+        if ($document_id) {
+            $project_id = 0;
+            if (class_exists('FRAMT_Project')) {
+                $project = FRAMT_Project::get_or_create($user_id);
+                $project_id = $project && $project->id ? (int) $project->id : 0;
+            }
+            self::file_generated_document(
+                $user_id,
+                $project_id,
+                sanitize_key($data['type']),
+                sanitize_text_field($data['title']),
+                $data['content'],
+                (int) $document_id
+            );
+        }
+
+        return $document_id;
+    }
+
+    /**
+     * Which dossier item a generated document answers.
+     *
+     * Both document vocabularies are covered: the chat generator's
+     * (cover-letter, financial-statement, no-work-attestation,
+     * accommodation-letter) and the REST API's (attestation-hebergement,
+     * financial-attestation, lettre-motivation).
+     *
+     * @param string $type Document type key
+     * @return string Checklist item id, or '' when the document backs none
+     */
+    public static function checklist_item_for_type($type) {
+        $map = array(
+            'cover-letter'            => 'cover-letter',
+            'lettre-motivation'       => 'cover-letter',
+            'no-work-attestation'     => 'declaration-no-work',
+            'accommodation-letter'    => 'proof-accommodation',
+            'attestation-hebergement' => 'proof-accommodation',
+            'financial-statement'     => 'proof-funds',
+            'financial-attestation'   => 'proof-funds',
+        );
+        return $map[$type] ?? '';
+    }
+
+    /**
+     * Put a generated document into the member's file vault and tick the
+     * dossier item it answers. A letter the portal wrote is evidence like
+     * any upload, so it lives with the uploads instead of a separate list.
+     *
+     * @param int          $user_id     User ID
+     * @param int          $project_id  Project ID (0 when none)
+     * @param string       $type        Document type key
+     * @param string       $title       Document title
+     * @param string|array $content     Rendered HTML/text, or the generator's section array
+     * @param int          $document_id Row id in the documents table
+     * @return int File id, or 0 when nothing was written
+     */
+    public static function file_generated_document($user_id, $project_id, $type, $title, $content, $document_id = 0) {
+        global $wpdb;
+
+        if (!class_exists('FRAMT_Portal_Schema')) {
+            return 0;
+        }
+
+        $body = is_array($content) ? wp_json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) : (string) $content;
+        $is_html = !is_array($content) && false !== strpos($body, '<');
+        $ext = is_array($content) ? 'json' : ($is_html ? 'html' : 'txt');
+        $mime = is_array($content) ? 'application/json' : ($is_html ? 'text/html' : 'text/plain');
+
+        $upload_dir = wp_upload_dir();
+        $portal_dir = $upload_dir['basedir'] . '/fra-portal/' . (int) $user_id;
+        if (!file_exists($portal_dir)) {
+            wp_mkdir_p($portal_dir);
+            file_put_contents($portal_dir . '/.htaccess', "deny from all\n");
+            file_put_contents($portal_dir . '/index.php', '<?php // Silence is golden');
+        }
+
+        $filename = 'generated-' . sanitize_key($type) . '-' . gmdate('Ymd-His') . '.' . $ext;
+        $filepath = $portal_dir . '/' . $filename;
+        if (false === file_put_contents($filepath, $body)) {
+            return 0;
+        }
+
+        $table = FRAMT_Portal_Schema::get_table('files');
+        $inserted = $wpdb->insert(
+            $table,
+            array(
+                'project_id'    => (int) $project_id,
+                'user_id'       => (int) $user_id,
+                'task_id'       => null,
+                'filename'      => $filename,
+                'original_name' => sanitize_file_name($title . '.' . $ext),
+                'file_type'     => $ext,
+                'file_size'     => strlen($body),
+                'mime_type'     => $mime,
+                'file_path'     => $filepath,
+                'category'      => 'generated',
+                'visibility'    => 'private',
+                'metadata'      => wp_json_encode(array(
+                    'generated'      => true,
+                    'document_type'  => $type,
+                    'document_id'    => (int) $document_id,
+                    'checklist_type' => 'visa-application',
+                    'item_id'        => self::checklist_item_for_type($type),
+                )),
+            ),
+            array('%d', '%d', '%d', '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%s', '%s')
+        );
+
+        if (!$inserted) {
+            return 0;
+        }
+        $file_id = (int) $wpdb->insert_id;
+
+        $item_id = self::checklist_item_for_type($type);
+        if ($item_id) {
+            $meta_key = 'fra_checklist_visa-application';
+            $progress = get_user_meta($user_id, $meta_key, true) ?: array();
+            if (!isset($progress[$item_id]) || !is_array($progress[$item_id])) {
+                $progress[$item_id] = array();
+            }
+            $progress[$item_id]['completed'] = true;
+            $progress[$item_id]['completed_at'] = current_time('mysql');
+            $progress[$item_id]['file_id'] = $file_id;
+            update_user_meta($user_id, $meta_key, $progress);
+        }
+
+        return $file_id;
     }
 
     /**

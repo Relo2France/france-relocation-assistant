@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { clsx } from 'clsx';
 import Modal from '@/components/shared/Modal';
 import { useCreateTask } from '@/hooks/useApi';
-import type { StageProgress, TaskPriority, TaskStatus } from '@/types';
+import type { TaskPriority, TaskStatus } from '@/types';
 
 interface TaskFormProps {
   isOpen: boolean;
@@ -10,7 +10,7 @@ interface TaskFormProps {
   projectId: number;
   defaultStatus?: TaskStatus;
   defaultStage?: string;
-  stages?: StageProgress[];
+  stages?: { slug: string; title: string }[];
 }
 
 export default function TaskForm({
