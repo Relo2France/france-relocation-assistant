@@ -8468,7 +8468,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
      * @return void
      */
     private function refresh_template_tasks( $user_id, $project_id ) {
-        if ( ! $user_id || ! $project_id || '1' === get_user_meta( $user_id, 'framt_task_templates_v5', true ) ) {
+        if ( ! $user_id || ! $project_id || '1' === get_user_meta( $user_id, 'framt_task_templates_v6', true ) ) {
             return;
         }
         $visa    = (string) get_user_meta( $user_id, 'fra_visa_type', true );
@@ -8487,8 +8487,10 @@ Focus on practical advice while being careful not to state incorrect facts. When
                 $task->delete();
                 continue;
             }
-            // A shared step that moved stage or date: re-create it in place.
-            if ( isset( $current[ $task->title ] ) && ( ! empty( $meta['from_template'] ) || isset( $meta['days_offset'] ) ) ) {
+            // A template step that moved stage or date: re-create it in place.
+            // Titles are the identity of a step (a member never types one of
+            // these titles), so steps from before the metadata markers count too.
+            if ( isset( $current[ $task->title ] ) ) {
                 $tpl = $current[ $task->title ];
                 if ( (string) $task->stage !== (string) $tpl['stage'] || (int) ( $meta['days_offset'] ?? PHP_INT_MIN ) !== (int) $tpl['days_offset'] ) {
                     $task->delete();
@@ -8524,7 +8526,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                 $task->save();
             }
         }
-        update_user_meta( $user_id, 'framt_task_templates_v5', '1' );
+        update_user_meta( $user_id, 'framt_task_templates_v6', '1' );
     }
 
     /**
