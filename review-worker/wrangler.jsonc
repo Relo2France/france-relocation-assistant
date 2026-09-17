@@ -1,6 +1,9 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "relo2france-review",
+  // A topic review streams a 30k-token answer and up to 15 searches; the
+  // default 30 s of CPU is too close for comfort.
+  "limits": { "cpu_ms": 300000 },
   "main": "./src/index.ts",
   "compatibility_date": "2026-09-01",
   "observability": { "enabled": true },
