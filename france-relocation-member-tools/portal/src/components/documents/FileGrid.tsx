@@ -8,6 +8,8 @@ import {
   FileText,
   FolderOpen,
   Image,
+  CheckCircle2,
+  Flag,
   MoreVertical,
   Shield,
   Trash2,
@@ -224,11 +226,13 @@ function FileCardGrid({ file, onClick, onDownload, onDelete, onVerify }: FileIte
       <div className="p-3">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium text-gray-900 truncate" title={file.title || file.original_name}>
-              {file.title || file.original_name}
+            <p className="text-sm font-medium text-gray-900 truncate flex items-center gap-1.5" title={file.title || file.original_name}>
+              {file.check?.status === 'ok' ? <CheckCircle2 className="w-4 h-4 text-primary-500 flex-shrink-0" aria-label="Meets the requirement" /> : null}
+              {file.check?.status === 'flag' ? <Flag className="w-4 h-4 text-accent-500 flex-shrink-0" aria-label="Does not meet the requirement" /> : null}
+              <span className="truncate">{file.title || file.original_name}</span>
             </p>
-            <p className="text-xs text-gray-500 mt-0.5">
-              {file.file_size_formatted}
+            <p className={clsx('text-xs mt-0.5', file.check?.status === 'flag' ? 'text-accent-500' : 'text-gray-500')} title={file.check?.note || undefined}>
+              {file.check?.note ? file.check.note.split('. ')[0].replace(/\.$/, '') : file.file_size_formatted}
             </p>
           </div>
 

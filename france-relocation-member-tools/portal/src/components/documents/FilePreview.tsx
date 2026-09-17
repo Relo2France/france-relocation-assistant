@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { clsx } from 'clsx';
 import {
+  HelpCircle,
+  Flag,
+  CheckCircle2,
   Calendar,
   Download,
   ExternalLink,
@@ -15,7 +18,7 @@ import {
   X,
 } from 'lucide-react';
 import Modal from '@/components/shared/Modal';
-import { useDeleteFile, useDownloadFile, useUpdateFile } from '@/hooks/useApi';
+import { useDeleteFile, useDownloadFile, useRecogniseFile, useUpdateFile } from '@/hooks/useApi';
 import type { FileCategory, FileType, PortalFile } from '@/types';
 
 interface FilePreviewProps {
@@ -55,6 +58,7 @@ const categoryOptions: { value: FileCategory; label: string }[] = [
 ];
 
 export default function FilePreview({ file, isOpen, onClose, projectId }: FilePreviewProps) {
+  const recognise = useRecogniseFile();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editCategory, setEditCategory] = useState<FileCategory | null>(null);
@@ -222,6 +226,26 @@ export default function FilePreview({ file, isOpen, onClose, projectId }: FilePr
                   <User className="w-4 h-4 text-gray-400" />
                   <span className="text-gray-600">By:</span>
                   <span className="text-gray-900">{file.uploaded_by_name}</span>
+                </div>
+
+                {/* Requirement check */}
+                <div className="flex items-start gap-3 text-sm">
+                  {file.check?.status === 'ok' ? <CheckCircle2 className="w-4 h-4 text-primary-500 mt-0.5" /> : file.check?.status === 'flag' ? <Flag className="w-4 h-4 text-accent-500 mt-0.5" /> : <HelpCircle className="w-4 h-4 text-gray-400 mt-0.5" />}
+                  <div className="flex flex-col gap-1 min-w-0">
+                    <span className={clsx('font-semibold', file.check?.status === 'ok' ? 'text-primary-500' : file.check?.status === 'flag' ? 'text-accent-500' : 'text-gray-600')}>
+                      {file.check?.status === 'ok' ? 'Meets the requirement' : file.check?.status === 'flag' ? 'Does not meet the requirement' : file.document_type ? 'No requirement to check' : 'Not recognised yet'}
+                    </span>
+                    {file.check?.note ? <span className="text-gray-600 leading-snug">{file.check.note}</span> : null}
+                    <button
+                      type="button"
+                      onClick={() => recognise.mutate({ id: file.id, projectId })}
+                      disabled={recognise.isPending}
+                      className="text-xs font-semibold text-primary-500 hover:text-primary-700 self-start"
+                    >
+                      {recognise.isPending ? 'Reading…' : file.document_type ? 'Read it again' : 'Recognise this file'}
+                    </button>
+                    {recognise.data && !recognise.data.recognised ? <span className="text-xs text-accent-500">{recognise.data.reason}</span> : null}
+                  </div>
                 </div>
 
                 {/* Category */}

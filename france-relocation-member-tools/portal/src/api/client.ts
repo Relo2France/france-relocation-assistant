@@ -363,6 +363,10 @@ export interface FileUploadData {
 }
 
 export const filesApi = {
+  // Read a file and file it: category, title, the dossier item, the requirement check
+  recognise: (id: number) =>
+    apiFetch<{ recognised: boolean; reason?: string; file: PortalFile }>(`/files/${id}/recognise`, { method: 'POST' }),
+
   list: (projectId: number, filters?: FileFilters) => {
     const params = new URLSearchParams();
     if (filters?.category) params.set('category', filters.category);

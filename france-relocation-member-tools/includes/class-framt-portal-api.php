@@ -2613,7 +2613,15 @@ class FRAMT_Portal_API {
         if ( '' !== $guess['title'] ) {
             $meta['title'] = $guess['title'];
         }
+        $meta['fields'] = $guess['fields'] ?? array();
+        $check          = $this->check_document_requirements( $guess, (int) $file->user_id );
+        $meta['check']  = array_merge( $check, array( 'checked_at' => current_time( 'mysql' ) ) );
         $wpdb->update( $table, array( 'category' => $guess['category'], 'metadata' => wp_json_encode( $meta ) ), array( 'id' => $file->id ) );
+
+        // A passport's expiry belongs in the profile too; the dossier reads it there.
+        if ( 'passport' === $guess['document_type'] && ! empty( $guess['fields']['expiry_date'] ) && '' === (string) get_user_meta( (int) $file->user_id, 'fra_passport_expiry', true ) ) {
+            update_user_meta( (int) $file->user_id, 'fra_passport_expiry', $guess['fields']['expiry_date'] );
+        }
         if ( '' !== $guess['dossier_item'] ) {
             $this->complete_checklist_item_with_file( (int) $file->user_id, 'visa-application', $guess['dossier_item'], (int) $file->id );
         }
@@ -2662,7 +2670,8 @@ class FRAMT_Portal_API {
         $prompt = 'This file was uploaded by an American preparing a French long-stay visa dossier. Identify what it is. Respond with ONLY a JSON object: '
             . '{"document_type": one of ["passport","passport_photo","birth_certificate","marriage_certificate","bank_statement","proof_of_income","tax_return","health_insurance","lease_or_deed","accommodation_proof","employment_contract","work_authorisation","diploma","background_check","cover_letter","visa","other"], '
             . '"title": a short human name such as "Passport, Kevin Burrowbridge" or "Chase statement, August 2026" (no more than 60 characters; use the name on the document if visible), '
-            . '"confidence": "high"|"medium"|"low"}. Do not transcribe numbers such as passport or account numbers.';
+            . '"fields": {"expiry_date": "YYYY-MM-DD or null", "issue_date": "YYYY-MM-DD or null", "document_date": "YYYY-MM-DD or null (statement date, certificate issue date, policy start)", "coverage_end": "YYYY-MM-DD or null (insurance)", "coverage_amount_eur": number or null (insurance medical cover in euros, converted if stated in dollars), "apostille_present": true|false|null (an apostille certificate or stamp is visible), "translation_present": true|false|null (a sworn French translation is attached)}, '
+            . '"confidence": "high"|"medium"|"low"}. Read dates exactly as printed. Do not transcribe identifying numbers such as passport, account or policy numbers.';
 
         $body = FRAMT_AI_Client::message( array(
             'purpose'    => 'docs',
@@ -2699,13 +2708,122 @@ class FRAMT_Portal_API {
             'visa'                 => array( 'visa', 'visa-received' ),
         );
         $confidence = sanitize_key( (string) ( $json['confidence'] ?? 'medium' ) );
+        $fields     = is_array( $json['fields'] ?? null ) ? $json['fields'] : array();
+        $date       = function ( $v ) {
+            $v = is_string( $v ) ? trim( $v ) : '';
+            return preg_match( '/^\d{4}-\d{2}-\d{2}$/', $v ) ? $v : null;
+        };
         return array(
             'category'      => isset( $map[ $type ] ) ? $map[ $type ][0] : 'other',
             'document_type' => $type,
             'title'         => sanitize_text_field( (string) ( $json['title'] ?? '' ) ),
             'dossier_item'  => ( isset( $map[ $type ] ) && 'low' !== $confidence ) ? $map[ $type ][1] : '',
             'confidence'    => $confidence,
+            'fields'        => array(
+                'expiry_date'         => $date( $fields['expiry_date'] ?? null ),
+                'issue_date'          => $date( $fields['issue_date'] ?? null ),
+                'document_date'       => $date( $fields['document_date'] ?? null ),
+                'coverage_end'        => $date( $fields['coverage_end'] ?? null ),
+                'coverage_amount_eur' => is_numeric( $fields['coverage_amount_eur'] ?? null ) ? (float) $fields['coverage_amount_eur'] : null,
+                'apostille_present'   => isset( $fields['apostille_present'] ) && null !== $fields['apostille_present'] ? (bool) $fields['apostille_present'] : null,
+                'translation_present' => isset( $fields['translation_present'] ) && null !== $fields['translation_present'] ? (bool) $fields['translation_present'] : null,
+            ),
         );
+    }
+
+    /**
+     * Check a recognised document against the requirement it has to meet.
+     *
+     * The rules are the ones the dossier already states, applied to what was
+     * read off the document: a passport must run six months past the move,
+     * a statement must be recent, a certificate must carry its apostille,
+     * insurance must cover the stay and the minimum amount. Anything else
+     * is recorded without a verdict.
+     *
+     * @param array $guess   From classify_uploaded_document().
+     * @param int   $user_id Member, for the move date.
+     * @return array status => ok|flag|none, note => string
+     */
+    private function check_document_requirements( $guess, $user_id ) {
+        $f       = $guess['fields'] ?? array();
+        $type    = $guess['document_type'] ?? 'other';
+        $project = FRAMT_Project::get_or_create( $user_id );
+        $move    = $project && $project->target_move_date ? substr( (string) $project->target_move_date, 0, 10 ) : substr( (string) get_user_meta( $user_id, 'fra_target_move_date', true ), 0, 10 );
+        $today   = current_time( 'Y-m-d' );
+        $months  = function ( $from, $to ) {
+            return ( strtotime( $to ) - strtotime( $from ) ) / ( 86400 * 30.44 );
+        };
+
+        switch ( $type ) {
+            case 'passport':
+                if ( empty( $f['expiry_date'] ) ) {
+                    return array( 'status' => 'none', 'note' => 'Could not read the expiry date. Check it yourself: it must run six months past your move.' );
+                }
+                $expiry = $f['expiry_date'];
+                $pretty = date_i18n( 'j F Y', strtotime( $expiry ) );
+                if ( $move ) {
+                    $m = $months( $move, $expiry );
+                    if ( $m >= 6 ) {
+                        return array( 'status' => 'ok', 'note' => sprintf( 'Valid until %s, %d months after your move. The consulate wants six or more.', $pretty, (int) floor( $m ) ) );
+                    }
+                    if ( $m >= 0 ) {
+                        return array( 'status' => 'flag', 'note' => sprintf( 'Expires %s, only %d months after your move. The consulate wants six or more: renew it before you apply.', $pretty, (int) floor( $m ) ) );
+                    }
+                    return array( 'status' => 'flag', 'note' => sprintf( 'Expires %s, before your move. Renew it now.', $pretty ) );
+                }
+                $m = $months( $today, $expiry );
+                if ( $m >= 12 ) {
+                    return array( 'status' => 'ok', 'note' => sprintf( 'Valid until %s. Set your move date and this is checked against the six-month rule.', $pretty ) );
+                }
+                return array( 'status' => 'flag', 'note' => sprintf( 'Expires %s, under a year away. It must run six months past your move; renewing before you apply is safer.', $pretty ) );
+
+            case 'bank_statement':
+            case 'proof_of_income':
+                if ( empty( $f['document_date'] ) ) {
+                    return array( 'status' => 'none', 'note' => 'Could not read the statement date. Consulates want documents under three months old at submission.' );
+                }
+                $age = $months( $f['document_date'], $today );
+                if ( $age <= 3 ) {
+                    return array( 'status' => 'ok', 'note' => sprintf( 'Dated %s. Under three months old today; it must still be under three months old on the day you submit.', date_i18n( 'j F Y', strtotime( $f['document_date'] ) ) ) );
+                }
+                return array( 'status' => 'flag', 'note' => sprintf( 'Dated %s, more than three months ago. Consulates want statements under three months old at submission: get a fresh one.', date_i18n( 'j F Y', strtotime( $f['document_date'] ) ) ) );
+
+            case 'birth_certificate':
+            case 'marriage_certificate':
+                if ( true === ( $f['apostille_present'] ?? null ) ) {
+                    $note = 'Apostille seen.';
+                    if ( false === ( $f['translation_present'] ?? null ) ) {
+                        $note .= ' No sworn French translation attached yet; the consulate wants one.';
+                        return array( 'status' => 'flag', 'note' => $note );
+                    }
+                    return array( 'status' => 'ok', 'note' => $note . ( true === ( $f['translation_present'] ?? null ) ? ' Translation attached.' : '' ) );
+                }
+                if ( false === ( $f['apostille_present'] ?? null ) ) {
+                    return array( 'status' => 'flag', 'note' => 'No apostille seen. The consulate needs the apostilled copy, then a sworn French translation.' );
+                }
+                return array( 'status' => 'none', 'note' => 'Could not tell whether it carries an apostille. It needs one, plus a sworn French translation.' );
+
+            case 'health_insurance':
+                $amount = $f['coverage_amount_eur'] ?? null;
+                $end    = $f['coverage_end'] ?? null;
+                $problems = array();
+                if ( null !== $amount && $amount < 30000 ) {
+                    $problems[] = sprintf( 'medical cover reads €%s, below the €30,000 minimum', number_format( $amount ) );
+                }
+                if ( $end && $move && strtotime( $end ) < strtotime( $move . ' +12 months' ) ) {
+                    $problems[] = sprintf( 'cover ends %s, before the first year of your stay is over', date_i18n( 'j F Y', strtotime( $end ) ) );
+                }
+                if ( $problems ) {
+                    return array( 'status' => 'flag', 'note' => ucfirst( implode( '; ', $problems ) ) . '.' );
+                }
+                if ( null !== $amount || $end ) {
+                    return array( 'status' => 'ok', 'note' => trim( ( null !== $amount ? sprintf( 'Cover €%s. ', number_format( $amount ) ) : '' ) . ( $end ? sprintf( 'Runs to %s. ', date_i18n( 'j F Y', strtotime( $end ) ) ) : '' ) . 'Check it also excludes nothing pre-existing and includes repatriation.' ) );
+                }
+                return array( 'status' => 'none', 'note' => 'Could not read the cover amount or dates. It must cover €30,000 of medical costs, the whole stay, with repatriation.' );
+
+            default:
+                return array( 'status' => 'none', 'note' => '' );
+        }
     }
 
     /**
@@ -2720,6 +2838,7 @@ class FRAMT_Portal_API {
         return array(
             'title'         => ! empty( $metadata['title'] ) ? $metadata['title'] : $file->original_name,
             'document_type' => $metadata['document_type'] ?? null,
+            'check'         => isset( $metadata['check'] ) && is_array( $metadata['check'] ) ? array( 'status' => $metadata['check']['status'] ?? 'none', 'note' => $metadata['check']['note'] ?? '' ) : null,
             'id'            => (int) $file->id,
             'project_id'    => (int) $file->project_id,
             'user_id'       => (int) $file->user_id,

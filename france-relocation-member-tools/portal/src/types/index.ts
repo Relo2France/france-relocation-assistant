@@ -172,6 +172,8 @@ export interface PortalFile {
   /** What the file is, as the member named it or the portal recognised it. */
   title?: string;
   document_type?: string | null;
+  /** How the document measures up to the requirement it has to meet. */
+  check?: { status: 'ok' | 'flag' | 'none'; note: string } | null;
   id: number;
   project_id: number;
   user_id: number;

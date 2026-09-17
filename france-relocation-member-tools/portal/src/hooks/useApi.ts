@@ -368,6 +368,19 @@ export function useUpdateFile() {
   });
 }
 
+export function useRecogniseFile() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id }: { id: number; projectId: number }) => filesApi.recognise(id),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.files(variables.projectId) });
+      queryClient.invalidateQueries({ queryKey: ['checklists'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.dashboard });
+    },
+  });
+}
+
 export function useDeleteFile() {
   const queryClient = useQueryClient();
 
