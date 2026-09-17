@@ -7624,7 +7624,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
      * @return void
      */
     private function backfill_task_persons( $user_id, $project_id ) {
-        if ( ! $user_id || ! $project_id || '1' === get_user_meta( $user_id, 'framt_task_backfill_v2', true ) ) {
+        if ( ! $user_id || ! $project_id || '1' === get_user_meta( $user_id, 'framt_task_backfill_v3', true ) ) {
             return;
         }
         $by_title = array();
@@ -7639,8 +7639,9 @@ Focus on practical advice while being careful not to state incorrect facts. When
         $seen = array();
         foreach ( FRAMT_Task::get_by_project( $project_id, array() ) as $task ) {
             $metadata = is_array( $task->metadata ) ? $task->metadata : array();
-            $is_template = ! empty( $metadata['from_template'] ) || isset( $by_title[ $task->title ] );
-            if ( $is_template && 'todo' === $task->status ) {
+            // Generated tasks share a title; a member never types the same
+            // title twice on purpose. Keep the oldest still-to-do copy.
+            if ( 'todo' === $task->status ) {
                 if ( isset( $seen[ $task->title ] ) ) {
                     $task->delete();
                     continue;
@@ -7654,7 +7655,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
             $task->metadata     = $metadata;
             $task->save();
         }
-        update_user_meta( $user_id, 'framt_task_backfill_v2', '1' );
+        update_user_meta( $user_id, 'framt_task_backfill_v3', '1' );
     }
 
     /**
