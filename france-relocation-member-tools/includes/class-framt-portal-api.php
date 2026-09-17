@@ -2330,6 +2330,9 @@ class FRAMT_Portal_API {
             'image/jpeg',
             'image/png',
             'image/gif',
+            'image/webp',
+            'image/heic',
+            'image/heif',
             'application/msword',
             'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             'application/vnd.ms-excel',
@@ -2394,6 +2397,25 @@ class FRAMT_Portal_API {
         }
 
         // Get file type from extension
+        // Phones hand over HEIC; browsers cannot show it and the model cannot read
+        // it. Convert to JPEG when the server can (WordPress.com can), and keep
+        // the original only if it cannot.
+        if ( in_array( $mime_type, array( 'image/heic', 'image/heif', 'image/webp' ), true ) && function_exists( 'wp_get_image_editor' ) ) {
+            $editor = wp_get_image_editor( $filepath );
+            if ( ! is_wp_error( $editor ) ) {
+                $jpeg_path = preg_replace( '/\.[A-Za-z0-9]+$/', '', $filepath ) . '.jpg';
+                $saved     = $editor->save( $jpeg_path, 'image/jpeg' );
+                if ( ! is_wp_error( $saved ) && ! empty( $saved['path'] ) && file_exists( $saved['path'] ) ) {
+                    @unlink( $filepath );
+                    $filepath  = $saved['path'];
+                    $filename  = basename( $filepath );
+                    $mime_type  = 'image/jpeg';
+                    $ext        = 'jpg';
+                    $uploaded_file['name'] = preg_replace( '/\.[A-Za-z0-9]+$/', '', $uploaded_file['name'] ) . '.jpg';
+                }
+            }
+        }
+
         $file_type = $this->get_file_type_from_extension( $ext );
 
         // Insert into database
