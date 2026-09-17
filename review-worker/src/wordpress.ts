@@ -8,7 +8,7 @@ import type { Env, ReviewResult, Topic, WebSource } from './types';
 
 function authHeaders(env: Env): HeadersInit {
   return {
-    authorization: `Bearer ${env.WP_SHARED_SECRET}`,
+    authorization: `Bearer ${(env.WP_SHARED_SECRET ?? '').trim()}`,
     'content-type': 'application/json',
   };
 }

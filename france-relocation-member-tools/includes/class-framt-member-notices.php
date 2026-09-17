@@ -89,6 +89,7 @@ class FRAMT_Member_Notices {
         $id       = 'n' . time() . substr(md5($category . $topic . wp_rand()), 0, 6);
         $drafts[$id] = array(
             'id'        => $id,
+            'token'     => wp_generate_password(32, false, false),
             'created'   => current_time('mysql'),
             'category'  => (string) $category,
             'topic'     => (string) $topic,
@@ -272,19 +273,26 @@ class FRAMT_Member_Notices {
         }
         $id     = sanitize_key($_GET['framt_notice']);
         $action = sanitize_key($_GET['framt_notice_action']);
-        if (!wp_verify_nonce($_GET['_wpnonce'] ?? '', 'framt_notice_' . $id)) {
-            wp_die('That link has expired. Open Member Messages in wp-admin and approve the notice there.');
+        $token  = sanitize_text_field(wp_unslash($_GET['framt_notice_token'] ?? ''));
+        $drafts = $this->drafts();
+        if (!isset($drafts[$id]) || '' === $token || !hash_equals((string) ($drafts[$id]['token'] ?? ''), $token)) {
+            wp_die('That link is not valid. Open Member Messages in wp-admin and handle the notice there.');
         }
-        $result = 'approve' === $action ? $this->approve($id) : ($this->discard($id) ? 'discarded' : 'missing');
+        if ('approve' === $action) {
+            $result = $this->approve($id);
+        } elseif ('discard' === $action) {
+            $result = $this->discard($id) ? 'discarded' : 'missing';
+        } else {
+            $result = 'missing';
+        }
         wp_safe_redirect(add_query_arg(array('page' => 'fra-messages', 'framt_notice_done' => is_int($result) ? 'sent-' . $result : $result), admin_url('admin.php')));
         exit;
     }
 
     public function action_url($id, $action) {
-        return wp_nonce_url(
-            add_query_arg(array('page' => 'fra-messages', 'framt_notice' => $id, 'framt_notice_action' => $action), admin_url('admin.php')),
-            'framt_notice_' . $id
-        );
+        $drafts = $this->drafts();
+        $token  = (string) ($drafts[$id]['token'] ?? '');
+        return add_query_arg(array('page' => 'fra-messages', 'framt_notice' => $id, 'framt_notice_action' => $action, 'framt_notice_token' => $token), admin_url('admin.php'));
     }
 
     public function admin_notice() {
@@ -294,7 +302,7 @@ class FRAMT_Member_Notices {
         $done = sanitize_text_field($_GET['framt_notice_done']);
         if (0 === strpos($done, 'sent-')) {
             $n = (int) substr($done, 5);
-            $text = $n < 0 ? 'That notice was already handled.' : sprintf('Notice sent to %d member%s.', $n, 1 === $n ? '' : 's');
+            $text = $n < 0 ? 'That notice was already handled, or the messages component is not loaded.' : sprintf('Notice sent to %d member%s.', $n, 1 === $n ? '' : 's');
         } elseif ('discarded' === $done) {
             $text = 'Notice discarded.';
         } else {
@@ -356,7 +364,7 @@ class FRAMT_Member_Notices {
         }
         $html = FRAMT_Messages::render_email(
             1 === $n ? 'One notice to approve' : $n . ' notices to approve',
-            'Knowledge-base changes drafted into member notices. Approve links work for 24 hours; after that, use the messages page.',
+            'Knowledge-base changes drafted into member notices. The links work while you are signed in to wp-admin; the messages page has the same buttons.',
             $body,
             'Open Member Messages',
             admin_url('admin.php?page=fra-messages')

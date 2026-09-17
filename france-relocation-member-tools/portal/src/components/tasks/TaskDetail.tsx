@@ -186,7 +186,7 @@ export default function TaskDetail({ task, isOpen, onClose }: TaskDetailProps) {
       <div className="space-y-4">
         {/* Status */}
         <PropertyRow icon={Circle} label="Status">
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {statusOptions.map((option) => {
               const Icon = option.icon;
               return (
@@ -194,10 +194,10 @@ export default function TaskDetail({ task, isOpen, onClose }: TaskDetailProps) {
                   key={option.value}
                   onClick={() => handleStatusChange(option.value)}
                   className={clsx(
-                    'px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5',
+                    'px-3 py-1.5 rounded-full text-sm font-medium transition-colors inline-flex items-center gap-1.5 whitespace-nowrap',
                     task.status === option.value
-                      ? 'bg-gray-900 text-white'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      ? 'bg-primary-500 text-white'
+                      : 'bg-card-2 text-gray-600 hover:bg-primary-100'
                   )}
                 >
                   <Icon className={clsx('w-4 h-4', task.status === option.value ? 'text-white' : option.color)} />
@@ -210,16 +210,16 @@ export default function TaskDetail({ task, isOpen, onClose }: TaskDetailProps) {
 
         {/* Priority */}
         <PropertyRow icon={Flag} label="Priority">
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {priorityOptions.map((option) => (
               <button
                 key={option.value}
                 onClick={() => handlePriorityChange(option.value)}
                 className={clsx(
-                  'px-3 py-1.5 rounded-lg text-sm font-medium transition-colors',
+                  'px-3 py-1.5 rounded-full text-sm font-medium transition-colors whitespace-nowrap',
                   task.priority === option.value
-                    ? option.color + ' ring-2 ring-offset-1 ring-gray-400'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    ? option.color + ' ring-1 ring-primary-500'
+                    : 'bg-card-2 text-gray-600 hover:bg-primary-100'
                 )}
               >
                 {option.label}

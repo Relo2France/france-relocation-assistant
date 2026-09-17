@@ -233,7 +233,7 @@ class FRA_Review_API {
         $users = $wpdb->get_col($wpdb->prepare(
             "SELECT user_id FROM {$wpdb->prefix}framt_research_report_links WHERE report_id = %d AND saved_at > %s",
             $report_id,
-            gmdate('Y-m-d H:i:s', time() - DAY_IN_SECONDS)
+            date('Y-m-d H:i:s', current_time('timestamp') - DAY_IN_SECONDS)
         ));
         if (empty($users)) {
             return;
@@ -866,6 +866,10 @@ class FRA_Review_API {
 
         $clean = array();
         foreach (array_slice($value, 0, 50) as $source) {
+            if (is_string($source)) {
+                // The gap drafter sends plain descriptions, dated inline.
+                $source = array('name' => $source, 'type' => 'forum', 'date' => '');
+            }
             if (!is_array($source)) {
                 continue;
             }

@@ -231,6 +231,9 @@ export function useUpdateProject() {
     onSuccess: (updatedProject) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.dashboard });
       queryClient.invalidateQueries({ queryKey: queryKeys.projects });
+      // The server re-dates every template task from the new move date.
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['checklists'] });
       queryClient.setQueryData(queryKeys.project(updatedProject.id), updatedProject);
     },
   });

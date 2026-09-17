@@ -19,6 +19,19 @@ $is_logged_in = is_user_logged_in();
 $current_user = $is_logged_in ? wp_get_current_user() : null;
 $login_error = '';
 
+// A member with an account of their own joins a household only by using
+// the link from the invitation, signed in as themselves.
+if ( $is_logged_in && ! empty( $_GET['accept_household'] ) ) {
+    $pending = get_user_meta( $current_user->ID, 'framt_household_invite', true );
+    $token   = sanitize_text_field( wp_unslash( $_GET['accept_household'] ) );
+    if ( is_array( $pending ) && ! empty( $pending['token'] ) && hash_equals( (string) $pending['token'], $token ) ) {
+        update_user_meta( $current_user->ID, 'framt_household_owner', (int) $pending['owner_id'] );
+        delete_user_meta( $current_user->ID, 'framt_household_invite' );
+    }
+    wp_safe_redirect( home_url( '/portal/' ) );
+    exit;
+}
+
 // Check for membership (optional - can be configured) - only if logged in
 $require_membership = get_option( 'framt_portal_require_membership', false );
 if ( $is_logged_in && $require_membership && class_exists( 'MeprUser' ) ) {

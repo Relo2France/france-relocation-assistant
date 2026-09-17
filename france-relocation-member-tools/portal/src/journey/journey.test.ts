@@ -89,3 +89,17 @@ describe('progress and grouping', () => {
     expect(groups[0].tasks[0].id).toBe(2);
   });
 });
+
+
+describe('stageForTask, journey vocabulary', () => {
+  const project = { target_move_date: '2027-03-01' };
+  it('journey ids pass through unchanged', () => {
+    for (const id of ['decide', 'prepare', 'apply', 'move', 'arrive', 'settle'] as const) {
+      expect(stageForTask({ stage: id, due_date: null }, project)).toBe(id);
+    }
+  });
+  it('keeps a moving task due on move day in Move', () => {
+    expect(stageForTask({ stage: 'moving', due_date: '2027-03-01' }, project)).toBe('move');
+    expect(stageForTask({ stage: 'moving', due_date: '2027-03-02' }, project)).toBe('arrive');
+  });
+});

@@ -189,7 +189,7 @@ export default function TasksView() {
 
       {/* Task detail drawer */}
       <TaskDetail
-        task={selectedTask}
+        task={selectedTask ? (tasks?.find((t) => t.id === selectedTask.id) ?? selectedTask) : null}
         isOpen={showTaskDetail}
         onClose={handleCloseTaskDetail}
       />

@@ -44,7 +44,7 @@ export default function DeadlinesView() {
   }
 
   const openStage = (id: string) => { setActiveStage(id); setActiveView('stage'); };
-  const openTask = (task: Task) => { setTaskFilters({ stage: task.stage }); setActiveView('tasks'); };
+  const openTask = (task: Task) => { setTaskFilters({ stage: project ? stageForTask(task, project) : task.stage }); setActiveView('tasks'); };
 
   const Row = ({ task }: { task: Task }) => {
     const done = task.status === 'done';

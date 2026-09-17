@@ -542,9 +542,10 @@ function PriorityDot({ priority }: { priority: string }) {
 }
 
 function formatShortDate(dateStr: string): string {
-  const date = new Date(dateStr);
-  const today = new Date();
-  const diff = Math.ceil((date.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  // Calendar-day arithmetic: both sides at UTC midnight.
+  const date = new Date(`${dateStr.slice(0, 10)}T00:00:00Z`);
+  const today = new Date(`${new Date().toLocaleDateString('en-CA')}T00:00:00Z`);
+  const diff = Math.round((date.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
   if (diff === 0) return 'Today';
   if (diff === 1) return 'Tomorrow';

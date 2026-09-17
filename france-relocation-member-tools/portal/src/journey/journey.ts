@@ -140,8 +140,13 @@ export function stageForTask(
   const due = parseDate(task.due_date);
   const daysFromMove = move && due ? daysBetween(move, due) : null;
 
-  // After the move, the date decides regardless of vocabulary.
-  if (daysFromMove !== null && daysFromMove >= 0) {
+  // A task already carrying a journey stage (created from the Tasks page)
+  // is where it says it is.
+  if (JOURNEY.some((j) => j.id === stage)) return stage as JourneyStageId;
+
+  // After the move, the date decides regardless of vocabulary. Move day
+  // itself still belongs to Move: the flight is not an arrival step.
+  if (daysFromMove !== null && daysFromMove > 0) {
     return daysFromMove <= ARRIVAL_WINDOW_DAYS ? 'arrive' : 'settle';
   }
 
@@ -209,7 +214,10 @@ export function stageWhen(stage: JourneyStageId, project: Pick<Project, 'target_
   const month = (d: Date) => d.toLocaleString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' }).toUpperCase();
   const shift = (days: number) => new Date(move.getTime() + days * 86_400_000);
   switch (stage) {
-    case 'decide': return `${Math.max(1, Math.round(daysBetween(now, move) / 30))} MONTHS OUT`;
+    case 'decide': {
+      const months = Math.max(1, Math.round(daysBetween(now, move) / 30));
+      return `${months} ${months === 1 ? 'MONTH' : 'MONTHS'} OUT`;
+    }
     case 'prepare': return month(shift(-180));
     case 'apply': return month(shift(-90));
     case 'move': return month(move);

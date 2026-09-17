@@ -42,10 +42,9 @@ export default function StageView() {
   // The person switcher narrows to that person's steps: the partner's, or a
   // child's (children share their steps unless one is named on a task).
   const forPerson = (t: Task) => {
-    if (person === 'me') return true;
-    const m = members.find((x) => x.id === person);
     const p = personOf(t);
-    if (!m) return true;
+    const m = person === 'me' ? undefined : members.find((x) => x.id === person);
+    if (person === 'me' || !m) return members.length === 0 || p === 'you' || p === '';
     if (m.relationship === 'spouse') return p === 'partner';
     return p === 'children' || p === `child:${m.id}`;
   };
@@ -140,7 +139,7 @@ export default function StageView() {
                         <span className={clsx('font-mono text-[0.7rem]', task.is_overdue && !done ? 'text-accent-500' : 'text-gray-500')}>{dueLabel(task)}</span>
                         <AssignSelect task={task} household={household} />
                         <button
-                          onClick={() => { setTaskFilters({ stage: task.stage }); setActiveView('tasks'); }}
+                          onClick={() => { setTaskFilters({ stage: stage.id }); setActiveView('tasks'); }}
                           className="text-sm font-semibold text-primary-500 hover:text-primary-700"
                         >
                           Open

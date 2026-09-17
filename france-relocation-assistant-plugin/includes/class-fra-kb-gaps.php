@@ -453,6 +453,7 @@ class FRA_KB_Gaps {
         }
 
         $gaps[$id]['last_error'] = substr((string) $message, 0, 300);
+        $gaps[$id]['last_failed_at'] = current_time('mysql');
         update_option(self::GAPS_OPTION, $gaps, false);
 
         return true;
@@ -467,6 +468,14 @@ class FRA_KB_Gaps {
         $ready = array();
 
         foreach (self::get_all('open') as $id => $gap) {
+            // A gap that went stale, or failed within the last day, waits its
+            // turn rather than taking one of the day's slots again.
+            if (!empty($gap['stale'])) {
+                continue;
+            }
+            if (!empty($gap['last_error']) && !empty($gap['last_failed_at']) && strtotime($gap['last_failed_at']) > time() - DAY_IN_SECONDS) {
+                continue;
+            }
             if ('raised' === $gap['type']) {
                 $threshold = self::RAISED_THRESHOLD;
             } elseif ('depth' === $gap['type']) {

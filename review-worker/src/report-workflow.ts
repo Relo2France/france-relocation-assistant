@@ -28,7 +28,7 @@ async function deliver(env: Env, reportId: number, body: Record<string, unknown>
   const url = `${env.WP_BASE_URL}/wp-json/fra/v1/review/reports/${reportId}`;
   const response = await fetch(url, {
     method: 'POST',
-    headers: { authorization: `Bearer ${env.WP_SHARED_SECRET}`, 'content-type': 'application/json' },
+    headers: { authorization: `Bearer ${(env.WP_SHARED_SECRET ?? '').trim()}`, 'content-type': 'application/json' },
     body: JSON.stringify(body),
   });
   if (!response.ok) {

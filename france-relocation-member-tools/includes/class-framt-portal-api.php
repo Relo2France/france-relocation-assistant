@@ -293,7 +293,7 @@ class FRAMT_Portal_API {
                 array(
                     'methods'             => 'DELETE',
                     'callback'            => array( $this, 'delete_project' ),
-                    'permission_callback' => array( $this, 'check_project_permission' ),
+                    'permission_callback' => array( $this, 'check_project_owner_permission' ),
                 ),
             )
         );
@@ -570,7 +570,7 @@ class FRAMT_Portal_API {
             array(
                 'methods'             => 'POST',
                 'callback'            => array( $this, 'reset_profile' ),
-                'permission_callback' => array( $this, 'check_member_permission' ),
+                'permission_callback' => array( $this, 'check_owner_permission' ),
             )
         );
 
@@ -600,7 +600,7 @@ class FRAMT_Portal_API {
                 array(
                     'methods'             => 'POST',
                     'callback'            => array( $this, 'create_family_member' ),
-                    'permission_callback' => array( $this, 'check_family_feature_permission' ),
+                    'permission_callback' => array( $this, 'check_family_owner_permission' ),
                 ),
             )
         );
@@ -617,12 +617,12 @@ class FRAMT_Portal_API {
                 array(
                     'methods'             => 'PUT',
                     'callback'            => array( $this, 'update_family_member' ),
-                    'permission_callback' => array( $this, 'check_family_feature_permission' ),
+                    'permission_callback' => array( $this, 'check_family_owner_permission' ),
                 ),
                 array(
                     'methods'             => 'DELETE',
                     'callback'            => array( $this, 'delete_family_member' ),
-                    'permission_callback' => array( $this, 'check_family_feature_permission' ),
+                    'permission_callback' => array( $this, 'check_family_owner_permission' ),
                 ),
             )
         );
@@ -1801,7 +1801,11 @@ class FRAMT_Portal_API {
             $task->stage = sanitize_key( $params['stage'] );
         }
         if ( isset( $params['status'] ) ) {
-            $task->status = sanitize_key( $params['status'] );
+            $status = sanitize_key( $params['status'] );
+            if ( ! isset( FRAMT_Task::$statuses[ $status ] ) ) {
+                return new WP_Error( 'rest_bad_status', 'Unknown task status.', array( 'status' => 400 ) );
+            }
+            $task->status = $status;
             if ( 'done' === $task->status && ! $task->completed_at ) {
                 $task->completed_at = current_time( 'mysql' );
             } elseif ( 'done' !== $task->status ) {
@@ -1927,7 +1931,20 @@ class FRAMT_Portal_API {
         $order  = $params['order'] ?? array();
 
         if ( ! empty( $order ) && is_array( $order ) ) {
-            FRAMT_Task::bulk_update_order( $order );
+            global $wpdb;
+            $ids = array_map( 'intval', array_keys( $order ) );
+            if ( $ids ) {
+                $placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
+                $mine = $wpdb->get_col( $wpdb->prepare(
+                    "SELECT id FROM {$wpdb->prefix}framt_tasks WHERE user_id = %d AND id IN ($placeholders)",
+                    array_merge( array( $this->acting_user_id() ), $ids )
+                ) );
+                $mine  = array_map( 'intval', (array) $mine );
+                $order = array_filter( $order, function ( $id ) use ( $mine ) { return in_array( (int) $id, $mine, true ); }, ARRAY_FILTER_USE_KEY );
+            }
+            if ( $order ) {
+                FRAMT_Task::bulk_update_order( $order );
+            }
         }
 
         return rest_ensure_response( array( 'success' => true ) );
@@ -2383,7 +2400,10 @@ class FRAMT_Portal_API {
 
         // Generate unique filename
         $ext      = pathinfo( $uploaded_file['name'], PATHINFO_EXTENSION );
-        $filename = wp_unique_filename( $portal_dir, sanitize_file_name( $uploaded_file['name'] ) );
+        // Stored under a random name: the uploads folder is public on hosts
+        // that ignore .htaccess, and a guessable name would serve the file
+        // to anyone. The member never sees this name; original_name does.
+        $filename = wp_generate_password( 24, false, false ) . '.' . strtolower( $ext );
         $filepath = $portal_dir . '/' . $filename;
 
         // Move file
@@ -2413,12 +2433,13 @@ class FRAMT_Portal_API {
         if ( in_array( $mime_type, array( 'image/heic', 'image/heif', 'image/webp' ), true ) && function_exists( 'wp_get_image_editor' ) ) {
             $editor = wp_get_image_editor( $filepath );
             if ( ! is_wp_error( $editor ) ) {
-                $jpeg_path = preg_replace( '/\.[A-Za-z0-9]+$/', '', $filepath ) . '.jpg';
+                $jpeg_path = $portal_dir . '/' . wp_generate_password( 24, false, false ) . '.jpg';
                 $saved     = $editor->save( $jpeg_path, 'image/jpeg' );
                 if ( ! is_wp_error( $saved ) && ! empty( $saved['path'] ) && file_exists( $saved['path'] ) ) {
                     @unlink( $filepath );
                     $filepath  = $saved['path'];
                     $filename  = basename( $filepath );
+                    $uploaded_file['size'] = (int) filesize( $filepath );
                     $mime_type  = 'image/jpeg';
                     $ext        = 'jpg';
                     $uploaded_file['name'] = preg_replace( '/\.[A-Za-z0-9]+$/', '', $uploaded_file['name'] ) . '.jpg';
@@ -3402,15 +3423,27 @@ class FRAMT_Portal_API {
         $old_applicants      = get_user_meta( $user_id, 'fra_applicants', true );
         $old_target_move_date = get_user_meta( $user_id, 'fra_target_move_date', true );
 
-        // Update each field if provided
+        // A move date has to be a date; everything downstream parses it.
+        if ( array_key_exists( 'target_move_date', $params ) && '' !== (string) $params['target_move_date'] && null !== $params['target_move_date']
+            && ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', (string) $params['target_move_date'] ) ) {
+            return new WP_Error( 'invalid_move_date', 'The move date must be a calendar date (YYYY-MM-DD).', array( 'status' => 400 ) );
+        }
+
+        // Update each field if provided. Only genuine counts are stored as
+        // numbers; a passport number or a postcode keeps its leading zeros.
+        // A null or empty value clears the field.
+        $integer_fields = array( 'num_children' );
         foreach ( $allowed_fields as $field ) {
-            if ( isset( $params[ $field ] ) ) {
+            if ( array_key_exists( $field, $params ) ) {
                 $value = $params[ $field ];
-                // Sanitize based on type
-                if ( is_numeric( $value ) ) {
-                    $value = intval( $value );
-                } elseif ( is_string( $value ) ) {
-                    $value = sanitize_text_field( $value );
+                if ( null === $value || '' === $value ) {
+                    $value = '';
+                } elseif ( in_array( $field, $integer_fields, true ) ) {
+                    $value = (int) $value;
+                } elseif ( is_scalar( $value ) ) {
+                    $value = sanitize_text_field( (string) $value );
+                } else {
+                    continue;
                 }
                 update_user_meta( $user_id, 'fra_' . $field, $value );
             }
@@ -3442,6 +3475,9 @@ class FRAMT_Portal_API {
 
         // The rest of the profile drives tasks too: housing, work, money.
         $this->generate_profile_tasks( $user_id );
+
+        // And tasks whose reason has gone go with it.
+        $this->reconcile_conditional_tasks( $user_id );
 
         // Who is moving becomes a file per person on the Family plan.
         $this->sync_family_from_profile( $user_id );
@@ -3924,7 +3960,7 @@ class FRAMT_Portal_API {
         $task_id = $request->get_param( 'task_id' );
         $task    = new FRAMT_Task( $task_id );
 
-        $checklist = $task->meta['checklist'] ?? array();
+        $checklist = $task->metadata['checklist'] ?? array();
 
         return rest_ensure_response( $checklist );
     }
@@ -3948,7 +3984,7 @@ class FRAMT_Portal_API {
             );
         }
 
-        $checklist = $task->meta['checklist'] ?? array();
+        $checklist = $task->metadata['checklist'] ?? array();
 
         $new_item = array(
             'id'        => wp_generate_uuid4(),
@@ -3958,7 +3994,7 @@ class FRAMT_Portal_API {
         );
 
         $checklist[] = $new_item;
-        $task->meta['checklist'] = $checklist;
+        $task->metadata['checklist'] = $checklist;
         $task->save();
 
         return rest_ensure_response( $new_item );
@@ -3976,7 +4012,7 @@ class FRAMT_Portal_API {
         $params  = $request->get_json_params();
         $task    = new FRAMT_Task( $task_id );
 
-        $checklist = $task->meta['checklist'] ?? array();
+        $checklist = $task->metadata['checklist'] ?? array();
         $found     = false;
 
         foreach ( $checklist as &$item ) {
@@ -4005,7 +4041,7 @@ class FRAMT_Portal_API {
             );
         }
 
-        $task->meta['checklist'] = $checklist;
+        $task->metadata['checklist'] = $checklist;
         $task->save();
 
         return rest_ensure_response( $item );
@@ -4022,7 +4058,7 @@ class FRAMT_Portal_API {
         $item_id = $request->get_param( 'item_id' );
         $task    = new FRAMT_Task( $task_id );
 
-        $checklist = $task->meta['checklist'] ?? array();
+        $checklist = $task->metadata['checklist'] ?? array();
         $new_checklist = array();
         $found = false;
 
@@ -4042,7 +4078,7 @@ class FRAMT_Portal_API {
             );
         }
 
-        $task->meta['checklist'] = $new_checklist;
+        $task->metadata['checklist'] = $new_checklist;
         $task->save();
 
         return rest_ensure_response( array( 'deleted' => true ) );
@@ -7353,7 +7389,11 @@ Focus on practical advice while being careful not to state incorrect facts. When
      * @return string Due date in Y-m-d format
      */
     private function calculate_due_date( $move_date, $days_offset ) {
-        $date = new DateTime( $move_date );
+        try {
+            $date = new DateTime( substr( (string) $move_date, 0, 10 ) );
+        } catch ( Exception $e ) {
+            return null;
+        }
         $date->modify( sprintf( '%+d days', $days_offset ) );
 
         // Don't set due dates in the past
@@ -7554,6 +7594,85 @@ Focus on practical advice while being careful not to state incorrect facts. When
             $task->save();
         }
         update_user_meta( $user_id, 'framt_person_backfill', '1' );
+    }
+
+    /**
+     * Remove template tasks whose trigger the profile no longer has.
+     *
+     * Pets, a partner, children, buying, remote work, retirement: each adds
+     * tasks when it appears in the profile, and each takes them away when it
+     * disappears. Only tasks still to do are removed; something the member
+     * has done stays in the record.
+     *
+     * @param int $user_id Member.
+     * @return int Tasks removed.
+     */
+    private function reconcile_conditional_tasks( $user_id ) {
+        global $wpdb;
+        $project = FRAMT_Project::get_or_create( $user_id );
+        if ( ! $project || ! $project->id ) {
+            return 0;
+        }
+        $who      = (string) get_user_meta( $user_id, 'fra_applicants', true );
+        $has_pets = ! in_array( (string) get_user_meta( $user_id, 'fra_has_pets', true ), array( '', 'no' ), true );
+        $wanted   = array();
+        if ( $has_pets ) {
+            foreach ( $this->get_pet_task_templates() as $t ) { $wanted[] = $t['title']; }
+        }
+        if ( in_array( $who, array( 'spouse', 'spouse_kids', 'family' ), true ) ) {
+            foreach ( $this->get_spouse_task_templates() as $t ) { $wanted[] = $t['title']; }
+        }
+        if ( in_array( $who, array( 'spouse_kids', 'kids_only', 'family' ), true ) ) {
+            foreach ( $this->get_children_task_templates() as $t ) { $wanted[] = $t['title']; }
+        }
+        foreach ( $this->get_profile_task_templates( $user_id ) as $t ) { $wanted[] = $t['title']; }
+
+        // The universe: every title any of these template sets can produce.
+        $universe = array();
+        foreach ( array_merge( $this->get_pet_task_templates(), $this->get_spouse_task_templates(), $this->get_children_task_templates(), $this->get_profile_task_universe() ) as $t ) {
+            $universe[] = $t['title'];
+        }
+        $stale = array_values( array_diff( array_unique( $universe ), $wanted ) );
+        if ( ! $stale ) {
+            return 0;
+        }
+        $placeholders = implode( ',', array_fill( 0, count( $stale ), '%s' ) );
+        $ids = $wpdb->get_col( $wpdb->prepare(
+            "SELECT id FROM {$wpdb->prefix}framt_tasks WHERE project_id = %d AND status = 'todo' AND title IN ($placeholders)",
+            array_merge( array( $project->id ), $stale )
+        ) );
+        foreach ( (array) $ids as $id ) {
+            $task = new FRAMT_Task( (int) $id );
+            if ( $task->id ) {
+                $task->delete();
+            }
+        }
+        return count( (array) $ids );
+    }
+
+    /**
+     * Every profile-driven template, regardless of the current profile, so
+     * reconciliation knows which titles are ours to remove. Titles with a
+     * member-specific part (the employer's name) are matched by prefix.
+     */
+    private function get_profile_task_universe() {
+        global $wpdb;
+        $titles = array(
+            'Talk to a cross-border tax professional before you move',
+            'Get a mortgage agreement in principle (accord de principe)',
+            'Budget for the notaire on a purchase',
+            'Check how owning French property affects your taxes and estate',
+            'Confirm how remote work for a US employer is treated in France',
+            'Choose a French business status and register with URSSAF',
+            'Ask how your US pension and retirement accounts are taxed in France',
+            'Check how French inheritance rules affect your estate plan',
+        );
+        $out = array();
+        foreach ( $titles as $t ) { $out[] = array( 'title' => $t ); }
+        // Employer paperwork tasks carry the employer's name; find them by prefix.
+        $named = $wpdb->get_col( "SELECT DISTINCT title FROM {$wpdb->prefix}framt_tasks WHERE title LIKE 'Ask % for the consulate paperwork'" );
+        foreach ( (array) $named as $t ) { $out[] = array( 'title' => $t ); }
+        return $out;
     }
 
     /**
@@ -8626,7 +8745,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
         // Check for cached report
         $cached_report = $wpdb->get_row(
             $wpdb->prepare(
-                "SELECT * FROM {$table_name} WHERE location_type = %s AND location_code = %s ORDER BY version DESC LIMIT 1",
+                "SELECT * FROM {$table_name} WHERE location_type = %s AND location_code = %s ORDER BY version DESC LIMIT 1", // newest row, whatever its state
                 $location_type,
                 $location_code
             ),
@@ -8671,11 +8790,13 @@ Focus on practical advice while being careful not to state incorrect facts. When
             ) );
         }
 
-        // A report already being written is not started twice.
+        // A report already being written is not started twice; a job that
+        // has run past the worker's own timeout is treated as dead.
         if ( $cached_report ) {
             $cached_content = json_decode( $cached_report['content'], true );
             if ( is_array( $cached_content ) && 'generating' === ( $cached_content['status'] ?? '' )
-                && strtotime( $cached_report['updated_at'] ) > strtotime( '-15 minutes' ) ) {
+                && strtotime( $cached_report['updated_at'] ) > strtotime( '-45 minutes' ) ) {
+                $this->save_report_link_to_documents( (int) $cached_report['id'], $this->acting_user_id() );
                 return rest_ensure_response( array(
                     'success'    => true,
                     'generating' => true,
@@ -8686,9 +8807,10 @@ Focus on practical advice while being careful not to state incorrect facts. When
         }
 
         // Generating takes minutes with web search, longer than any request
-        // between the browser and this server may stay open. The row is
-        // created now, the worker writes the content when it is done, and
-        // the portal polls the row until it lands.
+        // between the browser and this server may stay open. A new row is
+        // created now (the previous good copy, if any, is left untouched for
+        // everyone who saved it), the worker writes the content when it is
+        // done, and the portal polls the row until it lands.
         $report_data = array(
             'location_type' => $location_type,
             'location_code' => $location_code,
@@ -8696,16 +8818,10 @@ Focus on practical advice while being careful not to state incorrect facts. When
             'content'       => wp_json_encode( array( 'status' => 'generating', 'started_at' => current_time( 'mysql' ) ) ),
             'version'       => $cached_report ? ( (int) $cached_report['version'] + 1 ) : 1,
             'updated_at'    => current_time( 'mysql' ),
+            'generated_at'  => current_time( 'mysql' ),
         );
-
-        if ( $cached_report ) {
-            $wpdb->update( $table_name, $report_data, array( 'id' => $cached_report['id'] ) );
-            $report_id = (int) $cached_report['id'];
-        } else {
-            $report_data['generated_at'] = current_time( 'mysql' );
-            $wpdb->insert( $table_name, $report_data );
-            $report_id = (int) $wpdb->insert_id;
-        }
+        $wpdb->insert( $table_name, $report_data );
+        $report_id = (int) $wpdb->insert_id;
 
         $started = $this->start_report_job( $report_id, $location_type, $location_code, $location_name );
         if ( is_wp_error( $started ) ) {
@@ -8911,14 +9027,18 @@ SYSTEM;
         $pdf->addSpace( 1 );
 
         // Write key stats if available
-        if ( ! empty( $content['header']['key_stats'] ) ) {
-            $pdf->write( 'Key Statistics:', true );
-            foreach ( $content['header']['key_stats'] as $key => $value ) {
-                if ( $value ) {
-                    $label = ucwords( str_replace( '_', ' ', $key ) );
-                    $formatted = is_numeric( $value ) ? number_format( $value ) : $value;
-                    $pdf->write( "  {$label}: {$formatted}" );
+        $stat_cards = $content['header']['stat_cards'] ?? $content['header']['key_stats'] ?? array();
+        if ( ! empty( $stat_cards ) && is_array( $stat_cards ) ) {
+            $pdf->write( 'Key figures', true );
+            foreach ( $stat_cards as $key => $stat ) {
+                if ( is_array( $stat ) ) {
+                    $line = trim( (string) ( $stat['label'] ?? '' ) . ': ' . (string) ( $stat['value'] ?? '' ) . ( ! empty( $stat['sublabel'] ) ? ' (' . $stat['sublabel'] . ')' : '' ), ': ' );
+                } elseif ( $stat ) {
+                    $line = ucwords( str_replace( '_', ' ', (string) $key ) ) . ': ' . ( is_numeric( $stat ) ? number_format( $stat ) : $stat );
+                } else {
+                    continue;
                 }
+                $pdf->write( '  ' . $line );
             }
             $pdf->addSpace( 1 );
         }
@@ -8930,10 +9050,50 @@ SYSTEM;
                 $pdf->write( $section['title'] ?? ucwords( str_replace( '_', ' ', $section_id ) ), true );
                 $pdf->addSpace( 0.5 );
 
-                // Section content
-                if ( ! empty( $section['content'] ) ) {
-                    $pdf->write( $section['content'] );
-                    $pdf->addSpace( 0.5 );
+                // Section content, in every shape the renderer knows
+                foreach ( array( 'intro', 'content' ) as $k ) {
+                    if ( ! empty( $section[ $k ] ) && is_string( $section[ $k ] ) ) {
+                        $pdf->write( wp_strip_all_tags( $section[ $k ] ) );
+                        $pdf->addSpace( 0.5 );
+                    }
+                }
+                foreach ( array( 'paragraphs', 'paragraphs_footer' ) as $k ) {
+                    foreach ( (array) ( $section[ $k ] ?? array() ) as $para ) {
+                        $text = is_array( $para ) ? (string) ( $para['text'] ?? '' ) : (string) $para;
+                        if ( '' !== $text ) {
+                            $pdf->write( wp_strip_all_tags( $text ) );
+                            $pdf->addSpace( 0.3 );
+                        }
+                    }
+                }
+                foreach ( (array) ( $section['stat_cards'] ?? array() ) as $stat ) {
+                    if ( is_array( $stat ) && isset( $stat['value'] ) ) {
+                        $pdf->write( '  ' . (string) ( $stat['label'] ?? '' ) . ': ' . (string) $stat['value'] . ( ! empty( $stat['sublabel'] ) ? ' (' . $stat['sublabel'] . ')' : '' ) );
+                    }
+                }
+                foreach ( (array) ( $section['items'] ?? array() ) as $item ) {
+                    $text = is_array( $item ) ? trim( (string) ( $item['label'] ?? '' ) . ( isset( $item['text'] ) ? ': ' . $item['text'] : ( isset( $item['value'] ) ? ': ' . $item['value'] : '' ) ), ': ' ) : (string) $item;
+                    if ( '' !== $text ) {
+                        $pdf->write( '  - ' . wp_strip_all_tags( $text ) );
+                    }
+                }
+                foreach ( array( 'info_box', 'callout', 'highlight' ) as $k ) {
+                    $box = $section[ $k ] ?? null;
+                    if ( is_array( $box ) ) {
+                        if ( ! empty( $box['title'] ) ) {
+                            $pdf->write( '  ' . $box['title'], true );
+                        }
+                        foreach ( (array) ( $box['items'] ?? array() ) as $item ) {
+                            $text = is_array( $item ) ? trim( (string) ( $item['label'] ?? '' ) . ( isset( $item['text'] ) ? ': ' . $item['text'] : ( isset( $item['value'] ) ? ': ' . $item['value'] : '' ) ), ': ' ) : (string) $item;
+                            if ( '' !== $text ) {
+                                $pdf->write( '  - ' . wp_strip_all_tags( $text ) );
+                            }
+                        }
+                        if ( ! empty( $box['note'] ) ) {
+                            $pdf->write( '  ' . wp_strip_all_tags( (string) $box['note'] ) );
+                        }
+                        $pdf->addSpace( 0.5 );
+                    }
                 }
 
                 // Subsections
@@ -8942,8 +9102,20 @@ SYSTEM;
                         if ( ! empty( $subsection['title'] ) ) {
                             $pdf->write( '  ' . $subsection['title'], true );
                         }
-                        if ( ! empty( $subsection['content'] ) ) {
-                            $pdf->write( '  ' . $subsection['content'] );
+                        if ( ! empty( $subsection['content'] ) && is_string( $subsection['content'] ) ) {
+                            $pdf->write( '  ' . wp_strip_all_tags( $subsection['content'] ) );
+                        }
+                        foreach ( (array) ( $subsection['paragraphs'] ?? array() ) as $para ) {
+                            $text = is_array( $para ) ? (string) ( $para['text'] ?? '' ) : (string) $para;
+                            if ( '' !== $text ) {
+                                $pdf->write( '  ' . wp_strip_all_tags( $text ) );
+                            }
+                        }
+                        foreach ( (array) ( $subsection['items'] ?? array() ) as $item ) {
+                            $text = is_array( $item ) ? trim( (string) ( $item['label'] ?? '' ) . ( isset( $item['text'] ) ? ': ' . $item['text'] : '' ), ': ' ) : (string) $item;
+                            if ( '' !== $text ) {
+                                $pdf->write( '    - ' . wp_strip_all_tags( $text ) );
+                            }
                         }
                         $pdf->addSpace( 0.5 );
                     }
@@ -9540,12 +9712,22 @@ SYSTEM;
         // Format reports for frontend - use 'reports' key to match TypeScript interface
         $reports = array();
         if ( $saved ) {
+            $seen = array();
             foreach ( $saved as $item ) {
                 $content = json_decode( (string) $item['content'], true );
                 $status  = is_array( $content ) ? (string) ( $content['status'] ?? 'ready' ) : 'ready';
                 if ( 'failed' === $status ) {
                     continue;
                 }
+                if ( 'generating' === $status && strtotime( $item['updated_at'] ) < strtotime( '-45 minutes' ) ) {
+                    continue; // a job that never delivered
+                }
+                // One entry per place: the newest ready copy wins over an older one.
+                $place = $item['location_type'] . ':' . $item['location_code'];
+                if ( isset( $seen[ $place ] ) && 'ready' === $status && 'ready' === $seen[ $place ] ) {
+                    continue;
+                }
+                $seen[ $place ] = $status;
                 $reports[] = array(
                     'id'            => (int) $item['report_id'],
                     'location_name' => $item['location_name'],
@@ -10976,12 +11158,9 @@ SECTIONS;
      */
     public function check_family_feature_permission() {
         // First check basic member permission
-        if ( ! $this->check_member_permission() ) {
-            return new WP_Error(
-                'rest_forbidden',
-                'You must be logged in to access this resource.',
-                array( 'status' => 401 )
-            );
+        $base = $this->check_member_permission();
+        if ( is_wp_error( $base ) ) {
+            return $base;
         }
 
         // Check if family feature is enabled for this user
@@ -11105,7 +11284,7 @@ SECTIONS;
             foreach ( $members as $i => $m ) {
                 if ( 'spouse' === ( $m['relationship'] ?? '' ) ) {
                     $found = true;
-                    if ( '' === trim( (string) ( $m['name'] ?? '' ) ) && '' !== $profile['partnerName'] ) {
+                    if ( in_array( trim( (string) ( $m['name'] ?? '' ) ), array( '', 'Your partner' ), true ) && '' !== $profile['partnerName'] ) {
                         $members[ $i ]['name'] = $profile['partnerName'];
                         $changed = true;
                     }
@@ -11460,6 +11639,31 @@ SECTIONS;
      *
      * @return true|WP_Error
      */
+    /**
+     * The account holder only. An invited partner works on the file but
+     * cannot reset it, delete the project, or change who is in the family.
+     *
+     * @return true|WP_Error
+     */
+    public function check_owner_permission() {
+        $base = $this->check_member_permission();
+        if ( is_wp_error( $base ) ) {
+            return $base;
+        }
+        if ( get_current_user_id() !== $this->acting_user_id() && ! current_user_can( 'manage_options' ) ) {
+            return new WP_Error( 'rest_forbidden', 'Only the account holder can do this.', array( 'status' => 403 ) );
+        }
+        return true;
+    }
+
+    public function check_project_owner_permission( $request ) {
+        $base = $this->check_project_permission( $request );
+        if ( is_wp_error( $base ) ) {
+            return $base;
+        }
+        return $this->check_owner_permission();
+    }
+
     public function check_family_owner_permission() {
         $check = $this->check_family_feature_permission();
         if ( is_wp_error( $check ) ) {
@@ -11521,12 +11725,17 @@ SECTIONS;
         $user   = get_user_by( 'email', $email );
         $is_new = false;
         $first_name_for_email = trim( (string) strtok( (string) ( $members[ $index ]['name'] ?? '' ), ' ' ) );
+        $accept_token = '';
         if ( $user ) {
             $other_owner = (int) get_user_meta( $user->ID, 'framt_household_owner', true );
             if ( $other_owner && $other_owner !== $owner_id ) {
                 return new WP_Error( 'invite_taken', 'That address already belongs to another household\'s file.', array( 'status' => 400 ) );
             }
             $user_id = (int) $user->ID;
+            // An existing account is never taken over silently: they get a link
+            // and join only when they use it, from their own signed-in session.
+            $accept_token = wp_generate_password( 32, false, false );
+            update_user_meta( $user_id, 'framt_household_invite', array( 'owner_id' => $owner_id, 'token' => $accept_token, 'at' => current_time( 'mysql' ) ) );
         } else {
             $name       = (string) ( $members[ $index ]['name'] ?? '' );
             $first_name = trim( (string) strtok( $name, ' ' ) );
@@ -11549,7 +11758,9 @@ SECTIONS;
             $is_new = true;
         }
 
-        update_user_meta( $user_id, 'framt_household_owner', $owner_id );
+        if ( '' === $accept_token ) {
+            update_user_meta( $user_id, 'framt_household_owner', $owner_id );
+        }
 
         $members[ $index ]['email']         = $email;
         $members[ $index ]['invitedUserId'] = (int) $user_id;
@@ -11570,9 +11781,9 @@ SECTIONS;
             $cta_label = 'Set your password';
             $cta_url   = $link;
         } else {
-            $body .= '<p style="margin:0 0 12px;">Sign in with this address and the household file is there.</p>';
-            $cta_label = 'Open the portal';
-            $cta_url   = $portal_url;
+            $body .= '<p style="margin:0 0 12px;">You already have an account, so nothing changes until you accept. Accept, and the household file appears in your portal alongside your own; your own file stays yours.</p>';
+            $cta_label = 'Accept and open the household file';
+            $cta_url   = add_query_arg( 'accept_household', $accept_token, $portal_url );
         }
         $subject = sprintf( '%s added you to their move to France', $owner_first );
         $html    = FRAMT_Messages::render_email( $subject, 'Hello ' . ( '' !== $first_name_for_email ? $first_name_for_email : 'there' ) . ',', $body, $cta_label, $cta_url );
@@ -11621,6 +11832,10 @@ SECTIONS;
         }
         if ( (int) get_user_meta( $user_id, 'framt_household_owner', true ) === (int) $owner_id ) {
             delete_user_meta( $user_id, 'framt_household_owner' );
+        }
+        $pending = get_user_meta( $user_id, 'framt_household_invite', true );
+        if ( is_array( $pending ) && (int) ( $pending['owner_id'] ?? 0 ) === (int) $owner_id ) {
+            delete_user_meta( $user_id, 'framt_household_invite' );
         }
         global $wpdb;
         $wpdb->update(

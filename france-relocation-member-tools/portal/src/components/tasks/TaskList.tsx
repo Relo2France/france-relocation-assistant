@@ -334,13 +334,11 @@ function formatGroupTitle(key: string, groupBy: 'stage' | 'status'): string {
 }
 
 function formatDate(dateStr: string): string {
-  const date = new Date(dateStr);
-  const today = new Date();
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-
-  if (date.toDateString() === today.toDateString()) return 'Today';
-  if (date.toDateString() === tomorrow.toDateString()) return 'Tomorrow';
-
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  // A due date is a calendar day; compare it to today's calendar day.
+  const day = dateStr.slice(0, 10);
+  const todayStr = new Date().toLocaleDateString('en-CA');
+  const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
+  if (day === todayStr) return 'Today';
+  if (day === tomorrow.toLocaleDateString('en-CA')) return 'Tomorrow';
+  return new Date(`${day}T00:00:00Z`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
 }

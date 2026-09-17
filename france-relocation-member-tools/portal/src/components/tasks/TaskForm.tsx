@@ -32,12 +32,14 @@ export default function TaskForm({
 
   const createTask = useCreateTask(projectId);
 
-  // Focus title input when modal opens
+  // Focus title input when modal opens, and take that opening's defaults
   useEffect(() => {
-    if (isOpen && titleInputRef.current) {
-      titleInputRef.current.focus();
+    if (isOpen) {
+      setStatus(defaultStatus);
+      setStage(defaultStage || '');
+      if (titleInputRef.current) titleInputRef.current.focus();
     }
-  }, [isOpen]);
+  }, [isOpen, defaultStatus, defaultStage]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

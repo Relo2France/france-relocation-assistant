@@ -58,7 +58,7 @@ export default function Dashboard() {
   const nowIndex = JOURNEY.findIndex((s) => s.id === nowId);
 
   const next = overdue_tasks[0] ?? upcoming_tasks[0] ?? null;
-  const then = (overdue_tasks[0] ? overdue_tasks[1] ?? upcoming_tasks[0] : upcoming_tasks[1]) ?? null;
+  const then = [...overdue_tasks, ...upcoming_tasks].find((t) => next && t.id !== next.id) ?? null;
 
   const stageTasks = (tasks ?? []).filter((t) => stageForTask(t, project) === nowId);
   const open = stageTasks.filter((t) => t.status !== 'done').sort((a, b) => (a.due_date ?? '9').localeCompare(b.due_date ?? '9'));
@@ -70,7 +70,7 @@ export default function Dashboard() {
   const members = family?.members ?? [];
 
   const openStage = (id: string) => { setActiveStage(id); setActiveView('stage'); };
-  const openTask = (task: Task) => { setTaskFilters({ stage: task.stage }); setActiveView('tasks'); };
+  const openTask = (task: Task) => { setTaskFilters({ stage: stageForTask(task, project) }); setActiveView('tasks'); };
 
   return (
     <div className="flex flex-col">
@@ -139,7 +139,7 @@ export default function Dashboard() {
             </>
           ) : (
             <>
-              <h3 className="font-display text-[1.4rem] font-semibold tracking-[-0.018em]">Nothing is due. Set your move date and the plan dates itself.</h3>
+              <h3 className="font-display text-[1.4rem] font-semibold tracking-[-0.018em]">{project.target_move_date ? 'Nothing is due in the next two weeks.' : 'Nothing is due. Set your move date and the plan dates itself.'}</h3>
               <button className="btn btn-primary self-start" onClick={() => setShowMoveDateModal(true)}>Set your move date</button>
             </>
           )}

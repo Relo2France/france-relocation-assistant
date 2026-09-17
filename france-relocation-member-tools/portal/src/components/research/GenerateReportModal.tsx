@@ -5,7 +5,7 @@
  * Handles report generation, caching status, and saving to user documents.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AlertCircle, CheckCircle, Clock, FileText, Hourglass, Loader2, MapPin, RefreshCw, Save, X } from 'lucide-react';
 import { researchApi } from '@/api/client';
 import type { ResearchLevel } from '@/types';
@@ -91,6 +91,8 @@ export default function GenerateReportModal({
   // written by the worker; we poll it until the content lands.
   const [elapsed, setElapsed] = useState(0);
   const [autoSaved, setAutoSaved] = useState(false);
+  const openRef = useRef(isOpen);
+  useEffect(() => { openRef.current = isOpen; }, [isOpen]);
   const handleGenerate = async (forceRefresh = false) => {
     setState('generating');
     setError(null);
@@ -109,10 +111,19 @@ export default function GenerateReportModal({
       if (response.generating) {
         const id = response.report.id;
         const deadline = Date.now() + 15 * 60 * 1000;
+        let misses = 0;
         for (;;) {
           await new Promise((r) => setTimeout(r, 5000));
+          if (!openRef.current) return;
           if (Date.now() > deadline) throw new Error('The report is taking longer than fifteen minutes. Leave this page and come back; it will be here when it is done.');
-          const polled = await researchApi.getReport(id);
+          let polled;
+          try {
+            polled = await researchApi.getReport(id);
+            misses = 0;
+          } catch (e) {
+            if (++misses >= 4) throw e;
+            continue;
+          }
           const status = (polled.report.content as { status?: string; error?: string })?.status;
           if (status === 'failed') throw new Error((polled.report.content as { error?: string }).error || 'The report could not be generated.');
           if (status !== 'generating') {
