@@ -6,7 +6,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { AlertCircle, CheckCircle, Clock, FileText, Hourglass, MapPin, RefreshCw, Save, X } from 'lucide-react';
+import { AlertCircle, CheckCircle, Clock, FileText, Hourglass, Loader2, MapPin, RefreshCw, Save, X } from 'lucide-react';
 import { researchApi } from '@/api/client';
 import type { ResearchLevel } from '@/types';
 
