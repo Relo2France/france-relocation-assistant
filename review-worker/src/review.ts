@@ -42,7 +42,7 @@ export async function reviewTopic(
     // mid-object on a real topic. Streaming removes the timeout pressure that
     // made a small cap tempting, and unused headroom costs nothing.
     maxTokens: 32000,
-    webSearchUses: 5,
+    webSearchUses: 8,
     // Deliberately off: continuing a truncated JSON object rarely yields
     // valid JSON. Truncation is reported instead, and the run fails loudly.
     continueOnTruncation: false,

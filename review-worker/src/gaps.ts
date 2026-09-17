@@ -141,6 +141,8 @@ ${gap.current_content ?? ''}
 
 Research the current official position using web search, then rewrite this topic so it answers those questions completely.
 
+You have exactly 10 web searches for this task and no more; a search past that limit fails with max_uses_exceeded. Plan them before you start: broad official pages first, then the specific figures. When the budget is spent, write from what you found. Report honestly: if some searches succeeded, say what was verified and what was not, per claim. Never describe search as unavailable when searches returned results.
+
 RULES:
 - Keep everything already correct. This is an edit, not a replacement.
 - Only state requirements you can confirm from an official source.
@@ -165,6 +167,8 @@ ${raised
     : `Members asked these questions and we have no topic covering them:\n- ${questions}`}
 
 Research the current official position using web search, then write a new knowledge base topic that answers them.
+
+You have exactly 15 web searches for this task and no more; a search past that limit fails with max_uses_exceeded. Plan them before you start: broad official pages first, then the specific figures. When the budget is spent, write from what you found. Report honestly: if some searches succeeded, say what was verified and what was not, per claim. Never describe search as unavailable when searches returned results.
 
 RULES:
 - Only state requirements you can confirm from an official source.
@@ -203,7 +207,7 @@ export async function draftGap(env: Env, gap: Gap): Promise<GapOutcome> {
       tier: env.MODEL_TIER,
       prompt,
       maxTokens: 32000,
-      webSearchUses: 5,
+      webSearchUses: isUpdate ? 10 : 15,
       // Same reasoning as the review: continuing a truncated JSON object
       // rarely yields valid JSON, so fail loudly instead.
       continueOnTruncation: false,

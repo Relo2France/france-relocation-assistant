@@ -34,6 +34,8 @@ ${topic.content}
 **OFFICIAL SOURCES:** ${(topic.sources ?? []).join(', ')}
 **KEY FACTS TO VERIFY:** ${(topic.key_facts ?? []).join(', ')}
 
+You have exactly 8 web searches for this task and no more; a search past that limit fails with max_uses_exceeded. Plan them before you start: broad official pages first, then the specific figures. When the budget is spent, write from what you found. Report honestly: if some searches succeeded, say what was verified and what was not, per claim. Never describe search as unavailable when searches returned results.
+
 **PRACTICAL TOPICS TO RESEARCH:**
 - ${searchQueries}
 - Reddit r/expats, r/france, expat forums
