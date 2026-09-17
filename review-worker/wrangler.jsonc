@@ -31,6 +31,11 @@
       "name": "relo2france-gap-workflow",
       "binding": "GAP_WORKFLOW",
       "class_name": "GapWorkflow"
+    },
+    {
+      "name": "relo2france-report-workflow",
+      "binding": "REPORT_WORKFLOW",
+      "class_name": "ReportWorkflow"
     }
   ],
 

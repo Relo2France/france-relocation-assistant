@@ -20,8 +20,10 @@ import { reviewTopic } from './review';
 import { resolveModel } from './models';
 import { fetchTopics } from './wordpress';
 import type { Env } from './types';
+import type { ReportParams } from './report-workflow';
 
 export { ReviewWorkflow, GapWorkflow };
+export { ReportWorkflow } from './report-workflow';
 
 const json = (body: unknown, status = 200): Response =>
   new Response(JSON.stringify(body, null, 2), {
@@ -32,10 +34,16 @@ const json = (body: unknown, status = 200): Response =>
 function authorised(request: Request, env: Env): boolean {
   const header = request.headers.get('authorization') ?? '';
   const provided = header.toLowerCase().startsWith('bearer ') ? header.slice(7).trim() : '';
+  // Two callers: the operator with TRIGGER_SECRET, and WordPress with the
+  // shared secret it already holds for the review API. Either opens the door.
+  return matches(provided, env.TRIGGER_SECRET) || matches(provided, env.WP_SHARED_SECRET);
+}
+
+function matches(provided: string, secret: string | undefined): boolean {
   // Trim the stored value too. A secret pasted into the dashboard can pick up
   // a trailing newline, and surrounding whitespace is never meaningful in a
   // token - without this the mismatch is invisible and reads as a wrong key.
-  const expected = (env.TRIGGER_SECRET ?? '').trim();
+  const expected = (secret ?? '').trim();
 
   if (!provided || !expected || provided.length !== expected.length) return false;
 
@@ -87,6 +95,25 @@ export default {
             last_verified: t.last_verified,
           })),
         });
+      }
+
+      // A location report for the portal. WordPress sends the prompt and a
+      // report id; the finished JSON is posted back to it.
+      if (url.pathname === '/report' && request.method === 'POST') {
+        const body = (await request.json().catch(() => null)) as Partial<ReportParams> | null;
+        if (!body || !body.report_id || !body.prompt || !body.system) {
+          return json({ error: 'report_id, system and prompt are required' }, 400);
+        }
+        const instance = await env.REPORT_WORKFLOW.create({
+          params: {
+            report_id: Number(body.report_id),
+            system: String(body.system),
+            prompt: String(body.prompt),
+            max_tokens: body.max_tokens ? Number(body.max_tokens) : undefined,
+            web_search_uses: body.web_search_uses ? Number(body.web_search_uses) : undefined,
+          },
+        });
+        return json({ started: true, instance_id: instance.id, report_id: Number(body.report_id) });
       }
 
       // Start a full run. Returns immediately with an instance id - the run

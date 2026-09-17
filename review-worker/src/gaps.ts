@@ -54,6 +54,8 @@ export interface GapOutcome {
   error?: string;
   duration_ms: number;
   output_tokens?: number;
+  web_sources?: number;
+  web_search_errors?: string[];
 }
 
 function authHeaders(env: Env): HeadersInit {
@@ -250,6 +252,8 @@ export async function draftGap(env: Env, gap: Gap): Promise<GapOutcome> {
     is_new_topic: posted.is_new_topic,
     duration_ms: Date.now() - started,
     output_tokens: outcome.usage.output,
+    web_sources: outcome.webSources.length,
+    web_search_errors: outcome.webSearchErrors,
   };
 }
 

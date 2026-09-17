@@ -8281,7 +8281,8 @@ Focus on practical advice while being careful not to state incorrect facts. When
         // Return cached if less than 30 days old, not forcing regeneration, AND not a placeholder
         // (placeholders should always attempt regeneration if API key is available)
         $ai_api_key = class_exists( 'France_Relocation_Assistant' ) ? France_Relocation_Assistant::get_api_key() : '';
-        $should_use_cache = ! $force_regenerate && $cached_report
+        $in_progress_or_failed = $cached_report && is_array( $cached_content ) && in_array( $cached_content['status'] ?? '', array( 'generating', 'failed' ), true );
+        $should_use_cache = ! $force_regenerate && $cached_report && ! $in_progress_or_failed
             && strtotime( $cached_report['updated_at'] ) > strtotime( '-30 days' )
             && ( ! $is_placeholder || empty( $ai_api_key ) );
 
@@ -8305,7 +8306,129 @@ Focus on practical advice while being careful not to state incorrect facts. When
             ) );
         }
 
-        // Generate new report
+        // A report already being written is not started twice.
+        if ( $cached_report ) {
+            $cached_content = json_decode( $cached_report['content'], true );
+            if ( is_array( $cached_content ) && 'generating' === ( $cached_content['status'] ?? '' )
+                && strtotime( $cached_report['updated_at'] ) > strtotime( '-15 minutes' ) ) {
+                return rest_ensure_response( array(
+                    'success'    => true,
+                    'generating' => true,
+                    'report'     => $this->format_report_response( $cached_report ),
+                    'cached'     => false,
+                ) );
+            }
+        }
+
+        // Generating takes minutes with web search, longer than any request
+        // between the browser and this server may stay open. The row is
+        // created now, the worker writes the content when it is done, and
+        // the portal polls the row until it lands.
+        $report_data = array(
+            'location_type' => $location_type,
+            'location_code' => $location_code,
+            'location_name' => $location_name,
+            'content'       => wp_json_encode( array( 'status' => 'generating', 'started_at' => current_time( 'mysql' ) ) ),
+            'version'       => $cached_report ? ( (int) $cached_report['version'] + 1 ) : 1,
+            'updated_at'    => current_time( 'mysql' ),
+        );
+
+        if ( $cached_report ) {
+            $wpdb->update( $table_name, $report_data, array( 'id' => $cached_report['id'] ) );
+            $report_id = (int) $cached_report['id'];
+        } else {
+            $report_data['generated_at'] = current_time( 'mysql' );
+            $wpdb->insert( $table_name, $report_data );
+            $report_id = (int) $wpdb->insert_id;
+        }
+
+        $started = $this->start_report_job( $report_id, $location_type, $location_code, $location_name );
+        if ( is_wp_error( $started ) ) {
+            // The worker could not be reached: say so on the row and to the member.
+            $failed = array( 'status' => 'failed', 'error' => $started->get_error_message(), 'failed_at' => current_time( 'mysql' ) );
+            $wpdb->update( $table_name, array( 'content' => wp_json_encode( $failed ) ), array( 'id' => $report_id ) );
+            return new WP_Error( 'report_worker_unavailable', $started->get_error_message(), array( 'status' => 502 ) );
+        }
+
+        $report_data['id'] = $report_id;
+        return rest_ensure_response( array(
+            'success'    => true,
+            'generating' => true,
+            'report'     => $this->format_report_response( $report_data ),
+            'cached'     => false,
+        ) );
+    }
+
+    /**
+     * Hand a report to the review worker.
+     *
+     * The prompt and the system message stay here; the worker is generic.
+     * It authenticates with the same shared secret it uses to call us.
+     *
+     * @param int    $report_id Row to fill.
+     * @param string $type      Location type.
+     * @param string $code      Location code.
+     * @param string $name      Location name.
+     * @return true|WP_Error
+     */
+    private function start_report_job( $report_id, $type, $code, $name ) {
+        $secret = (string) get_option( 'fra_review_api_secret', '' );
+        if ( '' === $secret ) {
+            return new WP_Error( 'report_no_secret', 'The review API secret is not set in FR Assistant → API Settings, so reports cannot be generated.' );
+        }
+        $worker = (string) get_option( 'framt_review_worker_url', '' );
+        if ( '' === $worker ) {
+            $worker = 'https://relo2france-review.kburrowbridge.workers.dev';
+        }
+        $response = wp_remote_post( rtrim( $worker, '/' ) . '/report', array(
+            'timeout' => 20,
+            'headers' => array( 'Authorization' => 'Bearer ' . $secret, 'Content-Type' => 'application/json' ),
+            'body'    => wp_json_encode( array(
+                'report_id'       => (int) $report_id,
+                'system'          => $this->report_system_message(),
+                'prompt'          => $this->build_report_prompt( $type, $code, $name ),
+                'max_tokens'      => 12000,
+                'web_search_uses' => 8,
+            ) ),
+        ) );
+        if ( is_wp_error( $response ) ) {
+            return new WP_Error( 'report_worker_unreachable', 'Could not reach the report worker: ' . $response->get_error_message() );
+        }
+        $status = (int) wp_remote_retrieve_response_code( $response );
+        if ( $status < 200 || $status >= 300 ) {
+            return new WP_Error( 'report_worker_refused', 'The report worker refused the job (HTTP ' . $status . ').' );
+        }
+        return true;
+    }
+
+    /**
+     * The system message for a location report. Shared by the worker path
+     * and the synchronous fallback.
+     *
+     * @return string
+     */
+    private function report_system_message() {
+        return <<<SYSTEM
+You are an expert on French geography, demographics, and relocation. You create comprehensive, data-driven reports for people considering relocating to France.
+Your reports must:
+1. Use accurate, current data from INSEE, Eurostat, and French government sources
+2. Include specific numbers, prices (in euros), and statistics
+3. Be practical and informative for someone planning to relocate
+4. Cover both positives and realistic challenges/considerations
+CRITICAL: You must respond with ONLY valid JSON. No markdown, no code blocks, no explanation text - just the raw JSON object starting with { and ending with }.
+SYSTEM;
+    }
+
+    /**
+     * Retired synchronous path, kept for reference and manual use.
+     *
+     * @param string $location_type Location type.
+     * @param string $location_code Location code.
+     * @param string $location_name Location name.
+     * @return WP_REST_Response|WP_Error
+     */
+    private function generate_research_report_sync( $location_type, $location_code, $location_name, $cached_report, $table_name, $save_to_docs ) {
+        global $wpdb;
         $report_content = $this->generate_ai_report( $location_type, $location_code, $location_name );
 
         if ( is_wp_error( $report_content ) ) {

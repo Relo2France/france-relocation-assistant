@@ -35,6 +35,8 @@ interface TopicOutcome {
   error?: string;
   duration_ms?: number;
   output_tokens?: number;
+  web_sources?: number;
+  web_search_errors?: string[];
 }
 
 export class ReviewWorkflow extends WorkflowEntrypoint<Env, ReviewParams> {
@@ -101,6 +103,8 @@ export class ReviewWorkflow extends WorkflowEntrypoint<Env, ReviewParams> {
               review_id: result.review_id,
               duration_ms: result.duration_ms,
               output_tokens: result.usage.output,
+              web_sources: result.web_sources,
+              web_search_errors: result.web_search_errors,
             };
           } catch (error) {
             // Returned, not thrown: a topic we genuinely cannot review should
@@ -138,6 +142,8 @@ export class ReviewWorkflow extends WorkflowEntrypoint<Env, ReviewParams> {
         failures: failed.map((o) => ({ topic: o.topic, error: o.error })),
         total_output_tokens: reviewed.reduce((sum, o) => sum + (o.output_tokens ?? 0), 0),
         total_duration_ms: reviewed.reduce((sum, o) => sum + (o.duration_ms ?? 0), 0),
+        web_sources: reviewed.reduce((sum, o) => sum + (o.web_sources ?? 0), 0),
+        web_search_errors: reviewed.flatMap((o) => o.web_search_errors ?? []),
         // Per-topic seconds, sorted. The spread matters more than the total:
         // it is what decides whether the step timeout is safe.
         topic_seconds: durations,

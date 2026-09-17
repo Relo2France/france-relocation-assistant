@@ -70,6 +70,10 @@ export class GapWorkflow extends WorkflowEntrypoint<Env, GapParams> {
         // Named, not counted.
         failures: failed.map((o) => ({ gap_id: o.gap_id, error: o.error })),
         total_output_tokens: drafted.reduce((sum, o) => sum + (o.output_tokens ?? 0), 0),
+        // A draft written without a single search result is a draft written
+        // from memory; say so where it can be seen.
+        web_sources: drafted.reduce((sum, o) => sum + (o.web_sources ?? 0), 0),
+        web_search_errors: drafted.flatMap((o) => o.web_search_errors ?? []),
       };
 
       console.log('gap workflow complete', summary);

@@ -146,6 +146,14 @@ class FRA_Review_API {
             'permission_callback' => array($this, 'authenticate'),
         ));
 
+        // The worker delivers a finished location report here. The row was
+        // created by the portal when the member asked for it.
+        register_rest_route(self::NS, '/review/reports/(?P<id>\d+)', array(
+            'methods'             => WP_REST_Server::CREATABLE,
+            'callback'            => array($this, 'receive_report'),
+            'permission_callback' => array($this, 'authenticate'),
+        ));
+
         // The worker reports the start and end of a run here, so the AI
         // Review screen shows what actually happened rather than the last
         // time WordPress ran the job itself.
@@ -154,6 +162,51 @@ class FRA_Review_API {
             'callback'            => array($this, 'record_run'),
             'permission_callback' => array($this, 'authenticate'),
         ));
+    }
+
+    /**
+     * Store a location report the worker generated, or the reason it failed.
+     *
+     * @param WP_REST_Request $request Request
+     * @return WP_REST_Response|WP_Error
+     */
+    public function receive_report($request) {
+        global $wpdb;
+        $id    = absint($request->get_param('id'));
+        $table = $wpdb->prefix . 'framt_research_reports';
+        $row   = $wpdb->get_row($wpdb->prepare("SELECT id, content FROM {$table} WHERE id = %d", $id), ARRAY_A);
+        if (!$row) {
+            return new WP_Error('report_not_found', 'No such report row.', array('status' => 404));
+        }
+
+        $content = $request->get_param('content');
+        $error   = (string) $request->get_param('error');
+        if (is_array($content) && !empty($content)) {
+            $content['generation'] = array(
+                'model'              => sanitize_text_field((string) $request->get_param('model')),
+                'web_sources'        => count((array) $request->get_param('web_sources')),
+                'web_search_errors'  => array_map('sanitize_text_field', (array) $request->get_param('web_search_errors')),
+                'duration_ms'        => (int) $request->get_param('duration_ms'),
+                'completed_at'       => current_time('mysql'),
+            );
+            $stored = $content;
+        } else {
+            $stored = array(
+                'status'    => 'failed',
+                'error'     => '' !== $error ? sanitize_text_field($error) : 'The report came back empty.',
+                'failed_at' => current_time('mysql'),
+            );
+        }
+
+        $wpdb->update(
+            $table,
+            array('content' => wp_json_encode($stored), 'updated_at' => current_time('mysql')),
+            array('id' => $id),
+            array('%s', '%s'),
+            array('%d')
+        );
+
+        return rest_ensure_response(array('stored' => isset($stored['status']) ? 'failed' : 'content', 'id' => $id));
     }
 
     /**

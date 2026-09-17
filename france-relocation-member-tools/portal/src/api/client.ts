@@ -683,6 +683,7 @@ export const researchApi = {
         download_url: string;
       };
       cached: boolean;
+      generating?: boolean;
       cache_age?: string;
       is_placeholder?: boolean;
       placeholder_reason?: string;
@@ -690,6 +691,10 @@ export const researchApi = {
       method: 'POST',
       body: JSON.stringify(data),
     }),
+
+  // Poll a report row until the worker has written it
+  getReport: (reportId: number) =>
+    apiFetch<{ success: boolean; report: { id: number; location_name: string; content: Record<string, unknown>; updated_at: string; download_url: string; version: number; generated_at: string; location_type: string; location_code: string } }>(`/research/report/${reportId}`),
 
   // Save report to documents
   saveReport: (reportId: number) =>

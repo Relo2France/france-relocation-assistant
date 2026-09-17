@@ -30,6 +30,8 @@ export interface MessageOutcome {
   truncated: boolean;
   continued: boolean;
   webSources: WebSource[];
+  /** Error codes from web_search_tool_result blocks, so a run with no sources cannot look like a run that searched. */
+  webSearchErrors: string[];
   usage: { input: number; output: number };
 }
 
@@ -40,6 +42,23 @@ export function extractText(blocks: ContentBlock[]): string {
     .filter((b): b is { type: 'text'; text: string } => b.type === 'text' && typeof (b as { text?: unknown }).text === 'string')
     .map((b) => b.text)
     .join('');
+}
+
+/**
+ * Every web search that failed, by error code. The model narrates "search
+ * was unavailable" when this list is not empty; this is the machine-readable
+ * version so the summary can say so too.
+ */
+export function extractWebSearchErrors(blocks: ContentBlock[]): string[] {
+  const errors: string[] = [];
+  for (const block of blocks) {
+    if (block.type !== 'web_search_tool_result') continue;
+    const content = (block as { content?: unknown }).content;
+    if (Array.isArray(content)) continue;
+    const err = content as { type?: string; error_code?: string } | undefined;
+    errors.push(err?.error_code ?? err?.type ?? 'unknown');
+  }
+  return errors;
 }
 
 export function extractWebSources(blocks: ContentBlock[]): WebSource[] {
@@ -211,12 +230,17 @@ export async function sendMessage(env: Env, options: MessageOptions): Promise<Me
 
     truncated = body.stop_reason === 'max_tokens';
 
+    const searchErrors = extractWebSearchErrors(collected);
+    if (searchErrors.length) {
+      console.warn('web search errors', { model, errors: searchErrors, sources: extractWebSources(collected).length });
+    }
     return {
       text: extractText(collected),
       model,
       truncated,
       continued,
       webSources: extractWebSources(collected),
+      webSearchErrors: extractWebSearchErrors(collected),
       usage: { input: inputTokens, output: outputTokens },
     };
   }

@@ -2,6 +2,7 @@ export interface Env {
   MODEL_CACHE: KVNamespace;
   REVIEW_WORKFLOW: Workflow;
   GAP_WORKFLOW: Workflow;
+  REPORT_WORKFLOW: Workflow;
   ANTHROPIC_API_KEY: string;
   WP_SHARED_SECRET: string;
   TRIGGER_SECRET: string;

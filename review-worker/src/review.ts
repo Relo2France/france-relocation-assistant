@@ -15,6 +15,7 @@ export interface ReviewOutcome {
   review_id?: string;
   changes_summary?: string;
   web_sources: number;
+  web_search_errors: string[];
   truncated: boolean;
   continued: boolean;
   usage: { input: number; output: number };
@@ -65,6 +66,7 @@ export async function reviewTopic(
     posted: false,
     changes_summary: result.changes_summary,
     web_sources: outcome.webSources.length,
+    web_search_errors: outcome.webSearchErrors,
     truncated: outcome.truncated,
     continued: outcome.continued,
     usage: outcome.usage,

@@ -6,7 +6,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { AlertCircle, CheckCircle, Clock, FileText, Loader2, MapPin, RefreshCw, Save, X } from 'lucide-react';
+import { AlertCircle, CheckCircle, Clock, FileText, Hourglass, MapPin, RefreshCw, Save, X } from 'lucide-react';
 import { researchApi } from '@/api/client';
 import type { ResearchLevel } from '@/types';
 
@@ -87,18 +87,39 @@ export default function GenerateReportModal({
     }
   }, [isOpen, locationCode]);
 
-  // Generate report
+  // Generate report. The server answers at once with a row that is being
+  // written by the worker; we poll it until the content lands.
+  const [elapsed, setElapsed] = useState(0);
   const handleGenerate = async (forceRefresh = false) => {
     setState('generating');
     setError(null);
+    setElapsed(0);
+    const started = Date.now();
+    const tick = window.setInterval(() => setElapsed(Math.round((Date.now() - started) / 1000)), 1000);
 
     try {
-      const response = await researchApi.generateReport({
+      let response = await researchApi.generateReport({
         location_type: locationType,
         location_code: locationCode,
         location_name: locationName,
         force_refresh: forceRefresh,
       });
+
+      if (response.generating) {
+        const id = response.report.id;
+        const deadline = Date.now() + 15 * 60 * 1000;
+        for (;;) {
+          await new Promise((r) => setTimeout(r, 5000));
+          if (Date.now() > deadline) throw new Error('The report is taking longer than fifteen minutes. Leave this page and come back; it will be here when it is done.');
+          const polled = await researchApi.getReport(id);
+          const status = (polled.report.content as { status?: string; error?: string })?.status;
+          if (status === 'failed') throw new Error((polled.report.content as { error?: string }).error || 'The report could not be generated.');
+          if (status !== 'generating') {
+            response = { ...response, report: polled.report as typeof response.report, generating: false, cached: false };
+            break;
+          }
+        }
+      }
 
       setReport(response.report);
       setIsCached(response.cached);
@@ -114,6 +135,8 @@ export default function GenerateReportModal({
           : 'Failed to generate report. Please try again.'
       );
       setState('error');
+    } finally {
+      window.clearInterval(tick);
     }
   };
 
@@ -216,15 +239,25 @@ export default function GenerateReportModal({
           {/* Generating State */}
           {state === 'generating' && (
             <div className="text-center py-8">
-              <Loader2 className="w-12 h-12 animate-spin text-primary-600 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                Generating Report
+              <div className="relative w-16 h-16 mx-auto mb-4" aria-hidden="true">
+                <span className="absolute inset-0 rounded-full border-2 border-primary-100" />
+                <span className="absolute inset-0 rounded-full border-2 border-primary-500 border-t-transparent animate-spin" />
+                <Hourglass className="w-6 h-6 text-primary-500 absolute inset-0 m-auto" />
+              </div>
+              <h3 className="font-display text-lg font-semibold text-gray-900 mb-1">
+                Researching {locationName}
               </h3>
-              <p className="text-gray-600">
-                Our AI is researching and compiling information about {locationName}...
+              <p className="font-mono text-2xl tabular-nums text-ink mb-2" aria-live="polite">
+                {Math.floor(elapsed / 60)}:{String(elapsed % 60).padStart(2, '0')}
               </p>
-              <p className="text-sm text-gray-500 mt-4">
-                This may take a minute or two.
+              <p className="text-gray-600">
+                Reading INSEE, local and official sources, then writing the report. Usually three to five minutes.
+              </p>
+              <p className="text-sm text-gray-500 mt-3" aria-live="polite">
+                Now on: {REPORT_SECTIONS[Math.min(REPORT_SECTIONS.length - 1, Math.floor(elapsed / 25))]}
+              </p>
+              <p className="text-xs text-gray-400 mt-4">
+                You can close this and come back; the report keeps writing and will be here when it is done.
               </p>
             </div>
           )}
