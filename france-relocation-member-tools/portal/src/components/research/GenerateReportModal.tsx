@@ -90,6 +90,7 @@ export default function GenerateReportModal({
   // Generate report. The server answers at once with a row that is being
   // written by the worker; we poll it until the content lands.
   const [elapsed, setElapsed] = useState(0);
+  const [autoSaved, setAutoSaved] = useState(false);
   const handleGenerate = async (forceRefresh = false) => {
     setState('generating');
     setError(null);
@@ -119,6 +120,16 @@ export default function GenerateReportModal({
             break;
           }
         }
+      }
+
+      // Every finished report goes into the member's documents, where it can be
+      // opened, downloaded or removed later. Failure to save is not failure
+      // to generate.
+      try {
+        await researchApi.saveReport(response.report.id);
+        setAutoSaved(true);
+      } catch {
+        setAutoSaved(false);
       }
 
       setReport(response.report);
@@ -311,6 +322,9 @@ export default function GenerateReportModal({
               </div>
 
               {/* Actions */}
+              {autoSaved ? (
+                <p className="text-sm text-gray-600 mb-3">Saved to <strong>Documents &amp; files</strong>. Open it there any time, or remove it if you don’t want to keep it. Reports for the same place are kept and reused for thirty days, so asking again later costs nothing until you choose to refresh.</p>
+              ) : null}
               <div className="space-y-3">
                 <button
                   onClick={handleViewReport}

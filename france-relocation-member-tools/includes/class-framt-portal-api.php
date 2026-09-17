@@ -1089,6 +1089,16 @@ class FRAMT_Portal_API {
             )
         );
 
+        register_rest_route(
+            self::NAMESPACE,
+            '/research/saved/(?P<report_id>\d+)',
+            array(
+                'methods'             => 'DELETE',
+                'callback'            => array( $this, 'remove_saved_research_report' ),
+                'permission_callback' => array( $this, 'check_member_permission' ),
+            )
+        );
+
         // ============================================
         // Support Ticket endpoints
         // ============================================
@@ -10131,6 +10141,23 @@ SECTIONS;
      * @param int $user_id User ID.
      * @return int|null
      */
+    /**
+     * Take a report out of the member's documents. The report itself stays,
+     * shared by everyone who asks for that place; only this member's link goes.
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response
+     */
+    public function remove_saved_research_report( $request ) {
+        global $wpdb;
+        $deleted = $wpdb->delete(
+            $wpdb->prefix . 'framt_research_report_links',
+            array( 'user_id' => $this->acting_user_id(), 'report_id' => absint( $request->get_param( 'report_id' ) ) ),
+            array( '%d', '%d' )
+        );
+        return rest_ensure_response( array( 'success' => true, 'removed' => (int) $deleted ) );
+    }
+
     private function save_report_link_to_documents( $report_id, $user_id ) {
         global $wpdb;
         $table_name = $wpdb->prefix . 'framt_research_report_links';

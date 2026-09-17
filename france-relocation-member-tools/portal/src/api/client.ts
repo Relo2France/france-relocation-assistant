@@ -696,6 +696,10 @@ export const researchApi = {
   getReport: (reportId: number) =>
     apiFetch<{ success: boolean; report: { id: number; location_name: string; content: Record<string, unknown>; updated_at: string; download_url: string; version: number; generated_at: string; location_type: string; location_code: string } }>(`/research/report/${reportId}`),
 
+  // Take a report out of the member's documents
+  removeSavedReport: (reportId: number) =>
+    apiFetch<{ success: boolean; removed: number }>(`/research/saved/${reportId}`, { method: 'DELETE' }),
+
   // Save report to documents
   saveReport: (reportId: number) =>
     apiFetch<{ success: boolean; message: string }>(`/research/report/${reportId}/save`, {

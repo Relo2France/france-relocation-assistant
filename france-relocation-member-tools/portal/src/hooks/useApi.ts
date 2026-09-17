@@ -911,6 +911,16 @@ export function useDeleteSupportTicket() {
 // Research Hooks
 // ============================================
 
+export function useRemoveSavedReport() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (reportId: number) => researchApi.removeSavedReport(reportId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.savedReports });
+    },
+  });
+}
+
 export function useSavedReports() {
   return useQuery({
     queryKey: queryKeys.savedReports,

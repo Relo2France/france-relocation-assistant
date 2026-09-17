@@ -14,7 +14,7 @@ import {
   X,
 } from 'lucide-react';
 import Modal from '@/components/shared/Modal';
-import { useDashboard, useDownloadFile, useFiles, useSavedReports } from '@/hooks/useApi';
+import { useDashboard, useDownloadFile, useFiles, useRemoveSavedReport, useSavedReports } from '@/hooks/useApi';
 import type { FileCategory, FileType, PortalFile } from '@/types';
 import { AIVerificationModal } from './AIVerification';
 import FileGrid from './FileGrid';
@@ -62,6 +62,11 @@ export default function DocumentsView() {
   const projectId = dashboard?.project?.id || 0;
   const { data: savedReportsData } = useSavedReports();
   const savedReports = savedReportsData?.reports || [];
+  const removeSaved = useRemoveSavedReport();
+  const reportViewUrl = (id: number) => {
+    const wpData = window.fraPortalData || { nonce: '', apiUrl: '/wp-json/fra-portal/v1' };
+    return `${wpData.apiUrl}/research/report/${id}/html?_wpnonce=${wpData.nonce}`;
+  };
 
   const { data: files = [], isLoading: filesLoading, refetch: refetchFiles } = useFiles(
     projectId,
@@ -197,6 +202,14 @@ export default function DocumentsView() {
                       </p>
                     </div>
                     <a
+                      href={reportViewUrl(report.id)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm font-semibold text-primary-500 hover:text-primary-700"
+                    >
+                      Open
+                    </a>
+                    <a
                       href={report.download_url}
                       target="_blank"
                       rel="noopener noreferrer"
@@ -205,6 +218,15 @@ export default function DocumentsView() {
                     >
                       <Download className="w-5 h-5" />
                     </a>
+                    <button
+                      type="button"
+                      onClick={() => { if (window.confirm(`Remove the ${report.location_name} report from your documents? You can generate it again any time.`)) removeSaved.mutate(report.id); }}
+                      className="p-2 text-gray-400 hover:text-accent-500 transition-colors"
+                      title="Remove from my documents"
+                      aria-label={`Remove ${report.location_name} report`}
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
                   </div>
                 ))}
               </div>
