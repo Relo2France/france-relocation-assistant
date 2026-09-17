@@ -7375,9 +7375,15 @@ Focus on practical advice while being careful not to state incorrect facts. When
 
             // Keep the template's offset on the task, so a move-date change
             // can re-date it even after the member renames it.
+            $metadata = array( 'from_template' => true );
             if ( isset( $template['days_offset'] ) ) {
-                $task->metadata = array( 'days_offset' => (int) $template['days_offset'], 'from_template' => true );
+                $metadata['days_offset'] = (int) $template['days_offset'];
             }
+            $howto = FRAMT_Task_Howto::for_title( $template['title'], $this->howto_context( $user_id ) );
+            if ( $howto ) {
+                $metadata['howto'] = $howto;
+            }
+            $task->metadata = $metadata;
 
             // Calculate due date if move date exists and template has days_offset
             if ( ! empty( $move_date ) && isset( $template['days_offset'] ) ) {
@@ -7963,6 +7969,25 @@ Focus on practical advice while being careful not to state incorrect facts. When
     }
 
     /**
+     * The member's own words for a how-to: their state, their spouse's name.
+     *
+     * @param int $user_id Member.
+     * @return array
+     */
+    private function howto_context( $user_id ) {
+        $facts  = $this->get_state_facts( $user_id );
+        $spouse = trim( (string) get_user_meta( $user_id, 'fra_spouse_legal_first_name', true ) );
+        return array(
+            'state'            => '' !== $facts['name'] ? $facts['name'] : 'your state',
+            'state_code'       => $facts['state'],
+            'licence_exchange' => $facts['licence_exchange'],
+            'licence_classes'  => 'all' === $facts['licence_classes'] ? 'every class' : ( '' !== $facts['licence_classes'] ? 'class ' . $facts['licence_classes'] : '' ),
+            'spouse'           => '' !== $spouse ? $spouse : 'your spouse',
+            'verified'         => $facts['verified'],
+        );
+    }
+
+    /**
      * What the member's US state changes.
      *
      * The one state-by-state fact the knowledge base holds today: whether a
@@ -8167,6 +8192,10 @@ Focus on practical advice while being careful not to state incorrect facts. When
         }
         if ( ! empty( $template['professional'] ) ) {
             $metadata['professional'] = sanitize_key( $template['professional'] );
+        }
+        $howto = FRAMT_Task_Howto::for_title( $template['title'], $this->howto_context( $user_id ) );
+        if ( $howto ) {
+            $metadata['howto'] = $howto;
         }
         $task->metadata = $metadata;
 
@@ -8439,7 +8468,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
      * @return void
      */
     private function refresh_template_tasks( $user_id, $project_id ) {
-        if ( ! $user_id || ! $project_id || '1' === get_user_meta( $user_id, 'framt_task_templates_v3', true ) ) {
+        if ( ! $user_id || ! $project_id || '1' === get_user_meta( $user_id, 'framt_task_templates_v4', true ) ) {
             return;
         }
         $visa    = (string) get_user_meta( $user_id, 'fra_visa_type', true );
@@ -8474,7 +8503,22 @@ Focus on practical advice while being careful not to state incorrect facts. When
         // are part of the same plan and refresh with it.
         $this->generate_profile_tasks( $user_id );
         $this->reconcile_conditional_tasks( $user_id );
-        update_user_meta( $user_id, 'framt_task_templates_v3', '1' );
+
+        // Steps created before the how-tos existed get theirs now, in place.
+        $ctx = $this->howto_context( $user_id );
+        foreach ( FRAMT_Task::get_by_project( $project_id, array() ) as $task ) {
+            $meta = is_array( $task->metadata ) ? $task->metadata : array();
+            if ( ! empty( $meta['howto'] ) ) {
+                continue;
+            }
+            $howto = FRAMT_Task_Howto::for_title( $task->title, $ctx );
+            if ( $howto ) {
+                $meta['howto'] = $howto;
+                $task->metadata = $meta;
+                $task->save();
+            }
+        }
+        update_user_meta( $user_id, 'framt_task_templates_v4', '1' );
     }
 
     /**

@@ -1077,6 +1077,15 @@ export interface FamilyFeatureStatus {
 }
 
 /** When to bring in a professional, and why it applies to this member. */
+/** How to do a generated step: attached to task metadata as `howto`. */
+export interface TaskHowto {
+  steps: { title: string; detail: string; url?: string }[];
+  bring: string[];
+  time: string;
+  cost: string;
+  links: { label: string; url: string }[];
+}
+
 export interface StateFacts {
   state: string;
   name: string;

@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { Drawer } from '@/components/shared/Modal';
 import { useDeleteTask, useUpdateTask, useUpdateTaskStatus } from '@/hooks/useApi';
-import type { Task, TaskPriority, TaskStatus } from '@/types';
+import type { Task, TaskPriority, TaskStatus, TaskHowto } from '@/types';
 import TaskChecklist from './TaskChecklist';
 
 interface TaskDetailProps {
@@ -39,6 +39,8 @@ const priorityOptions: { value: TaskPriority; label: string; color: string }[] =
 ];
 
 export default function TaskDetail({ task, isOpen, onClose }: TaskDetailProps) {
+  const howto = (task?.metadata as { howto?: TaskHowto } | null | undefined)?.howto;
+  const howtoValid = howto && Array.isArray(howto.steps) && howto.steps.length > 0 ? howto : null;
   const [isEditing, setIsEditing] = useState(false);
   const [editedTitle, setEditedTitle] = useState('');
   const [editedDescription, setEditedDescription] = useState('');
@@ -176,6 +178,9 @@ export default function TaskDetail({ task, isOpen, onClose }: TaskDetailProps) {
           </div>
         )}
       </div>
+
+      {/* How to do this: the walkthrough attached to generated steps */}
+      {howtoValid ? <HowTo howto={howtoValid} /> : null}
 
       {/* Task Checklist */}
       <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
@@ -361,4 +366,67 @@ function formatDaysUntil(days: number): string {
   if (days === -1) return '(Yesterday)';
   if (days < 0) return `(${Math.abs(days)} days overdue)`;
   return `(in ${days} days)`;
+}
+
+/**
+ * The walkthrough for a generated step: the order, where to go, what to
+ * bring, how long, what it costs. Links open the official site in a new tab.
+ */
+function HowTo({ howto }: { howto: TaskHowto }) {
+  return (
+    <section className="mb-6 rounded-lg border border-rule bg-card p-5 flex flex-col gap-4" aria-labelledby="howto-title">
+      <div className="flex items-baseline justify-between gap-3">
+        <h4 id="howto-title" className="font-display text-[1.05rem] font-semibold m-0">How to do this</h4>
+        {(howto.time || howto.cost) ? (
+          <span className="font-mono text-[0.68rem] uppercase tracking-wide text-gray-500 text-right">
+            {howto.time}{howto.time && howto.cost ? ' · ' : ''}{howto.cost}
+          </span>
+        ) : null}
+      </div>
+      <ol className="list-none m-0 p-0 flex flex-col">
+        {howto.steps.map((step, i) => {
+          const last = i === howto.steps.length - 1;
+          return (
+            <li key={step.title} className="grid grid-cols-[1.5rem_minmax(0,1fr)] gap-x-3">
+              <div className="flex flex-col items-center" aria-hidden="true">
+                <span className="w-6 h-6 rounded-full border-2 border-primary-500 text-primary-500 text-[0.68rem] font-bold flex items-center justify-center flex-shrink-0">{i + 1}</span>
+                {!last ? <span className="w-px flex-1 my-0.5 bg-rule" /> : null}
+              </div>
+              <div className={last ? 'pb-0' : 'pb-3'}>
+                <span className="block text-[0.92rem] font-semibold leading-snug">{step.title}</span>
+                <span className="block text-[0.85rem] text-gray-600 leading-snug mt-0.5">{step.detail}</span>
+                {step.url ? (
+                  <a href={step.url} target="_blank" rel="noopener noreferrer" className="inline-block mt-1 text-[0.8rem] font-semibold text-primary-500 hover:text-primary-700">
+                    {new URL(step.url).hostname.replace(/^www\./, '')} ↗
+                  </a>
+                ) : null}
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+      {howto.bring.length ? (
+        <div className="flex flex-col gap-1">
+          <span className="eyebrow">Bring</span>
+          <ul className="m-0 p-0 list-none flex flex-wrap gap-1.5">
+            {howto.bring.map((b) => (
+              <li key={b} className="px-2.5 py-1 rounded-full bg-card-2 text-[0.8rem] text-gray-700">{b}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+      {howto.links.length ? (
+        <div className="flex flex-col gap-1">
+          <span className="eyebrow">Official links</span>
+          <ul className="m-0 p-0 list-none flex flex-col gap-0.5">
+            {howto.links.map((l) => (
+              <li key={l.url}>
+                <a href={l.url} target="_blank" rel="noopener noreferrer" className="text-[0.85rem] font-semibold text-primary-500 hover:text-primary-700">{l.label} ↗</a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+    </section>
+  );
 }
