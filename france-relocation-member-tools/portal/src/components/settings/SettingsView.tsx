@@ -10,7 +10,6 @@ import {
   Loader2,
   RefreshCw,
   Save,
-  Settings,
   Trash2,
   User,
 } from 'lucide-react';
