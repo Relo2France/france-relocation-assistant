@@ -8,6 +8,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { HelpCircle } from 'lucide-react';
 import { useGlossary } from '@/hooks/useApi';
+import { usePortalStore } from '@/store';
 
 /**
  * What a glossary entry looks like once normalised. The API sends
@@ -19,6 +20,8 @@ interface GlossaryTerm {
   title: string;
   short: string;
   french?: string;
+  guide?: string;
+  ask?: string;
 }
 
 function asString(v: unknown): string | undefined {
@@ -30,8 +33,10 @@ function normalise(raw: unknown): GlossaryTerm | null {
   const r = raw as Record<string, unknown>;
   const title = asString(r.term) ?? asString(r.title);
   const short = asString(r.definition) ?? asString(r.short);
+  const guide = asString(r.guide);
+  const ask = asString(r.ask);
   if (!title || !short) return null;
-  return { title, short, french: asString(r.french) };
+  return { title, short, french: asString(r.french) , guide, ask };
 }
 
 function escapeRegExp(s: string) {
@@ -66,6 +71,7 @@ function findTerm(terms: GlossaryTerm[], word: string): GlossaryTerm | undefined
 
 function Term({ term, children }: { term: GlossaryTerm; children: string }) {
   const [open, setOpen] = useState(false);
+  const { setActiveGuide, setActiveView, setChatDraft } = usePortalStore();
   const ref = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
@@ -103,6 +109,16 @@ function Term({ term, children }: { term: GlossaryTerm; children: string }) {
             ) : null}
           </span>
           <span className="block leading-snug">{term.short}</span>
+          {term.guide || term.ask ? (
+            <span className="flex gap-3 mt-2">
+              {term.guide ? (
+                <button type="button" onClick={(e) => { e.stopPropagation(); setActiveGuide(term.guide!); setActiveView('guide'); }} className="text-xs font-semibold text-primary-500 hover:text-primary-700">Read the guide →</button>
+              ) : null}
+              {term.ask ? (
+                <button type="button" onClick={(e) => { e.stopPropagation(); setChatDraft(term.ask!); setActiveView('chat'); }} className="text-xs font-semibold text-primary-500 hover:text-primary-700">Ask about my case →</button>
+              ) : null}
+            </span>
+          ) : null}
         </span>
       ) : null}
     </span>

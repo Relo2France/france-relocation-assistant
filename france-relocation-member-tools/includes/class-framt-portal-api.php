@@ -4202,6 +4202,20 @@ Signature:
                 ),
             ),
             array(
+                'id'    => 'taxes',
+                'name'  => 'Taxes',
+                'terms' => array(
+                    array( 'term' => 'Tax treaty', 'french' => 'Convention fiscale franco-américaine', 'definition' => 'The income tax convention between the United States and France. For a US citizen living in France it decides which country taxes each kind of income and how the other side gives credit, so the same income is not taxed twice. It does not stop US citizens having to file in the US every year.', 'pronunciation' => '', 'ask' => 'Explain the US–France tax treaty as it applies to my situation: which of my income is taxed where, and what I still have to file in the US.' ),
+                    array( 'term' => 'Treaty', 'french' => 'Convention fiscale', 'definition' => 'Short for the US–France income tax treaty: the agreement that decides which country taxes each kind of income for a US citizen living in France, and how double taxation is avoided.', 'pronunciation' => '', 'ask' => 'Explain the US–France tax treaty as it applies to my situation: which of my income is taxed where, and what I still have to file in the US.' ),
+                    array( 'term' => 'Totalization agreement', 'french' => 'Accord de sécurité sociale', 'definition' => 'The separate US–France agreement on Social Security contributions, so that work in one country is not charged for retirement contributions in both and periods can be combined for benefits.', 'pronunciation' => '', 'ask' => 'How does the US–France totalization agreement affect my Social Security contributions and benefits?' ),
+                    array( 'term' => 'Tax residency', 'french' => 'Résidence fiscale', 'definition' => 'Being taxable in France on worldwide income. Under Article 4B of the French tax code you are resident if your main home, your main stay, your main professional activity or the centre of your economic interests is in France. It is not just a 183-day count.', 'pronunciation' => '', 'guide' => 'tax-residency-rules' ),
+                    array( 'term' => 'FBAR', 'french' => '', 'definition' => 'The US Report of Foreign Bank and Financial Accounts, filed with FinCEN when the combined value of your non-US accounts passed $10,000 at any point in the year. It is separate from your tax return and the penalties for missing it are severe.', 'pronunciation' => 'eff-bar' ),
+                    array( 'term' => 'Foyer fiscal', 'french' => 'Foyer fiscal', 'definition' => 'The tax household. France assesses income tax per household, not per person: a married or PACS couple files one return and the household\'s income is divided into parts before the rates apply.', 'pronunciation' => 'fwah-yay fees-kal' ),
+                    array( 'term' => 'CSG', 'french' => 'Contribution sociale généralisée', 'definition' => 'A social charge levied alongside income tax, with CRDS, on most income of French tax residents, including investment and rental income. Whether it applies to your US retirement income depends on your health-cover affiliation.', 'pronunciation' => 'say-ess-zhay' ),
+                    array( 'term' => 'IFI', 'french' => 'Impôt sur la fortune immobilière', 'definition' => 'The French real-estate wealth tax on net property assets above €1.3 million. New residents are taxed on French property only for their first five years.', 'pronunciation' => 'ee-eff-ee' ),
+                ),
+            ),
+            array(
                 'id'    => 'housing',
                 'title' => 'Housing',
                 'terms' => array(
