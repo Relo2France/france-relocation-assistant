@@ -9984,6 +9984,63 @@ SYSTEM;
      * @return array
      */
     private function search_communes_data( $query, $department_code = '', $limit = 20 ) {
+        // The French government's geo API knows every commune and matches
+        // names without accents, which is how people type them. Results are
+        // cached for a day; the short static list below is the fallback if
+        // the API is unreachable, so the page never goes blank.
+        $query = trim( (string) $query );
+        $key   = 'framt_geo_' . md5( $query . '|' . $department_code . '|' . (int) $limit );
+        $hit   = get_transient( $key );
+        if ( is_array( $hit ) ) {
+            return $hit;
+        }
+
+        $args = array( 'fields' => 'nom,code,codesPostaux,codeDepartement,departement,region,population', 'limit' => max( 1, min( 200, (int) $limit ) ) );
+        if ( '' !== $query ) {
+            $args['nom']   = $query;
+            $args['boost'] = 'population';
+        }
+        if ( '' !== $department_code ) {
+            $args['codeDepartement'] = $department_code;
+        }
+        $response = wp_remote_get( 'https://geo.api.gouv.fr/communes?' . http_build_query( $args ), array( 'timeout' => 8 ) );
+        if ( ! is_wp_error( $response ) && 200 === (int) wp_remote_retrieve_response_code( $response ) ) {
+            $rows = json_decode( wp_remote_retrieve_body( $response ), true );
+            if ( is_array( $rows ) ) {
+                $communes = array();
+                foreach ( $rows as $row ) {
+                    if ( empty( $row['code'] ) || empty( $row['nom'] ) ) {
+                        continue;
+                    }
+                    $population = (int) ( $row['population'] ?? 0 );
+                    $communes[] = array(
+                        'code'            => (string) $row['code'],
+                        'name'            => (string) $row['nom'],
+                        'postal_codes'    => array_values( (array) ( $row['codesPostaux'] ?? array() ) ),
+                        'department_code' => (string) ( $row['codeDepartement'] ?? '' ),
+                        'department_name' => (string) ( $row['departement']['nom'] ?? '' ),
+                        'region_code'     => (string) ( $row['region']['code'] ?? '' ),
+                        'region_name'     => (string) ( $row['region']['nom'] ?? '' ),
+                        'population'      => $population,
+                        'type'            => $population >= 50000 ? 'city' : ( $population >= 5000 ? 'town' : 'village' ),
+                    );
+                }
+                if ( '' === $query ) {
+                    usort( $communes, function ( $x, $y ) { return $y['population'] <=> $x['population']; } );
+                }
+                $communes = array_slice( $communes, 0, $limit );
+                set_transient( $key, $communes, DAY_IN_SECONDS );
+                return $communes;
+            }
+        }
+
+        return $this->search_communes_fallback( $query, $department_code, $limit );
+    }
+
+    /**
+     * A handful of places to search when the geo API is down.
+     */
+    private function search_communes_fallback( $query, $department_code = '', $limit = 20 ) {
         $communes = array(
             array( 'code' => '33063', 'name' => 'Bordeaux', 'postal_codes' => array( '33000' ), 'department_code' => '33', 'department_name' => 'Gironde', 'region_code' => '75', 'region_name' => 'Nouvelle-Aquitaine', 'population' => 260958, 'type' => 'city' ),
             array( 'code' => '75056', 'name' => 'Paris', 'postal_codes' => array( '75001' ), 'department_code' => '75', 'department_name' => 'Paris', 'region_code' => '11', 'region_name' => 'Île-de-France', 'population' => 2145906, 'type' => 'city' ),
@@ -9993,18 +10050,16 @@ SYSTEM;
             array( 'code' => '06088', 'name' => 'Nice', 'postal_codes' => array( '06000' ), 'department_code' => '06', 'department_name' => 'Alpes-Maritimes', 'region_code' => '93', 'region_name' => "Provence-Alpes-Côte d'Azur", 'population' => 342669, 'type' => 'city' ),
             array( 'code' => '44109', 'name' => 'Nantes', 'postal_codes' => array( '44000' ), 'department_code' => '44', 'department_name' => 'Loire-Atlantique', 'region_code' => '52', 'region_name' => 'Pays de la Loire', 'population' => 320732, 'type' => 'city' ),
             array( 'code' => '67482', 'name' => 'Strasbourg', 'postal_codes' => array( '67000' ), 'department_code' => '67', 'department_name' => 'Bas-Rhin', 'region_code' => '44', 'region_name' => 'Grand Est', 'population' => 287228, 'type' => 'city' ),
-            array( 'code' => '24322', 'name' => 'Monsac', 'postal_codes' => array( '24440' ), 'department_code' => '24', 'department_name' => 'Dordogne', 'region_code' => '75', 'region_name' => 'Nouvelle-Aquitaine', 'population' => 385, 'type' => 'village' ),
+            array( 'code' => '24322', 'name' => 'Périgueux', 'postal_codes' => array( '24000' ), 'department_code' => '24', 'department_name' => 'Dordogne', 'region_code' => '75', 'region_name' => 'Nouvelle-Aquitaine', 'population' => 29896, 'type' => 'town' ),
+            array( 'code' => '24037', 'name' => 'Bergerac', 'postal_codes' => array( '24100' ), 'department_code' => '24', 'department_name' => 'Dordogne', 'region_code' => '75', 'region_name' => 'Nouvelle-Aquitaine', 'population' => 26833, 'type' => 'town' ),
         );
-
-        $query_lower = strtolower( $query );
-        $results = array_filter( $communes, function( $c ) use ( $query_lower, $department_code ) {
-            $name_match = strpos( strtolower( $c['name'] ), $query_lower ) !== false;
-            if ( $department_code && $c['department_code'] !== $department_code ) {
+        $needle = strtolower( remove_accents( (string) $query ) );
+        $results = array_filter( $communes, function ( $c ) use ( $needle, $department_code ) {
+            if ( '' !== $department_code && $c['department_code'] !== $department_code ) {
                 return false;
             }
-            return $name_match;
+            return '' === $needle || false !== strpos( strtolower( remove_accents( $c['name'] ) ), $needle );
         } );
-
         return array_slice( array_values( $results ), 0, $limit );
     }
 
@@ -10029,7 +10084,14 @@ SYSTEM;
                 }
             }
         } elseif ( 'commune' === $type ) {
-            foreach ( $this->search_communes_data( '', '', 100 ) as $c ) {
+            $response = wp_remote_get( 'https://geo.api.gouv.fr/communes/' . rawurlencode( $code ) . '?fields=nom', array( 'timeout' => 8 ) );
+            if ( ! is_wp_error( $response ) && 200 === (int) wp_remote_retrieve_response_code( $response ) ) {
+                $row = json_decode( wp_remote_retrieve_body( $response ), true );
+                if ( ! empty( $row['nom'] ) ) {
+                    return (string) $row['nom'];
+                }
+            }
+            foreach ( $this->search_communes_fallback( '', '', 100 ) as $c ) {
                 if ( $c['code'] === $code ) {
                     return $c['name'];
                 }
