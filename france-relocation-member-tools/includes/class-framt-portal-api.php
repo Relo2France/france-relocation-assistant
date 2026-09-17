@@ -2670,9 +2670,16 @@ class FRAMT_Portal_API {
         $meta['check']  = array_merge( $check, array( 'checked_at' => current_time( 'mysql' ) ) );
         $wpdb->update( $table, array( 'category' => $guess['category'], 'metadata' => wp_json_encode( $meta ) ), array( 'id' => $file->id ) );
 
-        // A passport's expiry belongs in the profile too; the dossier reads it there.
-        if ( 'passport' === $guess['document_type'] && ! empty( $guess['fields']['expiry_date'] ) && '' === (string) get_user_meta( (int) $file->user_id, 'fra_passport_expiry', true ) ) {
-            update_user_meta( (int) $file->user_id, 'fra_passport_expiry', $guess['fields']['expiry_date'] );
+        // A passport's expiry belongs in the profile too; the dossier reads it
+        // there. A confident read fills an empty profile value and replaces one
+        // that cannot be true (a misread from an earlier upload, or a typo), and
+        // the profile remembers which upload it came from.
+        if ( 'passport' === $guess['document_type'] && ! empty( $guess['fields']['expiry_date'] ) && 'low' !== $guess['confidence'] ) {
+            $current = (string) get_user_meta( (int) $file->user_id, 'fra_passport_expiry', true );
+            if ( '' === $current || ! $this->plausible_passport_expiry( $current ) ) {
+                update_user_meta( (int) $file->user_id, 'fra_passport_expiry', $guess['fields']['expiry_date'] );
+                update_user_meta( (int) $file->user_id, 'fra_passport_expiry_source', 'file:' . (int) $file->id );
+            }
         }
         if ( '' !== $guess['dossier_item'] ) {
             $this->complete_checklist_item_with_file( (int) $file->user_id, 'visa-application', $guess['dossier_item'], (int) $file->id );
@@ -2761,9 +2768,23 @@ class FRAMT_Portal_API {
         );
         $confidence = sanitize_key( (string) ( $json['confidence'] ?? 'medium' ) );
         $fields     = is_array( $json['fields'] ?? null ) ? $json['fields'] : array();
-        $date       = function ( $v ) {
+        // A date the model reads has to be one the field can hold. A passport
+        // cannot expire in the past or more than about eleven years out; a
+        // statement cannot be dated years ago or in the future. Anything
+        // outside the window is treated as unread rather than trusted, so a
+        // misread never reaches the profile or the dossier.
+        $today = (int) floor( time() / 86400 );
+        $date  = function ( $v, $min_years, $max_years ) use ( $today ) {
             $v = is_string( $v ) ? trim( $v ) : '';
-            return preg_match( '/^\d{4}-\d{2}-\d{2}$/', $v ) ? $v : null;
+            if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $v ) ) {
+                return null;
+            }
+            $ts = strtotime( $v . ' UTC' );
+            if ( false === $ts ) {
+                return null;
+            }
+            $days = (int) floor( $ts / 86400 ) - $today;
+            return ( $days >= $min_years * 365 && $days <= $max_years * 365 ) ? $v : null;
         };
         return array(
             'category'      => isset( $map[ $type ] ) ? $map[ $type ][0] : 'other',
@@ -2772,10 +2793,10 @@ class FRAMT_Portal_API {
             'dossier_item'  => ( isset( $map[ $type ] ) && 'low' !== $confidence ) ? $map[ $type ][1] : '',
             'confidence'    => $confidence,
             'fields'        => array(
-                'expiry_date'         => $date( $fields['expiry_date'] ?? null ),
-                'issue_date'          => $date( $fields['issue_date'] ?? null ),
-                'document_date'       => $date( $fields['document_date'] ?? null ),
-                'coverage_end'        => $date( $fields['coverage_end'] ?? null ),
+                'expiry_date'         => $date( $fields['expiry_date'] ?? null, 0, 11 ),
+                'issue_date'          => $date( $fields['issue_date'] ?? null, -15, 0 ),
+                'document_date'       => $date( $fields['document_date'] ?? null, -3, 0.1 ),
+                'coverage_end'        => $date( $fields['coverage_end'] ?? null, -1, 3 ),
                 'coverage_amount_eur' => is_numeric( $fields['coverage_amount_eur'] ?? null ) ? (float) $fields['coverage_amount_eur'] : null,
                 'apostille_present'   => isset( $fields['apostille_present'] ) && null !== $fields['apostille_present'] ? (bool) $fields['apostille_present'] : null,
                 'translation_present' => isset( $fields['translation_present'] ) && null !== $fields['translation_present'] ? (bool) $fields['translation_present'] : null,
@@ -3325,6 +3346,7 @@ class FRAMT_Portal_API {
     public function get_member_profile( $request ) {
         $user_id = $this->acting_user_id();
         $user    = get_userdata( $user_id );
+        $this->reconcile_passport_expiry( $user_id );
 
         // Get all profile meta - using frontend field names
         $profile = array(
@@ -3482,8 +3504,8 @@ class FRAMT_Portal_API {
         // typo like 1931 would otherwise flag the dossier and date nothing right.
         if ( array_key_exists( 'passport_expiry', $params ) && '' !== (string) $params['passport_expiry'] && null !== $params['passport_expiry'] ) {
             $exp = (string) $params['passport_expiry'];
-            if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $exp ) || $exp < gmdate( 'Y-m-d' ) ) {
-                return new WP_Error( 'invalid_passport_expiry', 'The passport expiry must be a calendar date (YYYY-MM-DD) in the future. Check the year.', array( 'status' => 400 ) );
+            if ( ! $this->plausible_passport_expiry( $exp ) ) {
+                return new WP_Error( 'invalid_passport_expiry', 'The passport expiry must be a date in the future, within twenty years. Check the year.', array( 'status' => 400 ) );
             }
         }
 
@@ -3731,10 +3753,14 @@ class FRAMT_Portal_API {
         $passport_note   = '';
         $passport_ok     = null;
         if ( 'visa-application' === $type ) {
+            $this->reconcile_passport_expiry( $user_id );
             $expiry  = (string) get_user_meta( $user_id, 'fra_passport_expiry', true );
             $project = FRAMT_Project::get_or_create( $user_id );
             $move    = $project && $project->target_move_date ? $project->target_move_date : (string) get_user_meta( $user_id, 'fra_target_move_date', true );
-            if ( $expiry && $move ) {
+            if ( '' !== $expiry && ! $this->plausible_passport_expiry( $expiry ) ) {
+                $passport_ok   = false;
+                $passport_note = sprintf( 'Your profile says the passport expires %s, which cannot be right · check the year', $expiry );
+            } elseif ( $expiry && $move ) {
                 try {
                     $expiry_date = new DateTime( substr( $expiry, 0, 10 ) );
                     $move_date   = new DateTime( substr( $move, 0, 10 ) );
@@ -7966,6 +7992,54 @@ Focus on practical advice while being careful not to state incorrect facts. When
         }
 
         return $templates;
+    }
+
+    /**
+     * Can this be a real passport expiry? A date, in the future, within twenty years.
+     *
+     * @param string $v YYYY-MM-DD.
+     * @return bool
+     */
+    private function plausible_passport_expiry( $v ) {
+        $v = (string) $v;
+        if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $v ) ) {
+            return false;
+        }
+        $ts = strtotime( $v . ' UTC' );
+        return false !== $ts && $ts > time() && $ts < time() + 20 * 365 * 86400;
+    }
+
+    /**
+     * If the profile's passport expiry cannot be true and a recognised
+     * passport on file has one that can, the file wins. Runs whenever the
+     * profile or the dossier is read, so a bad value never lingers.
+     *
+     * @param int $user_id Member.
+     * @return void
+     */
+    private function reconcile_passport_expiry( $user_id ) {
+        global $wpdb;
+        $current = (string) get_user_meta( $user_id, 'fra_passport_expiry', true );
+        if ( '' === $current || $this->plausible_passport_expiry( $current ) ) {
+            return;
+        }
+        $rows = $wpdb->get_results( $wpdb->prepare( "SELECT id, metadata FROM {$this->tbl('files')} WHERE user_id = %d ORDER BY id DESC LIMIT 50", $user_id ) );
+        foreach ( (array) $rows as $row ) {
+            $meta = $row->metadata ? json_decode( $row->metadata, true ) : array();
+            if ( ! is_array( $meta ) || 'passport' !== ( $meta['document_type'] ?? '' ) ) {
+                continue;
+            }
+            $exp = (string) ( $meta['fields']['expiry_date'] ?? '' );
+            if ( $this->plausible_passport_expiry( $exp ) ) {
+                update_user_meta( $user_id, 'fra_passport_expiry', $exp );
+                update_user_meta( $user_id, 'fra_passport_expiry_source', 'file:' . (int) $row->id );
+                if ( class_exists( 'FRAMT_Activity' ) ) {
+                    $project = FRAMT_Project::get_or_create( $user_id );
+                    FRAMT_Activity::log( $project ? (int) $project->id : 0, $user_id, 'profile_corrected', 'profile', 0, sprintf( 'Passport expiry %s could not be right; replaced with %s from your passport upload', $current, $exp ) );
+                }
+                return;
+            }
+        }
     }
 
     /**
