@@ -77,6 +77,15 @@ export async function reviewTopic(
     return base;
   }
 
+  // An update nothing verified does not go to the queue. The run report
+  // names it and WordPress emails it; the topic is checked again next week.
+  if (outcome.webSources.length === 0) {
+    const codes = Array.from(new Set(outcome.webSearchErrors));
+    throw new Error(
+      `Update withheld: web search returned no results${codes.length ? ` (${codes.join(', ')})` : ''}, so the suggested change could not be verified`
+    );
+  }
+
   const posted = await postSuggestion(env, {
     topic,
     result,

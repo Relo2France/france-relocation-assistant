@@ -56,6 +56,9 @@ export interface GapOutcome {
   in_practice_content?: string;
   practice_sources?: string[];
   error?: string;
+  /** The draft was written but withheld: nothing verified it. */
+  deferred?: boolean;
+  question?: string;
   duration_ms: number;
   output_tokens?: number;
   web_sources?: number;
@@ -234,6 +237,37 @@ export async function draftGap(env: Env, gap: Gap): Promise<GapOutcome> {
       : `No JSON object found in a ${outcome.text.length} character response`;
     await postGapResult(env, gap.id, { error: why }).catch(() => undefined);
     return { ...base, ok: false, error: why, duration_ms: Date.now() - started };
+  }
+
+  // A draft nothing verified is not a draft for the queue. No web result at
+  // all, or a low-confidence draft written through search failures, is
+  // withheld: the gap stays open for a retry and the run report says why.
+  const sources = outcome.webSources.length;
+  const searchErrors = outcome.webSearchErrors;
+  const confidence = draft.confidence ?? 'medium';
+  if (sources === 0 || (searchErrors.length > 0 && confidence === 'low')) {
+    const codes = Array.from(new Set(searchErrors));
+    const why =
+      sources === 0
+        ? `Web search returned no results${codes.length ? ` (${codes.join(', ')})` : ''}; the draft was written from memory and withheld`
+        : `Web search failed ${searchErrors.length} time${searchErrors.length === 1 ? '' : 's'} (${codes.join(', ')}) and the draft rates itself low confidence; withheld`;
+    await postGapResult(env, gap.id, {
+      error: why,
+      deferred: true,
+      web_search_errors: searchErrors,
+      web_sources: sources,
+    }).catch(() => undefined);
+    return {
+      ...base,
+      ok: false,
+      deferred: true,
+      error: why,
+      question: gap.questions?.[0],
+      duration_ms: Date.now() - started,
+      output_tokens: outcome.usage.output,
+      web_sources: sources,
+      web_search_errors: searchErrors,
+    };
   }
 
   const target = resolveTarget(gap, draft);

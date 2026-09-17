@@ -460,6 +460,54 @@ class FRA_KB_Gaps {
     }
 
     /**
+     * The worker drafted this gap but could not verify it (web search failed
+     * or returned nothing), so the draft was withheld. The gap stays open and
+     * is retried: after a day the first two times, after a week from the
+     * third, so a search outage does not burn a slot every night forever.
+     *
+     * @param string   $id      Gap id
+     * @param string   $message Why it was withheld
+     * @param string[] $errors  Web search error codes
+     * @param int      $sources Web results the draft did get
+     * @return bool
+     */
+    public static function mark_deferred($id, $message, $errors = array(), $sources = 0) {
+        $gaps = get_option(self::GAPS_OPTION, array());
+        if (!isset($gaps[$id])) {
+            return false;
+        }
+        $gaps[$id]['status']             = 'open';
+        $gaps[$id]['last_error']         = substr((string) $message, 0, 300);
+        $gaps[$id]['last_failed_at']     = current_time('mysql');
+        $gaps[$id]['defer_count']        = (int) ($gaps[$id]['defer_count'] ?? 0) + 1;
+        $gaps[$id]['last_search_errors'] = array_values(array_unique(array_map('sanitize_text_field', (array) $errors)));
+        $gaps[$id]['last_web_sources']   = (int) $sources;
+        update_option(self::GAPS_OPTION, $gaps, false);
+        return true;
+    }
+
+    /**
+     * A draft was rejected in the review queue: the gap is still a gap, so it
+     * goes back to open and waits a day before it is drafted again.
+     *
+     * @param string $id Gap id
+     * @return bool
+     */
+    public static function reopen($id) {
+        $gaps = get_option(self::GAPS_OPTION, array());
+        if (!isset($gaps[$id])) {
+            return false;
+        }
+        $gaps[$id]['status']         = 'open';
+        $gaps[$id]['last_error']     = 'Draft rejected in the review queue';
+        $gaps[$id]['last_failed_at'] = current_time('mysql');
+        $gaps[$id]['defer_count']    = (int) ($gaps[$id]['defer_count'] ?? 0) + 1;
+        unset($gaps[$id]['review_id'], $gaps[$id]['drafted_at']);
+        update_option(self::GAPS_OPTION, $gaps, false);
+        return true;
+    }
+
+    /**
      * Which gaps have recurred often enough to be worth drafting?
      *
      * @return array
@@ -473,8 +521,11 @@ class FRA_KB_Gaps {
             if (!empty($gap['stale'])) {
                 continue;
             }
-            if (!empty($gap['last_error']) && !empty($gap['last_failed_at']) && strtotime($gap['last_failed_at']) > time() - DAY_IN_SECONDS) {
-                continue;
+            if (!empty($gap['last_error']) && !empty($gap['last_failed_at'])) {
+                $wait = (int) ($gap['defer_count'] ?? 0) >= 3 ? WEEK_IN_SECONDS : DAY_IN_SECONDS;
+                if (strtotime($gap['last_failed_at']) > time() - $wait) {
+                    continue;
+                }
             }
             if ('raised' === $gap['type']) {
                 $threshold = self::RAISED_THRESHOLD;

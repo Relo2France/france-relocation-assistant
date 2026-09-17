@@ -1144,6 +1144,10 @@ For example, for Visitor Visa:
         $pending = $this->get_pending_reviews();
         
         if (isset($pending[$review_id])) {
+            // A rejected gap draft leaves its gap open, to be drafted again later.
+            if (!empty($pending[$review_id]['gap_id']) && class_exists('FRA_KB_Gaps')) {
+                FRA_KB_Gaps::reopen($pending[$review_id]['gap_id']);
+            }
             unset($pending[$review_id]);
             update_option(self::PENDING_REVIEWS_OPTION, $pending);
         }
@@ -1188,7 +1192,15 @@ For example, for Visitor Visa:
             wp_send_json_error('Unauthorized');
         }
         
-        $count = count($this->get_pending_reviews());
+        $pending = $this->get_pending_reviews();
+        $count   = count($pending);
+        if (class_exists('FRA_KB_Gaps')) {
+            foreach ($pending as $review) {
+                if (!empty($review['gap_id'])) {
+                    FRA_KB_Gaps::reopen($review['gap_id']);
+                }
+            }
+        }
         update_option(self::PENDING_REVIEWS_OPTION, array());
         
         wp_send_json_success(array(

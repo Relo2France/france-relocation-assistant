@@ -140,6 +140,12 @@ class FRA_Review_API {
             ),
         ));
 
+        register_rest_route(self::NS, '/review/gaps/report', array(
+            'methods'             => 'POST',
+            'callback'            => array($this, 'report_gap_run'),
+            'permission_callback' => array($this, 'authenticate'),
+        ));
+
         register_rest_route(self::NS, '/review/gaps/(?P<id>[A-Za-z0-9_]+)', array(
             'methods'             => WP_REST_Server::CREATABLE,
             'callback'            => array($this, 'create_gap_draft'),
@@ -698,6 +704,75 @@ class FRA_Review_API {
      * @param WP_REST_Request $request Request
      * @return WP_REST_Response|WP_Error
      */
+    /**
+     * The worker's report on a gap-drafting run. Drafts it withheld for want
+     * of verification, and drafts that failed outright, are emailed to the
+     * review address as a list to work on; nothing about them enters the
+     * approval queue. The report is also kept for the admin screen.
+     *
+     * @param WP_REST_Request $request
+     * @return WP_REST_Response
+     */
+    public function report_gap_run($request) {
+        $deferred = array();
+        foreach ((array) $request->get_param('deferred') as $d) {
+            if (!is_array($d)) {
+                continue;
+            }
+            $deferred[] = array(
+                'gap_id'   => sanitize_text_field((string) ($d['gap_id'] ?? '')),
+                'type'     => sanitize_text_field((string) ($d['type'] ?? '')),
+                'question' => sanitize_text_field((string) ($d['question'] ?? '')),
+                'topic'    => sanitize_text_field((string) ($d['topic'] ?? '')),
+                'error'    => sanitize_text_field((string) ($d['error'] ?? '')),
+                'errors'   => array_values(array_unique(array_map('sanitize_text_field', (array) ($d['web_search_errors'] ?? array())))),
+                'sources'  => (int) ($d['web_sources'] ?? 0),
+            );
+        }
+        $failed = array();
+        foreach ((array) $request->get_param('failures') as $f) {
+            if (is_array($f)) {
+                $failed[] = array('gap_id' => sanitize_text_field((string) ($f['gap_id'] ?? '')), 'error' => sanitize_text_field((string) ($f['error'] ?? '')));
+            }
+        }
+        $report = array(
+            'date'       => current_time('mysql'),
+            'considered' => (int) $request->get_param('considered'),
+            'drafted'    => (int) $request->get_param('drafted'),
+            'deferred'   => $deferred,
+            'failed'     => $failed,
+        );
+        update_option('fra_gap_run_last', $report, false);
+
+        if ($deferred || $failed) {
+            $settings = get_option('fra_scheduled_review_settings', array());
+            $email    = sanitize_email((string) ($settings['email_address'] ?? '')) ?: get_option('admin_email');
+            $site     = get_bloginfo('name');
+            $subject  = sprintf('[%s] %d knowledge-base draft%s need a hand', $site, count($deferred) + count($failed), 1 === count($deferred) + count($failed) ? '' : 's');
+            $lines    = array();
+            $lines[]  = sprintf('The overnight gap run drafted %d of %d. These were not put in the review queue:', $report['drafted'], $report['considered']);
+            $lines[]  = '';
+            foreach ($deferred as $d) {
+                $lines[] = sprintf('WITHHELD, unverified: %s', $d['question'] ?: ($d['topic'] ?: $d['gap_id']));
+                $lines[] = sprintf('  %s', $d['error']);
+                if ($d['errors']) {
+                    $lines[] = sprintf('  Search errors: %s. Web results kept: %d.', implode(', ', $d['errors']), $d['sources']);
+                }
+                $lines[] = '  It will be tried again automatically (after a day, then weekly from the third try).';
+                $lines[] = '';
+            }
+            foreach ($failed as $f) {
+                $lines[] = sprintf('FAILED: %s', $f['gap_id']);
+                $lines[] = sprintf('  %s', $f['error']);
+                $lines[] = '';
+            }
+            $lines[] = 'Gaps: ' . admin_url('admin.php?page=france-relocation-assistant-ai-review');
+            wp_mail($email, $subject, implode("\n", $lines));
+        }
+
+        return rest_ensure_response(array('recorded' => 'report', 'deferred' => count($deferred), 'failed' => count($failed)));
+    }
+
     public function create_gap_draft($request) {
         if (!class_exists('FRA_KB_Gaps')) {
             return new WP_Error('fra_gaps_unavailable', __('Gap detection is not available.', 'france-relocation-assistant'), array('status' => 503));
@@ -720,6 +795,12 @@ class FRA_Review_API {
         // is visible instead of looking untouched.
         $error = $request->get_param('error');
         if (!empty($error) && is_string($error)) {
+            // A draft the worker could not verify is withheld, not queued: the
+            // gap waits for a retry and the run report emails the reason.
+            if ((bool) $request->get_param('deferred')) {
+                FRA_KB_Gaps::mark_deferred($gap_id, $error, (array) $request->get_param('web_search_errors'), (int) $request->get_param('web_sources'));
+                return new WP_REST_Response(array('gap_id' => $gap_id, 'recorded' => 'deferred'), 200);
+            }
             FRA_KB_Gaps::mark_failed($gap_id, $error);
             return new WP_REST_Response(array('gap_id' => $gap_id, 'recorded' => 'error'), 200);
         }

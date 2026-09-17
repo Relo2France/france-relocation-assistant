@@ -60,7 +60,8 @@ export class GapWorkflow extends WorkflowEntrypoint<Env, GapParams> {
 
     return await step.do('summarise', async () => {
       const drafted = outcomes.filter((o) => o.ok);
-      const failed = outcomes.filter((o) => !o.ok);
+      const deferred = outcomes.filter((o) => !o.ok && o.deferred);
+      const failed = outcomes.filter((o) => !o.ok && !o.deferred);
 
       const summary = {
         considered: gaps.length,
@@ -69,6 +70,14 @@ export class GapWorkflow extends WorkflowEntrypoint<Env, GapParams> {
         new_topics: drafted.filter((o) => o.is_new_topic).length,
         // Named, not counted.
         failures: failed.map((o) => ({ gap_id: o.gap_id, error: o.error })),
+        deferred: deferred.map((o) => ({
+          gap_id: o.gap_id,
+          type: o.type,
+          question: o.question ?? '',
+          error: o.error ?? '',
+          web_search_errors: o.web_search_errors ?? [],
+          web_sources: o.web_sources ?? 0,
+        })),
         total_output_tokens: drafted.reduce((sum, o) => sum + (o.output_tokens ?? 0), 0),
         // A draft written without a single search result is a draft written
         // from memory; say so where it can be seen.
@@ -77,6 +86,25 @@ export class GapWorkflow extends WorkflowEntrypoint<Env, GapParams> {
       };
 
       console.log('gap workflow complete', summary);
+
+      // WordPress emails the withheld and failed ones as a list to work on.
+      try {
+        await fetch(`${this.env.WP_BASE_URL}/wp-json/fra/v1/review/gaps/report`, {
+          method: 'POST',
+          headers: {
+            authorization: `Bearer ${(this.env.WP_SHARED_SECRET ?? '').trim()}`,
+            'content-type': 'application/json',
+          },
+          body: JSON.stringify({
+            considered: summary.considered,
+            drafted: summary.drafted,
+            failures: summary.failures,
+            deferred: summary.deferred,
+          }),
+        });
+      } catch (error) {
+        console.error('gap run report not delivered', error instanceof Error ? error.message : String(error));
+      }
       return summary;
     });
   }
