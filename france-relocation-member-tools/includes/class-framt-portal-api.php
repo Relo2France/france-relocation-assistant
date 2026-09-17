@@ -2465,7 +2465,8 @@ class FRAMT_Portal_API {
 
         // Say what it is, if the member did not. Category 'upload' and 'other'
         // mean they did not choose; a dossier item means they did.
-        if ( ! $item_id && in_array( $category, array( 'upload', 'other', '' ), true ) ) {
+        $real_categories = array( 'identity', 'financial', 'housing', 'employment', 'visa', 'medical', 'education' );
+        if ( ! $item_id && ! in_array( $category, $real_categories, true ) ) {
             $guess = $this->classify_uploaded_document( $file );
             if ( $guess ) {
                 $this->apply_classification( $file, $guess );
