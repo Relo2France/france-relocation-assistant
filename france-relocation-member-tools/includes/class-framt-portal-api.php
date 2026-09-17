@@ -1487,8 +1487,13 @@ class FRAMT_Portal_API {
         $portal_settings = FRAMT_Portal_Settings::get_settings();
         $banner_dismissed = get_user_meta( $user_id, 'framt_welcome_banner_dismissed', true );
 
+        // The banner asks for two things, a move date and a visa route. Once
+        // both are in, it has done its job and retires on its own; nobody
+        // should have to find the X on a page that already knows where they are.
+        $banner_done = '' !== (string) $profile_visa_type && 'undecided' !== $profile_visa_type && ! empty( $project->target_move_date );
+
         $welcome_banner = null;
-        if ( ! empty( $portal_settings['welcome_banner_enabled'] ) && ! $banner_dismissed ) {
+        if ( ! empty( $portal_settings['welcome_banner_enabled'] ) && ! $banner_dismissed && ! $banner_done ) {
             $welcome_banner = array(
                 'title'        => $portal_settings['welcome_banner_title'] ?? '',
                 'message'      => $portal_settings['welcome_banner_message'] ?? '',
