@@ -106,12 +106,17 @@ class FRAMT_Project {
      * @var array
      */
     public static $visa_types = array(
-        'visitor' => 'Visitor Visa (Long Stay)',
-        'talent'  => 'Talent Passport',
-        'student' => 'Student Visa',
-        'family'  => 'Family Visa',
-        'work'    => 'Work Visa',
-        'other'   => 'Other',
+        'visitor'         => 'Visitor Visa (Long Stay)',
+        'retiree'         => 'Visitor Visa, retired',
+        'talent'          => 'Talent Passport',
+        'talent_passport' => 'Talent Passport',
+        'student'         => 'Student Visa',
+        'family'          => 'Family Visa',
+        'spouse_french'   => 'Spouse of a French National',
+        'work'            => 'Work Visa',
+        'employee'        => 'Employee Visa',
+        'entrepreneur'    => 'Entrepreneur Visa',
+        'other'           => 'Other',
     );
 
     /**

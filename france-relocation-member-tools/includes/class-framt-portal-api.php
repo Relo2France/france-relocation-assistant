@@ -8156,12 +8156,12 @@ Focus on practical advice while being careful not to state incorrect facts. When
                 'days_offset' => 14, // 2 weeks after move
             ),
             array(
-                'title'       => 'Register for social security',
-                'description' => 'Apply for your French social security number (numéro de sécurité sociale).',
+                'title'       => 'Apply for French health cover (PUMa)',
+                'description' => 'Residence-based cover opens once you have lived in France for three months. Apply to your local CPAM with proof of address and residence; your private policy carries you until then.',
                 'stage'       => 'arrival',
                 'priority'    => 'high',
                 'task_type'   => 'task',
-                'days_offset' => 7, // 1 week after move
+                'days_offset' => 91, // three months of residence
             ),
             array(
                 'title'       => 'Find permanent housing',
@@ -8410,20 +8410,12 @@ Focus on practical advice while being careful not to state incorrect facts. When
                         'days_offset' => -90, // 3 months before move
                     ),
                     array(
-                        'title'       => 'Arrange pension transfer',
-                        'description' => 'Set up international transfer of pension payments to France.',
+                        'title'       => 'Decide how your pension and Social Security get paid in France',
+                        'description' => 'Social Security can be paid to a French account or kept in the US; pensions and IRA withdrawals usually stay in US accounts. Choose before you go, and keep at least one US account open for it.',
                         'stage'       => 'pre-arrival',
                         'priority'    => 'medium',
                         'task_type'   => 'financial',
                         'days_offset' => -60, // 2 months before move
-                    ),
-                    array(
-                        'title'       => 'Research S1 health form',
-                        'description' => 'If from EU/UK, investigate S1 form for healthcare coverage.',
-                        'stage'       => 'pre-arrival',
-                        'priority'    => 'high',
-                        'task_type'   => 'task',
-                        'days_offset' => -90, // 3 months before move
                     ),
                 );
                 break;

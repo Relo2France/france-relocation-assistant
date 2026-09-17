@@ -219,7 +219,7 @@ export function stageWhen(stage: JourneyStageId, project: Pick<Project, 'target_
       return `${months} ${months === 1 ? 'MONTH' : 'MONTHS'} OUT`;
     }
     case 'prepare': return month(shift(-180));
-    case 'apply': return month(shift(-90));
+    case 'apply': return month(shift(-120));
     case 'move': return month(move);
     case 'arrive': return `${month(move)} · 90 DAYS`;
     case 'settle': return `${move.getUTCFullYear() + 1} →`;

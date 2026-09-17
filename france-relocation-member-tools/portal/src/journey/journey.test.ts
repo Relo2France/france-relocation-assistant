@@ -66,7 +66,7 @@ describe('labels', () => {
   });
   it('dates the road from the move', () => {
     expect(stageWhen('move', project, NOW)).toBe('AUG 2027');
-    expect(stageWhen('apply', project, NOW)).toBe('MAY 2027');
+    expect(stageWhen('apply', project, NOW)).toBe('APR 2027'); // 120 days out, when currentStage switches to Apply
     expect(stageWhen('settle', project, NOW)).toBe('2028 →');
     expect(stageWhen('move', { target_move_date: null })).toBe('');
   });
