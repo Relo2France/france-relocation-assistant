@@ -8468,12 +8468,12 @@ Focus on practical advice while being careful not to state incorrect facts. When
      * @return void
      */
     private function refresh_template_tasks( $user_id, $project_id ) {
-        if ( ! $user_id || ! $project_id || '1' === get_user_meta( $user_id, 'framt_task_templates_v4', true ) ) {
+        if ( ! $user_id || ! $project_id || '1' === get_user_meta( $user_id, 'framt_task_templates_v5', true ) ) {
             return;
         }
         $visa    = (string) get_user_meta( $user_id, 'fra_visa_type', true );
         $current = array();
-        foreach ( $this->get_visa_task_templates( $visa ?: 'undecided' ) as $tpl ) {
+        foreach ( array_merge( $this->get_visa_task_templates( $visa ?: 'undecided' ), $this->get_pet_task_templates(), $this->get_spouse_task_templates(), $this->get_children_task_templates(), $this->get_profile_task_templates( $user_id ) ) as $tpl ) {
             $current[ $tpl['title'] ] = $tpl;
         }
         $retired = $this->get_retired_template_titles();
@@ -8499,8 +8499,14 @@ Focus on practical advice while being careful not to state incorrect facts. When
         if ( '' !== $visa && 'undecided' !== $visa ) {
             $this->generate_visa_tasks( $user_id, $visa );
         }
-        // Profile-driven steps (the driving licence by state, the professionals)
-        // are part of the same plan and refresh with it.
+        // Household, pet and profile-driven steps are part of the same plan
+        // and refresh with it; passing an empty old value forces the check.
+        $this->generate_conditional_tasks( $user_id, array(
+            'old_has_pets'   => '',
+            'new_has_pets'   => (string) get_user_meta( $user_id, 'fra_has_pets', true ),
+            'old_applicants' => '',
+            'new_applicants' => (string) get_user_meta( $user_id, 'fra_applicants', true ),
+        ) );
         $this->generate_profile_tasks( $user_id );
         $this->reconcile_conditional_tasks( $user_id );
 
@@ -8518,7 +8524,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                 $task->save();
             }
         }
-        update_user_meta( $user_id, 'framt_task_templates_v4', '1' );
+        update_user_meta( $user_id, 'framt_task_templates_v5', '1' );
     }
 
     /**
@@ -8627,11 +8633,11 @@ Focus on practical advice while being careful not to state incorrect facts. When
             array(
                 'person'      => 'partner',
                 'title'       => 'Register spouse for social security',
-                'description' => 'Register your spouse as an ayant droit for health coverage.',
-                'stage'       => 'arrival',
+                'description' => 'Since PUMa there are no adult dependants: each adult affiliates in their own right. After three months of residence your spouse files their own form 736 with CPAM, with their own apostilled and translated birth certificate.',
+                'stage'       => 'settle',
                 'priority'    => 'medium',
                 'task_type'   => 'task',
-                'days_offset' => 21, // 3 weeks after move
+                'days_offset' => 95, // three months of residence, like yours
             ),
         );
     }

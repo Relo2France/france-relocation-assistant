@@ -941,6 +941,18 @@ class FRAMT_Task_Howto {
                 'links' => array(),
             ),
 
+            'Register spouse for social security' => array(
+                'steps' => array(
+                    array( 'Wait the same three months', 'Residence-based cover opens for each adult separately after three months of stable residence; there is no dependant status for a spouse.' ),
+                    array( 'File form 736 in {spouse}\'s name', 'The same form as yours, sent to the same CPAM, with {spouse}\'s passport and visa, validation confirmation, proof of the shared address, their apostilled birth certificate with a sworn translation, and a RIB (a joint account is fine).', $ameli ),
+                    array( 'Two numbers, two cards', 'Each of you gets a social security number and, later, a carte Vitale.' ),
+                ),
+                'bring' => array( 'Form 736', '{spouse}\'s passport, visa and validation', 'Proof of address', 'Birth certificate, apostilled and translated', 'RIB' ),
+                'time'  => 'After three months of residence; weeks to months to process.',
+                'cost'  => 'Free.',
+                'links' => array( array( 'ameli.fr', $ameli ) ),
+            ),
+
             'Gather spouse documents' => array(
                 'steps' => array(
                     array( 'Build {spouse}\'s dossier in parallel', 'Their own passport, photos, France-Visas form, proof of accommodation, insurance attestation, financial proof (shared accounts are fine, named on both), and their own certified, apostilled birth certificate.' ),
