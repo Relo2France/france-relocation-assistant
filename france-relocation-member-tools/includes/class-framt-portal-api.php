@@ -1200,6 +1200,17 @@ class FRAMT_Portal_API {
      *
      * @return int User ID whose data the request reads and writes.
      */
+    /**
+     * A schema table name for use inside a query string. The portal's tables
+     * are fra_*; raw framt_* names silently hit tables that do not exist.
+     *
+     * @param string $key Schema key: tasks, projects, files, notes, ...
+     * @return string
+     */
+    private function tbl( $key ) {
+        return FRAMT_Portal_Schema::get_table( $key );
+    }
+
     private function acting_user_id() {
         $current = get_current_user_id();
         if ( ! $current ) {
@@ -1948,7 +1959,7 @@ class FRAMT_Portal_API {
             if ( $ids ) {
                 $placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
                 $mine = $wpdb->get_col( $wpdb->prepare(
-                    "SELECT id FROM {$wpdb->prefix}framt_tasks WHERE user_id = %d AND id IN ($placeholders)",
+                    "SELECT id FROM {$this->tbl('tasks')} WHERE user_id = %d AND id IN ($placeholders)",
                     array_merge( array( $this->acting_user_id() ), $ids )
                 ) );
                 $mine  = array_map( 'intval', (array) $mine );
@@ -6060,7 +6071,7 @@ Now respond to this follow-up:";
 
         // Get user's uploaded documents
         global $wpdb;
-        $files_table = $wpdb->prefix . 'framt_files';
+        $files_table = FRAMT_Portal_Schema::get_table( 'files' );
         if ( $wpdb->get_var( "SHOW TABLES LIKE '{$files_table}'" ) === $files_table ) {
             $documents = $wpdb->get_results( $wpdb->prepare(
                 "SELECT id, original_name, category, uploaded_at FROM {$files_table} WHERE user_id = %d ORDER BY uploaded_at DESC",
@@ -6088,7 +6099,7 @@ Now respond to this follow-up:";
         }
 
         // Get user's tasks and completion status
-        $tasks_table = $wpdb->prefix . 'framt_tasks';
+        $tasks_table = FRAMT_Portal_Schema::get_table( 'tasks' );
         if ( $wpdb->get_var( "SHOW TABLES LIKE '{$tasks_table}'" ) === $tasks_table ) {
             $tasks = $wpdb->get_results( $wpdb->prepare(
                 "SELECT id, title, status, category FROM {$tasks_table} WHERE user_id = %d",
@@ -7122,7 +7133,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
         // Get user's projects
         $projects = $wpdb->get_col(
             $wpdb->prepare(
-                "SELECT id FROM {$wpdb->prefix}framt_projects WHERE user_id = %d",
+                "SELECT id FROM {$this->tbl('projects')} WHERE user_id = %d",
                 $user_id
             )
         );
@@ -7132,29 +7143,24 @@ Focus on practical advice while being careful not to state incorrect facts. When
             $project_ids = implode( ',', array_map( 'intval', $projects ) );
 
             // Delete task checklists for tasks in user's projects
-            $wpdb->query(
-                "DELETE tc FROM {$wpdb->prefix}framt_task_checklists tc
-                 INNER JOIN {$wpdb->prefix}framt_tasks t ON tc.task_id = t.id
-                 WHERE t.project_id IN ($project_ids)"
-            );
 
             // Delete tasks
             $wpdb->query(
                 $wpdb->prepare(
-                    "DELETE FROM {$wpdb->prefix}framt_tasks WHERE project_id IN ($project_ids)"
+                    "DELETE FROM {$this->tbl('tasks')} WHERE project_id IN ($project_ids)"
                 )
             );
 
             // Delete notes
             $wpdb->query(
                 $wpdb->prepare(
-                    "DELETE FROM {$wpdb->prefix}framt_notes WHERE project_id IN ($project_ids)"
+                    "DELETE FROM {$this->tbl('notes')} WHERE project_id IN ($project_ids)"
                 )
             );
 
             // Delete files
             $files = $wpdb->get_results(
-                "SELECT id, file_path FROM {$wpdb->prefix}framt_files WHERE project_id IN ($project_ids)"
+                "SELECT id, file_path FROM {$this->tbl('files')} WHERE project_id IN ($project_ids)"
             );
             foreach ( $files as $file ) {
                 // Delete physical file
@@ -7163,13 +7169,13 @@ Focus on practical advice while being careful not to state incorrect facts. When
                 }
             }
             $wpdb->query(
-                "DELETE FROM {$wpdb->prefix}framt_files WHERE project_id IN ($project_ids)"
+                "DELETE FROM {$this->tbl('files')} WHERE project_id IN ($project_ids)"
             );
 
             // Delete projects
             $wpdb->query(
                 $wpdb->prepare(
-                    "DELETE FROM {$wpdb->prefix}framt_projects WHERE user_id = %d",
+                    "DELETE FROM {$this->tbl('projects')} WHERE user_id = %d",
                     $user_id
                 )
             );
@@ -7374,7 +7380,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
         $placeholders = implode( ',', array_fill( 0, count( $stale ), '%s' ) );
         $removed      = $wpdb->query(
             $wpdb->prepare(
-                "DELETE FROM {$wpdb->prefix}framt_tasks WHERE project_id = %d AND status = 'todo' AND title IN ($placeholders)",
+                "DELETE FROM {$this->tbl('tasks')} WHERE project_id = %d AND status = 'todo' AND title IN ($placeholders)",
                 array_merge( array( $project->id ), $stale )
             )
         );
@@ -7437,7 +7443,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
         // Get all incomplete tasks for this project
         $tasks = $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT id, title, stage, metadata FROM {$wpdb->prefix}framt_tasks
+                "SELECT id, title, stage, metadata FROM {$this->tbl('tasks')}
                 WHERE project_id = %d AND status != 'done'",
                 $project->id
             )
@@ -7469,7 +7475,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                 $due_date = $this->calculate_due_date( $move_date, $offset );
 
                 $wpdb->update(
-                    $wpdb->prefix . 'framt_tasks',
+                    FRAMT_Portal_Schema::get_table( 'tasks' ),
                     array( 'due_date' => $due_date ),
                     array( 'id' => $task_row->id ),
                     array( '%s' ),
@@ -7488,7 +7494,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
         $project = FRAMT_Project::get_or_create( $user_id );
         $move    = $project && $project->target_move_date ? $project->target_move_date : get_user_meta( $user_id, 'fra_target_move_date', true );
         $map     = $this->get_task_offset_map();
-        $rows    = $wpdb->get_results( $wpdb->prepare( "SELECT id, title, status, due_date, metadata FROM {$wpdb->prefix}framt_tasks WHERE project_id = %d", $project ? $project->id : 0 ) );
+        $rows    = $wpdb->get_results( $wpdb->prepare( "SELECT id, title, status, due_date, metadata FROM {$this->tbl('tasks')} WHERE project_id = %d", $project ? $project->id : 0 ) );
         $seen    = array();
         foreach ( (array) $rows as $r ) {
             $meta = $r->metadata ? json_decode( $r->metadata, true ) : null;
@@ -7618,7 +7624,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
      * @return void
      */
     private function backfill_task_persons( $user_id, $project_id ) {
-        if ( ! $user_id || ! $project_id || '1' === get_user_meta( $user_id, 'framt_person_backfill', true ) ) {
+        if ( ! $user_id || ! $project_id || '1' === get_user_meta( $user_id, 'framt_task_backfill_v2', true ) ) {
             return;
         }
         $by_title = array();
@@ -7628,8 +7634,19 @@ Focus on practical advice while being careful not to state incorrect facts. When
         foreach ( $this->get_children_task_templates() as $t ) {
             $by_title[ $t['title'] ] = 'children';
         }
+        // Duplicate template tasks (the existence check used to query a
+        // table that did not exist): keep the oldest of each title still to do.
+        $seen = array();
         foreach ( FRAMT_Task::get_by_project( $project_id, array() ) as $task ) {
             $metadata = is_array( $task->metadata ) ? $task->metadata : array();
+            $is_template = ! empty( $metadata['from_template'] ) || isset( $by_title[ $task->title ] );
+            if ( $is_template && 'todo' === $task->status ) {
+                if ( isset( $seen[ $task->title ] ) ) {
+                    $task->delete();
+                    continue;
+                }
+                $seen[ $task->title ] = true;
+            }
             if ( ! empty( $metadata['person'] ) || ! isset( $by_title[ $task->title ] ) ) {
                 continue;
             }
@@ -7637,7 +7654,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
             $task->metadata     = $metadata;
             $task->save();
         }
-        update_user_meta( $user_id, 'framt_person_backfill', '1' );
+        update_user_meta( $user_id, 'framt_task_backfill_v2', '1' );
     }
 
     /**
@@ -7682,7 +7699,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
         }
         $placeholders = implode( ',', array_fill( 0, count( $stale ), '%s' ) );
         $ids = $wpdb->get_col( $wpdb->prepare(
-            "SELECT id FROM {$wpdb->prefix}framt_tasks WHERE project_id = %d AND status = 'todo' AND title IN ($placeholders)",
+            "SELECT id FROM {$this->tbl('tasks')} WHERE project_id = %d AND status = 'todo' AND title IN ($placeholders)",
             array_merge( array( $project->id ), $stale )
         ) );
         foreach ( (array) $ids as $id ) {
@@ -7714,7 +7731,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
         $out = array();
         foreach ( $titles as $t ) { $out[] = array( 'title' => $t ); }
         // Employer paperwork tasks carry the employer's name; find them by prefix.
-        $named = $wpdb->get_col( "SELECT DISTINCT title FROM {$wpdb->prefix}framt_tasks WHERE title LIKE 'Ask % for the consulate paperwork'" );
+        $named = $wpdb->get_col( "SELECT DISTINCT title FROM {$this->tbl('tasks')} WHERE title LIKE 'Ask % for the consulate paperwork'" );
         foreach ( (array) $named as $t ) { $out[] = array( 'title' => $t ); }
         return $out;
     }
@@ -7991,7 +8008,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
 
         $exists = $wpdb->get_var(
             $wpdb->prepare(
-                "SELECT COUNT(*) FROM {$wpdb->prefix}framt_tasks WHERE project_id = %d AND title = %s",
+                "SELECT COUNT(*) FROM {$this->tbl('tasks')} WHERE project_id = %d AND title = %s",
                 $project_id,
                 $title
             )
@@ -11883,7 +11900,7 @@ SECTIONS;
         }
         global $wpdb;
         $wpdb->update(
-            $wpdb->prefix . 'framt_tasks',
+            FRAMT_Portal_Schema::get_table( 'tasks' ),
             array( 'assignee_id' => null ),
             array( 'assignee_id' => $user_id, 'user_id' => $owner_id ),
             array( '%d' ),
