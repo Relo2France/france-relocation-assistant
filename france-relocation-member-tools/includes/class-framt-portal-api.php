@@ -627,6 +627,18 @@ class FRAMT_Portal_API {
             )
         );
 
+        // Administrators only: what the due-date recalculation sees for the
+        // signed-in member, so a member whose tasks stay undated can be read.
+        register_rest_route(
+            self::NAMESPACE,
+            '/debug/recalc',
+            array(
+                'methods'             => 'GET',
+                'callback'            => array( $this, 'debug_recalc' ),
+                'permission_callback' => function () { return current_user_can( 'manage_options' ); },
+            )
+        );
+
         register_rest_route(
             self::NAMESPACE,
             '/family/(?P<member_id>\d+)/invite',
@@ -7468,6 +7480,38 @@ Focus on practical advice while being careful not to state incorrect facts. When
         }
 
         return $tasks_updated;
+    }
+
+    public function debug_recalc( $request ) {
+        global $wpdb;
+        $user_id = $this->acting_user_id();
+        $project = FRAMT_Project::get_or_create( $user_id );
+        $move    = $project && $project->target_move_date ? $project->target_move_date : get_user_meta( $user_id, 'fra_target_move_date', true );
+        $map     = $this->get_task_offset_map();
+        $rows    = $wpdb->get_results( $wpdb->prepare( "SELECT id, title, status, due_date, metadata FROM {$wpdb->prefix}framt_tasks WHERE project_id = %d", $project ? $project->id : 0 ) );
+        $seen    = array();
+        foreach ( (array) $rows as $r ) {
+            $meta = $r->metadata ? json_decode( $r->metadata, true ) : null;
+            $seen[] = array(
+                'id'        => (int) $r->id,
+                'title'     => $r->title,
+                'status'    => $r->status,
+                'due'       => $r->due_date,
+                'meta_off'  => is_array( $meta ) && isset( $meta['days_offset'] ) ? $meta['days_offset'] : null,
+                'map_off'   => $map[ $r->title ] ?? null,
+                'calc'      => isset( $map[ $r->title ] ) ? $this->calculate_due_date( $move, (int) $map[ $r->title ] ) : null,
+            );
+        }
+        $updated = $move ? $this->recalculate_task_due_dates( $user_id, $move ) : -1;
+        return rest_ensure_response( array(
+            'user_id'    => $user_id,
+            'project_id' => $project ? (int) $project->id : null,
+            'move'       => $move,
+            'map_size'   => count( $map ),
+            'tasks'      => $seen,
+            'updated'    => $updated,
+            'db_error'   => $wpdb->last_error,
+        ) );
     }
 
     /**
