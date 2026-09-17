@@ -11,6 +11,7 @@
 import { type GuideDoc, guideBySlug, guides } from '@site-guides';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import Jargon from '@/components/shared/Jargon';
+import VisaFinder from '@/components/decide/VisaFinder';
 import { useCurrentUser, useDashboard, useMemberProfile } from '@/hooks/useApi';
 import { JOURNEY, timeToGo } from '@/journey/journey';
 import { usePortalStore } from '@/store';
@@ -90,6 +91,9 @@ export default function GuideView() {
 
       <div className="grid md:grid-cols-[minmax(0,1fr)_300px] gap-6 px-6 md:px-8 py-6">
         <article className="max-w-[42rem] font-serif text-[1.06rem] leading-[1.7]">
+          {guide.slug === 'long-stay-visa-overview' ? (
+            <VisaFinder currentRoute={data?.profile_visa_type ?? null} currentLabel={data?.profile_visa_label ?? null} />
+          ) : null}
           {(route || destination || project?.target_move_date) ? (
             <p className="font-sans text-[0.95rem] bg-primary-100 text-ink rounded-lg px-4 py-3 mb-6 border-l-2 border-primary-500">
               <strong>{me?.first_name || me?.display_name || 'You'}</strong>

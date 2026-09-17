@@ -42,8 +42,8 @@ export default function DecideLanding({ project, visaType }: { project: Project;
       body: 'Seven long-stay routes. It depends on whether you will work, who is coming, and what you can show.',
       done: routeChosen,
       doneNote: routeChosen ? project.visa_type_label : undefined,
-      primary: { label: routeChosen ? 'Change my route' : 'Set my route', onClick: () => { setSettingsTab('visa-profile'); setActiveView('profile'); } },
-      secondary: { label: 'Read the overview', onClick: openGuide('long-stay-visa-overview') },
+      primary: { label: routeChosen ? 'Check my route' : 'Find my route', onClick: openGuide('long-stay-visa-overview') },
+      secondary: { label: routeChosen ? 'Change it in my profile' : 'I already know it', onClick: () => { setSettingsTab('visa-profile'); setActiveView('profile'); } },
     },
     {
       id: 'where',
