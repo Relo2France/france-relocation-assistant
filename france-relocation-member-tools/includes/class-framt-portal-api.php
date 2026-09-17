@@ -8415,7 +8415,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                 'report_id'       => (int) $report_id,
                 'system'          => $this->report_system_message(),
                 'prompt'          => $this->build_report_prompt( $type, $code, $name ),
-                'max_tokens'      => 12000,
+                'max_tokens'      => 32000,
                 'web_search_uses' => 8,
             ) ),
         ) );
@@ -9186,7 +9186,7 @@ SYSTEM;
 
         $saved = $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT l.id, l.report_id, l.saved_at, r.location_type, r.location_code, r.location_name, r.updated_at
+                "SELECT l.id, l.report_id, l.saved_at, r.location_type, r.location_code, r.location_name, r.updated_at, r.content
                  FROM {$links_table} l
                  JOIN {$reports_table} r ON l.report_id = r.id
                  WHERE l.user_id = %d
@@ -9200,11 +9200,17 @@ SYSTEM;
         $reports = array();
         if ( $saved ) {
             foreach ( $saved as $item ) {
+                $content = json_decode( (string) $item['content'], true );
+                $status  = is_array( $content ) ? (string) ( $content['status'] ?? 'ready' ) : 'ready';
+                if ( 'failed' === $status ) {
+                    continue;
+                }
                 $reports[] = array(
                     'id'            => (int) $item['report_id'],
                     'location_name' => $item['location_name'],
                     'location_type' => $item['location_type'],
                     'updated_at'    => $item['updated_at'],
+                    'status'        => $status,
                     'download_url'  => rest_url( self::NAMESPACE . '/research/report/' . $item['report_id'] . '/download' ),
                 );
             }

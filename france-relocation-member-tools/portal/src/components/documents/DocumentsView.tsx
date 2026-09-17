@@ -198,7 +198,9 @@ export default function DocumentsView() {
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-gray-900 truncate">{report.location_name}</p>
                       <p className="text-xs text-gray-500 capitalize">
-                        {report.location_type} Report • {new Date(report.updated_at).toLocaleDateString()}
+                        {(report as { status?: string }).status === 'generating'
+                          ? 'Still writing · usually three to five minutes'
+                          : `${report.location_type} Report • ${new Date(report.updated_at).toLocaleDateString()}`}
                       </p>
                     </div>
                     <a

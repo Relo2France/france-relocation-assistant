@@ -208,6 +208,10 @@ class FRA_Review_API {
 
         if (!isset($stored['status'])) {
             $this->notify_report_requesters($id);
+        } else {
+            // Nobody wants a failed report in their folder; the member sees the
+            // reason in the portal and can try again.
+            $wpdb->delete($wpdb->prefix . 'framt_research_report_links', array('report_id' => $id), array('%d'));
         }
 
         return rest_ensure_response(array('stored' => isset($stored['status']) ? 'failed' : 'content', 'id' => $id));

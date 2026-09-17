@@ -49,9 +49,12 @@ export class ReportWorkflow extends WorkflowEntrypoint<Env, ReportParams> {
           tier: this.env.MODEL_TIER,
           system: params.system,
           prompt: params.prompt,
-          maxTokens: params.max_tokens ?? 12000,
+          maxTokens: params.max_tokens ?? 32000,
           webSearchUses: params.web_search_uses ?? 8,
-          continueOnTruncation: false,
+          // A department or region report can run long. If it is still cut
+          // off, ask for the rest once; the JSON is recovered from the whole.
+          continueOnTruncation: true,
+          maxContinuations: 1,
         });
         const content = extractJson<Record<string, unknown>>(outcome.text);
         if (!content) {
