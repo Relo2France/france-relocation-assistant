@@ -404,12 +404,18 @@ foreach ($reviewable_topics as $cat => $topics) {
                     </div>
                     <?php endif; ?>
                     
+                    <?php if (!empty($review['in_practice_content'])): ?>
+                    <div class="fra-in-practice-preview" style="margin:12px 0;padding:12px 16px;border-left:4px solid #2c5346;background:#f4f6f4;">
+                        <strong style="display:block;margin-bottom:6px;">✨ <?php _e('In Practice (what people report)', 'france-relocation-assistant'); ?></strong>
+                        <div style="font-size:13px;line-height:1.5;white-space:pre-wrap;"><?php echo esc_html(preg_replace('/^\s*\*\*In Practice\*\*\s*/i', '', (string) $review['in_practice_content'])); ?></div>
+                    </div>
+                    <?php else: ?>
+                    <p style="margin:8px 0;color:#94611a;font-size:13px;"><?php _e('No In Practice section came with this draft. Approving keeps the topic\'s existing In Practice section, if it has one.', 'france-relocation-assistant'); ?></p>
+                    <?php endif; ?>
+
                     <div class="fra-review-diff">
                         <div class="fra-diff-toggle">
                             <button type="button" class="button fra-show-diff"><?php _e('Show Full Content', 'france-relocation-assistant'); ?></button>
-                            <?php if (!empty($review['in_practice_content'])): ?>
-                            <span class="fra-has-practice-badge">✨ <?php _e('Includes "In Practice" section', 'france-relocation-assistant'); ?></span>
-                            <?php endif; ?>
                         </div>
                         <div class="fra-diff-content" style="display: none;">
                             <div class="fra-diff-panels">

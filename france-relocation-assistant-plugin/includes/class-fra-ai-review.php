@@ -1070,6 +1070,29 @@ For example, for Visitor Visa:
     /**
      * Apply a topic update to the knowledge base
      */
+    /**
+     * The In Practice section of a topic's content, from its header to the end.
+     *
+     * @param string $content Topic text
+     * @return string The section, or '' when there is none
+     */
+    private static function extract_in_practice($content) {
+        if (preg_match('/(\*\*In Practice\*\*[\s\S]*)$/i', (string) $content, $m)) {
+            return trim($m[1]);
+        }
+        return '';
+    }
+
+    /**
+     * Topic text without its In Practice section.
+     *
+     * @param string $content Topic text
+     * @return string
+     */
+    private static function strip_in_practice($content) {
+        return rtrim((string) preg_replace('/\n*\*\*In Practice\*\*[\s\S]*$/i', '', (string) $content));
+    }
+
     private function apply_topic_update($review) {
         $knowledge_base = get_option('fra_knowledge_base', array());
         
@@ -1097,6 +1120,25 @@ For example, for Visitor Visa:
         
         $old_content = $knowledge_base[$category][$topic]['content'];
         $new_content = $review['suggested_content'];
+
+        // The In Practice section travels separately from the official text
+        // and used to be dropped here on approval. It is written back under
+        // its own header; when a suggestion carries none, the section the
+        // topic already had is kept rather than lost.
+        $practice = trim((string) ($review['in_practice_content'] ?? ''));
+        if ('' === $practice) {
+            $practice = self::extract_in_practice($old_content);
+        }
+        $new_content = self::strip_in_practice($new_content);
+        if ('' !== $practice) {
+            if (!preg_match('/^\s*\*\*In Practice\*\*/i', $practice)) {
+                $practice = "**In Practice**\n\n" . $practice;
+            }
+            $new_content = rtrim($new_content) . "\n\n" . $practice;
+        }
+        if (!empty($review['practice_sources']) && is_array($review['practice_sources'])) {
+            $knowledge_base[$category][$topic]['practice_sources'] = array_values(array_map('sanitize_text_field', $review['practice_sources']));
+        }
         
         // Update content
         $knowledge_base[$category][$topic]['content'] = $new_content;
