@@ -8470,6 +8470,10 @@ Focus on practical advice while being careful not to state incorrect facts. When
         if ( '' !== $visa && 'undecided' !== $visa ) {
             $this->generate_visa_tasks( $user_id, $visa );
         }
+        // Profile-driven steps (the driving licence by state, the professionals)
+        // are part of the same plan and refresh with it.
+        $this->generate_profile_tasks( $user_id );
+        $this->reconcile_conditional_tasks( $user_id );
         update_user_meta( $user_id, 'framt_task_templates_v3', '1' );
     }
 
