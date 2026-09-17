@@ -46,9 +46,9 @@ describe('the route changes what Prepare says', () => {
   });
   it('tells the member whether their state exchanges licences', () => {
     const yes = walkthroughFor('settle', { ...base, route: 'visitor', stateFacts: { state: 'MD', name: 'Maryland', licence_exchange: 'yes', licence_classes: 'B', verified: 'September 2026' } });
-    expect(yes.milestones.find((m) => /driving/.test(m.title))?.why).toMatch(/Maryland licence can be exchanged .*class B only/);
+    expect(yes.milestones.find((m) => /driving/.test(m.title))?.why).toMatch(/Maryland exchanges .*class B only/);
     const no = walkthroughFor('settle', { ...base, route: 'visitor', stateFacts: { state: 'CA', name: 'California', licence_exchange: 'no', licence_classes: '', verified: 'September 2026' } });
-    expect(no.milestones.find((m) => /driving/.test(m.title))?.why).toMatch(/California has no exchange agreement/);
+    expect(no.milestones.find((m) => /driving/.test(m.title))?.why).toMatch(/California has no agreement/);
   });
   it('falls back to undecided for an unknown route', () => {
     expect(routeOf({ route: 'whatever', project: { target_move_date: null, visa_type: 'other' } })).toBe('undecided');

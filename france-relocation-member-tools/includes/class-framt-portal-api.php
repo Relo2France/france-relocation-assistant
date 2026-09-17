@@ -3917,7 +3917,6 @@ class FRAMT_Portal_API {
             array( 'id' => 'proof-funds', 'title' => 'Proof of financial means (3 months of bank statements)', 'lead_time' => 30, 'priority' => 'high' ),
             array( 'id' => 'travel-insurance', 'title' => 'Health insurance covering the full stay', 'lead_time' => 14, 'priority' => 'high' ),
             array( 'id' => 'birth-certificate-apostilled', 'title' => 'Birth certificate, apostilled', 'lead_time' => 60, 'priority' => 'high' ),
-            array( 'id' => 'certified-translations', 'title' => 'Certified French translations (traducteur assermenté)', 'lead_time' => 21, 'priority' => 'high' ),
             array( 'id' => 'cover-letter', 'title' => 'Cover letter explaining purpose', 'lead_time' => 7, 'priority' => 'medium' ),
         );
 
@@ -7775,11 +7774,13 @@ Focus on practical advice while being careful not to state incorrect facts. When
             'Choose a French business status and register with URSSAF',
             'Ask how your US pension and retirement accounts are taxed in France',
             'Check how French inheritance rules affect your estate plan',
+            'Pass the French driving test before your US licence stops counting',
+            'Check whether your state driving licence can be exchanged',
         );
         $out = array();
         foreach ( $titles as $t ) { $out[] = array( 'title' => $t ); }
         // Employer paperwork tasks carry the employer's name; find them by prefix.
-        $named = $wpdb->get_col( "SELECT DISTINCT title FROM {$this->tbl('tasks')} WHERE title LIKE 'Ask % for the consulate paperwork'" );
+        $named = $wpdb->get_col( "SELECT DISTINCT title FROM {$this->tbl('tasks')} WHERE title LIKE 'Ask % for the consulate paperwork' OR title LIKE 'Exchange your % driving licence through ANTS'" );
         foreach ( (array) $named as $t ) { $out[] = array( 'title' => $t ); }
         return $out;
     }
@@ -7910,6 +7911,38 @@ Focus on practical advice while being careful not to state incorrect facts. When
                 'priority'     => 'high',
                 'days_offset'  => -110,
                 'professional' => 'tax',
+            );
+        }
+
+        // Driving: the state decides the process (License Exchange topic, verified September 2026).
+        $facts = $this->get_state_facts( $user_id );
+        if ( 'yes' === $facts['licence_exchange'] ) {
+            $classes = 'all' === $facts['licence_classes'] ? 'every class transfers' : 'class ' . $facts['licence_classes'] . ' transfers; other classes mean the French test';
+            $templates[] = array(
+                'title'       => 'Exchange your ' . $facts['name'] . ' driving licence through ANTS',
+                'description' => $facts['name'] . ' has a reciprocal agreement with France (' . $classes . '). Your US licence is valid for one year from the start of residence; the exchange request has to go in before that year ends, and the request itself is what protects you, not the decision. The process: 1. Wait until you have a proof of address under three months old and your validated visa or residence permit. 2. Apply online at permisdeconduire.ants.gouv.fr with scans of the licence front and back, the passport and visa, the proof of address, an ANTS-format digital photo and, if asked, a sworn translation of the licence (many accept English). 3. Pay the €40 stamp (timbre fiscal), introduced May 2026. 4. Post the original US licence by lettre recommandée avec accusé de réception to the address ANTS gives you, and keep the tracking slip: it is your only proof. 5. The attestation de dépôt lets you keep driving while it is processed; three to six months officially, three to twelve in practice, all handled by the national centre in Nantes. An International Driving Permit from AAA before you leave covers the months before you file.',
+                'stage'       => 'settle',
+                'priority'    => 'medium',
+                'days_offset' => 120,
+                'task_type'   => 'document',
+            );
+        } elseif ( 'no' === $facts['licence_exchange'] ) {
+            $templates[] = array(
+                'title'       => 'Pass the French driving test before your US licence stops counting',
+                'description' => $facts['name'] . ' has no reciprocal agreement with France (list as of ' . $facts['verified'] . '; confirm on service-public.fr, it changes). Your US licence is valid for one year from the start of residence and then it is not, so the French licence has to be earned inside that year. The process: 1. Register with a driving school (auto-école) or, to save money, as a candidat libre through ANTS; a school package runs roughly €1,200 to €3,800 and most areas expect at least 20 hours of lessons. 2. Pass the theory test, the code de la route, about €30, sat at an approved centre; apps and books exist in English but the exam is in French. 3. Book the practical exam through the school or ANTS, €32 to €50 depending on the prefecture; waits for a slot run weeks to months. 4. On passing you get a provisional certificate and then the card; new licences carry a three-year probation with a lower alcohol limit. Get an International Driving Permit from AAA before you leave for the first year, and book the school within the first months: the year goes quickly.',
+                'stage'       => 'settle',
+                'priority'    => 'high',
+                'days_offset' => 60,
+                'task_type'   => 'task',
+            );
+        } else {
+            $templates[] = array(
+                'title'       => 'Check whether your state driving licence can be exchanged',
+                'description' => 'Eighteen US states have a reciprocal agreement with France and the rest do not; your US licence counts for one year of residence either way. Set your current state in your profile and this step turns into the exchange through ANTS or the French test, with the process laid out.',
+                'stage'       => 'settle',
+                'priority'    => 'medium',
+                'days_offset' => 60,
+                'task_type'   => 'task',
             );
         }
 
@@ -8176,8 +8209,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
         // ---- Shared: preparing the dossier ---------------------------------
         $prepare = array(
             $t( 'Order certified copies of your civil records', 'A fresh certified copy of your birth certificate from the state that issued it (and the marriage certificate if you are applying as a couple). Only a certified copy can be apostilled; a photocopy from the drawer cannot. Consulates like the birth certificate issued within the last six months.', 'prepare', -160, 'high', 'document' ),
-            $t( 'Get the apostilles from the state', 'Each state record is apostilled by the Secretary of State that issued it; federal documents (the FBI check) go to the US Department of State. One to three weeks in most states, longer by mail without expedite. This cannot start until the copies are in hand, so it sets the pace of everything after it.', 'prepare', -120, 'high', 'document' ),
-            $t( 'Get sworn French translations', 'A traducteur assermenté (sworn translator), not any translator, for every English document you will hand over. Send scans the day the apostilles come back; a week or two per batch.', 'prepare', -95, 'high', 'document' ),
+            $t( 'Get the apostilles from the state', 'Each state record is apostilled by the Secretary of State that issued it; federal documents (the FBI check) go to the US Department of State. One to three weeks in most states, longer by mail without expedite. Do it before you leave: the apostilled birth and marriage certificates serve you for years in France, at the prefecture and at CPAM, and are far harder to get from abroad.', 'prepare', -120, 'high', 'document' ),
             $t( 'Buy health insurance for the whole first year', 'Private cover for the full visa period, with at least €30,000 of medical cover, repatriation, and the dates and amounts written in the policy letter. Ordinary travel insurance is refused. It carries you until French health cover opens.', 'prepare', -70, 'high', 'task' ),
             $t( 'Line up where you will live for the first months', 'The consulate wants proof of accommodation: a lease, a deed, a booking, or a host\'s attestation d\'hébergement with a copy of their ID. A booking covers the first weeks for most consulates.', 'prepare', -70, 'high', 'task' ),
             $t( 'Get passport photos taken (35 x 45 mm)', 'Two recent photos to French specification: 35 x 45 mm, plain light background, neutral expression. A US passport photo is the wrong size.', 'prepare', -65, 'medium', 'document' ),
@@ -8205,6 +8237,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
         // ---- Shared: arriving ----------------------------------------------
         $arrive = array(
             $t( 'Get a French SIM', 'Every French account, bank included, sends its codes to a French number. Get the SIM in the first days.', 'arrive', 3, 'medium', 'task' ),
+            $t( 'Get sworn French translations', 'Not needed for the first application: consulates in the US take English documents. The prefecture at renewal and CPAM for health cover want a traducteur assermenté (sworn translator) version of the apostilled birth and marriage certificates. Send scans; a week or two per batch.', 'arrive', 60, 'high', 'document' ),
             $t( 'Validate your visa online within 90 days', 'On the ANEF portal (administration-etrangers-en-france.interieur.gouv.fr): passport, visa sticker, arrival date and a French address, then the validation tax paid by card. Counted from the entry stamp, not the visa date. Miss it and the visa stops working as a residence permit. If your sticker says carte de séjour à solliciter, skip this and book the prefecture within two months instead.', 'arrive', 14, 'high', 'appointment' ),
             $t( 'Open French bank account', 'Rent, utilities, health cover and the phone all want a French RIB. Passport, visa, proof of address; the validation confirmation helps. Keep a US account open too.', 'arrive', 14, 'high', 'financial' ),
             $t( 'Find permanent housing', 'The lease or the deed. Each bill in your name afterwards becomes the proof of address the next office asks for.', 'arrive', 21, 'high', 'task' ),
@@ -8215,7 +8248,6 @@ Focus on practical advice while being careful not to state incorrect facts. When
         // ---- Shared: settling in -------------------------------------------
         $settle = array(
             $t( 'Get Carte Vitale', 'Follows the health registration by some weeks to months. Until it arrives keep every receipt and use the paper feuille de soins for reimbursement.', 'settle', 150, 'medium', 'document' ),
-            $t( 'Exchange driving license', 'Some US states exchange licences with France and some do not, and the request has to go in during your first year of residence. Check your state early.', 'settle', 180, 'low', 'document' ),
             $t( 'File French tax return', 'The first French return goes in the spring after the year you arrive, for that year, even when the treaty means little tax is due in France. The US return continues alongside.', 'settle', 180, 'medium', 'financial' ),
         );
 
@@ -8258,7 +8290,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                     $t( 'Ask your employer to file the work authorisation on ANEF', 'Your employer, not you, applies for the autorisation de travail on the ANEF portal; the regional labour office (DREETS) has about two months to decide, and six to ten weeks is common. Unless the job is on the shortage list, they must show no available candidate in France could fill it. Nothing else can start until this is approved.', 'prepare', -180, 'high', 'document' ),
                     $background_check,
                     $t( 'Get the signed contract and the authorisation approval', 'The signed work contract or detailed offer, and the DREETS approval, are the two documents the consulate will not look at your file without. Both come from the employer.', 'prepare', -110, 'high', 'document' ),
-                    $t( 'Get diplomas translated by a sworn translator', 'Proof of qualifications with certified translations; apostille the diplomas first where the consulate asks for it.', 'prepare', -100, 'high', 'document' ),
+                    $t( 'Gather your diplomas and proof of qualifications', 'The consulate in the US takes them in English; apostille them where its checklist asks. Sworn translations come later, for the prefecture.', 'prepare', -100, 'high', 'document' ),
                     $t( 'Check your first payslip and health affiliation', 'Employees are affiliated to French health cover through payroll with no waiting period, and the employer must offer a mutuelle. The first payslip shows the social charges and the affiliation; query anything missing.', 'arrive', 35, 'medium', 'task' ),
                     $renewal,
                 );
@@ -8269,7 +8301,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                     $t( 'Confirm your Talent category and its threshold', 'Qualified employee (reference salary €39,582 gross a year in 2026), EU Blue Card (€59,373), company founder, investor, researcher with a hosting agreement, or artist. The category decides the proof; the thresholds are set by ministerial order, so confirm the one in force when your contract is signed.', 'prepare', -170, 'high', 'task' ),
                     $background_check,
                     $t( 'Gather the category proof', 'A contract at or above the reference salary, a hosting agreement, a business plan with funding, or the investment file, depending on your category. This is the file that makes it a Talent application rather than an ordinary work visa.', 'prepare', -130, 'high', 'document' ),
-                    $t( 'Get diplomas translated by a sworn translator', 'A master\'s degree or equivalent is the usual qualification; certified translations, apostilled where asked.', 'prepare', -100, 'high', 'document' ),
+                    $t( 'Gather your diplomas and proof of qualifications', 'A master\'s degree or equivalent is the usual qualification. The consulate takes them in English; apostille where its checklist asks.', 'prepare', -100, 'high', 'document' ),
                     $read_sticker,
                 );
                 // Talent cards run up to four years and skip the OFII visit;
@@ -8311,7 +8343,6 @@ Focus on practical advice while being careful not to state incorrect facts. When
                     $background_check,
                     $t( 'Get your spouse\'s French ID and proof of nationality', 'A copy of your spouse\'s French passport or identity card, and where asked a certificate of French nationality.', 'prepare', -110, 'high', 'document' ),
                     $t( 'Collect proof the relationship is genuine', 'Joint accounts, leases or deeds, travel together, photographs, correspondence: the file has to show a shared life, not just a certificate. A PACS needs twelve months of documented cohabitation first.', 'prepare', -100, 'high', 'document' ),
-                    $t( 'Translate the marriage certificate', 'A sworn French translation of the apostilled certificate.', 'prepare', -95, 'high', 'document' ),
                     $read_sticker,
                     $t( 'Sign the integration contract (CIR) when convoked', 'A free Contrat d\'Intégration Républicaine, with language and civics classes, comes with the first vie privée et familiale card. Attend when summoned; it counts at renewal.', 'arrive', 60, 'medium', 'appointment' ),
                     $puma,
@@ -8371,6 +8402,9 @@ Focus on practical advice while being careful not to state incorrect facts. When
             'Gather all required documents',
             'Get documents apostilled',
             'Get documents translated',
+            'Exchange driving license',
+            'Translate the marriage certificate',
+            'Get diplomas translated by a sworn translator',
             'Research health insurance options',
             'Validate visa (if VLS-TS)',
             'Register for social security',
@@ -8405,7 +8439,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
      * @return void
      */
     private function refresh_template_tasks( $user_id, $project_id ) {
-        if ( ! $user_id || ! $project_id || '1' === get_user_meta( $user_id, 'framt_task_templates_v2', true ) ) {
+        if ( ! $user_id || ! $project_id || '1' === get_user_meta( $user_id, 'framt_task_templates_v3', true ) ) {
             return;
         }
         $visa    = (string) get_user_meta( $user_id, 'fra_visa_type', true );
@@ -8436,7 +8470,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
         if ( '' !== $visa && 'undecided' !== $visa ) {
             $this->generate_visa_tasks( $user_id, $visa );
         }
-        update_user_meta( $user_id, 'framt_task_templates_v2', '1' );
+        update_user_meta( $user_id, 'framt_task_templates_v3', '1' );
     }
 
     /**
@@ -8518,11 +8552,11 @@ Focus on practical advice while being careful not to state incorrect facts. When
             array(
                 'person'      => 'partner',
                 'title'       => 'Translate marriage certificate',
-                'description' => 'Get a certified French translation of your marriage certificate.',
-                'stage'       => 'pre-arrival',
-                'priority'    => 'high',
+                'description' => 'Not for the consulate, which takes it in English, but for the prefecture and CPAM after you arrive: a sworn French translation of the apostilled certificate.',
+                'stage'       => 'arrive',
+                'priority'    => 'medium',
                 'task_type'   => 'document',
-                'days_offset' => -75, // 2.5 months before move (after apostille)
+                'days_offset' => 60, // before CPAM and the prefecture ask
             ),
             array(
                 'person'      => 'partner',

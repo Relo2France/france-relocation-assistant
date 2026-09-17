@@ -162,8 +162,7 @@ export function walkthroughFor(stage: JourneyStageId, ctx: WalkContext): Walkthr
       // Apostilled records are certified copies by definition.
       const civil = { title: 'Certified copies of your civil records', why: `Birth certificate${married && withSpouse ? ', and the marriage certificate' : ''}, ordered fresh from the state. A photocopy from the drawer will not be apostilled.`, done: apostilled === true ? true : firstKnown(T(/civil records|gather (all )?required documents|birth certificate/i)) };
       const fbi = { title: 'The FBI background check, through a channeler', why: 'Ten to fourteen weeks by mail, days through an FBI-approved channeler, then an apostille from the State Department. Consulates want it issued within the last six months.', done: firstKnown(T(/background check/i), D('background-check')) };
-      const apostille = { title: `Apostilles from ${birthState}`, why: 'The Secretary of State that issued a record certifies it. One to three weeks in most states, and it cannot start until the copies are in hand: this sets the pace of everything after it.', done: apostilled };
-      const translate = { title: 'Sworn French translations', why: 'A traducteur assermenté, not any translator. Send scans the day the apostilles come back.', done: firstKnown(D('certified-translations'), T(/translat/i)) };
+      const apostille = { title: `Apostilles from ${birthState}`, why: 'The Secretary of State that issued a record certifies it. One to three weeks in most states. Do it before you leave: the apostilled records serve you for years at the prefecture and CPAM. No translation for the consulate; that comes after arrival.', done: apostilled };
       const insurance = { title: 'Health insurance for the whole first year', why: 'At least €30,000 of medical cover plus repatriation, with the dates written in the policy letter. Ordinary travel insurance is refused.', done: firstKnown(D('travel-insurance'), T(/insurance/i)) };
       const home = { title: 'Somewhere to live for the first months', why: buying ? 'You are buying, which takes longer than the visa. For the application, a booking or a short lease covers the first weeks; the purchase carries on after you arrive.' : 'A lease, a deed, a booking, or a host’s attestation d’hébergement with their ID. A booking covers the first weeks for most consulates.', done: firstKnown(D('proof-accommodation'), T(/where you will live|accommodation/i)) };
       const money = { title: 'Money, pulled in the last weeks', why: route === 'student' ? 'The monthly minimum set by decree, about €877.50 a month from August 2026, for the whole stay: statements, a scholarship letter or a sponsor’s attestation.' : 'Three months of statements and proof of income, dated close to the appointment. Visitors are benchmarked against the French net minimum wage, about €1,478 a month in 2026; showing more avoids questions.', done: firstKnown(D('proof-funds', 'proof-funds-studies'), T(/bank statements|pension income|financial resources/i)) };
@@ -175,12 +174,12 @@ export function walkthroughFor(stage: JourneyStageId, ctx: WalkContext): Walkthr
       switch (route) {
         case 'employee':
           intro = [
-            `This route starts with ${employer}, not with you. They file the work authorisation on the ANEF portal and the regional labour office has about two months to decide; unless the job is on the shortage list they must show no one already in France could fill it. Only once that approval exists can you apply. Your own paperwork runs alongside: the FBI check, the apostilles, the translations of your diplomas.`,
+            `This route starts with ${employer}, not with you. They file the work authorisation on the ANEF portal and the regional labour office has about two months to decide; unless the job is on the shortage list they must show no one already in France could fill it. Only once that approval exists can you apply. Your own paperwork runs alongside: the FBI check, the apostilles, your diplomas.`,
           ];
           milestones = [
             { title: `${cap(employer)} files the work authorisation`, why: 'Their application, their timeline: six to ten weeks is common, slower in Paris. Ask for the DREETS approval letter the day it lands.', done: firstKnown(T(/work authorisation|consulate paperwork/i), D('work-authorisation')) },
             fbi, civil, apostille,
-            { title: 'Diplomas, translated', why: 'Proof of qualifications with certified translations; apostilled first where your consulate asks.', done: firstKnown(T(/diplomas/i), D('qualifications')) },
+            { title: 'Diplomas and proof of qualifications', why: 'The consulate takes them in English; apostilled where its checklist asks.', done: firstKnown(T(/diplomas/i), D('qualifications')) },
             { title: 'The signed contract and the approval, in hand', why: 'The two documents the consulate will not look at your file without. Both come from the employer.', done: firstKnown(T(/signed contract/i), D('work-contract')) },
             insurance, home, money,
           ];
@@ -196,7 +195,7 @@ export function walkthroughFor(stage: JourneyStageId, ctx: WalkContext): Walkthr
             { title: 'Confirm the category and its threshold', why: 'Thresholds are set by ministerial order and revised; confirm the one in force when your contract is signed.', done: firstKnown(T(/talent category/i)) },
             { title: 'The category proof', why: 'Contract, hosting agreement, business plan with funding, or investment file. This is what makes it a Talent application.', done: firstKnown(T(/category proof/i), D('category-proof')) },
             fbi, civil, apostille,
-            { title: 'Diplomas, translated', why: 'A master’s degree or equivalent is the usual qualification; certified translations, apostilled where asked.', done: firstKnown(T(/diplomas/i), D('qualifications')) },
+            { title: 'Diplomas and proof of qualifications', why: 'A master’s degree or equivalent is the usual qualification. In English is fine for the consulate; apostilled where asked.', done: firstKnown(T(/diplomas/i), D('qualifications')) },
             insurance, home, money,
           ];
           readyWhen = `The category proof is complete and every dossier line reads Ready. Then Apply${applyMonth ? ` starts in ${applyMonth}` : ''}; Talent files often take longer than visitor files to decide.`;
@@ -209,7 +208,7 @@ export function walkthroughFor(stage: JourneyStageId, ctx: WalkContext): Walkthr
           milestones = [
             { title: 'The business plan and viability file', why: 'What the business does, who pays for it, projected income, why it works in France.', done: firstKnown(T(/business plan/i), D('business-plan')) },
             { title: 'Is the profession regulated?', why: 'Law, accounting, medicine, architecture and many trades are. If yours is, the proof of qualification goes in the file.', done: firstKnown(T(/regulated/i), D('professional-qualification')) },
-            fbi, civil, apostille, translate,
+            fbi, civil, apostille,
             { title: 'Income projections at or above the SMIC', why: 'Statements, contracts and letters of intent that make the projections credible.', done: firstKnown(T(/income projections/i), D('income-projection')) },
             insurance, home,
           ];
@@ -224,7 +223,7 @@ export function walkthroughFor(stage: JourneyStageId, ctx: WalkContext): Walkthr
             { title: 'The acceptance letter', why: 'An official attestation d’inscription from an institution recognised to enrol international students.', done: firstKnown(T(/acceptance letter/i), D('acceptance-letter')) },
             { title: 'Does Campus France apply to you?', why: 'Check usa.campusfrance.org for your district. If a CEF file is required it must be done before the visa appointment.', done: firstKnown(T(/campus france/i)) },
             { title: 'Housing, through CROUS or a lease', why: 'The CROUS confirmation doubles as proof of accommodation.', done: firstKnown(T(/crous/i), D('proof-accommodation')) },
-            civil, apostille, translate, insurance, money,
+            civil, apostille, insurance, money,
           ];
           readyWhen = `The acceptance letter and proof of funds are in hand and every dossier line reads Ready. Then Apply${applyMonth ? ` starts in ${applyMonth}` : ''}; the student visa fee is reduced.`;
           break;
@@ -234,7 +233,7 @@ export function walkthroughFor(stage: JourneyStageId, ctx: WalkContext): Walkthr
             'Joining a French spouse is one of the most protected routes: no visa fee, decisions in about four weeks, and refusal only for fraud, an annulled marriage or public order. What the file has to prove is the marriage and the life behind it: the apostilled certificate, your spouse’s French identity, and evidence of a shared life. A PACS needs twelve months of documented cohabitation before it counts.',
           ];
           milestones = [
-            { title: 'The marriage certificate, apostilled and translated', why: 'A certified copy apostilled by the issuing state; digital apostilles are accepted. If you married in France, the French acte de mariage is used.', done: firstKnown(T(/marriage certificate/i), D('marriage-certificate')) },
+            { title: 'The marriage certificate, apostilled', why: 'A certified copy apostilled by the issuing state; digital apostilles are accepted, and English is fine for the consulate. If you married in France, the French acte de mariage is used.', done: firstKnown(T(/marriage certificate/i), D('marriage-certificate')) },
             { title: 'Your spouse’s French ID', why: 'Passport or identity card, and a certificate of nationality where asked.', done: firstKnown(T(/french id/i), D('spouse-french-id')) },
             { title: 'Proof the relationship is genuine', why: 'Joint accounts, leases, travel, photographs, correspondence. The file shows a shared life, not just a certificate.', done: firstKnown(T(/relationship is genuine/i), D('relationship-proof')) },
             fbi, civil, apostille, insurance, home, money,
@@ -249,7 +248,7 @@ export function walkthroughFor(stage: JourneyStageId, ctx: WalkContext): Walkthr
           milestones = [
             { title: 'The sponsor files with OFII', why: 'Their application, from France. Nothing on the visa side can start until it is approved.', done: firstKnown(T(/sponsor applies to ofii/i), D('ofii-approval')) },
             { title: 'Proof of residence, income and housing', why: 'Eighteen months of legal residence, twelve months of income, and a home that passes the size and condition check.', done: firstKnown(T(/sponsor gathers/i), D('sponsor-permit')) },
-            { title: 'The family records, apostilled and translated', why: 'Marriage certificate and children’s birth certificates; custody papers where a child has another parent.', done: firstKnown(T(/family records/i), D('marriage-certificate')) },
+            { title: 'The family records, apostilled', why: 'Marriage certificate and children’s birth certificates; custody papers where a child has another parent.', done: firstKnown(T(/family records/i), D('marriage-certificate')) },
             fbi,
             { title: 'The decision', why: 'Some prefectures take five months at this step alone; an incomplete file adds two to four. Chase through the sponsor.', done: firstKnown(T(/ofii and prefecture decision/i), D('ofii-approval')) },
             insurance, money,
@@ -263,7 +262,7 @@ export function walkthroughFor(stage: JourneyStageId, ctx: WalkContext): Walkthr
           ];
           milestones = [
             { title: 'The document list for your category', why: 'A tripartite internship agreement stamped by DREETS, a fixed-term contract with the employer’s work permit, a host-family agreement: the wizard and the consulate say which.', done: firstKnown(T(/document list for your category/i)) },
-            fbi, civil, apostille, translate, insurance, home, money,
+            fbi, civil, apostille, insurance, home, money,
           ];
           readyWhen = `The category’s own documents and every shared dossier line read Ready. Then Apply${applyMonth ? ` starts in ${applyMonth}` : ''}.`;
           break;
@@ -273,12 +272,12 @@ export function walkthroughFor(stage: JourneyStageId, ctx: WalkContext): Walkthr
         default: {
           const retired = route === 'retiree';
           intro = [
-            `Between now and ${applyMonth ?? 'the application'}, you assemble what the consulate will ask for. The slow pieces come first: the FBI background check, certified copies of your birth certificate${married && withSpouse ? ' and marriage certificate' : ''}, the apostilles from ${birthState}, then a sworn French translation of each. Insurance, proof of where you will live and the money come last, so they are fresh on the day. ${retired ? 'Your pension paperwork is the proof of means: the award letter, the statements, last year’s distributions.' : 'You will also sign a declaration that you will not work in France.'}`,
+            `Between now and ${applyMonth ?? 'the application'}, you assemble what the consulate will ask for. The slow pieces come first: the FBI background check, certified copies of your birth certificate${married && withSpouse ? ' and marriage certificate' : ''}, the apostilles from ${birthState}. No French translations for the first application; the consulate in the US takes English, and the sworn translations come after arrival for the prefecture and CPAM. Insurance, proof of where you will live and the money come last, so they are fresh on the day. ${retired ? 'Your pension paperwork is the proof of means: the award letter, the statements, last year’s distributions.' : 'You will also sign a declaration that you will not work in France.'}`,
           ];
           if (withSpouse) intro.push(`${cap(spouseWord)} needs the same set under their own name${children ? `, and the ${children === 1 ? 'child rides' : 'children ride'} on a parent’s file` : ''}. You file separate applications at the same appointment.`);
           if (pets) intro.push('The pet paperwork runs alongside: microchip, rabies shot at least 21 days before travel, then the health certificate in the last ten days.');
           milestones = [
-            fbi, civil, apostille, translate,
+            fbi, civil, apostille,
             retired
               ? { title: 'Pension income, documented', why: 'Social Security award letter, pension statements, IRA or 401(k) balances and distributions. Retirees usually clear the benchmark; the paper has to show it.', done: firstKnown(T(/pension income/i), D('proof-funds')) }
               : { title: 'Proof of financial resources', why: 'Benchmarked against the French net minimum wage, about €1,478 a month in 2026. Many applicants show one and a half to two times that, or a year in savings.', done: firstKnown(T(/financial resources/i), D('proof-funds')) },
@@ -349,6 +348,7 @@ export function walkthroughFor(stage: JourneyStageId, ctx: WalkContext): Walkthr
         { title: 'A French phone number', why: 'Every French account sends its codes to a French number. Get the SIM in the first days.', done: firstKnown(itemState(ctx.arrival, ['french-sim']), Tall(/french sim/i)) },
         { title: 'A French bank account', why: 'Rent, utilities, health cover and the phone all want a French RIB. Passport, visa and proof of address; the validation confirmation helps.', done: firstKnown(Tall(/bank account/i)) },
         { title: 'A home, and the utilities in your name', why: 'The lease or the deed, then electricity, water and internet. Each bill becomes a proof of address for the next office.', done: firstKnown(Tall(/permanent housing|utilities/i)) },
+        { title: 'Sworn translations, now', why: 'The consulate took your records in English; the prefecture and CPAM will not. A traducteur assermenté for the apostilled birth and marriage certificates, from scans, before the health-cover application and the renewal.', done: firstKnown(Tall(/sworn french translations|translate marriage certificate/i)) },
       ];
       if (route === 'employee') milestones.push({ title: 'The first payslip', why: 'It shows the social charges and the health affiliation; query anything missing, and ask about the mutuelle.', done: firstKnown(Tall(/first payslip/i)) });
       else if (route === 'student') milestones.push({ title: 'Enrolment, and student health cover on ameli', why: 'The inscription in person, then etudiant-etranger.ameli.fr with passport, visa, enrolment and a RIB.', done: firstKnown(Tall(/enrollment|student health cover/i)) });
@@ -388,9 +388,9 @@ export function walkthroughFor(stage: JourneyStageId, ctx: WalkContext): Walkthr
             title: 'The driving licence',
             why: (() => {
               const f = ctx.stateFacts;
-              if (f?.licence_exchange === 'yes') return `A ${f.name} licence can be exchanged for a French one${f.licence_classes && f.licence_classes !== 'all' ? ` (class ${f.licence_classes} only)` : ''}, online through ANTS, within your first year of residence. List as of ${f.verified}; confirm on service-public.fr before you file.`;
-              if (f?.licence_exchange === 'no') return `${f.name} has no exchange agreement with France as of ${f.verified}, so after a year of residence you would sit the French test, code and practical. Confirm on service-public.fr; the list changes.`;
-              return 'Some US states exchange licences with France and some do not, and the window is your first year. Set your current state in your profile and this line will say which.';
+              if (f?.licence_exchange === 'yes') return `${f.name} exchanges${f.licence_classes && f.licence_classes !== 'all' ? ` (class ${f.licence_classes} only)` : ''}. Within your first year of residence: apply online at ANTS with the licence, passport, proof of address and a digital photo, pay the €40 stamp, post the original licence by registered mail and keep the slip. The attestation de dépôt keeps you driving while Nantes processes it, three to twelve months. List as of ${f.verified}; confirm on service-public.fr first.`;
+              if (f?.licence_exchange === 'no') return `${f.name} has no agreement as of ${f.verified}, so the French licence has to be earned inside your first year: a driving school or candidat libre, the code de la route, then the practical exam. Budget €1,200 to €3,800 and a few months of waits for exam slots; start in the first months. Confirm on service-public.fr; the list changes.`;
+              return 'Eighteen US states exchange licences with France and the rest sit the French test; your US licence counts for one year either way. Set your current state in your profile and this line walks you through yours.';
             })(),
             done: firstKnown(Tall(/driving licen/i)),
           },
