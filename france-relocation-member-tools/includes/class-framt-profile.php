@@ -521,6 +521,8 @@ class FRAMT_Profile {
             'spouse_legal_first_name'   => get_user_meta( $user_id, 'fra_spouse_legal_first_name', true ),
             'spouse_legal_last_name'    => get_user_meta( $user_id, 'fra_spouse_legal_last_name', true ),
             'spouse_date_of_birth'      => get_user_meta( $user_id, 'fra_spouse_date_of_birth', true ),
+            'spouse_name'               => get_user_meta( $user_id, 'fra_spouse_name', true ),
+            'spouse_work_status'        => get_user_meta( $user_id, 'fra_spouse_work_status', true ),
             'num_children'              => (int) get_user_meta( $user_id, 'fra_num_children', true ),
             'children_ages'             => get_user_meta( $user_id, 'fra_children_ages', true ),
             'has_pets'                  => get_user_meta( $user_id, 'fra_has_pets', true ),
@@ -535,9 +537,14 @@ class FRAMT_Profile {
             'job_title'             => get_user_meta( $user_id, 'fra_job_title', true ),
 
             // Location Information
+            'current_country'       => get_user_meta( $user_id, 'fra_current_country', true ),
             'current_state'         => get_user_meta( $user_id, 'fra_current_state', true ),
+            'current_city'          => get_user_meta( $user_id, 'fra_current_city', true ),
             'birth_state'           => get_user_meta( $user_id, 'fra_birth_state', true ),
             'birth_state_other'     => get_user_meta( $user_id, 'fra_birth_state_other', true ),
+            'spouse_birth_state'    => get_user_meta( $user_id, 'fra_spouse_birth_state', true ),
+            'marriage_state'        => get_user_meta( $user_id, 'fra_marriage_state', true ),
+            'marriage_country'      => get_user_meta( $user_id, 'fra_marriage_country', true ),
             'target_location'       => get_user_meta( $user_id, 'fra_target_location', true ),
             'housing_plan'          => get_user_meta( $user_id, 'fra_housing_plan', true ),
 
@@ -547,6 +554,8 @@ class FRAMT_Profile {
             'application_location'  => get_user_meta( $user_id, 'fra_application_location', true ),
 
             // Financial
+            'financial_resources'   => get_user_meta( $user_id, 'fra_financial_resources', true ),
+            'income_sources'        => get_user_meta( $user_id, 'fra_income_sources', true ),
             'french_proficiency'    => get_user_meta( $user_id, 'fra_french_proficiency', true ),
             'french_mortgage'       => get_user_meta( $user_id, 'fra_french_mortgage', true ),
 

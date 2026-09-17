@@ -230,8 +230,26 @@ class FRAMT_Document_Generator {
         );
 
         // Add sections based on income sources
+        // The portal stores income sources as free text; the older onboarding
+        // form stored a list of keys. Map words in the text onto the known
+        // sections and fall back to savings so the statement is never empty.
         $income_sources = $profile['income_sources'] ?? array('savings');
-        
+        if (!is_array($income_sources)) {
+            $text = strtolower((string) $income_sources);
+            $income_sources = array();
+            foreach (array('employment' => array('employ', 'salary', 'job', 'work'), 'retirement' => array('retire', 'pension', 'invest', 'dividend', '401', 'ira'), 'savings' => array('saving', 'bank', 'cash')) as $key => $words) {
+                foreach ($words as $word) {
+                    if (false !== strpos($text, $word)) {
+                        $income_sources[] = $key;
+                        break;
+                    }
+                }
+            }
+            if (empty($income_sources)) {
+                $income_sources = array('savings');
+            }
+        }
+
         foreach ($income_sources as $source) {
             $content['sections'][] = $this->get_income_section($source, $use_placeholders, $language);
         }
