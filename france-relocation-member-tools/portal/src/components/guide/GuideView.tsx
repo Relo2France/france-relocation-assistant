@@ -128,14 +128,25 @@ export default function GuideView() {
                     })}
                   </dl>
                 ) : (
-                  <ul className="list-none mt-1 mb-5 p-0 flex flex-col gap-[10px]">
-                    {section.requirements.map((r) => (
-                      <li key={r} className="flex gap-3 text-[1rem]">
-                        <span aria-hidden="true" className="w-[7px] h-[7px] mt-[0.7em] rounded-full bg-primary-500 flex-none" />
-                        <span>{withFigures(r)}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  section.ordered ? (
+                    <ol className="list-none mt-1 mb-5 p-0 flex flex-col gap-[10px]">
+                      {section.requirements.map((r, n) => (
+                        <li key={r} className="flex gap-3 text-[1rem]">
+                          <span aria-hidden="true" className="w-6 h-6 mt-[0.2em] rounded-full bg-primary-100 text-primary-500 font-sans text-[0.72rem] font-bold flex items-center justify-center flex-none">{n + 1}</span>
+                          <span>{withFigures(r)}</span>
+                        </li>
+                      ))}
+                    </ol>
+                  ) : (
+                    <ul className="list-none mt-1 mb-5 p-0 flex flex-col gap-[10px]">
+                      {section.requirements.map((r) => (
+                        <li key={r} className="flex gap-3 text-[1rem]">
+                          <span aria-hidden="true" className="w-[7px] h-[7px] mt-[0.7em] rounded-full bg-primary-500 flex-none" />
+                          <span>{withFigures(r)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )
                 )
               ) : null}
               {section.caveat ? (

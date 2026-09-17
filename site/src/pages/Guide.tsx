@@ -1,5 +1,5 @@
 import {
-  Caveat, Figure, PersonalLead, PersonalNext, PracticeNote, Requirement, Requirements, TERM_ITEM, Term, TermList,
+  Caveat, Figure, PersonalLead, PersonalNext, PracticeNote, Requirement, Requirements, Step, TERM_ITEM, Term, TermList,
   SiteNav, SourceChip,
 } from '../components';
 import type { GuideDoc } from '../content/guides';
@@ -57,9 +57,9 @@ export function Guide({ guide }: { guide: GuideDoc }) {
                     })}
                   </TermList>
                 ) : (
-                  <Requirements>
-                    {section.requirements.map((r) => (
-                      <Requirement key={r}>{withFigures(r)}</Requirement>
+                  <Requirements ordered={section.ordered}>
+                    {section.requirements.map((r, n) => (
+                      section.ordered ? <Step key={r} n={n + 1}>{withFigures(r)}</Step> : <Requirement key={r}>{withFigures(r)}</Requirement>
                     ))}
                   </Requirements>
                 )

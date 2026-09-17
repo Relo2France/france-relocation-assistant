@@ -5,11 +5,22 @@ import type { ReactNode } from 'react';
  * the marker, monospaced figures via <Figure>. Nothing here should look
  * decorated - it is the part people act on.
  */
-export function Requirements({ children }: { children: ReactNode }) {
+export function Requirements({ children, ordered = false }: { children: ReactNode; ordered?: boolean }) {
+  const Tag = ordered ? 'ol' : 'ul';
   return (
-    <ul data-kind="requirements" className="list-none mt-1 mb-5 p-0 flex flex-col gap-[10px]">
+    <Tag data-kind={ordered ? 'steps' : 'requirements'} className="list-none mt-1 mb-5 p-0 flex flex-col gap-[10px]">
       {children}
-    </ul>
+    </Tag>
+  );
+}
+
+/** One step in an ordered walkthrough: a numbered marker instead of a dot. */
+export function Step({ n, children }: { n: number; children: ReactNode }) {
+  return (
+    <li className="flex gap-3 text-[1rem]">
+      <span aria-hidden="true" className="w-6 h-6 mt-[0.2em] rounded-full bg-vine-soft text-vine font-ui text-[0.72rem] font-bold flex items-center justify-center flex-none">{n}</span>
+      <span>{children}</span>
+    </li>
   );
 }
 

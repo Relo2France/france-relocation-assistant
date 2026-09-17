@@ -4,7 +4,7 @@ export { SourceChip, type SourceKind } from './SourceChip';
 export { Timeline, type TimelineStep } from './Timeline';
 export { Dossier, type Piece } from './Dossier';
 export { PracticeNote } from './PracticeNote';
-export { Requirements, Requirement, Figure, Caveat, TERM_ITEM, Term, TermList } from './Requirements';
+export { Requirements, Requirement, Figure, Caveat, TERM_ITEM, Term, TermList, Step } from './Requirements';
 export { GuideCard, type Guide } from './GuideCard';
 export { SiteNav } from './SiteNav';
 export { PersonalLead, PersonalNext } from './Personal';

@@ -7,8 +7,11 @@
  */
 export interface GuideSection {
   heading: string;
+  /** The walkthrough: what this is, how to approach it, what to watch. Every section has one. */
   paragraphs?: string[];
   requirements?: string[];
+  /** True when the requirements are steps in order, rendered numbered. */
+  ordered?: boolean;
   caveat?: string;
 }
 
@@ -95,6 +98,9 @@ export const guides: GuideDoc[] = [
       },
       {
         heading: 'The main categories',
+        paragraphs: [
+          'Every long-stay applicant lands in one of a handful of categories, and the category decides what you may do once you arrive: work, study, or neither. Read the five below against your own plan rather than your hopes. If you will be earning in France in any way, the visitor route is not yours; if a French employer or institution is involved, the paperwork starts on their side before it starts on yours. The finder at the top of this page walks the same choice one question at a time.',
+        ],
         requirements: [
           '{{Visitor}} (VLS-TS visiteur) — for those who will not work in France. Retirees and people living on savings or pensions; whether it covers remote work for a foreign employer is contested, and the visitor guide sets out where that stands',
           '{{Work}} (VLS-TS salarié) — requires a French job offer, and the employer must obtain the {{autorisation de travail}} before you apply',
@@ -116,6 +122,9 @@ export const guides: GuideDoc[] = [
       },
       {
         heading: 'What every type has in common',
+        paragraphs: [
+          'Whichever category you land in, the consulate checks the same foundations first, and a file that fails one of them is refused before the category-specific documents are even read. Get these six settled before you think about anything else. The one that surprises people most is the first: the application is made from the United States, through France-Visas and the consulate that covers your state, and cannot be started after you arrive.',
+        ],
         requirements: [
           'Apply from the US, through France-Visas and your assigned consulate — never after arriving',
           'Passport valid {{6+ months}} beyond the intended stay',
@@ -129,6 +138,9 @@ export const guides: GuideDoc[] = [
       },
       {
         heading: 'Documents every application needs',
+        paragraphs: [
+          'This is the physical file every applicant hands over at the biometric appointment. Two habits keep it out of trouble: start on the slow items first, because an apostille or a sworn translation takes weeks while a photo takes an afternoon, and keep everything inside the submission window, since a statement or a certificate that has aged past three months is asked for again. The list is the same for every category; the category then adds its own items on top, covered in the next section.',
+        ],
         requirements: [
           'US passport issued within the last {{10 years}}, valid at least {{3 months}} beyond your stay — {{6+ months}} is strongly recommended as a buffer for onward Schengen travel',
           'The France-Visas application, printed and signed, with a recent ICAO-compliant biometric photo',
@@ -157,6 +169,9 @@ export const guides: GuideDoc[] = [
       },
       {
         heading: 'What it actually costs',
+        paragraphs: [
+          'The visa fee itself is the smallest line. What adds up is everything the file has to carry: an apostille for each certificate, a sworn translation for each English document, the FBI check, and the service and biometric fees at the visa centre. Budget per document rather than per application, and add the optional extras only if you need them. The note below gives realistic totals for one applicant and for a family.',
+        ],
         requirements: [
           'Visa fee: {{€99}} long-stay, {{€50}} student, {{€90}} short-stay',
           'VFS Global or TLScontact service fee: {{$52–68}}, plus biometric enrolment at about {{$35}}',
@@ -199,6 +214,9 @@ export const guides: GuideDoc[] = [
       },
       {
         heading: 'What you’ll need in 2026',
+        paragraphs: [
+          'The visitor route asks for less than the work routes, but it asks for it precisely: the consulate is checking that you can support yourself without working and that you are insured if something goes wrong. Gather the five items below and read the note under them before deciding how much to show, because the resources figure is a benchmark the consulate reasons from, not a line you either clear or fail.',
+        ],
         requirements: [
           'A passport valid for {{6+ months}} beyond your intended stay',
           'Proof of accommodation — lease, deed, or host attestation',
@@ -222,6 +240,10 @@ export const guides: GuideDoc[] = [
       },
       {
         heading: 'How the application runs',
+        paragraphs: [
+          'The application runs in five steps, and the order matters: the online account comes first because the appointment cannot be booked without it, and the appointment is where the file, the fingerprints and the fee all happen at once. Book early in the summer months, when waits stretch.',
+        ],
+        ordered: true,
         requirements: [
           'Create an account on France-Visas.gouv.fr and complete the eligibility wizard',
           'Book an appointment at your regional consulate or visa centre — TLScontact or VFS',
@@ -290,6 +312,10 @@ export const guides: GuideDoc[] = [
       },
       {
         heading: 'The five stages',
+        paragraphs: [
+          'A French purchase moves through five fixed stages, each with its own document, and the buyer’s protection sits in the middle: the cooling-off period after the preliminary contract. Everything before it is reversible; everything after it costs money to undo. Plan your financing and your questions for the notaire around that point.',
+        ],
+        ordered: true,
         requirements: [
           'Find the property, through an agent or a direct listing',
           'Make a written offer ({{offre d’achat}})',
@@ -321,6 +347,9 @@ export const guides: GuideDoc[] = [
       },
       {
         heading: 'Budget 7–10% on top',
+        paragraphs: [
+          'The price on the listing is not the price you pay. Five further lines sit on top of it, and the biggest, the so-called notaire fees, is mostly tax collected for the state. Run the numbers on each before you make an offer, and confirm who pays the agency in the contract rather than assuming. The note below explains why the tax varies by département and how to check yours.',
+        ],
         requirements: [
           'Notaire fees: {{7–8%}} for property over five years old, {{2–3%}} for new builds',
           'Agency fees: {{3–8%}}, usually paid by the seller — but confirm who pays in the contract',
@@ -333,6 +362,9 @@ export const guides: GuideDoc[] = [
       },
       {
         heading: 'Two things that reduce the bill',
+        paragraphs: [
+          'Two rules can bring that figure down, and both need to be raised before the contract is drafted rather than after. Ask your notaire about each; neither is applied automatically.',
+        ],
         requirements: [
           'First-time buyers ({{primo-accédants}}) purchasing a primary residence are exempt nationwide from the {{0.5-point}} increase — a national rule, not a local option, but eligibility turns on your buyer status, so confirm it with your notaire',
           'The taxable base can be reduced by the itemised value of genuine furniture and movable fixtures included in the sale, up to {{5%}} of the price',
@@ -364,6 +396,9 @@ export const guides: GuideDoc[] = [
       },
       {
         heading: 'What they do',
+        paragraphs: [
+          'Think of the notaire as the state’s officer for the transaction: every French property sale passes through one, and the six duties below are theirs whether you appoint your own or share the seller’s. Knowing what they do tells you what they will ask you for, and what nobody else in the process is checking.',
+        ],
         requirements: [
           'Draft and register the preliminary contract and the final deed',
           'Verify ownership history and title',
@@ -443,6 +478,9 @@ export const guides: GuideDoc[] = [
       },
       {
         heading: 'What it costs',
+        paragraphs: [
+          'A mutuelle is priced by who is covered and by age, not by health, so the ranges below are wide but predictable. Get quotes for your household shape rather than per person, and read the note beneath if anyone in the household will be employed in France, because an employer plan changes the arithmetic.',
+        ],
         requirements: [
           'Individual: {{€40–170}} a month — younger adults at the low end, those over 60 frequently more',
           'Couple: {{€90–260}} a month',
@@ -484,6 +522,9 @@ export const guides: GuideDoc[] = [
       },
       {
         heading: 'What to file',
+        paragraphs: [
+          'Once you have lived in France for the qualifying period you file one form with your local CPAM, with the supporting documents below attached. Assemble them before you start: an incomplete file is returned rather than held, and the birth certificate in particular needs its apostille and translation ready.',
+        ],
         requirements: [
           'Form {{736}} — “Demande d’affiliation au régime général sur critère de résidence”, from ameli.fr or submitted through your ameli account',
           'Passport with your visa or residence permit',
@@ -588,6 +629,9 @@ export const guides: GuideDoc[] = [
       },
       {
         heading: 'How days are counted',
+        paragraphs: [
+          'If residency turns on where you spent the year, the count has to be done the way the French tax office does it, not by feel. Keep a simple log of entries and exits from the day you first arrive. The rules below are the ones that decide borderline cases.',
+        ],
         requirements: [
           'Any part of a day in France generally counts as a whole day',
           'Calendar year basis, {{1 January – 31 December}}',
@@ -622,6 +666,9 @@ export const guides: GuideDoc[] = [
       },
       {
         heading: 'Banks that accept Americans',
+        paragraphs: [
+          'FATCA makes a US citizen extra work for a French bank, so some branches say no and others say yes to the same person. Start with the banks below, which are known to take American clients, and expect an online account to be the quickest way to a French IBAN while a traditional branch account follows.',
+        ],
         requirements: [
           '{{BNP Paribas International}} — generally the most US-friendly, with dedicated expat services',
           '{{Crédit Agricole International}} — varies by region; some branches are more accommodating than others',
@@ -640,6 +687,9 @@ export const guides: GuideDoc[] = [
       },
       {
         heading: 'And what you must report',
+        paragraphs: [
+          'Opening the account creates a duty on the US side. Two separate filings cover foreign accounts, with different thresholds, and one does not stand in for the other. Note both due dates the year you open the account, because the penalties for missing the first are set by law and not small.',
+        ],
         requirements: [
           '{{FBAR}} (FinCEN 114) once your foreign accounts total more than {{$10,000}} at any point in the calendar year — filed electronically at fincen.gov',
           'FBAR is due {{15 April}} with an automatic extension to {{15 October}}, granted without any request',
@@ -650,6 +700,9 @@ export const guides: GuideDoc[] = [
       },
       {
         heading: 'What you will be asked for',
+        paragraphs: [
+          'A branch will expect the documents below at the appointment. The two that catch Americans out are the W-9, which the bank needs for its own FATCA reporting, and the proof of address, which you may not have yet; a host’s attestation is accepted for that.',
+        ],
         requirements: [
           'Valid passport, plus your visa or residence permit',
           'Proof of French address — a lease or {{attestation d’hébergement}}',
@@ -684,6 +737,10 @@ export const guides: GuideDoc[] = [
       },
       {
         heading: 'How the process runs',
+        paragraphs: [
+          'The salarié route runs through the employer before it runs through you: their work authorisation is the gate, and nothing at the consulate can start until it is granted. The seven steps below are in order. Where you can save time is at the ends: have your own documents ready while the authorisation is under review, and validate the visa promptly after you land.',
+        ],
+        ordered: true,
         requirements: [
           'Your French employer offers you a position',
           'The employer applies for work authorisation through the ANEF portal — this has replaced the older paper-based process',
@@ -698,6 +755,9 @@ export const guides: GuideDoc[] = [
       },
       {
         heading: 'What you’ll need',
+        paragraphs: [
+          'Your part of the file is the nine items below, most of which you can gather while the employer’s authorisation is pending. The apostilled background check and the certified translations of your diplomas are the slow ones; start them first.',
+        ],
         requirements: [
           'Passport valid {{6+ months}} beyond your stay',
           'Signed work contract or a detailed job offer letter',
@@ -764,6 +824,9 @@ export const guides: GuideDoc[] = [
       },
       {
         heading: 'What it gives you',
+        paragraphs: [
+          'The Talent Passport costs more effort up front and repays it for years: a multi-year card, a working spouse, and fewer of the post-arrival obligations other categories carry. If you are near a threshold, the six benefits below are the reason to reach for it.',
+        ],
         requirements: [
           '{{4-year}} validity, renewable, with a simplified renewal process',
           'Your spouse or partner receives automatic work authorisation',
@@ -827,6 +890,9 @@ export const guides: GuideDoc[] = [
       },
       {
         heading: 'Moving together, and children',
+        paragraphs: [
+          'When a household moves, the applications are separate but the timing is shared. File each adult’s application as its own dossier, lodged together so the consulate sees one household, and attach the children to a parent’s file with the documents below.',
+        ],
         requirements: [
           'Each spouse needs their own visa application — there is no joint file',
           'If one of you holds an EU Blue Card or Talent Passport, the other gets automatic work authorisation',
@@ -869,6 +935,10 @@ export const guides: GuideDoc[] = [
       },
       {
         heading: 'The online steps',
+        paragraphs: [
+          'Validation is done entirely online and takes an evening if the documents are to hand. Follow the six steps in order on the ANEF portal; the account activation and the tax stamp are both time-limited, so do not start unless you can finish the same day.',
+        ],
+        ordered: true,
         requirements: [
           'Go to administration-etrangers-en-france.interieur.gouv.fr and choose “I validate my visa”',
           'Authenticate via FranceConnect, or create a direct account and activate it within {{24 hours}} of the confirmation email',
@@ -920,6 +990,9 @@ export const guides: GuideDoc[] = [
       },
       {
         heading: 'What a VLS-TS means for you',
+        paragraphs: [
+          'If the sticker in your passport is a VLS-TS, the four points below are your first year. The one with a deadline is the first: online validation within three months of the entry stamp, which is what turns the visa into a residence permit.',
+        ],
         requirements: [
           'Mandatory online validation within {{3 months}} of arrival through the ANEF portal — track the calendar date, not a day count',
           'A validation tax, set by the annual finance law and raised again on {{1 May 2026}} — confirm the current amount on ANEF before paying',
@@ -929,6 +1002,9 @@ export const guides: GuideDoc[] = [
       },
       {
         heading: 'What “carte de séjour à solliciter” means for you',
+        paragraphs: [
+          'If instead the sticker says carte de séjour à solliciter, there is no online step and no validation tax, but there is a prefecture appointment with a shorter deadline, and your status is not settled until the card is in your hand. Book the appointment in your first days.',
+        ],
         requirements: [
           'No online validation and no validation tax',
           'A mandatory prefecture appointment — the visa is stamped “à solliciter dans les {{2 mois}}”, the standard national deadline',
@@ -967,6 +1043,9 @@ export const guides: GuideDoc[] = [
       },
       {
         heading: 'What you actually apply for',
+        paragraphs: [
+          'Because there is no separate category, a remote worker applies as a visitor and meets the visitor file. The five items below are the same as for a retiree, with one difference in emphasis: the consulate will want to see that the income is stable and that the work is for an employer or clients outside France.',
+        ],
         requirements: [
           'A valid passport with {{6+ months}} validity beyond the intended stay',
           'Stable monthly resources at or around net SMIC — roughly {{€1,426–€1,500}} a month in 2026 — or savings of roughly {{€17,000–€18,000}} to cover a year',
@@ -1006,6 +1085,9 @@ export const guides: GuideDoc[] = [
       },
       {
         heading: 'Lead times that catch people out',
+        paragraphs: [
+          'The consulate’s own processing time is the short part. The long part is the paperwork that has to exist before you can book: the FBI check, the apostilles, the sworn translations. The seven lead times below are the ones that decide whether your timeline holds, and the first one is the one to start today.',
+        ],
         requirements: [
           'FBI background check: {{10–14 weeks}} by mail direct from the FBI, versus roughly {{3–7 business days}} through an FBI-approved channeler — use the channeler',
           'State apostilles: {{1–2 weeks}} in most states; some offer {{24–48 hour}} expedited service, others by mail can run {{4+ weeks}}',
@@ -1018,6 +1100,10 @@ export const guides: GuideDoc[] = [
       },
       {
         heading: 'A timeline that works',
+        paragraphs: [
+          'Working back from your travel date, this is the sequence that leaves room for the slow items. Treat the first two milestones as fixed and the rest as the earliest sensible moment; the consulate appointment is booked as soon as the dossier is ready, not on a calendar date.',
+        ],
+        ordered: true,
         requirements: [
           '{{5–6 months}} before travel: start collecting documents, the FBI check first',
           '{{3–4 months}} before: submit apostille requests, book any medical exam',
