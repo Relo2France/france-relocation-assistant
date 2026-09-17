@@ -43,6 +43,8 @@ interface DraftJson {
   suggested_category?: string;
   suggested_topic_key?: string;
   suggested_title?: string;
+  in_practice_content?: string;
+  practice_sources?: string[];
 }
 
 export interface GapOutcome {
@@ -51,6 +53,8 @@ export interface GapOutcome {
   ok: boolean;
   review_id?: string;
   is_new_topic?: boolean;
+  in_practice_content?: string;
+  practice_sources?: string[];
   error?: string;
   duration_ms: number;
   output_tokens?: number;
@@ -143,6 +147,8 @@ Research the current official position using web search, then rewrite this topic
 
 You have exactly 10 web searches for this task and no more; a search past that limit fails with max_uses_exceeded. Plan them before you start: broad official pages first, then the specific figures. When the budget is spent, write from what you found. Report honestly: if some searches succeeded, say what was verified and what was not, per claim. Never describe search as unavailable when searches returned results.
 
+Two layers, never mixed: suggested_content states only what official sources say. in_practice_content is where lived experience goes: what people who have been through it report about waits, refusals, consulate quirks and workarounds, each attributed to a community source with a date. Spend some of your searches on that layer.
+
 RULES:
 - Keep everything already correct. This is an edit, not a replacement.
 - Only state requirements you can confirm from an official source.
@@ -151,7 +157,7 @@ RULES:
 - Match the existing formatting: ** for headers, bullets for lists.
 
 Respond with ONLY this JSON:
-{"suggested_content": "the full updated topic text", "changes_summary": "one sentence on what was missing", "key_insights": ["what was added"], "official_sources_checked": ["service-public.fr"], "confidence": "high|medium|low"}`;
+{"suggested_content": "the full updated topic text", "in_practice_content": "an **In Practice** section of first-hand reports, dated and attributed, or an empty string", "practice_sources": ["community source, with date"], "changes_summary": "one sentence on what was missing", "key_insights": ["what was added"], "official_sources_checked": ["service-public.fr"], "confidence": "high|medium|low"}`;
 }
 
 export function buildCoveragePrompt(gap: Gap): string {
@@ -170,6 +176,8 @@ Research the current official position using web search, then write a new knowle
 
 You have exactly 15 web searches for this task and no more; a search past that limit fails with max_uses_exceeded. Plan them before you start: broad official pages first, then the specific figures. When the budget is spent, write from what you found. Report honestly: if some searches succeeded, say what was verified and what was not, per claim. Never describe search as unavailable when searches returned results.
 
+Two layers, never mixed: suggested_content states only what official sources say. in_practice_content is where lived experience goes: what people who have been through it report about waits, refusals, consulate quirks and workarounds, each attributed to a community source with a date. Spend some of your searches on that layer.
+
 RULES:
 - Only state requirements you can confirm from an official source.
 - Prefer service-public.fr, france-visas.gouv.fr and consulate sites.
@@ -181,7 +189,7 @@ RULES:
 Existing categories: ${categories}
 
 Respond with ONLY this JSON:
-{"suggested_category": "one of the existing categories", "suggested_topic_key": "short_key", "suggested_title": "Topic Title", "suggested_content": "the topic text", "changes_summary": "one sentence on what this covers", "key_insights": ["what it answers"], "official_sources_checked": ["service-public.fr"], "confidence": "high|medium|low"}`;
+{"suggested_category": "one of the existing categories", "suggested_topic_key": "short_key", "suggested_title": "Topic Title", "suggested_content": "the topic text, official position only", "in_practice_content": "an **In Practice** section: what people who have actually done this report (forums, expat groups, recent first-hand accounts), dated where possible, clearly separated from the official text, or an empty string if you found nothing reliable", "practice_sources": ["description of each community source, with a date"], "changes_summary": "one sentence on what this covers", "key_insights": ["what it answers"], "official_sources_checked": ["service-public.fr"], "confidence": "high|medium|low"}`;
 }
 
 export async function draftGap(env: Env, gap: Gap): Promise<GapOutcome> {
@@ -243,6 +251,8 @@ export async function draftGap(env: Env, gap: Gap): Promise<GapOutcome> {
     confidence: draft.confidence ?? 'medium',
     changes_summary: draft.changes_summary ?? '',
     suggested_content: draft.suggested_content,
+    in_practice_content: draft.in_practice_content ?? '',
+    practice_sources: draft.practice_sources ?? [],
     key_insights: draft.key_insights ?? [],
     sources_checked: draft.official_sources_checked ?? [],
     web_sources: outcome.webSources as WebSource[],

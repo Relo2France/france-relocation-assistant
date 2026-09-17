@@ -71,6 +71,11 @@ class FRAMT_Portal_API {
      */
     private function __construct() {
         add_action( 'rest_api_init', array( $this, 'register_routes' ) );
+
+        // Member files are served through admin-ajax with a per-file nonce.
+        // The URLs were built for years; the handlers behind them are these.
+        add_action( 'wp_ajax_fra_preview_file', array( $this, 'ajax_preview_file' ) );
+        add_action( 'wp_ajax_fra_download_file', array( $this, 'ajax_download_file' ) );
     }
 
     /**
@@ -2426,6 +2431,27 @@ class FRAMT_Portal_API {
         // Get the inserted file
         $file = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE id = %d", $file_id ) );
 
+        // Say what it is, if the member did not. Category 'upload' and 'other'
+        // mean they did not choose; a dossier item means they did.
+        if ( ! $item_id && in_array( $category, array( 'upload', 'other', '' ), true ) ) {
+            $guess = $this->classify_uploaded_document( $file );
+            if ( $guess ) {
+                $meta = $file->metadata ? json_decode( $file->metadata, true ) : array();
+                $meta = is_array( $meta ) ? $meta : array();
+                $meta['document_type']             = $guess['document_type'];
+                $meta['classified_by']             = 'ai';
+                $meta['classification_confidence'] = $guess['confidence'];
+                if ( '' !== $guess['title'] ) {
+                    $meta['title'] = $guess['title'];
+                }
+                $wpdb->update( $table, array( 'category' => $guess['category'], 'metadata' => wp_json_encode( $meta ) ), array( 'id' => $file_id ) );
+                if ( '' !== $guess['dossier_item'] ) {
+                    $this->complete_checklist_item_with_file( $user_id, 'visa-application', $guess['dossier_item'], (int) $file_id );
+                }
+                $file = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE id = %d", $file_id ) );
+            }
+        }
+
         return rest_ensure_response( $this->format_file_response( $file ) );
     }
 
@@ -2488,6 +2514,125 @@ class FRAMT_Portal_API {
         );
     }
 
+    public function ajax_preview_file() {
+        $this->serve_member_file( 'preview' );
+    }
+
+    public function ajax_download_file() {
+        $this->serve_member_file( 'download' );
+    }
+
+    /**
+     * Stream a member's file: inline for a preview, as an attachment for a
+     * download. The nonce is per file and per action; the file must belong
+     * to the household, or the viewer must be an administrator.
+     *
+     * @param string $mode preview|download
+     * @return void
+     */
+    private function serve_member_file( $mode ) {
+        global $wpdb;
+        $file_id = isset( $_GET['file_id'] ) ? absint( $_GET['file_id'] ) : 0;
+        $nonce   = isset( $_GET['nonce'] ) ? sanitize_text_field( wp_unslash( $_GET['nonce'] ) ) : '';
+        if ( ! $file_id || ! wp_verify_nonce( $nonce, 'fra_file_' . $mode . '_' . $file_id ) ) {
+            status_header( 403 );
+            exit( 'This link has expired. Open the file from the portal again.' );
+        }
+        $table = FRAMT_Portal_Schema::get_table( 'files' );
+        $file  = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE id = %d", $file_id ) );
+        if ( ! $file || ( (int) $file->user_id !== (int) $this->acting_user_id() && ! current_user_can( 'manage_options' ) ) ) {
+            status_header( 404 );
+            exit( 'File not found.' );
+        }
+        if ( ! $file->file_path || ! file_exists( $file->file_path ) ) {
+            status_header( 404 );
+            exit( 'File not found on the server.' );
+        }
+        $mime = $file->mime_type ?: ( function_exists( 'mime_content_type' ) ? mime_content_type( $file->file_path ) : 'application/octet-stream' );
+        nocache_headers();
+        header( 'Content-Type: ' . $mime );
+        header( 'Content-Length: ' . filesize( $file->file_path ) );
+        header( 'X-Content-Type-Options: nosniff' );
+        header( 'Content-Disposition: ' . ( 'download' === $mode ? 'attachment' : 'inline' ) . '; filename="' . rawurlencode( $file->original_name ) . '"' );
+        readfile( $file->file_path );
+        exit;
+    }
+
+    /**
+     * Read an uploaded image or PDF once and say what it is.
+     *
+     * A member drops a phone photo of their passport and the portal should
+     * know it is a passport: file it under identity, name it, and tick the
+     * dossier item. Runs only when the member did not say what it is, and
+     * never blocks the upload if the model is unavailable.
+     *
+     * @param object $file Database row.
+     * @return array|null category, document_type, title, dossier_item, confidence
+     */
+    private function classify_uploaded_document( $file ) {
+        if ( ! class_exists( 'France_Relocation_Assistant' ) || ! class_exists( 'FRAMT_AI_Client' ) ) {
+            return null;
+        }
+        $api_key = France_Relocation_Assistant::get_api_key();
+        if ( empty( $api_key ) || ! $file->file_path || ! file_exists( $file->file_path ) || filesize( $file->file_path ) > 15 * 1024 * 1024 ) {
+            return null;
+        }
+        $mime = (string) $file->mime_type;
+        if ( 'application/pdf' === $mime ) {
+            $block = array( 'type' => 'document', 'source' => array( 'type' => 'base64', 'media_type' => 'application/pdf', 'data' => base64_encode( (string) file_get_contents( $file->file_path ) ) ) );
+        } elseif ( in_array( $mime, array( 'image/jpeg', 'image/png', 'image/webp', 'image/gif' ), true ) ) {
+            $block = array( 'type' => 'image', 'source' => array( 'type' => 'base64', 'media_type' => $mime, 'data' => base64_encode( (string) file_get_contents( $file->file_path ) ) ) );
+        } else {
+            return null;
+        }
+
+        $prompt = 'This file was uploaded by an American preparing a French long-stay visa dossier. Identify what it is. Respond with ONLY a JSON object: '
+            . '{"document_type": one of ["passport","passport_photo","birth_certificate","marriage_certificate","bank_statement","proof_of_income","tax_return","health_insurance","lease_or_deed","accommodation_proof","employment_contract","work_authorisation","diploma","background_check","cover_letter","visa","other"], '
+            . '"title": a short human name such as "Passport, Kevin Burrowbridge" or "Chase statement, August 2026" (no more than 60 characters; use the name on the document if visible), '
+            . '"confidence": "high"|"medium"|"low"}. Do not transcribe numbers such as passport or account numbers.';
+
+        $body = FRAMT_AI_Client::message( array(
+            'purpose'    => 'docs',
+            'max_tokens' => 300,
+            'timeout'    => 60,
+            'messages'   => array( array( 'role' => 'user', 'content' => array( $block, array( 'type' => 'text', 'text' => $prompt ) ) ) ),
+        ) );
+        if ( is_wp_error( $body ) ) {
+            return null;
+        }
+        $json = FRAMT_AI_Client::extract_json( $body );
+        if ( ! is_array( $json ) || empty( $json['document_type'] ) ) {
+            return null;
+        }
+        $type = sanitize_key( $json['document_type'] );
+        $map  = array(
+            'passport'             => array( 'identity', 'passport-valid' ),
+            'passport_photo'       => array( 'identity', 'passport-photos' ),
+            'birth_certificate'    => array( 'identity', 'birth-certificate-apostilled' ),
+            'marriage_certificate' => array( 'identity', 'marriage-certificate' ),
+            'bank_statement'       => array( 'financial', 'proof-funds' ),
+            'proof_of_income'      => array( 'financial', 'proof-funds' ),
+            'tax_return'           => array( 'financial', '' ),
+            'health_insurance'     => array( 'medical', 'travel-insurance' ),
+            'lease_or_deed'        => array( 'housing', 'proof-accommodation' ),
+            'accommodation_proof'  => array( 'housing', 'proof-accommodation' ),
+            'employment_contract'  => array( 'employment', 'work-contract' ),
+            'work_authorisation'   => array( 'employment', 'work-authorisation' ),
+            'diploma'              => array( 'education', 'qualifications' ),
+            'background_check'     => array( 'identity', 'background-check' ),
+            'cover_letter'         => array( 'visa', 'cover-letter' ),
+            'visa'                 => array( 'visa', 'visa-received' ),
+        );
+        $confidence = sanitize_key( (string) ( $json['confidence'] ?? 'medium' ) );
+        return array(
+            'category'      => isset( $map[ $type ] ) ? $map[ $type ][0] : 'other',
+            'document_type' => $type,
+            'title'         => sanitize_text_field( (string) ( $json['title'] ?? '' ) ),
+            'dossier_item'  => ( isset( $map[ $type ] ) && 'low' !== $confidence ) ? $map[ $type ][1] : '',
+            'confidence'    => $confidence,
+        );
+    }
+
     /**
      * Format file for API response
      *
@@ -2498,6 +2643,8 @@ class FRAMT_Portal_API {
         $metadata = $file->metadata ? json_decode( $file->metadata, true ) : array();
 
         return array(
+            'title'         => ! empty( $metadata['title'] ) ? $metadata['title'] : $file->original_name,
+            'document_type' => $metadata['document_type'] ?? null,
             'id'            => (int) $file->id,
             'project_id'    => (int) $file->project_id,
             'user_id'       => (int) $file->user_id,
@@ -9211,7 +9358,7 @@ SYSTEM;
                     'location_type' => $item['location_type'],
                     'updated_at'    => $item['updated_at'],
                     'status'        => $status,
-                    'download_url'  => rest_url( self::NAMESPACE . '/research/report/' . $item['report_id'] . '/download' ),
+                    'download_url'  => add_query_arg( '_wpnonce', wp_create_nonce( 'wp_rest' ), rest_url( self::NAMESPACE . '/research/report/' . $item['report_id'] . '/download' ) ),
                 );
             }
         }
@@ -9452,7 +9599,7 @@ SYSTEM;
             'version'       => (int) ( $report['version'] ?? 1 ),
             'generated_at'  => $report['generated_at'] ?? $report['updated_at'],
             'updated_at'    => $report['updated_at'],
-            'download_url'  => rest_url( self::NAMESPACE . '/research/report/' . $report['id'] . '/download' ),
+            'download_url'  => add_query_arg( '_wpnonce', wp_create_nonce( 'wp_rest' ), rest_url( self::NAMESPACE . '/research/report/' . $report['id'] . '/download' ) ),
         );
     }
 

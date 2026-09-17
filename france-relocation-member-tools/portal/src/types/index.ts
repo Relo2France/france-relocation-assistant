@@ -169,6 +169,9 @@ export interface UpdateProfileData {
 
 // File types
 export interface PortalFile {
+  /** What the file is, as the member named it or the portal recognised it. */
+  title?: string;
+  document_type?: string | null;
   id: number;
   project_id: number;
   user_id: number;

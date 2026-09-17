@@ -209,7 +209,8 @@ function FileCardGrid({ file, onClick, onDownload, onDelete, onVerify }: FileIte
         {file.thumbnail_url ? (
           <img
             src={file.thumbnail_url}
-            alt={file.original_name}
+            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+            alt={file.title || file.original_name}
             className="max-w-full max-h-full object-contain rounded"
           />
         ) : (
@@ -223,8 +224,8 @@ function FileCardGrid({ file, onClick, onDownload, onDelete, onVerify }: FileIte
       <div className="p-3">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium text-gray-900 truncate" title={file.original_name}>
-              {file.original_name}
+            <p className="text-sm font-medium text-gray-900 truncate" title={file.title || file.original_name}>
+              {file.title || file.original_name}
             </p>
             <p className="text-xs text-gray-500 mt-0.5">
               {file.file_size_formatted}
@@ -305,9 +306,9 @@ function FileRowList({ file, onClick, onDownload, onDelete, onVerify }: FileItem
             <button
               onClick={onClick}
               className="text-sm font-medium text-gray-900 hover:text-primary-600 truncate block max-w-xs"
-              title={file.original_name}
+              title={file.title || file.original_name}
             >
-              {file.original_name}
+              {file.title || file.original_name}
             </button>
             <p className="text-xs text-gray-500">{file.file_type_label}</p>
           </div>
