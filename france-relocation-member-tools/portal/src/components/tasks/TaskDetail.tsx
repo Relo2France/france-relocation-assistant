@@ -375,12 +375,12 @@ function formatDaysUntil(days: number): string {
 function HowTo({ howto }: { howto: TaskHowto }) {
   return (
     <section className="mb-6 rounded-lg border border-rule bg-card p-5 flex flex-col gap-4" aria-labelledby="howto-title">
-      <div className="flex items-baseline justify-between gap-3">
-        <h4 id="howto-title" className="font-display text-[1.05rem] font-semibold m-0">How to do this</h4>
+      <div className="flex flex-col gap-1">
+        <h4 id="howto-title" className="font-display text-[1.05rem] font-semibold m-0 whitespace-nowrap">How to do this</h4>
         {(howto.time || howto.cost) ? (
-          <span className="font-mono text-[0.68rem] uppercase tracking-wide text-gray-500 text-right">
-            {howto.time}{howto.time && howto.cost ? ' · ' : ''}{howto.cost}
-          </span>
+          <p className="text-[0.82rem] text-gray-500 m-0 leading-snug">
+            {howto.time}{howto.time && howto.cost ? ' ' : ''}{howto.cost}
+          </p>
         ) : null}
       </div>
       <ol className="list-none m-0 p-0 flex flex-col">
