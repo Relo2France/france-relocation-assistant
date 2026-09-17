@@ -1,3 +1,4 @@
+import { IN_PRACTICE_RULES, vetInPractice } from './practice';
 /**
  * Knowledge base gap drafting.
  *
@@ -150,7 +151,9 @@ Research the current official position using web search, then rewrite this topic
 
 You have exactly 10 web searches for this task and no more; a search past that limit fails with max_uses_exceeded. Plan them before you start: broad official pages first, then the specific figures. When the budget is spent, write from what you found. Report honestly: if some searches succeeded, say what was verified and what was not, per claim. Never describe search as unavailable when searches returned results.
 
-Two layers, never mixed: suggested_content states only what official sources say. in_practice_content is where lived experience goes: what people who have been through it report about waits, refusals, consulate quirks and workarounds, each attributed to a community source with a date. Spend some of your searches on that layer.
+Two layers, never mixed: suggested_content states only what official sources say. in_practice_content is where lived experience goes: what people who have been through it report about waits, refusals, consulate quirks and workarounds, Spend some of your searches on that layer.
+
+${IN_PRACTICE_RULES}
 
 RULES:
 - Keep everything already correct. This is an edit, not a replacement.
@@ -179,7 +182,9 @@ Research the current official position using web search, then write a new knowle
 
 You have exactly 15 web searches for this task and no more; a search past that limit fails with max_uses_exceeded. Plan them before you start: broad official pages first, then the specific figures. When the budget is spent, write from what you found. Report honestly: if some searches succeeded, say what was verified and what was not, per claim. Never describe search as unavailable when searches returned results.
 
-Two layers, never mixed: suggested_content states only what official sources say. in_practice_content is where lived experience goes: what people who have been through it report about waits, refusals, consulate quirks and workarounds, each attributed to a community source with a date. Spend some of your searches on that layer.
+Two layers, never mixed: suggested_content states only what official sources say. in_practice_content is where lived experience goes: what people who have been through it report about waits, refusals, consulate quirks and workarounds, Spend some of your searches on that layer.
+
+${IN_PRACTICE_RULES}
 
 RULES:
 - Only state requirements you can confirm from an official source.

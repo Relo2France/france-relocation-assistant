@@ -1,3 +1,4 @@
+import { IN_PRACTICE_RULES } from './practice';
 /**
  * The review prompt.
  *
@@ -56,12 +57,7 @@ Research and write an "**In Practice**" section that covers:
 • Current discussions or recent changes people are talking about
 • Things that surprised people or caught them off guard
 
-**IMPORTANT FOR IN PRACTICE:**
-- Be honest about grey areas without encouraging rule-breaking
-- Cite specific sources (Reddit threads, blog posts, forum discussions, articles)
-- Note when information is anecdotal vs. widely reported
-- Include approximate dates of sources ("as of late 2024", "reported in 2025")
-- Distinguish between "the law says X" and "in practice, Y"
+${IN_PRACTICE_RULES}
 
 ---
 
