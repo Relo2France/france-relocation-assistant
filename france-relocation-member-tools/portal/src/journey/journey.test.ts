@@ -30,6 +30,12 @@ describe('where a task belongs', () => {
     expect(stageForTask({ stage: 'pre-arrival', due_date: null, title: 'Apply for spouse visa' }, project)).toBe('apply');
     expect(stageForTask({ stage: 'pre-arrival', due_date: null, title: 'Get pet microchipped' }, project)).toBe('move');
     expect(stageForTask({ stage: 'pre-arrival', due_date: null, title: 'Book temporary accommodation' }, project)).toBe('move');
+    expect(stageForTask({ stage: 'pre-arrival', due_date: null, title: 'Book the TLScontact appointment' }, project)).toBe('apply');
+  });
+  it('shows a template step carrying a journey stage where it says, whatever the date', () => {
+    expect(stageForTask({ stage: 'apply', due_date: '2027-05-01', title: 'Collect your passport and check the visa' }, project)).toBe('apply');
+    expect(stageForTask({ stage: 'settle', due_date: '2027-11-18', title: 'Apply for French health cover (PUMa)' }, project)).toBe('settle');
+    expect(stageForTask({ stage: 'prepare', due_date: '2026-07-11', title: 'Your sponsor applies to OFII for family reunification' }, project)).toBe('prepare');
   });
   it('puts every post-move template into arriving or settling by date', () => {
     expect(stageForTask({ stage: 'arrival', due_date: null, title: 'Set up utilities' }, project)).toBe('arrive');

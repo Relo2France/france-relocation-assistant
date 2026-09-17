@@ -92,6 +92,7 @@ export default function Dashboard() {
 
   const walk = walkthroughFor(nowId, {
     project,
+    route: profile_visa_type,
     profile,
     tasks: all,
     dossier: items,

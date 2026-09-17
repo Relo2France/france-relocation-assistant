@@ -119,9 +119,9 @@ function daysBetween(a: Date, b: Date): number {
 }
 
 /** Template tasks that are about getting there, not about the dossier. */
-const MOVE_WORDS = /\b(pets?|accommodation|housing|book(ing)?|flights?|shipping|movers?|packing|vet(erinarian)?|vaccination)\b/i;
+const MOVE_WORDS = /\b(pets?|accommodation|housing|book(ing)?|flights?|shipping|movers?|packing|vet(erinarian)?|vaccination|hand luggage|mail forwarding)\b/i;
 /** Template tasks that are the application itself. */
-const APPLY_WORDS = /\b(apply for [a-z ]*visas?|consulate|appointment|biometrics?|submit|france-visas|visa application)\b/i;
+const APPLY_WORDS = /\b(apply for [a-z ]*visas?|consulate|appointment|biometrics?|submit|france-visas|visa application|tlscontact|visa sticker|collect your passport)\b/i;
 
 /**
  * Which journey stage a task belongs to.

@@ -1710,6 +1710,7 @@ class FRAMT_Portal_API {
         $project_id = $request->get_param( 'project_id' );
 
         $this->backfill_task_persons( $this->acting_user_id(), (int) $project_id );
+        $this->refresh_template_tasks( $this->acting_user_id(), (int) $project_id );
 
         $args = array(
             'stage'     => $request->get_param( 'stage' ),
@@ -3933,6 +3934,18 @@ class FRAMT_Portal_API {
                 array( 'id' => 'marriage-certificate', 'title' => 'Marriage certificate, apostilled', 'lead_time' => 60, 'priority' => 'high' ),
                 array( 'id' => 'spouse-french-id', 'title' => 'Your spouse\'s French identity document', 'lead_time' => 14, 'priority' => 'high' ),
                 array( 'id' => 'relationship-proof', 'title' => 'Proof the relationship is genuine', 'lead_time' => 30, 'priority' => 'high' ),
+            ),
+            'entrepreneur' => array(
+                array( 'id' => 'business-plan', 'title' => 'Business plan and viability file', 'lead_time' => 90, 'priority' => 'high' ),
+                array( 'id' => 'income-projection', 'title' => 'Income projections at or above the SMIC', 'lead_time' => 60, 'priority' => 'high' ),
+                array( 'id' => 'professional-qualification', 'title' => 'Proof of qualification, if the profession is regulated', 'lead_time' => 60, 'priority' => 'medium' ),
+                array( 'id' => 'background-check', 'title' => 'Clean criminal background check, apostilled', 'lead_time' => 90, 'priority' => 'high' ),
+            ),
+            'family' => array(
+                array( 'id' => 'ofii-approval', 'title' => 'OFII family reunification approval', 'lead_time' => 200, 'priority' => 'high' ),
+                array( 'id' => 'marriage-certificate', 'title' => 'Marriage certificate, apostilled', 'lead_time' => 60, 'priority' => 'high' ),
+                array( 'id' => 'sponsor-permit', 'title' => 'Sponsor\'s residence permit, valid a year or more', 'lead_time' => 30, 'priority' => 'high' ),
+                array( 'id' => 'background-check', 'title' => 'Clean criminal background check, apostilled', 'lead_time' => 90, 'priority' => 'high' ),
             ),
         );
         $by_route['family'] = $by_route['spouse_french'];
@@ -8087,358 +8100,289 @@ Focus on practical advice while being careful not to state incorrect facts. When
     }
 
     /**
-     * Get task templates for a visa type
+     * The steps a route asks for, in order, dated from the move.
      *
-     * @param string $visa_type Visa type
+     * Stages are the portal's own six (prepare, apply, move, arrive, settle);
+     * a task carrying one of those is shown where it says. Offsets are days
+     * from the move date, negative before. The shared steps come first, then
+     * what the route adds, then a handful of shared steps that only some
+     * routes need. Titles are the identity of a step: the duplicate check,
+     * the stale-route cleanup and the one-time refresh all key on them, so
+     * change a title only with the refresh version bumped.
+     *
+     * Sources: the knowledge base's Application Timeline, Document
+     * Requirements, TLScontact, Visa Validation and per-route topics.
+     *
+     * @param string $visa_type Route from the profile.
      * @return array Task templates
      */
     private function get_visa_task_templates( $visa_type ) {
-        // Common tasks for all visa types
-        // days_offset: negative = days before move, positive = days after move
-        $common_tasks = array(
-            // Pre-arrival stage (before move date)
-            array(
-                'title'       => 'Gather all required documents',
-                'description' => 'Collect passport, birth certificate, marriage certificate (if applicable), proof of income, and other supporting documents.',
-                'stage'       => 'pre-arrival',
-                'priority'    => 'high',
-                'task_type'   => 'document',
-                'days_offset' => -120, // 4 months before move
-            ),
-            array(
-                'title'       => 'Get documents apostilled',
-                'description' => 'Have your official documents apostilled for French recognition.',
-                'stage'       => 'pre-arrival',
-                'priority'    => 'high',
-                'task_type'   => 'document',
-                'days_offset' => -90, // 3 months before move
-            ),
-            array(
-                'title'       => 'Get documents translated',
-                'description' => 'Have all documents translated by a certified translator.',
-                'stage'       => 'pre-arrival',
-                'priority'    => 'high',
-                'task_type'   => 'document',
-                'days_offset' => -75, // 2.5 months before move
-            ),
-            array(
-                'title'       => 'Open French bank account',
-                'description' => 'Research and open a French bank account. Some can be opened remotely before arrival.',
-                'stage'       => 'pre-arrival',
-                'priority'    => 'medium',
-                'task_type'   => 'financial',
-                'days_offset' => -60, // 2 months before move
-            ),
-            array(
-                'title'       => 'Research health insurance options',
-                'description' => 'Understand French healthcare and research private insurance options for the interim period.',
-                'stage'       => 'pre-arrival',
-                'priority'    => 'high',
-                'task_type'   => 'task',
-                'days_offset' => -90, // 3 months before move
-            ),
-            array(
-                'title'       => 'Book temporary accommodation',
-                'description' => 'Arrange initial housing for your first weeks in France.',
-                'stage'       => 'pre-arrival',
-                'priority'    => 'high',
-                'task_type'   => 'task',
-                'days_offset' => -30, // 1 month before move
-            ),
+        $t = function ( $title, $description, $stage, $offset, $priority = 'high', $type = 'task' ) {
+            return array(
+                'title'       => $title,
+                'description' => $description,
+                'stage'       => $stage,
+                'priority'    => $priority,
+                'task_type'   => $type,
+                'days_offset' => $offset,
+            );
+        };
 
-            // Arrival stage (shortly after move date)
-            array(
-                'title'       => 'Validate visa (if VLS-TS)',
-                'description' => 'Validate your long-stay visa within 3 months of arrival at the OFII.',
-                'stage'       => 'arrival',
-                'priority'    => 'high',
-                'task_type'   => 'appointment',
-                'days_offset' => 14, // 2 weeks after move
-            ),
-            array(
-                'title'       => 'Apply for French health cover (PUMa)',
-                'description' => 'Residence-based cover opens once you have lived in France for three months. Apply to your local CPAM with proof of address and residence; your private policy carries you until then.',
-                'stage'       => 'arrival',
-                'priority'    => 'high',
-                'task_type'   => 'task',
-                'days_offset' => 91, // three months of residence
-            ),
-            array(
-                'title'       => 'Find permanent housing',
-                'description' => 'Search for and secure long-term accommodation. Gather required dossier documents.',
-                'stage'       => 'arrival',
-                'priority'    => 'high',
-                'task_type'   => 'task',
-                'days_offset' => 21, // 3 weeks after move
-            ),
-            array(
-                'title'       => 'Set up utilities',
-                'description' => 'Arrange electricity, gas, internet, and other utilities for your new home.',
-                'stage'       => 'arrival',
-                'priority'    => 'medium',
-                'task_type'   => 'task',
-                'days_offset' => 30, // 1 month after move
-            ),
-
-            // Settlement stage (1-3 months after move)
-            array(
-                'title'       => 'Get Carte Vitale',
-                'description' => 'Once registered with social security, apply for your Carte Vitale health card.',
-                'stage'       => 'settlement',
-                'priority'    => 'medium',
-                'task_type'   => 'document',
-                'days_offset' => 60, // 2 months after move
-            ),
-            array(
-                'title'       => 'Apply for CAF benefits',
-                'description' => 'Apply for housing assistance (APL) and other applicable CAF benefits.',
-                'stage'       => 'settlement',
-                'priority'    => 'medium',
-                'task_type'   => 'financial',
-                'days_offset' => 45, // 1.5 months after move
-            ),
-            array(
-                'title'       => 'Exchange driving license',
-                'description' => 'Apply to exchange your foreign driving license for a French one.',
-                'stage'       => 'settlement',
-                'priority'    => 'low',
-                'task_type'   => 'document',
-                'days_offset' => 90, // 3 months after move
-            ),
-
-            // Integration stage (3+ months after move)
-            array(
-                'title'       => 'Enroll in French language classes',
-                'description' => 'Sign up for French language courses to improve integration.',
-                'stage'       => 'integration',
-                'priority'    => 'medium',
-                'task_type'   => 'task',
-                'days_offset' => 30, // 1 month after move (start early)
-            ),
-            array(
-                'title'       => 'File French tax return',
-                'description' => 'Understand your tax obligations and file your first French tax return.',
-                'stage'       => 'integration',
-                'priority'    => 'medium',
-                'task_type'   => 'financial',
-                'days_offset' => 180, // 6 months after move (next tax season)
-            ),
+        // ---- Shared: preparing the dossier ---------------------------------
+        $prepare = array(
+            $t( 'Order certified copies of your civil records', 'A fresh certified copy of your birth certificate from the state that issued it (and the marriage certificate if you are applying as a couple). Only a certified copy can be apostilled; a photocopy from the drawer cannot. Consulates like the birth certificate issued within the last six months.', 'prepare', -160, 'high', 'document' ),
+            $t( 'Get the apostilles from the state', 'Each state record is apostilled by the Secretary of State that issued it; federal documents (the FBI check) go to the US Department of State. One to three weeks in most states, longer by mail without expedite. This cannot start until the copies are in hand, so it sets the pace of everything after it.', 'prepare', -120, 'high', 'document' ),
+            $t( 'Get sworn French translations', 'A traducteur assermenté (sworn translator), not any translator, for every English document you will hand over. Send scans the day the apostilles come back; a week or two per batch.', 'prepare', -95, 'high', 'document' ),
+            $t( 'Buy health insurance for the whole first year', 'Private cover for the full visa period, with at least €30,000 of medical cover, repatriation, and the dates and amounts written in the policy letter. Ordinary travel insurance is refused. It carries you until French health cover opens.', 'prepare', -70, 'high', 'task' ),
+            $t( 'Line up where you will live for the first months', 'The consulate wants proof of accommodation: a lease, a deed, a booking, or a host\'s attestation d\'hébergement with a copy of their ID. A booking covers the first weeks for most consulates.', 'prepare', -70, 'high', 'task' ),
+            $t( 'Get passport photos taken (35 x 45 mm)', 'Two recent photos to French specification: 35 x 45 mm, plain light background, neutral expression. A US passport photo is the wrong size.', 'prepare', -65, 'medium', 'document' ),
+            $t( 'Write the cover letter', 'One page explaining who you are, why France, where you will live and how you will support yourself. It frames the whole file for the officer who reads it.', 'prepare', -60, 'medium', 'document' ),
+            $t( 'Pull three months of bank statements', 'Official statements for the last three months, plus proof of income, pulled in the last weeks so the dates are recent. Older statements get asked for again at the appointment.', 'prepare', -50, 'high', 'document' ),
         );
 
-        // Visa-specific tasks
-        // days_offset: negative = days before move, positive = days after move
-        $visa_specific_tasks = array();
+        // ---- Shared: the application itself --------------------------------
+        $apply = array(
+            $t( 'Complete the France-Visas application online', 'Create the account on france-visas.gouv.fr, answer the wizard with your real purpose of stay, fill in the long-stay form, then print and sign it. The receipt page with the reference number is the first thing asked for at the appointment.', 'apply', -100, 'high', 'document' ),
+            $t( 'Book the TLScontact appointment', 'Since April 2025 TLScontact runs visa intake for the US at ten centres (New York, Boston, Washington, Atlanta, Miami, Chicago, Houston, Los Angeles, San Francisco, Seattle); you can book any of them. Slots open a few weeks ahead and go fast from May to August. The decision is made by the Consulate General in Washington.', 'apply', -95, 'high', 'appointment' ),
+            $t( 'Attend the appointment: dossier, biometrics, fee', 'Every original with a photocopy of each, the France-Visas printout, the €99 visa fee and the TLScontact service fee (about €220 for a long stay). Fingerprints and photo are taken there. The dossier and your passport leave with them; an incomplete file is sent home to rebook.', 'apply', -60, 'high', 'appointment' ),
+            $t( 'Collect your passport and check the visa', 'Two to six weeks after the appointment, longer in summer. Before you leave the counter, check the dates, the spelling of your name and the mention on the sticker (VLS-TS, or carte de séjour à solliciter). Nothing that needs the passport can be booked while it is away.', 'apply', -35, 'high', 'document' ),
+        );
 
+        // ---- Shared: the move ----------------------------------------------
+        $move = array(
+            $t( 'Arrange shipping, or sell what stays', 'Movers and customs for a household, or a sale and two suitcases. The inventory list does double duty at French customs; keep it.', 'move', -50, 'medium', 'task' ),
+            $t( 'Book flights for on or after the visa start date', 'Land on or after the date the visa starts; a day early and you enter as a tourist. Keep the boarding pass: it proves the arrival date if the passport is not stamped.', 'move', -45, 'high', 'task' ),
+            $t( 'Book temporary accommodation', 'Where you sleep the first weeks, and the address the validation confirmation and the bank card will be posted to.', 'move', -30, 'high', 'task' ),
+            $t( 'Tidy the US side: mail, prescriptions, bank, phone', 'Mail forwarding, three months of prescriptions, the bank told you are travelling, and a US number kept alive for the two-factor codes every US account will send.', 'move', -14, 'medium', 'task' ),
+            $t( 'Pack the originals in hand luggage', 'The passport with the visa, every original from the dossier, and the pet certificate if there is one. Nothing that mattered at the consulate goes in the hold.', 'move', -3, 'high', 'task' ),
+        );
+
+        // ---- Shared: arriving ----------------------------------------------
+        $arrive = array(
+            $t( 'Get a French SIM', 'Every French account, bank included, sends its codes to a French number. Get the SIM in the first days.', 'arrive', 3, 'medium', 'task' ),
+            $t( 'Validate your visa online within 90 days', 'On the ANEF portal (administration-etrangers-en-france.interieur.gouv.fr): passport, visa sticker, arrival date and a French address, then the validation tax paid by card. Counted from the entry stamp, not the visa date. Miss it and the visa stops working as a residence permit. If your sticker says carte de séjour à solliciter, skip this and book the prefecture within two months instead.', 'arrive', 14, 'high', 'appointment' ),
+            $t( 'Open French bank account', 'Rent, utilities, health cover and the phone all want a French RIB. Passport, visa, proof of address; the validation confirmation helps. Keep a US account open too.', 'arrive', 14, 'high', 'financial' ),
+            $t( 'Find permanent housing', 'The lease or the deed. Each bill in your name afterwards becomes the proof of address the next office asks for.', 'arrive', 21, 'high', 'task' ),
+            $t( 'Set up utilities', 'Electricity, water and internet in your name at the new address.', 'arrive', 30, 'medium', 'task' ),
+            $t( 'Enroll in French language classes', 'Earlier is easier. Some routes come with free classes through the integration contract; the rest is up to you.', 'arrive', 30, 'low', 'task' ),
+        );
+
+        // ---- Shared: settling in -------------------------------------------
+        $settle = array(
+            $t( 'Get Carte Vitale', 'Follows the health registration by some weeks to months. Until it arrives keep every receipt and use the paper feuille de soins for reimbursement.', 'settle', 150, 'medium', 'document' ),
+            $t( 'Exchange driving license', 'Some US states exchange licences with France and some do not, and the request has to go in during your first year of residence. Check your state early.', 'settle', 180, 'low', 'document' ),
+            $t( 'File French tax return', 'The first French return goes in the spring after the year you arrive, for that year, even when the treaty means little tax is due in France. The US return continues alongside.', 'settle', 180, 'medium', 'financial' ),
+        );
+
+        // Shared steps that only some routes need.
+        $background_check = $t( 'Request your FBI background check', 'The FBI Identity History Summary, apostilled by the US Department of State. Ten to fourteen weeks by mail, days through an FBI-approved channeler; use the channeler. Consulates want it issued within the last six months, so time it against your appointment.', 'prepare', -160, 'high', 'document' );
+        $puma             = $t( 'Apply for French health cover (PUMa)', 'Residence-based cover opens once you have lived in France for three months. Apply to your local CPAM with form 736, passport and visa, proof of address, birth certificate and a French RIB; your private policy carries you until then.', 'settle', 95, 'high', 'task' );
+        $renewal          = $t( 'Start the renewal four months before the visa expires', 'The first visa runs a year. Renewal is filed online through the prefecture two to four months before it expires and comes back as a carte de séjour; prefecture appointments are the bottleneck, so start at the four-month mark.', 'settle', 240, 'high', 'appointment' );
+        $read_sticker     = $t( 'Read the visa sticker: VLS-TS or carte de séjour à solliciter', 'Your route is sometimes issued as a visa marked carte de séjour à solliciter. If so there is no online validation: you must apply at the prefecture within two months of arrival and your residence right is not settled until the card is issued. If it says VLS-TS, validate online within three months instead.', 'arrive', 3, 'high', 'task' );
+        $ofii_medical     = $t( 'Watch for the OFII convocation', 'After online validation, this route is usually summoned to an OFII appointment: a medical visit, and for family routes the signing of the integration contract (CIR). The letter comes by post or email to the address you validated with, weeks to months later, so keep it current.', 'arrive', 45, 'medium', 'appointment' );
+
+        // ---- What each route adds ------------------------------------------
+        $route = array();
+        $skip  = array();
         switch ( $visa_type ) {
             case 'visitor':
-                $visa_specific_tasks = array(
-                    array(
-                        'title'       => 'Prepare proof of financial resources',
-                        'description' => 'Document sufficient funds to support yourself without working (bank statements, investments, pension, etc.).',
-                        'stage'       => 'pre-arrival',
-                        'priority'    => 'high',
-                        'task_type'   => 'document',
-                        'days_offset' => -90, // 3 months before move
-                    ),
-                    array(
-                        'title'       => 'Sign declaration not to work',
-                        'description' => 'Prepare the attestation that you will not engage in professional activity in France.',
-                        'stage'       => 'pre-arrival',
-                        'priority'    => 'high',
-                        'task_type'   => 'document',
-                        'days_offset' => -60, // 2 months before move
-                    ),
-                    array(
-                        'title'       => 'Arrange comprehensive health insurance',
-                        'description' => 'Obtain private health insurance covering the entire stay as required for visitor visa.',
-                        'stage'       => 'pre-arrival',
-                        'priority'    => 'high',
-                        'task_type'   => 'task',
-                        'days_offset' => -45, // 1.5 months before move
-                    ),
-                );
-                break;
-
-            case 'talent_passport':
-                $visa_specific_tasks = array(
-                    array(
-                        'title'       => 'Gather employment documentation',
-                        'description' => 'Collect employment contract, company registration, salary details meeting the threshold requirements.',
-                        'stage'       => 'pre-arrival',
-                        'priority'    => 'high',
-                        'task_type'   => 'document',
-                        'days_offset' => -120, // 4 months before move
-                    ),
-                    array(
-                        'title'       => 'Prepare diploma/qualification proof',
-                        'description' => 'Get your master\'s degree or equivalent qualifications certified and translated.',
-                        'stage'       => 'pre-arrival',
-                        'priority'    => 'high',
-                        'task_type'   => 'document',
-                        'days_offset' => -90, // 3 months before move
-                    ),
-                    array(
-                        'title'       => 'Register with URSSAF',
-                        'description' => 'If self-employed, register your business activity with URSSAF.',
-                        'stage'       => 'arrival',
-                        'priority'    => 'high',
-                        'task_type'   => 'task',
-                        'days_offset' => 14, // 2 weeks after move
-                    ),
-                );
-                break;
-
-            case 'employee':
-                $visa_specific_tasks = array(
-                    array(
-                        'title'       => 'Obtain work permit (if required)',
-                        'description' => 'Employer must obtain work authorization from DIRECCTE before visa application.',
-                        'stage'       => 'pre-arrival',
-                        'priority'    => 'high',
-                        'task_type'   => 'document',
-                        'days_offset' => -150, // 5 months before move
-                    ),
-                    array(
-                        'title'       => 'Get employment contract certified',
-                        'description' => 'Have your French employment contract reviewed and certified.',
-                        'stage'       => 'pre-arrival',
-                        'priority'    => 'high',
-                        'task_type'   => 'document',
-                        'days_offset' => -90, // 3 months before move
-                    ),
-                    array(
-                        'title'       => 'Understand French labor rights',
-                        'description' => 'Learn about French employment law, RTT, mutuelle, and employee rights.',
-                        'stage'       => 'arrival',
-                        'priority'    => 'medium',
-                        'task_type'   => 'task',
-                        'days_offset' => 7, // 1 week after move
-                    ),
-                );
-                break;
-
-            case 'entrepreneur':
-                $visa_specific_tasks = array(
-                    array(
-                        'title'       => 'Prepare business plan',
-                        'description' => 'Create a detailed business plan demonstrating viability and economic contribution.',
-                        'stage'       => 'pre-arrival',
-                        'priority'    => 'high',
-                        'task_type'   => 'document',
-                        'days_offset' => -120, // 4 months before move
-                    ),
-                    array(
-                        'title'       => 'Prove business funding',
-                        'description' => 'Document minimum investment capital and financial resources for your business.',
-                        'stage'       => 'pre-arrival',
-                        'priority'    => 'high',
-                        'task_type'   => 'financial',
-                        'days_offset' => -90, // 3 months before move
-                    ),
-                    array(
-                        'title'       => 'Register business in France',
-                        'description' => 'Register your business with the appropriate French authorities (CFE, INSEE).',
-                        'stage'       => 'arrival',
-                        'priority'    => 'high',
-                        'task_type'   => 'task',
-                        'days_offset' => 14, // 2 weeks after move
-                    ),
-                    array(
-                        'title'       => 'Set up business bank account',
-                        'description' => 'Open a professional bank account for your French business.',
-                        'stage'       => 'arrival',
-                        'priority'    => 'high',
-                        'task_type'   => 'financial',
-                        'days_offset' => 21, // 3 weeks after move
-                    ),
-                );
-                break;
-
-            case 'student':
-                $visa_specific_tasks = array(
-                    array(
-                        'title'       => 'Get university acceptance letter',
-                        'description' => 'Secure admission to a French educational institution.',
-                        'stage'       => 'pre-arrival',
-                        'priority'    => 'high',
-                        'task_type'   => 'document',
-                        'days_offset' => -180, // 6 months before move (applications due early)
-                    ),
-                    array(
-                        'title'       => 'Register on Campus France',
-                        'description' => 'Complete the Campus France procedure for your country.',
-                        'stage'       => 'pre-arrival',
-                        'priority'    => 'high',
-                        'task_type'   => 'task',
-                        'days_offset' => -150, // 5 months before move
-                    ),
-                    array(
-                        'title'       => 'Prove financial resources for studies',
-                        'description' => 'Document sufficient funds (€615/month minimum) for your study period.',
-                        'stage'       => 'pre-arrival',
-                        'priority'    => 'high',
-                        'task_type'   => 'financial',
-                        'days_offset' => -90, // 3 months before move
-                    ),
-                    array(
-                        'title'       => 'Apply for CROUS housing',
-                        'description' => 'Apply for student housing through CROUS if available.',
-                        'stage'       => 'pre-arrival',
-                        'priority'    => 'medium',
-                        'task_type'   => 'task',
-                        'days_offset' => -120, // 4 months before move
-                    ),
-                    array(
-                        'title'       => 'Complete university enrollment',
-                        'description' => 'Finalize your inscription at the university upon arrival.',
-                        'stage'       => 'arrival',
-                        'priority'    => 'high',
-                        'task_type'   => 'task',
-                        'days_offset' => 7, // 1 week after move
-                    ),
+                $route = array(
+                    $background_check,
+                    $t( 'Prepare proof of financial resources', 'Consulates benchmark a visitor against the French net minimum wage, about €1,478 a month in 2026, and many US applicants show one and a half to two times that, or a year\'s worth in savings, to avoid questions. Statements, investment accounts, pension or salary letters, all dated recently.', 'prepare', -80, 'high', 'document' ),
+                    $t( 'Sign declaration not to work', 'The attestation sur l\'honneur: a signed statement that you will carry out no professional activity in France. Whether remote work for a US employer counts is contested; read the guide before you sign.', 'prepare', -60, 'high', 'document' ),
+                    $ofii_medical,
+                    $puma,
+                    $renewal,
                 );
                 break;
 
             case 'retiree':
-                $visa_specific_tasks = array(
-                    array(
-                        'title'       => 'Document pension income',
-                        'description' => 'Gather proof of pension or retirement income meeting French requirements.',
-                        'stage'       => 'pre-arrival',
-                        'priority'    => 'high',
-                        'task_type'   => 'document',
-                        'days_offset' => -90, // 3 months before move
-                    ),
-                    array(
-                        'title'       => 'Decide how your pension and Social Security get paid in France',
-                        'description' => 'Social Security can be paid to a French account or kept in the US; pensions and IRA withdrawals usually stay in US accounts. Choose before you go, and keep at least one US account open for it.',
-                        'stage'       => 'pre-arrival',
-                        'priority'    => 'medium',
-                        'task_type'   => 'financial',
-                        'days_offset' => -60, // 2 months before move
-                    ),
+                $route = array(
+                    $background_check,
+                    $t( 'Document pension income', 'Social Security award letter, pension statements, IRA or 401(k) balances and the last year\'s distributions. The consulate benchmarks against the French net minimum wage, about €1,478 a month in 2026; retirees usually clear it, but the paper has to show it.', 'prepare', -80, 'high', 'document' ),
+                    $t( 'Sign declaration not to work', 'The attestation sur l\'honneur: a signed statement that you will carry out no professional activity in France.', 'prepare', -60, 'high', 'document' ),
+                    $t( 'Decide how your pension and Social Security get paid in France', 'Social Security can be paid to a French account or kept in the US; pensions and IRA withdrawals usually stay in US accounts. Choose before you go, and keep at least one US account open for it.', 'prepare', -60, 'medium', 'financial' ),
+                    $ofii_medical,
+                    $puma,
+                    $renewal,
                 );
                 break;
 
+            case 'employee':
+                $route = array(
+                    $t( 'Ask your employer to file the work authorisation on ANEF', 'Your employer, not you, applies for the autorisation de travail on the ANEF portal; the regional labour office (DREETS) has about two months to decide, and six to ten weeks is common. Unless the job is on the shortage list, they must show no available candidate in France could fill it. Nothing else can start until this is approved.', 'prepare', -180, 'high', 'document' ),
+                    $background_check,
+                    $t( 'Get the signed contract and the authorisation approval', 'The signed work contract or detailed offer, and the DREETS approval, are the two documents the consulate will not look at your file without. Both come from the employer.', 'prepare', -110, 'high', 'document' ),
+                    $t( 'Get diplomas translated by a sworn translator', 'Proof of qualifications with certified translations; apostille the diplomas first where the consulate asks for it.', 'prepare', -100, 'high', 'document' ),
+                    $t( 'Check your first payslip and health affiliation', 'Employees are affiliated to French health cover through payroll with no waiting period, and the employer must offer a mutuelle. The first payslip shows the social charges and the affiliation; query anything missing.', 'arrive', 35, 'medium', 'task' ),
+                    $renewal,
+                );
+                break;
+
+            case 'talent_passport':
+                $route = array(
+                    $t( 'Confirm your Talent category and its threshold', 'Qualified employee (reference salary €39,582 gross a year in 2026), EU Blue Card (€59,373), company founder, investor, researcher with a hosting agreement, or artist. The category decides the proof; the thresholds are set by ministerial order, so confirm the one in force when your contract is signed.', 'prepare', -170, 'high', 'task' ),
+                    $background_check,
+                    $t( 'Gather the category proof', 'A contract at or above the reference salary, a hosting agreement, a business plan with funding, or the investment file, depending on your category. This is the file that makes it a Talent application rather than an ordinary work visa.', 'prepare', -130, 'high', 'document' ),
+                    $t( 'Get diplomas translated by a sworn translator', 'A master\'s degree or equivalent is the usual qualification; certified translations, apostilled where asked.', 'prepare', -100, 'high', 'document' ),
+                    $read_sticker,
+                );
+                // Talent cards run up to four years and skip the OFII visit;
+                // the standard one-year renewal does not apply.
+                break;
+
+            case 'entrepreneur':
+                $route = array(
+                    $t( 'Write the business plan and viability file', 'The test for this route is economic viability, not a capital threshold: what the business does, who pays for it, projected income, and why it works in France. Business France and the consulate both read it.', 'prepare', -150, 'high', 'document' ),
+                    $t( 'Check whether your profession is regulated in France', 'Law, accounting, medicine, architecture and many trades are regulated; you must meet the same diploma or experience conditions as a French national, and prove it in the file.', 'prepare', -140, 'high', 'task' ),
+                    $background_check,
+                    $t( 'Show income projections at or above the SMIC', 'For commercial activity the administration looks for income at least equal to the French minimum wage; for liberal professions it judges viability from the projections. Recent statements and any contracts or letters of intent strengthen it.', 'prepare', -120, 'high', 'document' ),
+                    $t( 'File no earlier than three months before your arrival date', 'This route\'s application cannot be submitted more than three months before the date you arrive. Have the dossier finished before the window opens so the appointment can be booked the day it does.', 'apply', -92, 'high', 'task' ),
+                    $t( 'Register the business (Kbis or self-employed affiliation)', 'Before the residence card is finalised you must show the business is registered, a Kbis extract or company statutes, or affiliation to the self-employed social scheme. An expert-comptable can set the status up.', 'arrive', 30, 'high', 'task' ),
+                    $t( 'Set up business bank account', 'A professional account for the French business, separate from your personal one.', 'arrive', 21, 'high', 'financial' ),
+                    $t( 'Apply for the entrepreneur carte de séjour with proof of registration', 'At the end of the first year you ask for the entrepreneur / profession libérale card, or the multi-year talent card for a project holder, with the registration proof. Start four months before the visa expires.', 'settle', 240, 'high', 'appointment' ),
+                );
+                $skip[] = 'Complete the France-Visas application online'; // replaced by the three-month-window step's timing
+                $route[] = $t( 'Complete the France-Visas application online', 'Create the account on france-visas.gouv.fr, answer the wizard with your real purpose of stay, fill in the long-stay form, then print and sign it. For this route the file is accepted no earlier than three months before arrival.', 'apply', -88, 'high', 'document' );
+                break;
+
+            case 'student':
+                $route = array(
+                    $t( 'Get university acceptance letter', 'An official attestation d\'inscription or convention d\'accueil from an institution recognised to enrol international students. Applications close early; this is the longest lead time on the route.', 'prepare', -180, 'high', 'document' ),
+                    $t( 'Check whether Campus France Études en France applies to you', 'The Études en France procedure is compulsory only for a list of countries, and the United States is not on it, so most US applicants apply straight through France-Visas. Practice varies by consular district; confirm on usa.campusfrance.org before booking anything.', 'prepare', -170, 'high', 'task' ),
+                    $t( 'Apply for CROUS housing', 'Subsidised student housing through CROUS where your institution offers it; the confirmation doubles as proof of accommodation.', 'prepare', -120, 'medium', 'task' ),
+                    $t( 'Prove financial resources for studies', 'A monthly minimum set by decree, about €877.50 a month from August 2026, for the length of the stay: bank statements, a scholarship letter, or a sponsor\'s attestation de prise en charge with their statements.', 'prepare', -90, 'high', 'financial' ),
+                    $t( 'Complete university enrollment', 'Finalise the inscription in person and collect the student card; the university\'s own deadlines run in September.', 'arrive', 7, 'high', 'task' ),
+                    $t( 'Register for student health cover on ameli', 'Students join French health cover online at etudiant-etranger.ameli.fr after arrival, with the passport, visa, enrolment and a RIB. No separate student mutual is needed.', 'arrive', 14, 'high', 'task' ),
+                    $t( 'Apply for CAF housing aid (APL)', 'Students in rented or CROUS housing usually qualify for a housing allowance; apply once the lease and the RIB exist.', 'settle', 45, 'medium', 'financial' ),
+                    $renewal,
+                );
+                $skip[] = 'Request your FBI background check';
+                break;
+
             case 'spouse_french':
+                $route = array(
+                    $t( 'Apostille the marriage certificate', 'A certified copy of the marriage certificate, apostilled by the state that issued it; digital apostilles are accepted. If you married in France, the French acte de mariage is used instead.', 'prepare', -120, 'high', 'document' ),
+                    $background_check,
+                    $t( 'Get your spouse\'s French ID and proof of nationality', 'A copy of your spouse\'s French passport or identity card, and where asked a certificate of French nationality.', 'prepare', -110, 'high', 'document' ),
+                    $t( 'Collect proof the relationship is genuine', 'Joint accounts, leases or deeds, travel together, photographs, correspondence: the file has to show a shared life, not just a certificate. A PACS needs twelve months of documented cohabitation first.', 'prepare', -100, 'high', 'document' ),
+                    $t( 'Translate the marriage certificate', 'A sworn French translation of the apostilled certificate.', 'prepare', -95, 'high', 'document' ),
+                    $read_sticker,
+                    $t( 'Sign the integration contract (CIR) when convoked', 'A free Contrat d\'Intégration Républicaine, with language and civics classes, comes with the first vie privée et familiale card. Attend when summoned; it counts at renewal.', 'arrive', 60, 'medium', 'appointment' ),
+                    $puma,
+                    $t( 'Apply for the multi-year card before the first one expires', 'The renewal is a multi-year vie privée et familiale card. Since 2026 a civic exam applies at this step. Start four months before expiry; there is no visa fee on this route but the card carries a stamp duty.', 'settle', 240, 'high', 'appointment' ),
+                );
+                break;
+
             case 'family':
-                // Joining a French spouse or family: the shared document work
-                // plus the marriage-certificate steps. No route-specific legal
-                // content is written here; the knowledge base does not yet
-                // hold a dedicated topic for these routes.
-                foreach ( $this->get_spouse_task_templates() as $template ) {
-                    if ( false !== stripos( $template['title'], 'marriage certificate' ) ) {
-                        $visa_specific_tasks[] = $template;
-                    }
-                }
+                $route = array(
+                    $t( 'Your sponsor applies to OFII for family reunification', 'Regroupement familial is filed from inside France by the family member you are joining, not by you at a consulate. Nothing on the visa side can start until OFII and the prefecture approve, and the whole route runs six to fifteen months, so this begins a year or more before the move.', 'prepare', -400, 'high', 'task' ),
+                    $t( 'Sponsor gathers proof of residence, income and housing', 'The sponsor must have lived legally in France for at least eighteen months on a permit valid a year or more, show stable household income around the minimum wage (more for larger families) over the last twelve months, and housing that meets the size and condition standards for the zone.', 'prepare', -400, 'high', 'document' ),
+                    $background_check,
+                    $t( 'Apostille and translate the family records', 'Marriage certificate and children\'s birth certificates, certified copies apostilled by the issuing state and translated by a sworn translator. Custody papers where a child has another parent.', 'prepare', -300, 'high', 'document' ),
+                    $t( 'Wait for the OFII and prefecture decision', 'OFII checks the file and the prefecture decides; some prefectures take five months at this step alone. An incomplete file adds two to four months. Chase through the sponsor, not the consulate.', 'prepare', -200, 'medium', 'task' ),
+                    $t( 'Apply for the visa once OFII approves', 'With the approval in hand you apply for the long-stay visa at the consulate; issuance is usually two to four weeks after approval. The France-Visas form and the TLScontact appointment follow from here.', 'apply', -90, 'high', 'task' ),
+                    $read_sticker,
+                    $ofii_medical,
+                    $t( 'Sign the integration contract (CIR) when convoked', 'A mandatory OFII medical visit and the signing of the integration contract, with civic and language training, follow arrival on this route.', 'arrive', 60, 'medium', 'appointment' ),
+                    $puma,
+                    $renewal,
+                );
                 break;
 
             default:
-                // For undecided or other types, just use common tasks
+                // Undecided: the shared steps only, until a route is chosen.
+                $route = array( $background_check, $puma, $renewal );
                 break;
         }
 
-        return array_merge( $common_tasks, $visa_specific_tasks );
+        $all = array_merge( $prepare, $apply, $move, $arrive, $route, $settle );
+        if ( $skip ) {
+            $all = array_values( array_filter( $all, function ( $tpl ) use ( $skip ) {
+                return ! in_array( $tpl['title'], $skip, true );
+            } ) );
+        }
+        return $all;
+    }
+
+    /**
+     * Titles that earlier template versions produced and this one does not.
+     * The one-time refresh removes the still-to-do ones so members do not
+     * carry two vocabularies.
+     *
+     * @return string[]
+     */
+    private function get_retired_template_titles() {
+        return array(
+            'Gather all required documents',
+            'Get documents apostilled',
+            'Get documents translated',
+            'Research health insurance options',
+            'Validate visa (if VLS-TS)',
+            'Register for social security',
+            'Apply for CAF benefits',
+            'Arrange comprehensive health insurance',
+            'Gather employment documentation',
+            'Prepare diploma/qualification proof',
+            'Register with URSSAF',
+            'Obtain work permit (if required)',
+            'Get employment contract certified',
+            'Understand French labor rights',
+            'Prepare business plan',
+            'Prove business funding',
+            'Register business in France',
+            'Register on Campus France',
+            'Arrange pension transfer',
+            'Research S1 health form',
+        );
+    }
+
+    /**
+     * One-time refresh when the templates change shape.
+     *
+     * Members who chose a route before this version carry the old steps.
+     * Retired titles still to do are removed, shared steps whose stage or
+     * date moved are re-created, and anything the route now adds is
+     * generated. Done steps are never touched, and steps the member wrote
+     * themselves are not template steps and are left alone.
+     *
+     * @param int $user_id    Member.
+     * @param int $project_id Project.
+     * @return void
+     */
+    private function refresh_template_tasks( $user_id, $project_id ) {
+        if ( ! $user_id || ! $project_id || '1' === get_user_meta( $user_id, 'framt_task_templates_v2', true ) ) {
+            return;
+        }
+        $visa    = (string) get_user_meta( $user_id, 'fra_visa_type', true );
+        $current = array();
+        foreach ( $this->get_visa_task_templates( $visa ?: 'undecided' ) as $tpl ) {
+            $current[ $tpl['title'] ] = $tpl;
+        }
+        $retired = $this->get_retired_template_titles();
+
+        foreach ( FRAMT_Task::get_by_project( $project_id, array() ) as $task ) {
+            if ( 'todo' !== $task->status ) {
+                continue;
+            }
+            $meta = is_array( $task->metadata ) ? $task->metadata : array();
+            if ( in_array( $task->title, $retired, true ) ) {
+                $task->delete();
+                continue;
+            }
+            // A shared step that moved stage or date: re-create it in place.
+            if ( isset( $current[ $task->title ] ) && ( ! empty( $meta['from_template'] ) || isset( $meta['days_offset'] ) ) ) {
+                $tpl = $current[ $task->title ];
+                if ( (string) $task->stage !== (string) $tpl['stage'] || (int) ( $meta['days_offset'] ?? PHP_INT_MIN ) !== (int) $tpl['days_offset'] ) {
+                    $task->delete();
+                }
+            }
+        }
+
+        if ( '' !== $visa && 'undecided' !== $visa ) {
+            $this->generate_visa_tasks( $user_id, $visa );
+        }
+        update_user_meta( $user_id, 'framt_task_templates_v2', '1' );
     }
 
     /**
