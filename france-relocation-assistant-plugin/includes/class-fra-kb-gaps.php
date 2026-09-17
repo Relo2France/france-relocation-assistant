@@ -530,7 +530,15 @@ class FRA_KB_Gaps {
             $cat   = (string) ($gap['category'] ?? '');
             $topic = (string) ($gap['topic'] ?? '');
             $drafted_at = strtotime((string) ($gap['drafted_at'] ?? '')) ?: 0;
-            $updated_at = isset($kb[$cat][$topic]['last_updated']) ? (strtotime((string) $kb[$cat][$topic]['last_updated']) ?: 0) : 0;
+            // An approval appends to the topic's updateHistory; the newest entry
+            // dates the last applied draft.
+            $updated_at = 0;
+            foreach ((array) ($kb[$cat][$topic]['updateHistory'] ?? array()) as $h) {
+                $ts = strtotime((string) ($h['date'] ?? '')) ?: 0;
+                if ($ts > $updated_at) {
+                    $updated_at = $ts;
+                }
+            }
             if ('' !== $cat && '' !== $topic && isset($kb[$cat][$topic]) && $updated_at >= $drafted_at && $drafted_at > 0) {
                 $gaps[$id]['status'] = 'applied';
                 continue;
