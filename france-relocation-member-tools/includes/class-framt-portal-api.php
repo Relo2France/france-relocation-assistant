@@ -465,6 +465,16 @@ class FRAMT_Portal_API {
 
         register_rest_route(
             self::NAMESPACE,
+            '/files/(?P<id>\d+)/recognise',
+            array(
+                'methods'             => 'POST',
+                'callback'            => array( $this, 'recognise_file' ),
+                'permission_callback' => array( $this, 'check_file_permission' ),
+            )
+        );
+
+        register_rest_route(
+            self::NAMESPACE,
             '/files/(?P<id>\d+)/download',
             array(
                 'methods'             => 'GET',
@@ -2458,18 +2468,7 @@ class FRAMT_Portal_API {
         if ( ! $item_id && in_array( $category, array( 'upload', 'other', '' ), true ) ) {
             $guess = $this->classify_uploaded_document( $file );
             if ( $guess ) {
-                $meta = $file->metadata ? json_decode( $file->metadata, true ) : array();
-                $meta = is_array( $meta ) ? $meta : array();
-                $meta['document_type']             = $guess['document_type'];
-                $meta['classified_by']             = 'ai';
-                $meta['classification_confidence'] = $guess['confidence'];
-                if ( '' !== $guess['title'] ) {
-                    $meta['title'] = $guess['title'];
-                }
-                $wpdb->update( $table, array( 'category' => $guess['category'], 'metadata' => wp_json_encode( $meta ) ), array( 'id' => $file_id ) );
-                if ( '' !== $guess['dossier_item'] ) {
-                    $this->complete_checklist_item_with_file( $user_id, 'visa-application', $guess['dossier_item'], (int) $file_id );
-                }
+                $this->apply_classification( $file, $guess );
                 $file = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE id = %d", $file_id ) );
             }
         }
@@ -2591,6 +2590,57 @@ class FRAMT_Portal_API {
      * @param object $file Database row.
      * @return array|null category, document_type, title, dossier_item, confidence
      */
+    /** Why the last classification returned nothing, for the recognise endpoint. */
+    private $last_classification_note = '';
+
+    /**
+     * Apply a classification to a file row: category, title, document type,
+     * and the dossier item it satisfies.
+     *
+     * @param object $file  Database row.
+     * @param array  $guess From classify_uploaded_document().
+     * @return void
+     */
+    private function apply_classification( $file, $guess ) {
+        global $wpdb;
+        $table = FRAMT_Portal_Schema::get_table( 'files' );
+        $meta  = $file->metadata ? json_decode( $file->metadata, true ) : array();
+        $meta  = is_array( $meta ) ? $meta : array();
+        $meta['document_type']             = $guess['document_type'];
+        $meta['classified_by']             = 'ai';
+        $meta['classification_confidence'] = $guess['confidence'];
+        if ( '' !== $guess['title'] ) {
+            $meta['title'] = $guess['title'];
+        }
+        $wpdb->update( $table, array( 'category' => $guess['category'], 'metadata' => wp_json_encode( $meta ) ), array( 'id' => $file->id ) );
+        if ( '' !== $guess['dossier_item'] ) {
+            $this->complete_checklist_item_with_file( (int) $file->user_id, 'visa-application', $guess['dossier_item'], (int) $file->id );
+        }
+    }
+
+    /**
+     * Recognise an existing file on request: the "what is this?" action.
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response|WP_Error
+     */
+    public function recognise_file( $request ) {
+        global $wpdb;
+        $table = FRAMT_Portal_Schema::get_table( 'files' );
+        $file  = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE id = %d", absint( $request->get_param( 'id' ) ) ) );
+        if ( ! $file ) {
+            return new WP_Error( 'rest_file_not_found', 'File not found.', array( 'status' => 404 ) );
+        }
+        $this->last_classification_note = '';
+        $guess = $this->classify_uploaded_document( $file );
+        if ( ! $guess ) {
+            return rest_ensure_response( array( 'recognised' => false, 'reason' => $this->last_classification_note ?: 'This file type cannot be read, or the assistant is not configured.', 'file' => $this->format_file_response( $file ) ) );
+        }
+        $this->apply_classification( $file, $guess );
+        $file = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE id = %d", $file->id ) );
+        return rest_ensure_response( array( 'recognised' => true, 'guess' => $guess, 'file' => $this->format_file_response( $file ) ) );
+    }
+
     private function classify_uploaded_document( $file ) {
         if ( ! class_exists( 'France_Relocation_Assistant' ) || ! class_exists( 'FRAMT_AI_Client' ) ) {
             return null;
@@ -2620,10 +2670,12 @@ class FRAMT_Portal_API {
             'messages'   => array( array( 'role' => 'user', 'content' => array( $block, array( 'type' => 'text', 'text' => $prompt ) ) ) ),
         ) );
         if ( is_wp_error( $body ) ) {
+            $this->last_classification_note = 'API error: ' . $body->get_error_message();
             return null;
         }
         $json = FRAMT_AI_Client::extract_json( $body );
         if ( ! is_array( $json ) || empty( $json['document_type'] ) ) {
+            $this->last_classification_note = 'No usable answer: ' . substr( (string) FRAMT_AI_Client::extract_text( $body ), 0, 300 );
             return null;
         }
         $type = sanitize_key( $json['document_type'] );
