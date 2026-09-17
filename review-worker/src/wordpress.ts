@@ -52,11 +52,13 @@ export interface SuggestionPayload {
   result: ReviewResult;
   webSources: WebSource[];
   model: string;
+  practiceWithheld?: string;
+  practiceCorroboration?: number;
 }
 
 export async function postSuggestion(
   env: Env,
-  { topic, result, webSources, model }: SuggestionPayload
+  { topic, result, webSources, model, practiceWithheld, practiceCorroboration }: SuggestionPayload
 ): Promise<{ review_id: string; pending: number }> {
   const url = `${env.WP_BASE_URL}/wp-json/fra/v1/review/suggestions`;
 
@@ -73,6 +75,8 @@ export async function postSuggestion(
       suggested_content: result.suggested_content,
       in_practice_content: result.in_practice_content,
       practice_sources: result.practice_sources,
+      practice_withheld: practiceWithheld ?? '',
+      practice_corroboration: practiceCorroboration ?? 0,
       key_insights: result.key_insights,
       sources_checked: result.official_sources_checked,
       web_sources: webSources,

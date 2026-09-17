@@ -562,6 +562,8 @@ class FRA_Review_API {
             'in_practice_content' => $practice,
             'changes_summary'     => sanitize_textarea_field((string) $request->get_param('changes_summary')),
             'practice_sources'    => $this->clean_practice_sources($request->get_param('practice_sources')),
+            'practice_withheld'   => sanitize_text_field((string) $request->get_param('practice_withheld')),
+            'practice_corroboration' => (int) $request->get_param('practice_corroboration'),
             'key_insights'        => $this->clean_string_list($request->get_param('key_insights')),
             'sources_checked'     => $this->clean_string_list($request->get_param('sources_checked')),
             'web_sources'         => $this->clean_web_sources($request->get_param('web_sources')),
@@ -735,20 +737,28 @@ class FRA_Review_API {
                 $failed[] = array('gap_id' => sanitize_text_field((string) ($f['gap_id'] ?? '')), 'error' => sanitize_text_field((string) ($f['error'] ?? '')));
             }
         }
+        $practice = array();
+        foreach ((array) $request->get_param('practice_withheld') as $p) {
+            if (is_array($p)) {
+                $practice[] = array('gap_id' => sanitize_text_field((string) ($p['gap_id'] ?? '')), 'question' => sanitize_text_field((string) ($p['question'] ?? '')), 'reason' => sanitize_text_field((string) ($p['reason'] ?? '')));
+            }
+        }
         $report = array(
             'date'       => current_time('mysql'),
             'considered' => (int) $request->get_param('considered'),
             'drafted'    => (int) $request->get_param('drafted'),
             'deferred'   => $deferred,
             'failed'     => $failed,
+            'practice_withheld' => $practice,
         );
         update_option('fra_gap_run_last', $report, false);
 
-        if ($deferred || $failed) {
+        if ($deferred || $failed || $practice) {
             $settings = get_option('fra_scheduled_review_settings', array());
             $email    = sanitize_email((string) ($settings['email_address'] ?? '')) ?: get_option('admin_email');
             $site     = get_bloginfo('name');
-            $subject  = sprintf('[%s] %d knowledge-base draft%s need a hand', $site, count($deferred) + count($failed), 1 === count($deferred) + count($failed) ? '' : 's');
+            $n        = count($deferred) + count($failed) + count($practice);
+            $subject  = sprintf('[%s] %d knowledge-base draft%s need a hand', $site, $n, 1 === $n ? '' : 's');
             $lines    = array();
             $lines[]  = sprintf('The overnight gap run drafted %d of %d. These were not put in the review queue:', $report['drafted'], $report['considered']);
             $lines[]  = '';
@@ -759,6 +769,12 @@ class FRA_Review_API {
                     $lines[] = sprintf('  Search errors: %s. Web results kept: %d.', implode(', ', $d['errors']), $d['sources']);
                 }
                 $lines[] = '  It will be tried again automatically (after a day, then weekly from the third try).';
+                $lines[] = '';
+            }
+            foreach ($practice as $p) {
+                $lines[] = sprintf('IN PRACTICE WITHHELD (official text queued): %s', $p['question'] ?: $p['gap_id']);
+                $lines[] = sprintf('  %s', $p['reason']);
+                $lines[] = '  The rule: two independent, dated community sources, or the section stays out.';
                 $lines[] = '';
             }
             foreach ($failed as $f) {
@@ -847,6 +863,8 @@ class FRA_Review_API {
             'in_practice_content' => $this->clean_content($request->get_param('in_practice_content')),
             'changes_summary'     => sanitize_textarea_field((string) $request->get_param('changes_summary')),
             'practice_sources'    => $this->clean_practice_sources($request->get_param('practice_sources')),
+            'practice_withheld'   => sanitize_text_field((string) $request->get_param('practice_withheld')),
+            'practice_corroboration' => (int) $request->get_param('practice_corroboration'),
             'key_insights'        => $this->clean_string_list($request->get_param('key_insights')),
             'sources_checked'     => $this->clean_string_list($request->get_param('sources_checked')),
             'web_sources'         => $this->clean_web_sources($request->get_param('web_sources')),

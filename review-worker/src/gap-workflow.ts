@@ -70,6 +70,7 @@ export class GapWorkflow extends WorkflowEntrypoint<Env, GapParams> {
         new_topics: drafted.filter((o) => o.is_new_topic).length,
         // Named, not counted.
         failures: failed.map((o) => ({ gap_id: o.gap_id, error: o.error })),
+        practice_withheld: drafted.filter((o) => o.practice_withheld).map((o) => ({ gap_id: o.gap_id, question: o.question ?? '', reason: o.practice_withheld })),
         deferred: deferred.map((o) => ({
           gap_id: o.gap_id,
           type: o.type,
@@ -100,6 +101,7 @@ export class GapWorkflow extends WorkflowEntrypoint<Env, GapParams> {
             drafted: summary.drafted,
             failures: summary.failures,
             deferred: summary.deferred,
+            practice_withheld: summary.practice_withheld,
           }),
         });
       } catch (error) {

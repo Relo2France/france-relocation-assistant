@@ -59,6 +59,8 @@ export interface GapOutcome {
   error?: string;
   /** The draft was written but withheld: nothing verified it. */
   deferred?: boolean;
+  /** The official text went through; the In Practice section did not, for this reason. */
+  practice_withheld?: string;
   question?: string;
   duration_ms: number;
   output_tokens?: number;
@@ -282,6 +284,10 @@ export async function draftGap(env: Env, gap: Gap): Promise<GapOutcome> {
     return { ...base, ok: false, error: why, duration_ms: Date.now() - started };
   }
 
+  // The In Practice section has its own bar: two independent dated sources
+  // or it is withheld, with the reason travelling to the card and the email.
+  const practice = vetInPractice(draft.in_practice_content, draft.practice_sources);
+
   const posted = await postGapResult(env, gap.id, {
     category: target.category,
     topic: target.topic,
@@ -290,8 +296,10 @@ export async function draftGap(env: Env, gap: Gap): Promise<GapOutcome> {
     confidence: draft.confidence ?? 'medium',
     changes_summary: draft.changes_summary ?? '',
     suggested_content: draft.suggested_content,
-    in_practice_content: draft.in_practice_content ?? '',
-    practice_sources: draft.practice_sources ?? [],
+    in_practice_content: practice.content,
+    practice_sources: practice.sources,
+    practice_withheld: practice.withheld,
+    practice_corroboration: practice.corroboration,
     key_insights: draft.key_insights ?? [],
     sources_checked: draft.official_sources_checked ?? [],
     web_sources: outcome.webSources as WebSource[],
@@ -303,6 +311,7 @@ export async function draftGap(env: Env, gap: Gap): Promise<GapOutcome> {
     ok: true,
     review_id: posted.review_id,
     is_new_topic: posted.is_new_topic,
+    practice_withheld: practice.withheld || undefined,
     duration_ms: Date.now() - started,
     output_tokens: outcome.usage.output,
     web_sources: outcome.webSources.length,

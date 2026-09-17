@@ -1,6 +1,7 @@
 /**
  * Reviewing one topic, end to end.
  */
+import { vetInPractice } from './practice';
 import { extractJson, sendMessage } from './anthropic';
 import { buildReviewPrompt } from './prompt';
 import { findTopic, postSuggestion } from './wordpress';
@@ -16,6 +17,7 @@ export interface ReviewOutcome {
   changes_summary?: string;
   web_sources: number;
   web_search_errors: string[];
+  practice_withheld?: string;
   truncated: boolean;
   continued: boolean;
   usage: { input: number; output: number };
@@ -86,12 +88,15 @@ export async function reviewTopic(
     );
   }
 
+  const practice = vetInPractice(result.in_practice_content, result.practice_sources);
   const posted = await postSuggestion(env, {
     topic,
-    result,
+    result: { ...result, in_practice_content: practice.content, practice_sources: practice.sources },
+    practiceWithheld: practice.withheld,
+    practiceCorroboration: practice.corroboration,
     webSources: outcome.webSources,
     model: outcome.model,
   });
 
-  return { ...base, posted: true, review_id: posted.review_id, duration_ms: Date.now() - started };
+  return { ...base, posted: true, review_id: posted.review_id, practice_withheld: practice.withheld || undefined, duration_ms: Date.now() - started };
 }

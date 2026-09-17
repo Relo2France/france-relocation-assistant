@@ -404,9 +404,11 @@ foreach ($reviewable_topics as $cat => $topics) {
                     </div>
                     <?php endif; ?>
                     
-                    <?php if (!empty($review['in_practice_content'])): ?>
+                    <?php if (!empty($review['practice_withheld'])): ?>
+                    <p style="margin:8px 0;padding:10px 14px;border-left:4px solid #b87a21;background:#fbf1df;font-size:13px;"><strong><?php _e('In Practice withheld.', 'france-relocation-assistant'); ?></strong> <?php echo esc_html($review['practice_withheld']); ?> <?php _e('The official text below still stands on its own.', 'france-relocation-assistant'); ?></p>
+                    <?php elseif (!empty($review['in_practice_content'])): ?>
                     <div class="fra-in-practice-preview" style="margin:12px 0;padding:12px 16px;border-left:4px solid #2c5346;background:#f4f6f4;">
-                        <strong style="display:block;margin-bottom:6px;">✨ <?php _e('In Practice (what people report)', 'france-relocation-assistant'); ?></strong>
+                        <strong style="display:block;margin-bottom:6px;">✨ <?php _e('In Practice (what people report)', 'france-relocation-assistant'); ?><?php if (!empty($review['practice_corroboration'])): ?> <span style="font-weight:normal;color:#5e3d11;">· <?php printf(esc_html__('%d independent dated sources', 'france-relocation-assistant'), (int) $review['practice_corroboration']); ?></span><?php endif; ?></strong>
                         <div style="font-size:13px;line-height:1.5;white-space:pre-wrap;"><?php echo esc_html(preg_replace('/^\s*\*\*In Practice\*\*\s*/i', '', (string) $review['in_practice_content'])); ?></div>
                     </div>
                     <?php else: ?>
