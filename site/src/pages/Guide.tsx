@@ -53,7 +53,7 @@ export function Guide({ guide }: { guide: GuideDoc }) {
                   <TermList>
                     {section.requirements.map((r) => {
                       const m = TERM_ITEM.exec(r)!;
-                      return <Term key={r} term={m[1]} official={m[2]?.slice(1, -1)}>{withFigures(m[3])}</Term>;
+                      return <Term key={r} term={m[1] ?? ''} official={m[2]?.slice(1, -1)}>{withFigures(m[3] ?? '')}</Term>;
                     })}
                   </TermList>
                 ) : (
