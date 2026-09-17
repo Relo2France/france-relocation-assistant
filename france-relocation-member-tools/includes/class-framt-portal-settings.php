@@ -539,64 +539,46 @@ class FRAMT_Portal_Settings {
     }
 
     /**
-     * Render the settings page.
+     * The settings screen.
+     *
+     * Three tabs, and only the controls the portal actually reads. The rail's
+     * shape, the names of things and the colours of the page are product
+     * decisions made in the portal build; what is left here is what a site
+     * owner genuinely changes: sidebar colours, the tab title, which tools
+     * are on, membership and the welcome banner.
      */
     public function render_settings_page() {
-        $settings    = self::get_settings();
-        $active_tab  = isset( $_GET['tab'] ) ? sanitize_text_field( $_GET['tab'] ) : 'appearance';
+        $settings   = self::get_settings();
+        $requested  = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'portal';
+        $aliases    = array( 'appearance' => 'portal', 'branding' => 'portal', 'advanced' => 'portal', 'menu' => 'tools', 'features' => 'members' );
+        $active_tab = $aliases[ $requested ] ?? $requested;
+        if ( ! in_array( $active_tab, array( 'portal', 'tools', 'members' ), true ) ) {
+            $active_tab = 'portal';
+        }
+        $tabs = array( 'portal' => 'Portal', 'tools' => 'Tools', 'members' => 'Members' );
         ?>
-        <div class="wrap">
+        <div class="wrap framt-portal-settings">
             <h1>Portal Settings</h1>
 
             <nav class="nav-tab-wrapper">
-                <a href="?page=framt-portal-settings&tab=appearance"
-                   class="nav-tab <?php echo $active_tab === 'appearance' ? 'nav-tab-active' : ''; ?>">
-                    Appearance
-                </a>
-                <a href="?page=framt-portal-settings&tab=menu"
-                   class="nav-tab <?php echo $active_tab === 'menu' ? 'nav-tab-active' : ''; ?>">
-                    Menu Items
-                </a>
-                <a href="?page=framt-portal-settings&tab=branding"
-                   class="nav-tab <?php echo $active_tab === 'branding' ? 'nav-tab-active' : ''; ?>">
-                    Branding
-                </a>
-                <a href="?page=framt-portal-settings&tab=features"
-                   class="nav-tab <?php echo $active_tab === 'features' ? 'nav-tab-active' : ''; ?>">
-                    Features
-                </a>
-                <a href="?page=framt-portal-settings&tab=advanced"
-                   class="nav-tab <?php echo $active_tab === 'advanced' ? 'nav-tab-active' : ''; ?>">
-                    Advanced
-                </a>
+                <?php foreach ( $tabs as $id => $label ) : ?>
+                <a href="?page=framt-portal-settings&tab=<?php echo esc_attr( $id ); ?>"
+                   class="nav-tab <?php echo $active_tab === $id ? 'nav-tab-active' : ''; ?>"><?php echo esc_html( $label ); ?></a>
+                <?php endforeach; ?>
             </nav>
 
             <form method="post" action="options.php">
                 <?php settings_fields( 'framt_portal_settings_group' ); ?>
-
-                <?php
-                // Output hidden fields for all settings to preserve values from other tabs
-                $this->render_hidden_fields( $settings, $active_tab );
-                ?>
+                <?php $this->render_hidden_fields( $settings, $active_tab ); ?>
 
                 <div class="tab-content" style="margin-top: 20px;">
                     <?php
-                    switch ( $active_tab ) {
-                        case 'appearance':
-                            $this->render_appearance_tab( $settings );
-                            break;
-                        case 'menu':
-                            $this->render_menu_tab( $settings );
-                            break;
-                        case 'branding':
-                            $this->render_branding_tab( $settings );
-                            break;
-                        case 'features':
-                            $this->render_features_tab( $settings );
-                            break;
-                        case 'advanced':
-                            $this->render_advanced_tab( $settings );
-                            break;
+                    if ( 'tools' === $active_tab ) {
+                        $this->render_tools_tab( $settings );
+                    } elseif ( 'members' === $active_tab ) {
+                        $this->render_members_tab( $settings );
+                    } else {
+                        $this->render_portal_tab( $settings );
                     }
                     ?>
                 </div>
@@ -604,75 +586,44 @@ class FRAMT_Portal_Settings {
                 <?php submit_button(); ?>
             </form>
 
-            <hr>
-            <h3>Reset Settings</h3>
-            <p>Reset all portal settings to their default values.</p>
-            <button type="button" class="button" id="framt-reset-settings">Reset to Defaults</button>
+            <p class="description" style="margin-top: 24px;">
+                <button type="button" class="button-link" id="framt-reset-settings" style="color: #b32d2e;">Reset every portal setting to its default</button>
+            </p>
         </div>
 
         <style>
-            .framt-settings-card {
-                background: #fff;
-                border: 1px solid #ccd0d4;
-                padding: 20px;
-                margin-bottom: 20px;
-                max-width: 800px;
-            }
-            .framt-settings-card h2 {
-                margin-top: 0;
-                padding-bottom: 10px;
-                border-bottom: 1px solid #eee;
-            }
-            .framt-color-row {
-                display: flex;
-                align-items: center;
-                margin-bottom: 15px;
-            }
-            .framt-color-row label {
-                width: 200px;
-                font-weight: 500;
-            }
-            .framt-color-preview {
-                width: 30px;
-                height: 30px;
-                border-radius: 4px;
-                margin-left: 10px;
-                border: 1px solid #ccc;
-            }
-            .framt-menu-item {
-                display: flex;
-                align-items: center;
-                padding: 12px;
-                background: #f9f9f9;
-                margin-bottom: 8px;
-                border-radius: 4px;
-            }
-            .framt-menu-item label {
-                margin-left: 10px;
-                flex: 1;
-            }
-            .framt-menu-item input[type="text"] {
-                width: 200px;
-            }
+            .framt-settings-card { background: #fff; border: 1px solid #dde3de; border-radius: 8px; padding: 20px 24px; margin-bottom: 20px; max-width: 820px; }
+            .framt-settings-card h2 { margin: 0 0 4px; font-size: 1.15em; }
+            .framt-settings-card > p.lead { margin: 0 0 16px; color: #5f6e66; }
+            .framt-switch-list { list-style: none; margin: 0; padding: 0; }
+            .framt-switch-list li { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-top: 1px solid #ebefeb; }
+            .framt-switch-list li:first-child { border-top: 0; }
+            .framt-switch-list input[type="checkbox"] { margin-top: 3px; }
+            .framt-switch-list strong { display: block; }
+            .framt-switch-list span { color: #5f6e66; font-size: 12px; }
+            .framt-fixed { color: #5f6e66; font-size: 13px; margin: 6px 0 0; }
+            .framt-status td { padding: 6px 12px 6px 0; vertical-align: top; }
+            .framt-status th { text-align: left; padding: 6px 16px 6px 0; font-weight: 600; white-space: nowrap; }
+            .framt-color-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+            .framt-color-row label { width: 220px; font-weight: 500; }
+            .framt-color-row input[type="color"] { width: 44px; height: 32px; padding: 0; border: 1px solid #dde3de; border-radius: 4px; background: none; }
+            .framt-color-row code { color: #5f6e66; }
         </style>
 
         <script>
         jQuery(document).ready(function($) {
-            // Reset settings button handler
             $('#framt-reset-settings').on('click', function() {
-                if (!confirm('Are you sure you want to reset all portal settings to defaults?')) {
+                if (!confirm('Reset every portal setting to its default? Membership integration and the family add-on product are kept.')) {
                     return;
                 }
-
                 $.post(ajaxurl, {
                     action: 'framt_reset_portal_settings',
                     nonce: '<?php echo wp_create_nonce( 'framt_portal_settings' ); ?>'
                 }, function(response) {
                     if (response.success) {
-                        alert('Settings reset! Page will reload.');
                         location.reload();
                     } else {
-                        alert('Error: ' + response.data.message);
+                        alert('Could not reset: ' + response.data.message);
                     }
                 });
             });
@@ -682,829 +633,192 @@ class FRAMT_Portal_Settings {
     }
 
     /**
-     * Render hidden fields for settings not on the current tab.
-     * This preserves all settings when saving from any tab.
-     *
-     * @param array  $settings   Current settings.
-     * @param string $active_tab Currently active tab.
+     * Which option keys each tab renders. Everything else is carried through
+     * as a hidden field so saving one tab never blanks another.
+     */
+    private function tab_fields( $tab ) {
+        $tools = array_map( function ( $id ) { return 'menu_' . $id; }, array_keys( $this->tool_switches() ) );
+        $map = array(
+            'portal'  => array( 'sidebar_bg_color', 'sidebar_text_color', 'portal_title' ),
+            'tools'   => $tools,
+            'members' => array( 'welcome_banner_enabled', 'welcome_banner_title', 'welcome_banner_message' ),
+        );
+        return $map[ $tab ] ?? array();
+    }
+
+    /**
+     * Carry every other setting through the form untouched.
      */
     private function render_hidden_fields( $settings, $active_tab ) {
-        // Define which fields belong to which tab
-        $tab_fields = array(
-            'appearance' => array(
-                'primary_color', 'secondary_color', 'sidebar_bg_color',
-                'sidebar_text_color', 'header_bg_color', 'accent_color',
-                'show_wp_header', 'show_wp_footer', 'show_promo_banner',
-                'sidebar_position', 'sidebar_collapsed',
-            ),
-            'menu' => array(
-                // Visibility
-                'menu_dashboard', 'menu_tasks', 'menu_checklists', 'menu_timeline',
-                'menu_messages', 'menu_chat', 'menu_documents', 'menu_guides',
-                'menu_glossary', 'menu_research', 'menu_schengen', 'menu_files', 'menu_profile', 'menu_family',
-                'menu_membership', 'menu_settings', 'menu_help',
-                // Labels
-                'label_dashboard', 'label_tasks', 'label_checklists', 'label_timeline',
-                'label_messages', 'label_chat', 'label_documents', 'label_guides',
-                'label_glossary', 'label_research', 'label_files', 'label_profile', 'label_family',
-                'label_schengen', 'label_membership', 'label_settings', 'label_help',
-                // Icons
-                'icon_dashboard', 'icon_tasks', 'icon_checklists', 'icon_timeline',
-                'icon_messages', 'icon_chat', 'icon_documents', 'icon_guides',
-                'icon_glossary', 'icon_research', 'icon_files', 'icon_profile', 'icon_family',
-                'icon_schengen', 'icon_membership', 'icon_settings', 'icon_help',
-                // Order
-                'menu_order_project', 'menu_order_resources', 'menu_order_account',
-                // Section labels
-                'section_label_project', 'section_label_resources', 'section_label_account',
-            ),
-            'branding' => array(
-                'portal_title', 'logo_url', 'favicon_url',
-            ),
-            'features' => array(
-                'enable_notifications', 'enable_file_upload', 'enable_ai_assistant',
-                'welcome_banner_enabled', 'welcome_banner_title', 'welcome_banner_message',
-                'welcome_banner_bg_color', 'welcome_banner_border_color',
-            ),
-            'advanced' => array(
-                'custom_css',
-            ),
-        );
-
-        // Get fields that are NOT on the current tab
-        $hidden_fields = array();
-        foreach ( $tab_fields as $tab => $fields ) {
-            if ( $tab !== $active_tab ) {
-                $hidden_fields = array_merge( $hidden_fields, $fields );
+        $visible = $this->tab_fields( $active_tab );
+        foreach ( $this->defaults as $key => $default ) {
+            if ( in_array( $key, $visible, true ) ) {
+                continue;
             }
-        }
-
-        // Boolean fields that need special handling
-        $bool_fields = array(
-            'show_wp_header', 'show_wp_footer', 'show_promo_banner', 'sidebar_collapsed',
-            'enable_notifications', 'enable_file_upload', 'enable_ai_assistant',
-            'welcome_banner_enabled',
-            'menu_dashboard', 'menu_tasks', 'menu_checklists', 'menu_timeline',
-            'menu_messages', 'menu_chat', 'menu_documents', 'menu_guides',
-            'menu_glossary', 'menu_research', 'menu_files', 'menu_profile', 'menu_family',
-            'menu_schengen', 'menu_membership', 'menu_settings', 'menu_help',
-        );
-
-        // Output hidden fields
-        foreach ( $hidden_fields as $field ) {
-            $value = isset( $settings[ $field ] ) ? $settings[ $field ] : '';
-
-            if ( in_array( $field, $bool_fields, true ) ) {
-                // For boolean fields, only output if true (checkboxes)
-                if ( $value ) {
-                    echo '<input type="hidden" name="' . esc_attr( self::OPTION_NAME ) . '[' . esc_attr( $field ) . ']" value="1">';
-                }
-            } else {
-                // For other fields, output the value
-                echo '<input type="hidden" name="' . esc_attr( self::OPTION_NAME ) . '[' . esc_attr( $field ) . ']" value="' . esc_attr( $value ) . '">';
+            $value = $settings[ $key ] ?? $default;
+            if ( is_bool( $value ) ) {
+                $value = $value ? '1' : '0';
+            } elseif ( is_array( $value ) ) {
+                continue;
             }
+            printf( '<input type="hidden" name="%s[%s]" value="%s">', esc_attr( self::OPTION_NAME ), esc_attr( $key ), esc_attr( (string) $value ) );
         }
     }
 
     /**
-     * Render appearance tab.
-     *
-     * @param array $settings Current settings.
+     * The tools a member can be shown or not. Home, the six stages, Profile
+     * and Support are not switches: a member always has them.
      */
-    private function render_appearance_tab( $settings ) {
-        ?>
-        <div class="framt-settings-card">
-            <h2>Colors</h2>
-            <p>Customize the portal color scheme to match your brand.</p>
-
-            <div class="framt-color-row">
-                <label for="primary_color">Primary Color</label>
-                <input type="text" name="<?php echo self::OPTION_NAME; ?>[primary_color]"
-                       id="primary_color" class="framt-color-picker"
-                       value="<?php echo esc_attr( $settings['primary_color'] ); ?>">
-                <div class="framt-color-preview" style="background-color: <?php echo esc_attr( $settings['primary_color'] ); ?>"></div>
-                <span style="margin-left: 10px; color: #666;">Buttons, links, progress bars</span>
-            </div>
-
-            <div class="framt-color-row">
-                <label for="secondary_color">Secondary Color</label>
-                <input type="text" name="<?php echo self::OPTION_NAME; ?>[secondary_color]"
-                       id="secondary_color" class="framt-color-picker"
-                       value="<?php echo esc_attr( $settings['secondary_color'] ); ?>">
-                <div class="framt-color-preview" style="background-color: <?php echo esc_attr( $settings['secondary_color'] ); ?>"></div>
-                <span style="margin-left: 10px; color: #666;">Secondary buttons, badges</span>
-            </div>
-
-            <div class="framt-color-row">
-                <label for="accent_color">Accent Color</label>
-                <input type="text" name="<?php echo self::OPTION_NAME; ?>[accent_color]"
-                       id="accent_color" class="framt-color-picker"
-                       value="<?php echo esc_attr( $settings['accent_color'] ); ?>">
-                <div class="framt-color-preview" style="background-color: <?php echo esc_attr( $settings['accent_color'] ); ?>"></div>
-                <span style="margin-left: 10px; color: #666;">Highlights, warnings</span>
-            </div>
-
-            <div class="framt-color-row">
-                <label for="sidebar_bg_color">Sidebar Background</label>
-                <input type="text" name="<?php echo self::OPTION_NAME; ?>[sidebar_bg_color]"
-                       id="sidebar_bg_color" class="framt-color-picker"
-                       value="<?php echo esc_attr( $settings['sidebar_bg_color'] ); ?>">
-                <div class="framt-color-preview" style="background-color: <?php echo esc_attr( $settings['sidebar_bg_color'] ); ?>"></div>
-            </div>
-
-            <div class="framt-color-row">
-                <label for="sidebar_text_color">Sidebar Text</label>
-                <input type="text" name="<?php echo self::OPTION_NAME; ?>[sidebar_text_color]"
-                       id="sidebar_text_color" class="framt-color-picker"
-                       value="<?php echo esc_attr( $settings['sidebar_text_color'] ); ?>">
-                <div class="framt-color-preview" style="background-color: <?php echo esc_attr( $settings['sidebar_text_color'] ); ?>"></div>
-            </div>
-
-            <div class="framt-color-row">
-                <label for="header_bg_color">Header Background</label>
-                <input type="text" name="<?php echo self::OPTION_NAME; ?>[header_bg_color]"
-                       id="header_bg_color" class="framt-color-picker"
-                       value="<?php echo esc_attr( $settings['header_bg_color'] ); ?>">
-                <div class="framt-color-preview" style="background-color: <?php echo esc_attr( $settings['header_bg_color'] ); ?>"></div>
-            </div>
-        </div>
-
-        <div class="framt-settings-card">
-            <h2>Layout Options</h2>
-
-            <table class="form-table">
-                <tr>
-                    <th>WordPress Theme Header</th>
-                    <td>
-                        <label>
-                            <input type="checkbox" name="<?php echo self::OPTION_NAME; ?>[show_wp_header]"
-                                   value="1" <?php checked( $settings['show_wp_header'] ); ?>>
-                            Show WordPress theme header above portal
-                        </label>
-                        <p class="description">Enable if you want to keep your theme's navigation visible.</p>
-                    </td>
-                </tr>
-                <tr>
-                    <th>WordPress Theme Footer</th>
-                    <td>
-                        <label>
-                            <input type="checkbox" name="<?php echo self::OPTION_NAME; ?>[show_wp_footer]"
-                                   value="1" <?php checked( $settings['show_wp_footer'] ); ?>>
-                            Show WordPress theme footer below portal
-                        </label>
-                    </td>
-                </tr>
-                <tr>
-                    <th>Promotional Banner</th>
-                    <td>
-                        <label>
-                            <input type="checkbox" name="<?php echo self::OPTION_NAME; ?>[show_promo_banner]"
-                                   value="1" <?php checked( $settings['show_promo_banner'] ); ?>>
-                            Show site branding/promotional banner
-                        </label>
-                        <p class="description">The banner with your logo and tagline at the top of the portal.</p>
-                    </td>
-                </tr>
-                <tr>
-                    <th>Sidebar Position</th>
-                    <td>
-                        <select name="<?php echo self::OPTION_NAME; ?>[sidebar_position]">
-                            <option value="left" <?php selected( $settings['sidebar_position'], 'left' ); ?>>Left</option>
-                            <option value="right" <?php selected( $settings['sidebar_position'], 'right' ); ?>>Right</option>
-                        </select>
-                    </td>
-                </tr>
-                <tr>
-                    <th>Sidebar Default State</th>
-                    <td>
-                        <label>
-                            <input type="checkbox" name="<?php echo self::OPTION_NAME; ?>[sidebar_collapsed]"
-                                   value="1" <?php checked( $settings['sidebar_collapsed'] ); ?>>
-                            Start with sidebar collapsed (icons only)
-                        </label>
-                    </td>
-                </tr>
-            </table>
-        </div>
-        <?php
+    private function tool_switches() {
+        return array(
+            'chat'      => array( 'Ask about my case', 'The assistant, answering against the member\'s file and the knowledge base.' ),
+            'documents' => array( 'Documents & files', 'The dossier per person, uploads, generated documents and saved reports.' ),
+            'family'    => array( 'Family plans', 'One file per person, the partner sign-in and the $20 add-on offer.' ),
+            'timeline'  => array( 'Deadlines', 'Every dated step counted back from the move.' ),
+            'schengen'  => array( 'Schengen days', 'The 90/180 tracker, carrying the coming-soon note.' ),
+            'research'  => array( 'Explore France', 'Regions, departments and communes, with generated location reports.' ),
+            'messages'  => array( 'Messages', 'What the site sends the member: team messages, notices, alerts from their own file.' ),
+            'settings'  => array( 'Settings', 'The member\'s own preferences.' ),
+            'help'      => array( 'Help', 'The help pages. Support sits beside it and is always shown.' ),
+        );
     }
 
-    /**
-     * Render menu tab.
-     *
-     * @param array $settings Current settings.
-     */
-    private function render_menu_tab( $settings ) {
-        // Define all menu items with their defaults
-        // Names are product copy owned by the portal build; this screen shows
-        // them and where each thing lives, and lets you hide a tool.
-        $all_menu_items = array(
-            'dashboard'  => array( 'default_label' => 'Where you are', 'default_icon' => 'LayoutDashboard', 'where' => 'Home' ),
-            'tasks'      => array( 'default_label' => 'Steps', 'default_icon' => 'CheckSquare', 'where' => 'Inside each stage; also gates Deadlines' ),
-            'checklists' => array( 'default_label' => 'Checklists', 'default_icon' => 'ClipboardList', 'where' => 'Inside each stage' ),
-            'timeline'   => array( 'default_label' => 'Deadlines', 'default_icon' => 'Calendar', 'where' => 'Tools' ),
-            'messages'   => array( 'default_label' => 'Messages', 'default_icon' => 'Mail', 'where' => 'Tools: what the site sends the member' ),
-            'chat'       => array( 'default_label' => 'Ask about my case', 'default_icon' => 'MessageSquare', 'where' => 'Tools' ),
-            'documents'  => array( 'default_label' => 'Documents & files', 'default_icon' => 'FileText', 'where' => 'Tools' ),
-            'guides'     => array( 'default_label' => 'Guides', 'default_icon' => 'BookOpen', 'where' => 'Inside each stage and Explore France' ),
-            'glossary'   => array( 'default_label' => 'Glossary', 'default_icon' => 'BookMarked', 'where' => 'Inside Ask about my case' ),
-            'research'   => array( 'default_label' => 'Explore France', 'default_icon' => 'BookOpen', 'where' => 'Tools' ),
-            'files'      => array( 'default_label' => 'Files', 'default_icon' => 'FolderOpen', 'where' => 'Part of Documents & files' ),
-            'profile'    => array( 'default_label' => 'Profile', 'default_icon' => 'User', 'where' => 'Account (always shown)' ),
-            'family'     => array( 'default_label' => 'Family plans', 'default_icon' => 'Users', 'where' => 'Tools' ),
-            'schengen'   => array( 'default_label' => 'Schengen days', 'default_icon' => 'Globe', 'where' => 'Tools (coming as its own app)' ),
-            'membership' => array( 'default_label' => 'Membership', 'default_icon' => 'CreditCard', 'where' => 'Inside Profile' ),
-            'settings'   => array( 'default_label' => 'Settings', 'default_icon' => 'Settings', 'where' => 'Account' ),
-            'help'       => array( 'default_label' => 'Help', 'default_icon' => 'HelpCircle', 'where' => 'Account; Support sits beside it and is always shown' ),
-        );
+    /* ------------------------------------------------------------------ */
 
-        // Define sections with their default items
-        $default_section_items = array(
-            'project'   => array( 'dashboard', 'tasks', 'checklists', 'timeline', 'messages' ),
-            'resources' => array( 'research', 'chat', 'documents', 'guides', 'glossary', 'schengen', 'files' ),
-            'account'   => array( 'profile', 'family', 'membership', 'settings', 'help' ),
-        );
-
-        $sections = array(
-            'project'   => array(
-                'label'    => $settings['section_label_project'] ?: 'PROJECT',
-                'items'    => explode( ',', $settings['menu_order_project'] ),
-            ),
-            'resources' => array(
-                'label'    => $settings['section_label_resources'] ?: 'RESOURCES',
-                'items'    => explode( ',', $settings['menu_order_resources'] ),
-            ),
-            'account'   => array(
-                'label'    => $settings['section_label_account'] ?: 'ACCOUNT',
-                'items'    => explode( ',', $settings['menu_order_account'] ),
-            ),
-        );
-
-        // Ensure all menu items are present in their sections (handles newly added items)
-        foreach ( $default_section_items as $section_id => $default_items ) {
-            foreach ( $default_items as $item_id ) {
-                if ( ! in_array( $item_id, $sections[ $section_id ]['items'], true ) ) {
-                    // Add missing item to the section
-                    $sections[ $section_id ]['items'][] = $item_id;
+    private function render_portal_tab( $settings ) {
+        $manifest = FRAMT_PLUGIN_DIR . 'assets/portal/.vite/manifest.json';
+        $bundle   = '';
+        if ( file_exists( $manifest ) ) {
+            $m = json_decode( (string) file_get_contents( $manifest ), true );
+            foreach ( (array) $m as $entry ) {
+                if ( ! empty( $entry['isEntry'] ) && ! empty( $entry['file'] ) ) {
+                    $bundle = basename( $entry['file'] );
+                    break;
                 }
             }
         }
-        ?>
-
-        <div class="framt-settings-card">
-            <h2>Menu Configuration</h2>
-            <p>The portal rail has a fixed shape: home, the six stages of the move, then the tools that cut across every stage, then the account. Steps, checklists and guides live inside the stage they belong to and have no door of their own. Use the switches to hide a tool from members; the names and icons below are set in the portal build and shown here for reference. Order within a section is kept for the old sidebar and does not change the rail.</p>
-
-            <!-- Section labels are not used by the rail; kept for the legacy sidebar only. -->
-            <input type="hidden" name="<?php echo self::OPTION_NAME; ?>[section_label_project]" value="<?php echo esc_attr( $settings['section_label_project'] ); ?>">
-            <input type="hidden" name="<?php echo self::OPTION_NAME; ?>[section_label_resources]" value="<?php echo esc_attr( $settings['section_label_resources'] ); ?>">
-            <input type="hidden" name="<?php echo self::OPTION_NAME; ?>[section_label_account]" value="<?php echo esc_attr( $settings['section_label_account'] ); ?>">
-
-            <?php foreach ( $sections as $section_id => $section ) : ?>
-            <div class="framt-menu-section" data-section="<?php echo esc_attr( $section_id ); ?>">
-                <div class="framt-menu-section-header">
-                    <h3><?php echo esc_html( $section['label'] ); ?></h3>
-                    <span class="framt-drag-hint">Drag to reorder</span>
-                </div>
-
-                <div class="framt-menu-sortable" id="sortable-<?php echo esc_attr( $section_id ); ?>">
-                    <?php
-                    foreach ( $section['items'] as $item_id ) :
-                        $item_id = trim( $item_id );
-                        if ( empty( $item_id ) || ! isset( $all_menu_items[ $item_id ] ) ) continue;
-                        $item = $all_menu_items[ $item_id ];
-                        $is_enabled = ! empty( $settings[ 'menu_' . $item_id ] );
-                        $label = $settings[ 'label_' . $item_id ] ?: $item['default_label'];
-                        $icon = $settings[ 'icon_' . $item_id ] ?: $item['default_icon'];
-                    ?>
-                    <div class="framt-menu-item-row <?php echo $is_enabled ? '' : 'framt-menu-disabled'; ?>"
-                         data-item-id="<?php echo esc_attr( $item_id ); ?>">
-                        <div class="framt-menu-drag-handle">
-                            <span class="dashicons dashicons-menu"></span>
-                        </div>
-
-                        <div class="framt-menu-visibility">
-                            <label class="framt-switch">
-                                <input type="checkbox"
-                                       name="<?php echo self::OPTION_NAME; ?>[menu_<?php echo esc_attr( $item_id ); ?>]"
-                                       value="1"
-                                       class="framt-visibility-toggle"
-                                       <?php checked( $is_enabled ); ?>>
-                                <span class="framt-switch-slider"></span>
-                            </label>
-                        </div>
-
-                        <div class="framt-menu-icon-select">
-                            <select name="<?php echo self::OPTION_NAME; ?>[icon_<?php echo esc_attr( $item_id ); ?>]"
-                                    class="framt-icon-dropdown">
-                                <?php foreach ( $this->available_icons as $icon_key => $icon_label ) : ?>
-                                <option value="<?php echo esc_attr( $icon_key ); ?>"
-                                        <?php selected( $icon, $icon_key ); ?>>
-                                    <?php echo esc_html( $icon_label ); ?>
-                                </option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-
-                        <div class="framt-menu-label-input">
-                            <strong><?php echo esc_html( $item['default_label'] ); ?></strong>
-                            <span style="display:block;color:#5f6e66;font-size:12px;"><?php echo esc_html( $item['where'] ?? '' ); ?></span>
-                            <input type="hidden"
-                                   name="<?php echo self::OPTION_NAME; ?>[label_<?php echo esc_attr( $item_id ); ?>]"
-                                   value="<?php echo esc_attr( $item['default_label'] ); ?>">
-                        </div>
-
-                        <div class="framt-menu-item-id">
-                            <code><?php echo esc_html( $item_id ); ?></code>
-                        </div>
-                    </div>
-                    <?php endforeach; ?>
-                </div>
-
-                <!-- Hidden field to store order -->
-                <input type="hidden"
-                       name="<?php echo self::OPTION_NAME; ?>[menu_order_<?php echo esc_attr( $section_id ); ?>]"
-                       id="menu_order_<?php echo esc_attr( $section_id ); ?>"
-                       value="<?php echo esc_attr( implode( ',', $section['items'] ) ); ?>"
-                       class="framt-menu-order-field">
-            </div>
-            <?php endforeach; ?>
-        </div>
-
-        <style>
-            .framt-menu-section {
-                margin-bottom: 30px;
-                border: 1px solid #c3c4c7;
-                border-radius: 4px;
-                background: #fff;
-            }
-            .framt-menu-section-header {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: 12px 15px;
-                background: #f0f0f1;
-                border-bottom: 1px solid #c3c4c7;
-            }
-            .framt-menu-section-header h3 {
-                margin: 0;
-                font-size: 13px;
-                font-weight: 600;
-                text-transform: uppercase;
-                letter-spacing: 0.5px;
-                color: #1d2327;
-            }
-            .framt-drag-hint {
-                font-size: 11px;
-                color: #787c82;
-                font-style: italic;
-            }
-            .framt-menu-sortable {
-                padding: 10px;
-            }
-            .framt-menu-item-row {
-                display: flex;
-                align-items: center;
-                gap: 12px;
-                padding: 10px 12px;
-                margin-bottom: 8px;
-                background: #f9f9f9;
-                border: 1px solid #dcdcde;
-                border-radius: 4px;
-                cursor: move;
-                transition: all 0.2s ease;
-            }
-            .framt-menu-item-row:hover {
-                background: #f0f6fc;
-                border-color: #2271b1;
-            }
-            .framt-menu-item-row.ui-sortable-helper {
-                background: #fff;
-                box-shadow: 0 3px 10px rgba(0,0,0,0.15);
-            }
-            .framt-menu-item-row.ui-sortable-placeholder {
-                background: #e7f3ff;
-                border: 2px dashed #2271b1;
-                visibility: visible !important;
-            }
-            .framt-menu-disabled {
-                opacity: 0.5;
-                background: #f0f0f1;
-            }
-            .framt-menu-drag-handle {
-                color: #787c82;
-                cursor: move;
-            }
-            .framt-menu-drag-handle .dashicons {
-                font-size: 18px;
-                width: 18px;
-                height: 18px;
-            }
-            .framt-menu-visibility {
-                flex-shrink: 0;
-            }
-            .framt-switch {
-                position: relative;
-                display: inline-block;
-                width: 40px;
-                height: 22px;
-            }
-            .framt-switch input {
-                opacity: 0;
-                width: 0;
-                height: 0;
-            }
-            .framt-switch-slider {
-                position: absolute;
-                cursor: pointer;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                background-color: #ccc;
-                transition: 0.3s;
-                border-radius: 22px;
-            }
-            .framt-switch-slider:before {
-                position: absolute;
-                content: "";
-                height: 16px;
-                width: 16px;
-                left: 3px;
-                bottom: 3px;
-                background-color: white;
-                transition: 0.3s;
-                border-radius: 50%;
-            }
-            .framt-switch input:checked + .framt-switch-slider {
-                background-color: #2271b1;
-            }
-            .framt-switch input:checked + .framt-switch-slider:before {
-                transform: translateX(18px);
-            }
-            .framt-menu-icon-select select {
-                width: 140px;
-                padding: 4px 8px;
-            }
-            .framt-menu-label-input {
-                flex: 1;
-            }
-            .framt-menu-label-input input {
-                width: 100%;
-                padding: 6px 10px;
-            }
-            .framt-menu-item-id {
-                flex-shrink: 0;
-            }
-            .framt-menu-item-id code {
-                font-size: 11px;
-                color: #787c82;
-                background: #f0f0f1;
-                padding: 2px 6px;
-                border-radius: 3px;
-            }
-        </style>
-
-        <script>
-        jQuery(document).ready(function($) {
-            // Initialize sortable for each section
-            $('.framt-menu-sortable').sortable({
-                handle: '.framt-menu-drag-handle',
-                placeholder: 'framt-menu-item-row ui-sortable-placeholder',
-                forcePlaceholderSize: true,
-                tolerance: 'pointer',
-                update: function(event, ui) {
-                    updateMenuOrder($(this));
-                }
-            });
-
-            // Update hidden field with new order
-            function updateMenuOrder($sortable) {
-                var sectionId = $sortable.attr('id').replace('sortable-', '');
-                var order = [];
-                $sortable.find('.framt-menu-item-row').each(function() {
-                    order.push($(this).data('item-id'));
-                });
-                $('#menu_order_' + sectionId).val(order.join(','));
-            }
-
-            // Toggle visibility styling
-            $(document).on('change', '.framt-visibility-toggle', function() {
-                var $row = $(this).closest('.framt-menu-item-row');
-                if ($(this).is(':checked')) {
-                    $row.removeClass('framt-menu-disabled');
-                } else {
-                    $row.addClass('framt-menu-disabled');
-                }
-            });
-        });
-        </script>
-        <?php
-    }
-
-    /**
-     * Render branding tab.
-     *
-     * @param array $settings Current settings.
-     */
-    private function render_branding_tab( $settings ) {
-        ?>
-        <div class="framt-settings-card">
-            <h2>Branding</h2>
-
-            <table class="form-table">
-                <tr>
-                    <th>Portal Title</th>
-                    <td>
-                        <input type="text" name="<?php echo self::OPTION_NAME; ?>[portal_title]"
-                               value="<?php echo esc_attr( $settings['portal_title'] ); ?>"
-                               class="regular-text">
-                        <p class="description">Shown in the browser tab and header.</p>
-                    </td>
-                </tr>
-                <tr>
-                    <th>Portal Logo</th>
-                    <td>
-                        <input type="text" name="<?php echo self::OPTION_NAME; ?>[logo_url]"
-                               id="logo_url"
-                               value="<?php echo esc_attr( $settings['logo_url'] ); ?>"
-                               class="regular-text">
-                        <button type="button" class="button framt-upload-button" data-target="#logo_url">
-                            Select Image
-                        </button>
-                        <?php if ( ! empty( $settings['logo_url'] ) ) : ?>
-                        <br><img src="<?php echo esc_url( $settings['logo_url'] ); ?>"
-                                 class="framt-image-preview"
-                                 style="max-width: 200px; margin-top: 10px;">
-                        <?php endif; ?>
-                        <p class="description">Logo displayed in the sidebar (recommended: 150x40px).</p>
-                    </td>
-                </tr>
-                <tr>
-                    <th>Favicon</th>
-                    <td>
-                        <input type="text" name="<?php echo self::OPTION_NAME; ?>[favicon_url]"
-                               id="favicon_url"
-                               value="<?php echo esc_attr( $settings['favicon_url'] ); ?>"
-                               class="regular-text">
-                        <button type="button" class="button framt-upload-button" data-target="#favicon_url">
-                            Select Image
-                        </button>
-                        <p class="description">Custom favicon for the portal page (32x32px).</p>
-                    </td>
-                </tr>
-            </table>
-        </div>
-        <?php
-    }
-
-    /**
-     * Render features tab.
-     *
-     * @param array $settings Current settings.
-     */
-    private function render_features_tab( $settings ) {
-        // Get membership plugin status
         $membership = class_exists( 'FRAMT_Membership' ) ? FRAMT_Membership::get_instance() : null;
-        $detected_plugin = $membership ? $membership->get_plugin() : false;
-        $require_membership = get_option( 'framt_portal_require_membership', false );
-        $demo_mode = get_option( 'framt_enable_demo_mode', false );
+        $plugin     = $membership ? $membership->get_plugin() : false;
+        $worker     = (string) get_option( 'framt_review_worker_url', '' );
+        $worker     = '' !== $worker ? $worker : 'https://relo2france-review.kburrowbridge.workers.dev';
         ?>
         <div class="framt-settings-card">
-            <h2>Membership Integration</h2>
-            <p>Configure membership requirements for portal access.</p>
-
-            <table class="form-table">
-                <tr>
-                    <th>Detected Plugin</th>
-                    <td>
-                        <?php if ( $detected_plugin ) : ?>
-                            <span style="color: #46b450;">
-                                <span class="dashicons dashicons-yes-alt"></span>
-                                <strong><?php echo esc_html( ucfirst( $detected_plugin ) ); ?></strong> detected and active
-                            </span>
-                        <?php else : ?>
-                            <span style="color: #dc3232;">
-                                <span class="dashicons dashicons-warning"></span>
-                                No membership plugin detected
-                            </span>
-                            <p class="description">
-                                Supported plugins: MemberPress (recommended), Paid Memberships Pro, Restrict Content Pro, WooCommerce Memberships
-                            </p>
-                        <?php endif; ?>
-                    </td>
-                </tr>
-                <tr>
-                    <th>Require Membership</th>
-                    <td>
-                        <label>
-                            <input type="checkbox" name="framt_portal_require_membership"
-                                   value="1" <?php checked( $require_membership ); ?>>
-                            Require active membership to access the portal
-                        </label>
-                        <p class="description">
-                            When enabled, users without an active membership will be redirected to the membership page.
-                        </p>
-                    </td>
-                </tr>
-                <tr>
-                    <th>Demo Mode</th>
-                    <td>
-                        <label>
-                            <input type="checkbox" name="framt_enable_demo_mode"
-                                   value="1" <?php checked( $demo_mode ); ?>>
-                            Enable demo mode (bypass membership check)
-                        </label>
-                        <p class="description">
-                            <strong style="color: #dc3232;">For testing only!</strong> When enabled, all logged-in users can access the portal regardless of membership status.
-                        </p>
-                    </td>
-                </tr>
-                <tr>
-                    <th>Family add-on product</th>
-                    <td>
-                        <input type="number" min="0" name="framt_family_addon_product_id" class="small-text"
-                               value="<?php echo esc_attr( (int) get_option( 'framt_family_addon_product_id', 0 ) ); ?>">
-                        <p class="description">
-                            The MemberPress product ID for the $20 one-time Family add-on (one partner, up to four children). Once set, only members who bought it can edit family files and invite a partner. Leave at 0 to keep the feature open to every member.
-                        </p>
-                    </td>
-                </tr>
-                <tr>
-                    <th>Family add-on checkout URL</th>
-                    <td>
-                        <input type="url" name="framt_family_addon_url" class="regular-text"
-                               value="<?php echo esc_attr( get_option( 'framt_family_addon_url', '' ) ); ?>"
-                               placeholder="<?php echo esc_attr( home_url( '/register/family-add-on/' ) ); ?>">
-                        <p class="description">Where the "Add the Family plan" button sends members. Defaults to /register/family-add-on/.</p>
-                    </td>
-                </tr>
-            </table>
-        </div>
-
-        <div class="framt-settings-card">
-            <h2>Portal Features</h2>
-
-            <table class="form-table">
-                <tr>
-                    <th>Notifications</th>
-                    <td>
-                        <label>
-                            <input type="checkbox" name="<?php echo self::OPTION_NAME; ?>[enable_notifications]"
-                                   value="1" <?php checked( $settings['enable_notifications'] ); ?>>
-                            Enable notification bell and alerts
-                        </label>
-                    </td>
-                </tr>
-                <tr>
-                    <th>File Upload</th>
-                    <td>
-                        <label>
-                            <input type="checkbox" name="<?php echo self::OPTION_NAME; ?>[enable_file_upload]"
-                                   value="1" <?php checked( $settings['enable_file_upload'] ); ?>>
-                            Allow members to upload documents
-                        </label>
-                    </td>
-                </tr>
-                <tr>
-                    <th>AI Assistant</th>
-                    <td>
-                        <label>
-                            <input type="checkbox" name="<?php echo self::OPTION_NAME; ?>[enable_ai_assistant]"
-                                   value="1" <?php checked( $settings['enable_ai_assistant'] ); ?>>
-                            Enable AI assistant chat widget
-                        </label>
-                        <p class="description">Requires AI integration to be configured in the main plugin settings.</p>
-                    </td>
-                </tr>
-            </table>
-        </div>
-
-        <div class="framt-settings-card">
-            <h2>Welcome Banner</h2>
-            <p>Display a dismissible welcome message for new members on the dashboard. Once dismissed, it won't appear again for that user.</p>
-
-            <table class="form-table">
-                <tr>
-                    <th>Enable Welcome Banner</th>
-                    <td>
-                        <label>
-                            <input type="checkbox" name="<?php echo self::OPTION_NAME; ?>[welcome_banner_enabled]"
-                                   value="1" <?php checked( $settings['welcome_banner_enabled'] ); ?>>
-                            Show welcome banner for new members
-                        </label>
-                    </td>
-                </tr>
-                <tr>
-                    <th>Banner Title</th>
-                    <td>
-                        <input type="text" name="<?php echo self::OPTION_NAME; ?>[welcome_banner_title]"
-                               value="<?php echo esc_attr( $settings['welcome_banner_title'] ); ?>"
-                               class="regular-text"
-                               placeholder="Welcome to Your Relocation Portal!">
-                    </td>
-                </tr>
-                <tr>
-                    <th>Banner Message</th>
-                    <td>
-                        <textarea name="<?php echo self::OPTION_NAME; ?>[welcome_banner_message]"
-                                  rows="4"
-                                  class="large-text"
-                                  placeholder="Write a helpful getting started message for new members..."><?php echo esc_textarea( $settings['welcome_banner_message'] ); ?></textarea>
-                        <p class="description">Explain how the portal works and what members should do first.</p>
-                    </td>
-                </tr>
-                <tr>
-                    <th>Background Color</th>
-                    <td>
-                        <div class="framt-color-row">
-                            <input type="text" name="<?php echo self::OPTION_NAME; ?>[welcome_banner_bg_color]"
-                                   class="framt-color-picker"
-                                   value="<?php echo esc_attr( $settings['welcome_banner_bg_color'] ); ?>">
-                            <div class="framt-color-preview" style="background-color: <?php echo esc_attr( $settings['welcome_banner_bg_color'] ); ?>"></div>
-                        </div>
-                    </td>
-                </tr>
-                <tr>
-                    <th>Border Color</th>
-                    <td>
-                        <div class="framt-color-row">
-                            <input type="text" name="<?php echo self::OPTION_NAME; ?>[welcome_banner_border_color]"
-                                   class="framt-color-picker"
-                                   value="<?php echo esc_attr( $settings['welcome_banner_border_color'] ); ?>">
-                            <div class="framt-color-preview" style="background-color: <?php echo esc_attr( $settings['welcome_banner_border_color'] ); ?>"></div>
-                        </div>
-                    </td>
-                </tr>
-            </table>
-
-            <!-- Preview -->
-            <div style="margin-top: 20px;">
-                <h4>Preview:</h4>
-                <div id="welcome-banner-preview" style="padding: 16px 20px; border-radius: 8px; border-width: 2px; border-style: solid; background-color: <?php echo esc_attr( $settings['welcome_banner_bg_color'] ); ?>; border-color: <?php echo esc_attr( $settings['welcome_banner_border_color'] ); ?>;">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                        <div>
-                            <strong style="font-size: 16px; display: block; margin-bottom: 8px;"><?php echo esc_html( $settings['welcome_banner_title'] ); ?></strong>
-                            <p style="margin: 0; color: #374151;"><?php echo esc_html( $settings['welcome_banner_message'] ); ?></p>
-                        </div>
-                        <button type="button" style="background: none; border: none; cursor: pointer; padding: 4px; opacity: 0.6;">✕</button>
-                    </div>
-                </div>
+            <h2>Sidebar</h2>
+            <p class="lead">The only colours the portal takes from here. Everything else on the page follows the site\'s design tokens.</p>
+            <div class="framt-color-row">
+                <label for="sidebar_bg_color">Sidebar background</label>
+                <input type="color" id="sidebar_bg_color" name="<?php echo self::OPTION_NAME; ?>[sidebar_bg_color]" value="<?php echo esc_attr( $settings['sidebar_bg_color'] ); ?>">
+                <code><?php echo esc_html( $settings['sidebar_bg_color'] ); ?></code>
             </div>
+            <div class="framt-color-row">
+                <label for="sidebar_text_color">Sidebar text</label>
+                <input type="color" id="sidebar_text_color" name="<?php echo self::OPTION_NAME; ?>[sidebar_text_color]" value="<?php echo esc_attr( $settings['sidebar_text_color'] ); ?>">
+                <code><?php echo esc_html( $settings['sidebar_text_color'] ); ?></code>
+            </div>
+        </div>
+
+        <div class="framt-settings-card">
+            <h2>Browser tab</h2>
+            <p class="lead">Shown as "<em>title</em> – <?php echo esc_html( get_bloginfo( 'name' ) ); ?>" in the tab.</p>
+            <input type="text" class="regular-text" name="<?php echo self::OPTION_NAME; ?>[portal_title]" value="<?php echo esc_attr( $settings['portal_title'] ); ?>">
+        </div>
+
+        <div class="framt-settings-card">
+            <h2>Status</h2>
+            <table class="framt-status">
+                <tr><th>Member tools</th><td><?php echo esc_html( FRAMT_VERSION ); ?></td></tr>
+                <tr><th>Portal build</th><td><?php echo $bundle ? esc_html( $bundle ) : 'not built'; ?></td></tr>
+                <tr><th>Membership plugin</th><td><?php echo $plugin ? esc_html( ucfirst( $plugin ) ) . ' detected' : 'none detected'; ?></td></tr>
+                <tr><th>Review worker</th><td><code><?php echo esc_html( $worker ); ?></code><br><span style="color:#5f6e66;">Runs the knowledge-base review, gap drafting and location reports. Authenticates with the Review API secret from FR Assistant → API Settings.</span></td></tr>
+                <tr><th>Portal page</th><td><a href="<?php echo esc_url( home_url( '/portal/' ) ); ?>" target="_blank" rel="noopener"><?php echo esc_html( home_url( '/portal/' ) ); ?></a></td></tr>
+            </table>
         </div>
         <?php
     }
 
-    /**
-     * Render advanced tab.
-     *
-     * @param array $settings Current settings.
-     */
-    private function render_advanced_tab( $settings ) {
+    private function render_tools_tab( $settings ) {
         ?>
         <div class="framt-settings-card">
-            <h2>Custom CSS</h2>
-            <p>Add custom CSS to further customize the portal appearance.</p>
+            <h2>What members see</h2>
+            <p class="lead">The rail is fixed: <strong>Where you are</strong>, the six stages of the move, then the tools below, then the account. Steps, checklists and guides live inside the stage they belong to. Turn a tool off and it disappears from every member\'s rail; nothing else moves.</p>
+            <ul class="framt-switch-list">
+                <?php foreach ( $this->tool_switches() as $id => $item ) :
+                    $key = 'menu_' . $id;
+                    $on  = ! empty( $settings[ $key ] ); ?>
+                <li>
+                    <input type="hidden" name="<?php echo self::OPTION_NAME; ?>[<?php echo esc_attr( $key ); ?>]" value="0">
+                    <input type="checkbox" id="<?php echo esc_attr( $key ); ?>" name="<?php echo self::OPTION_NAME; ?>[<?php echo esc_attr( $key ); ?>]" value="1" <?php checked( $on ); ?>>
+                    <label for="<?php echo esc_attr( $key ); ?>"><strong><?php echo esc_html( $item[0] ); ?></strong><span><?php echo esc_html( $item[1] ); ?></span></label>
+                </li>
+                <?php endforeach; ?>
+            </ul>
+            <p class="framt-fixed">Always shown: Where you are, the six stages, Profile, Support.</p>
+        </div>
+        <?php
+    }
 
-            <textarea name="<?php echo self::OPTION_NAME; ?>[custom_css]"
-                      rows="15"
-                      style="width: 100%; font-family: monospace;"
-                      placeholder="/* Your custom CSS here */
-.sidebar { }
-.header { }
-.main-content { }"><?php echo esc_textarea( $settings['custom_css'] ); ?></textarea>
-
-            <h3 style="margin-top: 30px;">CSS Reference</h3>
-            <p>Common selectors you can target:</p>
-            <ul style="list-style: disc; margin-left: 20px;">
-                <li><code>.fra-portal-sidebar</code> - The sidebar container</li>
-                <li><code>.fra-portal-header</code> - The top header bar</li>
-                <li><code>.fra-portal-content</code> - The main content area</li>
-                <li><code>.fra-portal-nav-item</code> - Sidebar navigation items</li>
-                <li><code>.fra-portal-card</code> - Content cards</li>
-                <li><code>.fra-btn-primary</code> - Primary buttons</li>
+    private function render_members_tab( $settings ) {
+        $membership = class_exists( 'FRAMT_Membership' ) ? FRAMT_Membership::get_instance() : null;
+        $plugin     = $membership ? $membership->get_plugin() : false;
+        $require    = get_option( 'framt_portal_require_membership', false );
+        $demo       = get_option( 'framt_enable_demo_mode', false );
+        ?>
+        <div class="framt-settings-card">
+            <h2>Who gets in</h2>
+            <p class="lead"><?php echo $plugin ? esc_html( ucfirst( $plugin ) ) . ' is detected and active.' : 'No membership plugin detected; every signed-in user can open the portal.'; ?></p>
+            <ul class="framt-switch-list">
+                <li>
+                    <input type="checkbox" id="framt_portal_require_membership" name="framt_portal_require_membership" value="1" <?php checked( $require ); ?>>
+                    <label for="framt_portal_require_membership"><strong>Require an active membership</strong><span>Signed-in people without one are sent to the membership page. A partner invited from the Family plan passes on the account holder\'s membership.</span></label>
+                </li>
+                <li>
+                    <input type="checkbox" id="framt_enable_demo_mode" name="framt_enable_demo_mode" value="1" <?php checked( $demo ); ?>>
+                    <label for="framt_enable_demo_mode"><strong>Demo mode</strong><span style="color:#b32d2e;">Testing only: every signed-in user gets in regardless of membership.</span></label>
+                </li>
             </ul>
         </div>
 
         <div class="framt-settings-card">
-            <h2>Debug Information</h2>
+            <h2>Family add-on</h2>
+            <p class="lead">The $20 one-time MemberPress product for one partner and up to four children. Once its ID is set, only members who bought it can edit family files and invite a partner; everyone else sees the offer.</p>
+            <table class="form-table" style="margin-top:0;">
+                <tr>
+                    <th scope="row"><label for="framt_family_addon_product_id">Product ID</label></th>
+                    <td><input type="number" min="0" id="framt_family_addon_product_id" name="framt_family_addon_product_id" class="small-text" value="<?php echo esc_attr( (int) get_option( 'framt_family_addon_product_id', 0 ) ); ?>">
+                        <p class="description">0 keeps the feature open to every member.</p></td>
+                </tr>
+                <tr>
+                    <th scope="row"><label for="framt_family_addon_url">Checkout URL</label></th>
+                    <td><input type="url" id="framt_family_addon_url" name="framt_family_addon_url" class="regular-text" value="<?php echo esc_attr( get_option( 'framt_family_addon_url', '' ) ); ?>" placeholder="<?php echo esc_attr( home_url( '/register/family-add-on/' ) ); ?>">
+                        <p class="description">Where "Add the Family plan" sends members. Empty means the placeholder.</p></td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="framt-settings-card">
+            <h2>Welcome banner</h2>
+            <p class="lead">A dismissible note at the top of a new member\'s home. Once dismissed it does not come back for that member.</p>
+            <ul class="framt-switch-list">
+                <li>
+                    <input type="hidden" name="<?php echo self::OPTION_NAME; ?>[welcome_banner_enabled]" value="0">
+                    <input type="checkbox" id="welcome_banner_enabled" name="<?php echo self::OPTION_NAME; ?>[welcome_banner_enabled]" value="1" <?php checked( ! empty( $settings['welcome_banner_enabled'] ) ); ?>>
+                    <label for="welcome_banner_enabled"><strong>Show the banner to new members</strong></label>
+                </li>
+            </ul>
             <table class="form-table">
                 <tr>
-                    <th>Portal Template</th>
-                    <td><code>template-portal.php</code></td>
+                    <th scope="row"><label for="welcome_banner_title">Title</label></th>
+                    <td><input type="text" id="welcome_banner_title" class="regular-text" name="<?php echo self::OPTION_NAME; ?>[welcome_banner_title]" value="<?php echo esc_attr( $settings['welcome_banner_title'] ); ?>"></td>
                 </tr>
                 <tr>
-                    <th>React App</th>
-                    <td><code>/assets/portal/</code></td>
-                </tr>
-                <tr>
-                    <th>Settings Option</th>
-                    <td><code><?php echo self::OPTION_NAME; ?></code></td>
+                    <th scope="row"><label for="welcome_banner_message">Message</label></th>
+                    <td><textarea id="welcome_banner_message" class="large-text" rows="4" name="<?php echo self::OPTION_NAME; ?>[welcome_banner_message]"><?php echo esc_textarea( $settings['welcome_banner_message'] ); ?></textarea></td>
                 </tr>
             </table>
         </div>
         <?php
     }
+
 }
 
 // Initialize
