@@ -16,11 +16,11 @@
  * timeline, TLScontact and the validation topic, as verified September 2026.
  */
 import { US_STATES } from '@/config/profile';
-import type { ChecklistItem, FamilyMember, MemberProfile, Project, Task } from '@/types';
+import type { ChecklistItem, FamilyMember, MemberProfile, Project, StateFacts, Task } from '@/types';
 import { ARRIVAL_WINDOW_DAYS, stageForTask } from './journey';
 import type { JourneyStageId } from './journey';
 
-export type Route = 'visitor' | 'retiree' | 'employee' | 'talent_passport' | 'entrepreneur' | 'student' | 'spouse_french' | 'family' | 'undecided';
+export type Route = 'visitor' | 'retiree' | 'employee' | 'talent_passport' | 'entrepreneur' | 'student' | 'spouse_french' | 'family' | 'other' | 'undecided';
 
 export interface WalkContext {
   project: Pick<Project, 'target_move_date' | 'visa_type'>;
@@ -35,6 +35,8 @@ export interface WalkContext {
   /** The arrival checklist. */
   arrival: ChecklistItem[];
   members: Pick<FamilyMember, 'name' | 'relationship'>[];
+  /** From the dashboard: what the member's state changes. */
+  stateFacts?: StateFacts | null;
 }
 
 export interface Milestone {
@@ -99,7 +101,7 @@ function firstKnown(...states: (boolean | null)[]): boolean | null {
 
 export function routeOf(ctx: Pick<WalkContext, 'route' | 'project'>): Route {
   const r = (ctx.route || (ctx.project.visa_type as string) || '') as string;
-  const known: Route[] = ['visitor', 'retiree', 'employee', 'talent_passport', 'entrepreneur', 'student', 'spouse_french', 'family'];
+  const known: Route[] = ['visitor', 'retiree', 'employee', 'talent_passport', 'entrepreneur', 'student', 'spouse_french', 'family', 'other'];
   return (known as string[]).includes(r) ? (r as Route) : 'undecided';
 }
 
@@ -255,6 +257,17 @@ export function walkthroughFor(stage: JourneyStageId, ctx: WalkContext): Walkthr
           readyWhen = 'OFII approval is in hand. Only then do you apply for the visa at the consulate; issuance usually follows within two to four weeks.';
           break;
 
+        case 'other':
+          intro = [
+            'Intern, temporary or seasonal worker, posted employee, au pair: each of the narrower routes has its own document list, and it is not on file here yet. Run the France-Visas wizard with your real category and confirm the list with the consulate. The shared steps below still apply to every long-stay visa.',
+          ];
+          milestones = [
+            { title: 'The document list for your category', why: 'A tripartite internship agreement stamped by DREETS, a fixed-term contract with the employer’s work permit, a host-family agreement: the wizard and the consulate say which.', done: firstKnown(T(/document list for your category/i)) },
+            fbi, civil, apostille, translate, insurance, home, money,
+          ];
+          readyWhen = `The category’s own documents and every shared dossier line read Ready. Then Apply${applyMonth ? ` starts in ${applyMonth}` : ''}.`;
+          break;
+
         case 'retiree':
         case 'visitor':
         default: {
@@ -371,7 +384,16 @@ export function walkthroughFor(stage: JourneyStageId, ctx: WalkContext): Walkthr
         intro,
         milestones: [
           { title: 'The carte Vitale', why: 'Until it arrives, keep every receipt for reimbursement.', done: firstKnown(Tall(/carte vitale/i)) },
-          { title: 'The driving licence', why: 'Some US states exchange licences with France and some do not, and the window is your first year. Check yours early.', done: firstKnown(Tall(/driving licen/i)) },
+          {
+            title: 'The driving licence',
+            why: (() => {
+              const f = ctx.stateFacts;
+              if (f?.licence_exchange === 'yes') return `A ${f.name} licence can be exchanged for a French one${f.licence_classes && f.licence_classes !== 'all' ? ` (class ${f.licence_classes} only)` : ''}, online through ANTS, within your first year of residence. List as of ${f.verified}; confirm on service-public.fr before you file.`;
+              if (f?.licence_exchange === 'no') return `${f.name} has no exchange agreement with France as of ${f.verified}, so after a year of residence you would sit the French test, code and practical. Confirm on service-public.fr; the list changes.`;
+              return 'Some US states exchange licences with France and some do not, and the window is your first year. Set your current state in your profile and this line will say which.';
+            })(),
+            done: firstKnown(Tall(/driving licen/i)),
+          },
           { title: 'The first French tax return', why: 'Filed in spring for the previous calendar year, even when the treaty means little tax is due in France.', done: firstKnown(Tall(/tax return/i)) },
           renewal,
           { title: 'Schengen days, if you travel', why: 'As a French resident your days in France do not count. Days in other Schengen countries still do.', done: null },

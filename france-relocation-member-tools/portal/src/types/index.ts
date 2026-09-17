@@ -115,6 +115,8 @@ export interface DashboardData {
   welcome_banner: WelcomeBanner | null;
   household?: Household;
   professionals?: ProfessionalPrompt[];
+  /** What the member's US state changes; today, the driving-licence exchange. */
+  state_facts?: StateFacts;
   upcoming_tasks: Task[];
   overdue_tasks: Task[];
   recent_activity: Activity[];
@@ -379,7 +381,7 @@ export interface MemberProfile {
 export type ApplicantType = 'alone' | 'spouse' | 'spouse_kids' | 'kids_only';
 export type WorkStatus = 'employed' | 'self_employed' | 'retired' | 'not_working';
 export type PetType = 'no' | 'dogs' | 'cats' | 'both' | 'other';
-export type ProfileVisaType = 'undecided' | 'visitor' | 'talent_passport' | 'employee' | 'entrepreneur' | 'student' | 'family' | 'spouse_french' | 'retiree';
+export type ProfileVisaType = 'undecided' | 'visitor' | 'talent_passport' | 'employee' | 'entrepreneur' | 'student' | 'family' | 'spouse_french' | 'retiree' | 'other';
 export type WorkInFranceType = 'no' | 'yes_local' | 'yes_remote' | 'yes_self' | 'undecided';
 export type ApplicationLocation = 'us' | 'france';
 export type FinancialRange = 'under_50k' | '50k_100k' | '100k_200k' | '200k_500k' | 'over_500k';
@@ -1075,6 +1077,14 @@ export interface FamilyFeatureStatus {
 }
 
 /** When to bring in a professional, and why it applies to this member. */
+export interface StateFacts {
+  state: string;
+  name: string;
+  licence_exchange: 'yes' | 'no' | 'unknown';
+  licence_classes: string;
+  verified: string;
+}
+
 export interface ProfessionalPrompt {
   id: string;
   kind: 'tax' | 'law' | 'notaire' | 'accountant' | 'courtier';

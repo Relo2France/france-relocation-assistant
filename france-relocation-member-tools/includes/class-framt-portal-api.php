@@ -1481,6 +1481,7 @@ class FRAMT_Portal_API {
             'family'          => 'Family Reunification',
             'spouse_french'   => 'Spouse of French National',
             'retiree'         => 'Retiree Visa',
+            'other'           => 'Another long-stay route',
         );
 
         // Get welcome banner settings
@@ -1513,6 +1514,7 @@ class FRAMT_Portal_API {
             'welcome_banner'       => $welcome_banner,
             'household'            => $this->household_for_current_user(),
             'professionals'        => $this->get_professional_prompts( $user_id ),
+            'state_facts'          => $this->get_state_facts( $user_id ),
             'upcoming_tasks'       => array_map(
                 function( $task ) {
                     return $task->to_array();
@@ -7928,6 +7930,40 @@ Focus on practical advice while being careful not to state incorrect facts. When
     }
 
     /**
+     * What the member's US state changes.
+     *
+     * The one state-by-state fact the knowledge base holds today: whether a
+     * driving licence from that state can be exchanged for a French one, and
+     * for which classes (License Exchange topic, verified September 2026).
+     * Everything else that varies by state (apostille office, vital records,
+     * state tax domicile) is raised as a knowledge-base gap and is not
+     * invented here.
+     *
+     * @param int $user_id Member.
+     * @return array
+     */
+    private function get_state_facts( $user_id ) {
+        $code  = strtoupper( (string) get_user_meta( $user_id, 'fra_current_state', true ) );
+        $names = array( 'AL' => 'Alabama', 'AK' => 'Alaska', 'AZ' => 'Arizona', 'AR' => 'Arkansas', 'CA' => 'California', 'CO' => 'Colorado', 'CT' => 'Connecticut', 'DE' => 'Delaware', 'DC' => 'District of Columbia', 'FL' => 'Florida', 'GA' => 'Georgia', 'HI' => 'Hawaii', 'ID' => 'Idaho', 'IL' => 'Illinois', 'IN' => 'Indiana', 'IA' => 'Iowa', 'KS' => 'Kansas', 'KY' => 'Kentucky', 'LA' => 'Louisiana', 'ME' => 'Maine', 'MD' => 'Maryland', 'MA' => 'Massachusetts', 'MI' => 'Michigan', 'MN' => 'Minnesota', 'MS' => 'Mississippi', 'MO' => 'Missouri', 'MT' => 'Montana', 'NE' => 'Nebraska', 'NV' => 'Nevada', 'NH' => 'New Hampshire', 'NJ' => 'New Jersey', 'NM' => 'New Mexico', 'NY' => 'New York', 'NC' => 'North Carolina', 'ND' => 'North Dakota', 'OH' => 'Ohio', 'OK' => 'Oklahoma', 'OR' => 'Oregon', 'PA' => 'Pennsylvania', 'RI' => 'Rhode Island', 'SC' => 'South Carolina', 'SD' => 'South Dakota', 'TN' => 'Tennessee', 'TX' => 'Texas', 'UT' => 'Utah', 'VT' => 'Vermont', 'VA' => 'Virginia', 'WA' => 'Washington', 'WV' => 'West Virginia', 'WI' => 'Wisconsin', 'WY' => 'Wyoming' );
+        // Reciprocal licence-exchange states and the classes they transfer.
+        $exchange = array(
+            'IL' => 'all', 'IA' => 'all', 'MA' => 'all', 'MI' => 'all', 'NH' => 'all', 'SC' => 'all',
+            'CT' => 'A and B', 'FL' => 'A and B', 'PA' => 'A and B',
+            'AR' => 'B', 'CO' => 'B', 'DE' => 'B', 'MD' => 'B', 'OH' => 'B', 'OK' => 'B', 'TX' => 'B', 'VA' => 'B', 'WI' => 'B',
+        );
+        if ( '' === $code || ! isset( $names[ $code ] ) ) {
+            return array( 'state' => $code, 'name' => '', 'licence_exchange' => 'unknown', 'licence_classes' => '', 'verified' => 'September 2026' );
+        }
+        return array(
+            'state'           => $code,
+            'name'            => $names[ $code ],
+            'licence_exchange' => isset( $exchange[ $code ] ) ? 'yes' : 'no',
+            'licence_classes' => $exchange[ $code ] ?? '',
+            'verified'        => 'September 2026',
+        );
+    }
+
+    /**
      * When a member should bring in a professional, and which one.
      *
      * The portal holds hands through the process, and part of that is saying
@@ -8294,6 +8330,15 @@ Focus on practical advice while being careful not to state incorrect facts. When
                     $read_sticker,
                     $ofii_medical,
                     $t( 'Sign the integration contract (CIR) when convoked', 'A mandatory OFII medical visit and the signing of the integration contract, with civic and language training, follow arrival on this route.', 'arrive', 60, 'medium', 'appointment' ),
+                    $puma,
+                    $renewal,
+                );
+                break;
+
+            case 'other':
+                $route = array(
+                    $t( 'Confirm the document list for your category with the consulate', 'Intern, temporary worker, seasonal worker, posted employee (ICT), au pair and the other narrower categories each have their own list: a tripartite internship agreement stamped by DREETS, a fixed-term contract with the employer\'s work permit, a hosting family agreement. Run the France-Visas wizard with your real category and confirm the list with the consulate; the shared steps here still apply.', 'prepare', -150, 'high', 'task' ),
+                    $background_check,
                     $puma,
                     $renewal,
                 );

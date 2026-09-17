@@ -71,6 +71,7 @@ export const VISA_TYPES = [
   { value: 'family', label: 'Family Reunification', description: 'Joining family members in France' },
   { value: 'spouse_french', label: 'Spouse of French Citizen', description: 'Married to a French national' },
   { value: 'retiree', label: 'Retiree Visa', description: 'Retiring in France' },
+  { value: 'other', label: 'Another long-stay route', description: 'Intern, temporary worker, ICT, au pair or another category' },
 ] as const;
 
 // Financial resource ranges

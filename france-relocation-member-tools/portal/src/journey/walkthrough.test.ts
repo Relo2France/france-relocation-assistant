@@ -4,7 +4,7 @@ import { JOURNEY } from './journey';
 import { routeOf, walkthroughFor } from './walkthrough';
 import type { Route } from './walkthrough';
 
-const ROUTES: Route[] = ['visitor', 'retiree', 'employee', 'talent_passport', 'entrepreneur', 'student', 'spouse_french', 'family'];
+const ROUTES: Route[] = ['visitor', 'retiree', 'employee', 'talent_passport', 'entrepreneur', 'student', 'spouse_french', 'family', 'other'];
 const base = { project: { target_move_date: '2027-03-01', visa_type: 'visitor' as const }, tasks: [] as Task[], dossier: [], departure: [], arrival: [], members: [] };
 
 describe('every route has a walkthrough for every stage', () => {
@@ -43,6 +43,12 @@ describe('the route changes what Prepare says', () => {
     const w = walkthroughFor('prepare', { ...base, route: 'visitor', tasks });
     expect(w.milestones.find((m) => /Apostilles/.test(m.title))?.done).toBe(true);
     expect(w.milestones.find((m) => /FBI/.test(m.title))?.done).toBeNull();
+  });
+  it('tells the member whether their state exchanges licences', () => {
+    const yes = walkthroughFor('settle', { ...base, route: 'visitor', stateFacts: { state: 'MD', name: 'Maryland', licence_exchange: 'yes', licence_classes: 'B', verified: 'September 2026' } });
+    expect(yes.milestones.find((m) => /driving/.test(m.title))?.why).toMatch(/Maryland licence can be exchanged .*class B only/);
+    const no = walkthroughFor('settle', { ...base, route: 'visitor', stateFacts: { state: 'CA', name: 'California', licence_exchange: 'no', licence_classes: '', verified: 'September 2026' } });
+    expect(no.milestones.find((m) => /driving/.test(m.title))?.why).toMatch(/California has no exchange agreement/);
   });
   it('falls back to undecided for an unknown route', () => {
     expect(routeOf({ route: 'whatever', project: { target_move_date: null, visa_type: 'other' } })).toBe('undecided');

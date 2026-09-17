@@ -99,6 +99,7 @@ export default function Dashboard() {
     departure: departure?.items ?? [],
     arrival: arrival?.items ?? [],
     members,
+    stateFacts: data.state_facts ?? null,
   });
 
   const moveDateLabel = project.target_move_date
