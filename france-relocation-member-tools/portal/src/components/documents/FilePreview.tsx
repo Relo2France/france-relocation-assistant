@@ -18,7 +18,7 @@ import {
   X,
 } from 'lucide-react';
 import Modal from '@/components/shared/Modal';
-import { useDeleteFile, useDownloadFile, useRecogniseFile, useUpdateFile } from '@/hooks/useApi';
+import { useDeleteFile, useDownloadFile, useFiles, useRecogniseFile, useUpdateFile } from '@/hooks/useApi';
 import type { FileCategory, FileType, PortalFile } from '@/types';
 
 interface FilePreviewProps {
@@ -57,8 +57,12 @@ const categoryOptions: { value: FileCategory; label: string }[] = [
   { value: 'other', label: 'Other' },
 ];
 
-export default function FilePreview({ file, isOpen, onClose, projectId }: FilePreviewProps) {
+export default function FilePreview({ file: openedFile, isOpen, onClose, projectId }: FilePreviewProps) {
   const recognise = useRecogniseFile();
+  // The panel is opened with a snapshot; after a recognise or an edit the
+  // list refetches, so read the current row from it when it is there.
+  const { data: currentFiles } = useFiles(projectId);
+  const file = openedFile ? (currentFiles?.find((f) => f.id === openedFile.id) ?? openedFile) : null;
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editCategory, setEditCategory] = useState<FileCategory | null>(null);
@@ -139,14 +143,14 @@ export default function FilePreview({ file, isOpen, onClose, projectId }: FilePr
             {file.file_type === 'image' && file.preview_url ? (
               <img
                 src={file.preview_url}
-                alt={file.original_name}
+                alt={file.title || file.original_name}
                 className="max-w-full max-h-full object-contain rounded-lg shadow-sm"
               />
             ) : file.file_type === 'pdf' && file.preview_url ? (
               <iframe
                 src={file.preview_url}
                 className="w-full h-full rounded-lg border-0"
-                title={file.original_name}
+                title={file.title || file.original_name}
               />
             ) : (
               <div className="text-center">
@@ -171,8 +175,8 @@ export default function FilePreview({ file, isOpen, onClose, projectId }: FilePr
             <div className="p-4 border-b border-gray-200">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
-                  <h3 className="font-semibold text-gray-900 truncate" title={file.original_name}>
-                    {file.original_name}
+                  <h3 className="font-semibold text-gray-900 truncate" title={file.title || file.original_name}>
+                    {file.title || file.original_name}
                   </h3>
                   <p className="text-sm text-gray-500">{file.file_type_label}</p>
                 </div>
@@ -364,7 +368,7 @@ export default function FilePreview({ file, isOpen, onClose, projectId }: FilePr
         }
       >
         <p className="text-gray-600">
-          Are you sure you want to delete <strong>{file.original_name}</strong>? This action cannot be undone.
+          Are you sure you want to delete <strong>{file.title || file.original_name}</strong>? This action cannot be undone.
         </p>
       </Modal>
     </>
