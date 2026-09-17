@@ -1056,6 +1056,9 @@ For example, for Visitor Visa:
         $success = $this->apply_topic_update($review);
         
         if ($success) {
+            if (!empty($review['gap_id']) && class_exists('FRA_KB_Gaps')) {
+                FRA_KB_Gaps::mark_applied($review['gap_id']);
+            }
             unset($pending[$review_id]);
             update_option(self::PENDING_REVIEWS_OPTION, $pending);
             wp_send_json_success(array('message' => 'Update applied successfully'));
@@ -1171,6 +1174,9 @@ For example, for Visitor Visa:
         foreach ($pending as $review_id => $review) {
             if ($this->apply_topic_update($review)) {
                 $approved++;
+                if (!empty($review['gap_id']) && class_exists('FRA_KB_Gaps')) {
+                    FRA_KB_Gaps::mark_applied($review['gap_id']);
+                }
             }
         }
         

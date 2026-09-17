@@ -487,6 +487,67 @@ class FRA_KB_Gaps {
     }
 
     /**
+     * The draft was approved and applied: the gap is closed for good.
+     *
+     * @param string $id Gap id
+     * @return bool
+     */
+    public static function mark_applied($id) {
+        $gaps = get_option(self::GAPS_OPTION, array());
+        if (!isset($gaps[$id])) {
+            return false;
+        }
+        $gaps[$id]['status']     = 'applied';
+        $gaps[$id]['applied_at'] = current_time('mysql');
+        update_option(self::GAPS_OPTION, $gaps, false);
+        return true;
+    }
+
+    /**
+     * One-time repair. Before 3.13.10 a rejected draft left its gap marked
+     * drafted forever. A drafted gap whose review is no longer pending was
+     * either applied or rejected; the applied ones are told apart by their
+     * topic existing with content newer than the draft, the rest reopen.
+     *
+     * @return int Gaps reopened
+     */
+    public static function reconcile_drafted() {
+        if ('1' === get_option('fra_gaps_reconciled_v1')) {
+            return 0;
+        }
+        $gaps    = get_option(self::GAPS_OPTION, array());
+        $pending = get_option('fra_pending_reviews', array());
+        $kb      = get_option('fra_knowledge_base', array());
+        $reopened = 0;
+        foreach ($gaps as $id => $gap) {
+            if (($gap['status'] ?? '') !== 'drafted') {
+                continue;
+            }
+            $review_id = (string) ($gap['review_id'] ?? '');
+            if ('' !== $review_id && isset($pending[$review_id])) {
+                continue; // still waiting for a decision
+            }
+            $cat   = (string) ($gap['category'] ?? '');
+            $topic = (string) ($gap['topic'] ?? '');
+            $drafted_at = strtotime((string) ($gap['drafted_at'] ?? '')) ?: 0;
+            $updated_at = isset($kb[$cat][$topic]['last_updated']) ? (strtotime((string) $kb[$cat][$topic]['last_updated']) ?: 0) : 0;
+            if ('' !== $cat && '' !== $topic && isset($kb[$cat][$topic]) && $updated_at >= $drafted_at && $drafted_at > 0) {
+                $gaps[$id]['status'] = 'applied';
+                continue;
+            }
+            $gaps[$id]['status']         = 'open';
+            $gaps[$id]['last_error']     = 'Draft rejected before 3.13.10; reopened for a retry';
+            $gaps[$id]['last_failed_at'] = current_time('mysql');
+            $gaps[$id]['defer_count']    = (int) ($gaps[$id]['defer_count'] ?? 0) + 1;
+            unset($gaps[$id]['review_id'], $gaps[$id]['drafted_at']);
+            $reopened++;
+        }
+        update_option(self::GAPS_OPTION, $gaps, false);
+        update_option('fra_gaps_reconciled_v1', '1', false);
+        return $reopened;
+    }
+
+    /**
      * A draft was rejected in the review queue: the gap is still a gap, so it
      * goes back to open and waits a day before it is drafted again.
      *
@@ -513,6 +574,7 @@ class FRA_KB_Gaps {
      * @return array
      */
     public static function get_ready() {
+        self::reconcile_drafted();
         $ready = array();
 
         foreach (self::get_all('open') as $id => $gap) {
