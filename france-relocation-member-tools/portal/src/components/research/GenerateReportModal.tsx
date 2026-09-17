@@ -267,8 +267,8 @@ export default function GenerateReportModal({
               <p className="text-sm text-gray-500 mt-3" aria-live="polite">
                 Now on: {REPORT_SECTIONS[Math.min(REPORT_SECTIONS.length - 1, Math.floor(elapsed / 25))]}
               </p>
-              <p className="text-xs text-gray-400 mt-4">
-                You can close this and come back; the report keeps writing and will be here when it is done.
+              <p className="text-sm text-gray-600 mt-4 max-w-[40ch] mx-auto">
+                You can close this. The report keeps writing, lands in <strong>Documents &amp; files</strong> when it is done, and we email you to say so.
               </p>
             </div>
           )}
@@ -323,7 +323,7 @@ export default function GenerateReportModal({
 
               {/* Actions */}
               {autoSaved ? (
-                <p className="text-sm text-gray-600 mb-3">Saved to <strong>Documents &amp; files</strong>. Open it there any time, or remove it if you don’t want to keep it. Reports for the same place are kept and reused for thirty days, so asking again later costs nothing until you choose to refresh.</p>
+                <p className="text-sm text-gray-600 mb-3">It is in <strong>Documents &amp; files</strong>. Open it there any time, or remove it if you don’t want to keep it. Reports for the same place are kept and reused for thirty days, so asking again later costs nothing until you choose to refresh.</p>
               ) : null}
               <div className="space-y-3">
                 <button

@@ -206,7 +206,55 @@ class FRA_Review_API {
             array('%d')
         );
 
+        if (!isset($stored['status'])) {
+            $this->notify_report_requesters($id);
+        }
+
         return rest_ensure_response(array('stored' => isset($stored['status']) ? 'failed' : 'content', 'id' => $id));
+    }
+
+    /**
+     * Email and message every member who asked for this report in the last
+     * day. The link row in their documents was created when they asked.
+     *
+     * @param int $report_id Report row.
+     * @return void
+     */
+    private function notify_report_requesters($report_id) {
+        global $wpdb;
+        $report = $wpdb->get_row($wpdb->prepare("SELECT location_name, location_type FROM {$wpdb->prefix}framt_research_reports WHERE id = %d", $report_id), ARRAY_A);
+        if (!$report) {
+            return;
+        }
+        $users = $wpdb->get_col($wpdb->prepare(
+            "SELECT user_id FROM {$wpdb->prefix}framt_research_report_links WHERE report_id = %d AND saved_at > %s",
+            $report_id,
+            gmdate('Y-m-d H:i:s', time() - DAY_IN_SECONDS)
+        ));
+        if (empty($users)) {
+            return;
+        }
+        $name       = (string) $report['location_name'];
+        $portal     = home_url('/portal/?view=documents');
+        $messages   = function_exists('framt') && framt() ? framt()->get_component('messages') : null;
+        $admins     = get_users(array('role' => 'administrator', 'number' => 1, 'fields' => 'ID'));
+        $admin_id   = !empty($admins) ? (int) $admins[0] : 1;
+        $body_md    = "Your report on **{$name}** is written and waiting in Documents & files. Open it there, download it as a PDF, or remove it if you don't want to keep it.\n\nReports are kept and reused for thirty days, so asking for {$name} again soon costs nothing; after that you can refresh it.";
+
+        foreach (array_unique(array_map('intval', $users)) as $user_id) {
+            $user = get_userdata($user_id);
+            if (!$user) {
+                continue;
+            }
+            if ($messages && method_exists($messages, 'create_admin_message')) {
+                // create_admin_message emails the member itself, in the site's layout.
+                $messages->create_admin_message($user_id, "Your {$name} report is ready", $body_md, $admin_id);
+            } elseif (class_exists('FRAMT_Messages')) {
+                $first = $user->first_name ?: strtok($user->display_name, ' ');
+                $html  = FRAMT_Messages::render_email("Your {$name} report is ready", 'Hello ' . $first . ',', FRAMT_Messages::markdown_to_html($body_md), 'Open Documents & files', $portal);
+                FRAMT_Messages::send_html($user->user_email, "Your {$name} report is ready", $html);
+            }
+        }
     }
 
     /**

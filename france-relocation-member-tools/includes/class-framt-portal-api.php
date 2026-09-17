@@ -8374,6 +8374,10 @@ Focus on practical advice while being careful not to state incorrect facts. When
             return new WP_Error( 'report_worker_unavailable', $started->get_error_message(), array( 'status' => 502 ) );
         }
 
+        // In the member's documents from the start, so it is there whether or
+        // not they wait, and so the finished report knows whom to tell.
+        $this->save_report_link_to_documents( $report_id, $this->acting_user_id() );
+
         $report_data['id'] = $report_id;
         return rest_ensure_response( array(
             'success'    => true,
