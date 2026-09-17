@@ -139,7 +139,7 @@ export const guides: GuideDoc[] = [
       {
         heading: 'Documents every application needs',
         paragraphs: [
-          'This is the physical file every applicant hands over at the biometric appointment. Two habits keep it out of trouble: start on the slow items first, because an apostille or a sworn translation takes weeks while a photo takes an afternoon, and keep everything inside the submission window, since a statement or a certificate that has aged past three months is asked for again. The list is the same for every category; the category then adds its own items on top, covered in the next section.',
+          'This is the physical file every applicant hands over at the biometric appointment. Two habits keep it out of trouble: start on the slow items first, because an FBI check or an apostille takes weeks while a photo takes an afternoon, and keep everything inside the submission window, since a statement or a certificate that has aged past three months is asked for again. The list is the same for every category; the category then adds its own items on top, covered in the next section.',
         ],
         requirements: [
           'US passport issued within the last {{10 years}}, valid at least {{3 months}} beyond your stay — {{6+ months}} is strongly recommended as a buffer for onward Schengen travel',
@@ -150,7 +150,7 @@ export const guides: GuideDoc[] = [
           'A biometric appointment, completed at a VFS Global centre',
         ],
         caveat:
-          'Submit no earlier than {{3 months}} and no later than {{15 days}} before travel. Most English-language documents need a certified translation by a sworn translator ({{traducteur assermenté}}).',
+          'Submit no earlier than {{3 months}} and no later than {{15 days}} before travel. US consulates take English-language documents as they are; sworn translations ({{traducteur assermenté}}) come after arrival, for the prefecture and CPAM.',
       },
       {
         heading: 'Documents only some categories need',
@@ -170,12 +170,12 @@ export const guides: GuideDoc[] = [
       {
         heading: 'What it actually costs',
         paragraphs: [
-          'The visa fee itself is the smallest line. What adds up is everything the file has to carry: an apostille for each certificate, a sworn translation for each English document, the FBI check, and the service and biometric fees at the visa centre. Budget per document rather than per application, and add the optional extras only if you need them. The note below gives realistic totals for one applicant and for a family.',
+          'The visa fee itself is the smallest line. What adds up is everything the file has to carry: an apostille for each certificate, the FBI check, the service and biometric fees at the visa centre, and, after arrival, a sworn translation of each certificate for the prefecture. Budget per document rather than per application, and add the optional extras only if you need them. The note below gives realistic totals for one applicant and for a family.',
         ],
         requirements: [
           'Visa fee: {{€99}} long-stay, {{€50}} student, {{€90}} short-stay',
           'VFS Global or TLScontact service fee: {{$52–68}}, plus biometric enrolment at about {{$35}}',
-          'Apostille: {{$38–75}} per document. Certified translation: {{$50–125}} per page',
+          'Apostille: {{$38–75}} per document. Sworn translation, after arrival: {{$50–125}} per page',
           'FBI background check: {{$18}} when applying from the US',
           'Optional extras — priority booking, courier return, SMS updates — add {{$22–120}}',
         ],
@@ -233,7 +233,7 @@ export const guides: GuideDoc[] = [
           'Basic travel or Schengen cover will not do. You need comprehensive private health insurance running the full visa duration, with at least {{€30,000}} of medical cover, repatriation, and — the condition people miss — no exclusion for pre-existing conditions.',
         ],
         requirements: [
-          'Birth certificate with apostille and a certified French translation',
+          'Birth certificate with apostille (the translation comes after arrival, for the prefecture and CPAM)',
           'A clean criminal background check — the FBI Identity History Summary for US citizens',
           'The signed {{attestation sur l’honneur}} promising not to work in France',
         ],
@@ -756,13 +756,13 @@ export const guides: GuideDoc[] = [
       {
         heading: 'What you’ll need',
         paragraphs: [
-          'Your part of the file is the nine items below, most of which you can gather while the employer’s authorisation is pending. The apostilled background check and the certified translations of your diplomas are the slow ones; start them first.',
+          'Your part of the file is the nine items below, most of which you can gather while the employer’s authorisation is pending. The apostilled background check and the diplomas are the slow ones; start them first. Translations are not needed for the consulate.',
         ],
         requirements: [
           'Passport valid {{6+ months}} beyond your stay',
           'Signed work contract or a detailed job offer letter',
           'The employer’s work authorisation approval from DREETS via ANEF',
-          'Proof of qualifications — diplomas with certified translations',
+          'Proof of qualifications — diplomas, in English, apostilled where the checklist asks',
           'Proof of accommodation in France',
           'Health insurance cover',
           'Proof of financial means',
@@ -1071,7 +1071,7 @@ export const guides: GuideDoc[] = [
     when: '6 months out',
     summary: 'The FBI check sets the pace',
     description:
-      'A working timeline for a French long-stay visa from the US: lead times for the FBI check, apostilles and translations, when to book the consulate, and what the official processing times really say.',
+      'A working timeline for a French long-stay visa from the US: lead times for the FBI check, certified copies and apostilles, when to book the consulate, and what the official processing times really say.',
     verified: '2026-09',
     sourceCount: 1,
     sources: [{ label: 'france-visas.gouv.fr', kind: 'official' }],
