@@ -176,7 +176,10 @@ export default function PersonalSection({ profile }: PersonalSectionProps) {
             value={formData.passport_expiry}
             onChange={handleChange}
             className={inputClass}
+            min={new Date().toISOString().slice(0, 10)}
+            aria-describedby="passport_expiry_hint"
           />
+          <p id="passport_expiry_hint" className="mt-1 text-sm text-gray-500">The consulate wants six months beyond your move; the dossier checks this date.</p>
         </div>
       </div>
 

@@ -3476,6 +3476,15 @@ class FRAMT_Portal_API {
             return new WP_Error( 'invalid_move_date', 'The move date must be a calendar date (YYYY-MM-DD).', array( 'status' => 400 ) );
         }
 
+        // A passport expiry has to be a date, and one still in the future: a
+        // typo like 1931 would otherwise flag the dossier and date nothing right.
+        if ( array_key_exists( 'passport_expiry', $params ) && '' !== (string) $params['passport_expiry'] && null !== $params['passport_expiry'] ) {
+            $exp = (string) $params['passport_expiry'];
+            if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $exp ) || $exp < gmdate( 'Y-m-d' ) ) {
+                return new WP_Error( 'invalid_passport_expiry', 'The passport expiry must be a calendar date (YYYY-MM-DD) in the future. Check the year.', array( 'status' => 400 ) );
+            }
+        }
+
         // Update each field if provided. Only genuine counts are stored as
         // numbers; a passport number or a postcode keeps its leading zeros.
         // A null or empty value clears the field.
