@@ -252,7 +252,7 @@ export function groupByLeadTime(tasks: Task[], now = new Date()): { label: strin
   const byDue = (a: Task, b: Task) => (a.due_date ?? '').localeCompare(b.due_date ?? '');
   return [
     { label: 'Start now', tasks: soon.sort(byDue) },
-    { label: 'Then', tasks: later.sort(byDue) },
+    { label: soon.length ? 'Then' : 'In order', tasks: later.sort(byDue) },
     { label: 'When you get to it', tasks: undated },
     { label: 'Done', tasks: done },
   ].filter((g) => g.tasks.length > 0);

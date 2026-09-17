@@ -199,13 +199,13 @@ export default function KnowledgeBaseChat() {
           </button>
           <MessageSquare className="w-6 h-6 text-primary-600" />
           <div>
-            <h1 className="text-xl font-bold text-gray-900">Knowledge Base Chat</h1>
+            <h1 className="font-display text-xl font-semibold text-gray-900">Ask about my case</h1>
             <p className="text-sm text-gray-600">
               {selectedCategory
                 ? `Asking about ${
                     categories?.find((c) => c.id === selectedCategory)?.title || selectedCategory
                   }`
-                : 'Ask anything about relocating to France'}
+                : 'Answers against your file and the knowledge base'}
             </p>
           </div>
         </div>
@@ -580,13 +580,13 @@ function EmptyState({ onSelectQuestion }: EmptyStateProps) {
       <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center">
         <MessageSquare className="w-8 h-8 text-white" />
       </div>
-      <h2 className="text-2xl font-bold text-gray-900 mb-3">
-        Welcome to Knowledge Base Chat
+      <h2 className="font-display text-2xl font-semibold text-gray-900 mb-3">
+        Ask about your move
       </h2>
       <p className="text-gray-600 mb-8 max-w-2xl mx-auto">
-        Ask me anything about relocating to France! I can help with visas, healthcare, taxes,
-        property, driving, banking, and more. Get answers based on our comprehensive knowledge
-        base and real-world insights.
+        The assistant knows your file: your route, your dates, who is moving. Answers come from the
+        knowledge base, built from official sources and re-checked weekly, and say where each one
+        comes from. It does not give tax or legal advice; where a step needs a professional, it says so.
       </p>
 
       <div className="mb-6">
@@ -607,14 +607,14 @@ function EmptyState({ onSelectQuestion }: EmptyStateProps) {
         </div>
       </div>
 
-      <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg text-left max-w-xl mx-auto">
+      <div className="p-4 bg-primary-100/60 rounded-lg text-left max-w-xl mx-auto">
         <div className="flex items-start gap-3">
-          <Lightbulb className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+          <Lightbulb className="w-5 h-5 text-primary-500 flex-shrink-0 mt-0.5" aria-hidden="true" />
           <div>
-            <h4 className="font-medium text-blue-900 mb-1">Pro Tip</h4>
-            <p className="text-sm text-blue-700">
-              Toggle &quot;Include real-world insights&quot; to get practical advice from people who have
-              actually gone through the relocation process, not just official requirements.
+            <h4 className="font-medium text-ink mb-1">Two kinds of answer</h4>
+            <p className="text-sm text-gray-600">
+              The official requirement always comes first. Turn on &quot;Include real-world insights&quot; to
+              add what people who made the move report: waits, quirks, what a consulate actually asked for.
             </p>
           </div>
         </div>

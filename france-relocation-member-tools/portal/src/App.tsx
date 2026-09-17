@@ -9,7 +9,9 @@ import { useCurrentUser } from '@/hooks/useApi';
 import { usePortalStore } from '@/store';
 
 // Views that should auto-collapse the sidebar for more content space
-const IMMERSIVE_VIEWS = ['chat', 'research', 'schengen', 'guides'];
+// No view collapses the rail on its own: it is the map, and a member who wants
+// it out of the way has the Collapse button.
+const IMMERSIVE_VIEWS: string[] = [];
 
 // Lazy load all other views for better initial bundle size
 const TasksView = lazy(() => import('@/components/tasks/TasksView'));

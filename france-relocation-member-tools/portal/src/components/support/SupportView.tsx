@@ -73,7 +73,8 @@ function TicketList({
   onViewTicket: (id: number) => void;
 }) {
   const { data, isLoading } = useSupportTickets();
-  const tickets = data?.tickets || [];
+  // Site-originated threads (reports ready, welcome) belong to Messages.
+  const tickets = (data?.tickets || []).filter((t) => !t.from_site);
 
   return (
     <>

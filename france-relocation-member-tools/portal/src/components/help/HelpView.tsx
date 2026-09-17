@@ -1,439 +1,134 @@
+/**
+ * HelpView
+ *
+ * How the portal works, in the member's terms: what each part is for, the
+ * questions people actually ask, where to write to us, and the official
+ * sites every step points at. No system status, no filler.
+ */
 import { useState } from 'react';
 import { clsx } from 'clsx';
-import {
-  AlertCircle,
-  Book,
-  Briefcase,
-  CheckCircle,
-  ChevronDown,
-  ChevronRight,
-  Clock,
-  ExternalLink,
-  FileText,
-  GraduationCap,
-  HelpCircle,
-  Home,
-  Mail,
-  MessageCircle,
-  Plane,
-} from 'lucide-react';
+import { ChevronDown, ChevronUp, ExternalLink, MessageSquare } from 'lucide-react';
+import { JOURNEY } from '@/journey/journey';
+import { usePortalStore } from '@/store';
 
-interface FAQItem {
-  question: string;
-  answer: string;
-  category: string;
-}
-
-const faqData: FAQItem[] = [
-  // Getting Started
-  {
-    category: 'Getting Started',
-    question: 'How do I start my relocation journey?',
-    answer: 'Begin by completing your profile with accurate information about your situation, including your visa type, target move date, and family details. Our system will then generate a personalized task list and timeline based on your specific circumstances.',
-  },
-  {
-    category: 'Getting Started',
-    question: 'What visa type should I choose?',
-    answer: 'The visa type depends on your purpose for moving to France. Common options include: VLS-TS Visiteur (for retirees/passive income), Passeport Talent (for entrepreneurs/skilled workers), Student Visa (for education), and Family Visa (for joining French citizens/residents). Use our AI assistant for personalized guidance.',
-  },
-  {
-    category: 'Getting Started',
-    question: 'How long does the relocation process typically take?',
-    answer: 'The timeline varies based on your visa type and personal situation. Generally, expect 3-6 months from initial application to arrival in France. Long-stay visa processing typically takes 2-8 weeks. Our timeline feature helps you track each step.',
-  },
-  // Documents
-  {
-    category: 'Documents',
-    question: 'What documents do I need for my visa application?',
-    answer: 'Required documents vary by visa type but typically include: valid passport, passport photos, proof of accommodation, proof of income/financial resources, health insurance, and a completed application form. Check your personalized task list for specific requirements.',
-  },
-  {
-    category: 'Documents',
-    question: 'Do my documents need to be translated?',
-    answer: 'Yes, most documents must be translated into French by a certified/sworn translator (traducteur assermenté). Some documents may also require apostille certification. We can help generate cover letters and provide translator recommendations.',
-  },
-  {
-    category: 'Documents',
-    question: 'How do I get an apostille for my documents?',
-    answer: 'Apostilles authenticate documents for international use. In the US, contact your state\'s Secretary of State office. In the UK, use the Foreign, Commonwealth & Development Office. Processing typically takes 1-4 weeks.',
-  },
-  // Tasks & Progress
-  {
-    category: 'Tasks & Progress',
-    question: 'How do I mark a task as complete?',
-    answer: 'Click on any task to open its details, then use the status dropdown to change it to "Done". You can also drag and drop tasks between columns in the Kanban view. Completed tasks are automatically logged in your timeline.',
-  },
-  {
-    category: 'Tasks & Progress',
-    question: 'Can I add my own custom tasks?',
-    answer: 'Yes! Click the "Add Task" button in the Tasks view to create custom tasks. You can set due dates, priorities, and assign them to specific stages of your relocation journey.',
-  },
-  {
-    category: 'Tasks & Progress',
-    question: 'What happens if I miss a deadline?',
-    answer: 'Overdue tasks are highlighted in red on your dashboard and task list. While missing internal deadlines won\'t directly affect your application, we recommend staying on schedule. Official government deadlines (like visa appointments) should never be missed.',
-  },
-  // Account & Membership
-  {
-    category: 'Account',
-    question: 'How do I upgrade my membership?',
-    answer: 'Visit the Membership page from the main menu or your account settings. Choose from our available plans and complete the checkout process. Upgrades take effect immediately.',
-  },
-  {
-    category: 'Account',
-    question: 'Can I share my account with family members?',
-    answer: 'Each account is for individual use, but our Family plan allows you to add family members to your relocation project. This lets everyone track their own tasks while staying coordinated.',
-  },
-  {
-    category: 'Account',
-    question: 'How do I export my data?',
-    answer: 'You can download your documents from the Documents section. For a complete data export including tasks and notes, please contact our support team.',
-  },
+const PARTS: { title: string; body: string; view: string; label: string }[] = [
+  { title: 'Where you are', body: 'Your home page. The road across the top, the current stage told in plain words with the order it goes in, and the next few dated steps. It changes as your file does.', view: 'dashboard', label: 'Open' },
+  { title: 'The six stages', body: `${JOURNEY.map((s) => s.name).join(', ')}. Each stage page lists its steps in order, its guides, and when to bring in a professional. Steps are dated back from your move date, so change the date and the plan moves with it.`, view: 'stage', label: 'Open the current stage' },
+  { title: 'Steps and how-tos', body: 'Every generated step opens with "How to do this": the order, where to go with the official link, what to bring, how long and what it costs. Tick a step done and the walkthrough on your home page ticks with it.', view: 'tasks', label: 'All steps' },
+  { title: 'Documents & files', body: 'Upload a document and the portal recognises it, checks it against the requirement (passport validity, statement age, apostille), and ticks the dossier line it satisfies. Your Explore France reports are kept here too.', view: 'documents', label: 'Open' },
+  { title: 'Checklists', body: 'The document lists for each stage. "Ready" means the document is on file or you said you handled it yourself; the dossier count on your home page comes from here.', view: 'checklists', label: 'Open' },
+  { title: 'Family plans', body: 'One file per person. Add your partner and children, hand steps to your partner, or give them their own sign-in to complete their part. Their steps sit on the same calendar as yours.', view: 'family', label: 'Open' },
+  { title: 'Deadlines', body: 'Every dated step across all six stages, overdue first, then month by month.', view: 'deadlines', label: 'Open' },
+  { title: 'Ask about my case', body: 'Questions answered against your own file and the knowledge base, which is built from official sources and re-checked weekly. Turn on real-world insights to see what people who made the move report.', view: 'chat', label: 'Ask' },
+  { title: 'Explore France', body: 'Compare a region, department or town with the rest of France and generate a report on the place you are considering. Reports land in Documents and are updated, not duplicated, when you ask again.', view: 'research', label: 'Open' },
+  { title: 'Messages and Support', body: 'Messages is what the site and the team send you, plus the alerts your own file raises. Support is what you send us. They are different doors on purpose.', view: 'messages', label: 'Messages' },
 ];
 
-const resourceLinks = [
-  {
-    title: 'France-Visas Official Portal',
-    description: 'Official French government visa application website',
-    url: 'https://france-visas.gouv.fr',
-    icon: Plane,
-  },
-  {
-    title: 'Service-Public.fr',
-    description: 'Official guide to French administrative procedures',
-    url: 'https://www.service-public.fr',
-    icon: FileText,
-  },
-  {
-    title: 'CAF (Family Allowances)',
-    description: 'Information about French family benefits',
-    url: 'https://www.caf.fr',
-    icon: Home,
-  },
-  {
-    title: 'URSSAF (Social Security)',
-    description: 'French social security contributions for workers',
-    url: 'https://www.urssaf.fr',
-    icon: Briefcase,
-  },
-  {
-    title: 'Campus France',
-    description: 'Resource for students planning to study in France',
-    url: 'https://www.campusfrance.org',
-    icon: GraduationCap,
-  },
+const FAQ: { q: string; a: string }[] = [
+  { q: 'Why does my stage say "Prepare" when I have five months to go?', a: 'The stages are worked out from your move date, not from what you have ticked. You are preparing until four months out, applying until the last month, moving in that month, arriving for ninety days, then settling. Open any stage from the sidebar whenever you like.' },
+  { q: 'I changed my move date. What happens?', a: 'Every generated step is re-dated from the new date at once. Steps you wrote yourself keep their dates. The stage you are in may change too.' },
+  { q: 'I changed my visa route. What happens?', a: 'The old route\'s steps still to do are removed, the new route\'s steps are added, and the dossier list changes to match. Steps you have done are kept.' },
+  { q: 'What does "Ready" mean on the dossier?', a: 'The document is on file and passed its check, or you ticked "I handled this myself". "Waiting" means it is in progress; "Not started" means nothing is on file yet.' },
+  { q: 'Do I need French translations for the application?', a: 'Not for the first application: consulates in the US take English documents. Sworn translations are for the prefecture at renewal and for CPAM, so that step sits after arrival.' },
+  { q: 'Why are some steps in my file marked for my partner?', a: 'Each adult applies separately and the partner\'s documents are theirs. Steps carry a person; the filter chips on each stage show yours, theirs, or the children\'s. Hand a step over from Family plans.' },
+  { q: 'Where did my Explore France report go?', a: 'Into Documents & files, under Saved reports. Open it there, download it as a PDF, or remove it. Asking again for the same place updates the report rather than making a second one.' },
+  { q: 'When should I bring in a professional?', a: 'The portal says so on the stage it applies to, with the reason from your profile: a cross-border tax professional before the year you move for every US citizen, a notaire if you are buying, an immigration lawyer if the consulate refuses. It never gives tax or legal advice itself.' },
+  { q: 'Can I add my own steps?', a: 'Yes, from any stage page or the steps list. Your own steps are never re-dated or removed by the plan.' },
+  { q: 'How do I get a refund?', a: 'Write to Support within thirty days of joining and say so. No questions.' },
 ];
 
-const quickGuides = [
-  {
-    title: 'Visa Application Checklist',
-    description: 'Step-by-step guide for preparing your visa documents',
-    time: '10 min read',
-  },
-  {
-    title: 'Opening a French Bank Account',
-    description: 'Options and requirements for banking in France',
-    time: '8 min read',
-  },
-  {
-    title: 'Finding Housing in France',
-    description: 'Tips for apartment hunting and rental requirements',
-    time: '12 min read',
-  },
-  {
-    title: 'French Healthcare System',
-    description: 'Understanding CPAM, mutuelle, and medical care',
-    time: '15 min read',
-  },
+const OFFICIAL: { label: string; url: string; note: string }[] = [
+  { label: 'France-Visas', url: 'https://france-visas.gouv.fr/', note: 'The application, the wizard and the document list for your route.' },
+  { label: 'TLScontact', url: 'https://visas-fr.tlscontact.com/', note: 'The appointment, at any of ten US centres.' },
+  { label: 'ANEF', url: 'https://administration-etrangers-en-france.interieur.gouv.fr/', note: 'Validate the visa after arrival; renewals.' },
+  { label: 'service-public.fr', url: 'https://www.service-public.fr/', note: 'The official guide to every French procedure.' },
+  { label: 'ameli.fr', url: 'https://www.ameli.fr/', note: 'Health cover and the carte Vitale.' },
+  { label: 'ANTS', url: 'https://permisdeconduire.ants.gouv.fr/', note: 'Exchanging a driving licence.' },
+  { label: 'Where to write for vital records (CDC)', url: 'https://www.cdc.gov/nchs/w2w/index.htm', note: 'Certified copies of US birth and marriage records, by state.' },
+  { label: 'Apostille offices by state (NASS)', url: 'https://www.nass.org/can-I-help-you/apostilles-document-authentication', note: 'Who apostilles what, and the fee.' },
 ];
 
 export default function HelpView() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [expandedCategories, setExpandedCategories] = useState<string[]>(['Getting Started']);
-  const [expandedQuestions, setExpandedQuestions] = useState<string[]>([]);
+  const { setActiveView, setActiveStage } = usePortalStore();
+  const [open, setOpen] = useState<number | null>(0);
 
-  // Group FAQ by category
-  const categories = [...new Set(faqData.map((item) => item.category))];
-
-  // Filter FAQ based on search
-  const filteredFaq = searchQuery
-    ? faqData.filter(
-        (item) =>
-          item.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          item.answer.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : faqData;
-
-  const toggleCategory = (category: string) => {
-    setExpandedCategories((prev) =>
-      prev.includes(category)
-        ? prev.filter((c) => c !== category)
-        : [...prev, category]
-    );
-  };
-
-  const toggleQuestion = (question: string) => {
-    setExpandedQuestions((prev) =>
-      prev.includes(question)
-        ? prev.filter((q) => q !== question)
-        : [...prev, question]
-    );
+  const go = (view: string) => {
+    if (view === 'stage') setActiveStage('prepare');
+    setActiveView(view);
   };
 
   return (
-    <div className="p-6">
-      {/* Page header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Help & Support</h1>
-        <p className="text-gray-600 mt-1">
-          Find answers, guides, and resources for your relocation journey
-        </p>
-      </div>
+    <div className="p-6 md:p-8 flex flex-col gap-8">
+      <header className="flex flex-col gap-1">
+        <span className="eyebrow">Help</span>
+        <h1 className="font-display text-[1.6rem] font-semibold tracking-[-0.018em] leading-tight m-0">How the portal works</h1>
+        <p className="text-gray-600 m-0 max-w-[60ch]">What each part is for, the questions people ask, and where to write to us.</p>
+      </header>
 
-      {/* Search */}
-      <div className="mb-8">
-        <div className="relative max-w-xl">
-          <HelpCircle className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search for help..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* FAQ Section - Main column */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* FAQ */}
-          <div className="card p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <MessageCircle className="w-5 h-5 text-primary-600" />
-              Frequently Asked Questions
-            </h2>
-
-            {searchQuery ? (
-              // Search results
-              <div className="space-y-3">
-                {filteredFaq.length === 0 ? (
-                  <p className="text-gray-500 text-center py-8">
-                    No results found for &quot;{searchQuery}&quot;
-                  </p>
-                ) : (
-                  filteredFaq.map((item) => (
-                    <FAQAccordion
-                      key={item.question}
-                      item={item}
-                      isExpanded={expandedQuestions.includes(item.question)}
-                      onToggle={() => toggleQuestion(item.question)}
-                      showCategory
-                    />
-                  ))
-                )}
-              </div>
-            ) : (
-              // Categorized FAQ
-              <div className="space-y-4">
-                {categories.map((category) => {
-                  const categoryItems = faqData.filter((item) => item.category === category);
-                  const isExpanded = expandedCategories.includes(category);
-
-                  return (
-                    <div key={category} className="border border-gray-200 rounded-lg overflow-hidden">
-                      <button
-                        onClick={() => toggleCategory(category)}
-                        className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors"
-                      >
-                        <span className="font-medium text-gray-900">{category}</span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm text-gray-500">
-                            {categoryItems.length} questions
-                          </span>
-                          {isExpanded ? (
-                            <ChevronDown className="w-5 h-5 text-gray-400" />
-                          ) : (
-                            <ChevronRight className="w-5 h-5 text-gray-400" />
-                          )}
-                        </div>
-                      </button>
-
-                      {isExpanded && (
-                        <div className="p-3 space-y-2">
-                          {categoryItems.map((item) => (
-                            <FAQAccordion
-                              key={item.question}
-                              item={item}
-                              isExpanded={expandedQuestions.includes(item.question)}
-                              onToggle={() => toggleQuestion(item.question)}
-                            />
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* Quick Guides */}
-          <div className="card p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <Book className="w-5 h-5 text-primary-600" />
-              Quick Guides
-            </h2>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {quickGuides.map((guide) => (
-                <div
-                  key={guide.title}
-                  className="p-4 border border-gray-200 rounded-lg hover:border-primary-300 hover:bg-primary-50/50 transition-colors cursor-pointer"
-                >
-                  <h3 className="font-medium text-gray-900 mb-1">{guide.title}</h3>
-                  <p className="text-sm text-gray-600 mb-2">{guide.description}</p>
-                  <div className="flex items-center gap-1 text-xs text-gray-500">
-                    <Clock className="w-3 h-3" />
-                    {guide.time}
-                  </div>
-                </div>
+      <div className="grid lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 flex flex-col gap-8">
+          <section aria-labelledby="parts-title" className="flex flex-col gap-3">
+            <h2 id="parts-title" className="font-display text-[1.2rem] font-semibold m-0">The parts</h2>
+            <ul className="list-none m-0 p-0 grid sm:grid-cols-2 gap-3">
+              {PARTS.map((p) => (
+                <li key={p.title} className="card p-4 flex flex-col gap-1.5">
+                  <span className="font-semibold text-[0.95rem]">{p.title}</span>
+                  <span className="text-[0.85rem] text-gray-600 leading-snug">{p.body}</span>
+                  <button onClick={() => go(p.view)} className="self-start text-sm font-semibold text-primary-500 hover:text-primary-700 mt-1">{p.label} →</button>
+                </li>
               ))}
-            </div>
-          </div>
-        </div>
+            </ul>
+          </section>
 
-        {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Contact Support */}
-          <div className="card p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <Mail className="w-5 h-5 text-primary-600" />
-              Contact Support
-            </h2>
-
-            <div className="space-y-4">
-              <p className="text-sm text-gray-600">
-                Can&apos;t find what you&apos;re looking for? Our support team is here to help.
-              </p>
-
-              <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                <div className="flex items-center gap-2 text-green-700 mb-1">
-                  <CheckCircle className="w-4 h-4" />
-                  <span className="font-medium text-sm">AI Assistant Available</span>
-                </div>
-                <p className="text-sm text-green-600">
-                  Use our AI chat for instant answers about French visas and relocation.
-                </p>
-              </div>
-
-              <a
-                href="mailto:support@relo2france.com"
-                className="btn btn-primary w-full flex items-center justify-center gap-2"
-              >
-                <Mail className="w-4 h-4" />
-                Email Support
-              </a>
-
-              <div className="flex items-start gap-2 text-sm text-gray-500">
-                <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                <span>Response time: Usually within 24 hours</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Useful Links */}
-          <div className="card p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <ExternalLink className="w-5 h-5 text-primary-600" />
-              Official Resources
-            </h2>
-
-            <div className="space-y-3">
-              {resourceLinks.map((link) => {
-                const Icon = link.icon;
+          <section aria-labelledby="faq-title" className="flex flex-col gap-3">
+            <h2 id="faq-title" className="font-display text-[1.2rem] font-semibold m-0">Questions people ask</h2>
+            <ul className="list-none m-0 p-0 card divide-y divide-rule-soft">
+              {FAQ.map((f, i) => {
+                const isOpen = open === i;
                 return (
-                  <a
-                    key={link.title}
-                    href={link.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors group"
-                  >
-                    <div className="p-2 bg-gray-100 rounded-lg group-hover:bg-primary-100 transition-colors">
-                      <Icon className="w-4 h-4 text-gray-600 group-hover:text-primary-600" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1">
-                        <span className="font-medium text-gray-900 text-sm">
-                          {link.title}
-                        </span>
-                        <ExternalLink className="w-3 h-3 text-gray-400" />
-                      </div>
-                      <p className="text-xs text-gray-500 truncate">
-                        {link.description}
-                      </p>
-                    </div>
-                  </a>
+                  <li key={f.q}>
+                    <button
+                      onClick={() => setOpen(isOpen ? null : i)}
+                      className="w-full flex items-start justify-between gap-4 px-5 py-3.5 text-left hover:bg-card-2 transition-colors"
+                      aria-expanded={isOpen}
+                    >
+                      <span className={clsx('text-[0.95rem]', isOpen ? 'font-semibold' : 'font-medium')}>{f.q}</span>
+                      {isOpen ? <ChevronUp className="w-4 h-4 text-gray-400 flex-shrink-0 mt-1" aria-hidden="true" /> : <ChevronDown className="w-4 h-4 text-gray-400 flex-shrink-0 mt-1" aria-hidden="true" />}
+                    </button>
+                    {isOpen ? <p className="px-5 pb-4 m-0 text-[0.9rem] text-gray-600 leading-relaxed max-w-[64ch]">{f.a}</p> : null}
+                  </li>
                 );
               })}
-            </div>
-          </div>
+            </ul>
+          </section>
+        </div>
 
-          {/* Status */}
-          <div className="card p-6 bg-gradient-to-br from-primary-50 to-primary-100 border-primary-200">
-            <h3 className="font-semibold text-primary-900 mb-2">System Status</h3>
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-              <span className="text-sm text-primary-700">All systems operational</span>
+        <div className="flex flex-col gap-5">
+          <section className="card p-5 flex flex-col gap-3" aria-labelledby="contact-title">
+            <h2 id="contact-title" className="font-display text-[1.1rem] font-semibold m-0">Write to us</h2>
+            <p className="text-[0.9rem] text-gray-600 m-0 leading-snug">Membership, the site, or something on a page that looks wrong. We answer within a day. For questions about your own move, ask the assistant; it knows your file.</p>
+            <div className="flex flex-wrap gap-2">
+              <button onClick={() => setActiveView('support')} className="btn btn-primary gap-1.5"><MessageSquare className="w-4 h-4" aria-hidden="true" /> Write to Support</button>
+              <button onClick={() => setActiveView('chat')} className="btn btn-secondary">Ask about my case</button>
             </div>
-          </div>
+            <p className="text-[0.8rem] text-gray-500 m-0 leading-snug">We are not lawyers or tax advisers. Where a step needs one, the portal says so and why.</p>
+          </section>
+
+          <section className="card p-5 flex flex-col gap-3" aria-labelledby="official-title">
+            <h2 id="official-title" className="font-display text-[1.1rem] font-semibold m-0">The official sites</h2>
+            <ul className="list-none m-0 p-0 flex flex-col divide-y divide-rule-soft">
+              {OFFICIAL.map((o) => (
+                <li key={o.url} className="py-2.5 flex flex-col gap-0.5">
+                  <a href={o.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-[0.9rem] font-semibold text-primary-500 hover:text-primary-700">
+                    {o.label} <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
+                  </a>
+                  <span className="text-[0.8rem] text-gray-500 leading-snug">{o.note}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
         </div>
       </div>
-    </div>
-  );
-}
-
-interface FAQAccordionProps {
-  item: FAQItem;
-  isExpanded: boolean;
-  onToggle: () => void;
-  showCategory?: boolean;
-}
-
-function FAQAccordion({ item, isExpanded, onToggle, showCategory }: FAQAccordionProps) {
-  return (
-    <div className={clsx(
-      'border rounded-lg overflow-hidden',
-      isExpanded ? 'border-primary-200 bg-primary-50/30' : 'border-gray-200'
-    )}>
-      <button
-        onClick={onToggle}
-        className="w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-gray-50 transition-colors"
-      >
-        {isExpanded ? (
-          <ChevronDown className="w-5 h-5 text-primary-600 flex-shrink-0 mt-0.5" />
-        ) : (
-          <ChevronRight className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
-        )}
-        <div className="flex-1">
-          {showCategory && (
-            <span className="text-xs text-primary-600 font-medium">{item.category}</span>
-          )}
-          <span className={clsx(
-            'block font-medium',
-            isExpanded ? 'text-primary-900' : 'text-gray-900'
-          )}>
-            {item.question}
-          </span>
-        </div>
-      </button>
-
-      {isExpanded && (
-        <div className="px-4 pb-4 pl-12">
-          <p className="text-sm text-gray-600 leading-relaxed">{item.answer}</p>
-        </div>
-      )}
     </div>
   );
 }

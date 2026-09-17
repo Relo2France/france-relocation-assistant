@@ -180,7 +180,7 @@ export const guides: GuideDoc[] = [
           'Optional extras — priority booking, courier return, SMS updates — add {{$22–120}}',
         ],
         caveat:
-          'Realistic totals: {{$500–850}} for one long-stay applicant, {{$1,400–2,100}} for a family of four. The visa fee is the small part; apostilles and sworn translations are what add up, and both take time as well as money.',
+          'Realistic totals: {{$500–850}} for one long-stay applicant, {{$1,400–2,100}} for a family of four. The visa fee is the small part; the FBI check, the apostilles and, after arrival, the sworn translations are what add up, and all take time as well as money.',
       },
     ],
     practice: {
@@ -1086,13 +1086,13 @@ export const guides: GuideDoc[] = [
       {
         heading: 'Lead times that catch people out',
         paragraphs: [
-          'The consulate’s own processing time is the short part. The long part is the paperwork that has to exist before you can book: the FBI check, the apostilles, the sworn translations. The seven lead times below are the ones that decide whether your timeline holds, and the first one is the one to start today.',
+          'The consulate’s own processing time is the short part. The long part is the paperwork that has to exist before you can book: the FBI check, the certified copies, the apostilles. Translations come later, for the prefecture, not the consulate. The seven lead times below are the ones that decide whether your timeline holds, and the first one is the one to start today.',
         ],
         requirements: [
           'FBI background check: {{10–14 weeks}} by mail direct from the FBI, versus roughly {{3–7 business days}} through an FBI-approved channeler — use the channeler',
           'State apostilles: {{1–2 weeks}} in most states; some offer {{24–48 hour}} expedited service, others by mail can run {{4+ weeks}}',
           'Birth and marriage certificate apostilles: {{1–3 weeks}}, with the same variability',
-          'Certified French translations by a sworn translator ({{traducteur assermenté}}) for most official English-language documents',
+          'Sworn French translations ({{traducteur assermenté}}): not for the application, which US consulates take in English, but for the prefecture and CPAM after arrival; {{1–2 weeks}} per batch',
           'Official stamped bank statements: allow {{1–2 weeks}}',
           'Academic transcripts and diploma authentication: {{2–3 weeks}}, longer if the institution is slow',
           'Medical examinations, where your category requires one: {{1–2 weeks}} for an appointment',
