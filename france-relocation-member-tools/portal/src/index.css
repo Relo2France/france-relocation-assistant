@@ -61,6 +61,14 @@
 
 /* Custom component styles */
 @layer components {
+  /* A figure someone would check twice: highlighted like a marker, not set as code. */
+  .fig {
+    background: linear-gradient(transparent 58%, #e7efea 58%);
+    color: inherit;
+    padding: 0 0.12em;
+    border-radius: 2px;
+  }
+
   /* Sidebar styles */
   .sidebar {
     @apply fixed left-0 top-0 h-screen bg-sidebar-bg text-sidebar-text transition-all duration-300 z-40;

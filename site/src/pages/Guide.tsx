@@ -1,5 +1,5 @@
 import {
-  Caveat, Figure, PersonalLead, PersonalNext, PracticeNote, Requirement, Requirements,
+  Caveat, Figure, PersonalLead, PersonalNext, PracticeNote, Requirement, Requirements, TERM_ITEM, Term, TermList,
   SiteNav, SourceChip,
 } from '../components';
 import type { GuideDoc } from '../content/guides';
@@ -42,18 +42,27 @@ export function Guide({ guide }: { guide: GuideDoc }) {
           <PersonalLead topic={guide.title.toLowerCase()} />
           {guide.sections.map((section) => (
             <section key={section.heading}>
-              <h2 className="font-display text-[1.1rem] mt-[26px] first:mt-0 mb-2 pb-[7px] border-b border-rule-soft">
+              <h2 className="font-display text-[1.3rem] leading-[1.25] tracking-[-0.015em] mt-9 first:mt-0 mb-3">
                 {section.heading}
               </h2>
               {section.paragraphs?.map((p) => (
                 <p key={p} className="mb-[14px]">{withFigures(p)}</p>
               ))}
               {section.requirements ? (
-                <Requirements>
-                  {section.requirements.map((r) => (
-                    <Requirement key={r}>{withFigures(r)}</Requirement>
-                  ))}
-                </Requirements>
+                section.requirements.every((r) => TERM_ITEM.test(r)) ? (
+                  <TermList>
+                    {section.requirements.map((r) => {
+                      const m = TERM_ITEM.exec(r)!;
+                      return <Term key={r} term={m[1]} official={m[2]?.slice(1, -1)}>{withFigures(m[3])}</Term>;
+                    })}
+                  </TermList>
+                ) : (
+                  <Requirements>
+                    {section.requirements.map((r) => (
+                      <Requirement key={r}>{withFigures(r)}</Requirement>
+                    ))}
+                  </Requirements>
+                )
               ) : null}
               {section.caveat ? <Caveat>{withFigures(section.caveat)}</Caveat> : null}
             </section>

@@ -16,11 +16,14 @@ import { useCurrentUser, useDashboard, useMemberProfile } from '@/hooks/useApi';
 import { JOURNEY, timeToGo } from '@/journey/journey';
 import { usePortalStore } from '@/store';
 
+/** A requirement shaped "{{Term}} (official) — meaning" becomes a term row. */
+const TERM_ITEM = /^\{\{([^}]+)\}\}\s*(\([^)]*\))?\s*—\s*([\s\S]*)$/;
+
 /** {{...}} marks a number someone would check twice. */
 function withFigures(text: string) {
   return text.split(/(\{\{[^}]+\}\})/g).map((part, i) =>
     part.startsWith('{{') ? (
-      <span key={i} className="font-mono font-semibold text-[0.92em] bg-primary-100 text-ink px-[5px] py-px rounded-[3px]">{part.slice(2, -2)}</span>
+      <mark key={i} className="fig font-bold text-inherit">{part.slice(2, -2)}</mark>
     ) : (
       <Jargon key={i} text={part} />
     )
@@ -106,24 +109,46 @@ export default function GuideView() {
 
           {guide.sections.map((section) => (
             <section key={section.heading}>
-              <h3 className="font-display text-[1.15rem] font-semibold mt-7 first:mt-0 mb-2 pb-2 border-b border-rule-soft">{section.heading}</h3>
-              {section.paragraphs?.map((para) => <p key={para} className="mb-3.5">{withFigures(para)}</p>)}
+              <h3 className="font-display text-[1.3rem] font-semibold leading-[1.25] tracking-[-0.015em] mt-9 first:mt-0 mb-3">{section.heading}</h3>
+              {section.paragraphs?.map((para) => <p key={para} className="mb-[0.95rem]">{withFigures(para)}</p>)}
               {section.requirements ? (
-                <ul className="list-none m-0 mb-3.5 p-0 flex flex-col">
-                  {section.requirements.map((r) => (
-                    <li key={r} className="flex gap-3 py-2 border-b border-rule-soft last:border-b-0">
-                      <span aria-hidden="true" className="w-[5px] h-[5px] mt-[11px] bg-primary-500 flex-none" />
-                      <span>{withFigures(r)}</span>
-                    </li>
-                  ))}
-                </ul>
+                section.requirements.every((r) => TERM_ITEM.test(r)) ? (
+                  <dl className="mt-2 mb-5 grid gap-[14px]">
+                    {section.requirements.map((r) => {
+                      const m = TERM_ITEM.exec(r)!;
+                      return (
+                        <div key={r} className="grid sm:grid-cols-[11rem_minmax(0,1fr)] gap-x-[18px] gap-y-1 items-baseline">
+                          <dt className="font-sans text-[0.95rem] font-bold leading-[1.35] text-primary-500 m-0">
+                            {m[1]}
+                            {m[2] ? <span className="block font-mono font-normal text-[0.74rem] text-gray-500 mt-[2px]">{m[2].slice(1, -1)}</span> : null}
+                          </dt>
+                          <dd className="m-0 text-[1rem]">{withFigures(m[3])}</dd>
+                        </div>
+                      );
+                    })}
+                  </dl>
+                ) : (
+                  <ul className="list-none mt-1 mb-5 p-0 flex flex-col gap-[10px]">
+                    {section.requirements.map((r) => (
+                      <li key={r} className="flex gap-3 text-[1rem]">
+                        <span aria-hidden="true" className="w-[7px] h-[7px] mt-[0.7em] rounded-full bg-primary-500 flex-none" />
+                        <span>{withFigures(r)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )
               ) : null}
-              {section.caveat ? <p className="text-[0.93rem] text-gray-600 border-l-2 border-rule pl-3.5">{withFigures(section.caveat)}</p> : null}
+              {section.caveat ? (
+                <aside className="mt-1 mb-6 px-[18px] py-[14px] bg-card-2 border-l-2 border-rule rounded-r-[8px] font-sans text-[0.92rem] leading-[1.55]">
+                  <span className="eyebrow block">Worth knowing</span>
+                  <p className="mt-[6px] mb-0">{withFigures(section.caveat)}</p>
+                </aside>
+              ) : null}
             </section>
           ))}
 
           {guide.practice ? (
-            <aside className="mt-7 bg-accent-100 rounded-lg px-5 py-4 font-sans">
+            <aside className="mt-8 bg-accent-100 border-l-2 border-accent-500 rounded-r-[10px] px-5 py-4 font-sans">
               <span className="eyebrow text-accent-500 block mb-2">What people actually experience</span>
               <div className="text-[0.93rem] leading-relaxed [&>p]:mb-2 [&>p:last-child]:mb-0">
                 {guide.practice.paragraphs.map((para) => <p key={para}>{para}</p>)}

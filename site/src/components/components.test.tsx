@@ -49,9 +49,12 @@ describe('the official / anecdotal distinction', () => {
 });
 
 describe('Figure', () => {
-  it('sets numbers people will check twice in mono', () => {
+  it('highlights numbers people will check twice, without setting them as code', () => {
     const { container } = render(<Figure>€1,478/month</Figure>);
-    expect(container.firstElementChild!.className).toContain('font-mono');
+    const el = container.firstElementChild!;
+    expect(el.tagName).toBe('MARK');
+    expect(el.className).toContain('fig');
+    expect(el.className).not.toContain('font-mono');
   });
 });
 
