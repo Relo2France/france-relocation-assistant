@@ -16,7 +16,7 @@
  * Plugin Name: France Relocation GitHub Sync
  * Plugin URI:  https://relo2france.com
  * Description: Custom GitHub sync solution - automatically updates plugins from GitHub without requiring WP Pusher. Includes diagnostics, version tracking, local backups, and detailed logging.
- * Version:     2.3.0
+ * Version:     2.3.1
  * Author:      Relo2France
  * Author URI:  https://relo2france.com
  * License:     GPL v2 or later
@@ -68,7 +68,7 @@ class FRA_GitHub_Sync {
      * @since 1.0.0
      * @var string
      */
-    const VERSION = '2.3.0';
+    const VERSION = '2.3.1';
 
     /**
      * Backup folder name within uploads directory.
@@ -104,10 +104,6 @@ class FRA_GitHub_Sync {
         'france-relocation-github-sync' => array(
             'file' => 'france-relocation-github-sync/france-relocation-github-sync.php',
             'name' => 'France Relocation GitHub Sync',
-        ),
-        'relo2france-schengen-tracker' => array(
-            'file' => 'relo2france-schengen-tracker/relo2france-schengen-tracker.php',
-            'name' => 'Relo2France Schengen Tracker',
         ),
         'mytravelstatus' => array(
             'file' => 'mytravelstatus/mytravelstatus.php',

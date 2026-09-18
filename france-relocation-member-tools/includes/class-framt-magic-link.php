@@ -105,11 +105,12 @@ class FRAMT_Magic_Link {
             wp_safe_redirect( add_query_arg( 'signed_out', '1', home_url( '/portal/' ) ) );
             exit;
         }
-        // The Schengen tracker page is drawn by an older plugin whose own
-        // sign-in box points at wp-login.php; send signed-out visitors to the
-        // portal card, and back to the tracker once signed in.
-        if ( ! is_user_logged_in() && is_page( 'my-travel-status' ) ) {
-            wp_safe_redirect( add_query_arg( 'redirect_to', rawurlencode( home_url( '/my-travel-status/' ) ), home_url( '/portal/' ) ) );
+        // The Schengen tracker lives in the portal ("Schengen days"). The old
+        // /my-travel-status/ page belonged to a retired plugin; send everyone
+        // there, signing in first when needed.
+        if ( is_page( 'my-travel-status' ) ) {
+            $tracker = add_query_arg( 'view', 'schengen', home_url( '/portal/' ) );
+            wp_safe_redirect( is_user_logged_in() ? $tracker : add_query_arg( 'redirect_to', rawurlencode( $tracker ), home_url( '/portal/' ) ) );
             exit;
         }
         if ( ! is_user_logged_in() && is_page( 'account' ) ) {
