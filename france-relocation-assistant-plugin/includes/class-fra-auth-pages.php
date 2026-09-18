@@ -262,6 +262,8 @@ class FRA_Auth_Pages {
             margin: 0 0 6px 0 !important;
         }
 
+        .fra-auth-magic { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--rule, #dde3de); }
+        .fra-auth-magic-title { margin: 0 0 10px; font-size: 14px; color: var(--muted, #5f6e66); text-align: center; }
         .fra-auth-form-wrap label {
             display: block !important;
             font-family: var(--font-ui, Karla, Arial, sans-serif) !important;
@@ -835,9 +837,19 @@ class FRA_Auth_Pages {
                     <p><?php echo esc_html($subtitle); ?></p>
                 </div>
                 
+                <?php if (isset($_GET['link']) && 'expired' === $_GET['link']) : // phpcs:ignore WordPress.Security.NonceVerification ?>
+                    <p class="fra-auth-error" role="alert">That sign-in link has expired or was already used. Ask for a new one below, or sign in with your password.</p>
+                <?php endif; ?>
                 <div class="fra-auth-form-wrap">
                     <?php echo shortcode_exists('mepr-login-form') ? do_shortcode('[mepr-login-form]') : wp_login_form(array('echo' => false, 'redirect' => home_url('/portal/'))); ?>
                 </div>
+
+                <?php if (class_exists('FRAMT_Magic_Link')) : ?>
+                    <div class="fra-auth-form-wrap fra-auth-magic">
+                        <p class="fra-auth-magic-title">Or sign in without a password</p>
+                        <?php echo FRAMT_Magic_Link::form_html(); // phpcs:ignore WordPress.Security.EscapeOutput -- built and escaped in the class. ?>
+                    </div>
+                <?php endif; ?>
                 
                 <div class="fra-auth-card-footer">
                     <a href="<?php echo esc_url(wp_lostpassword_url()); ?>">Forgot your password?</a>

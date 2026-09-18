@@ -324,6 +324,7 @@ final class FRA_Member_Tools {
             'includes/class-framt-messages.php',
             'includes/class-framt-member-notices.php',
             'includes/class-framt-member-emails.php',
+            'includes/class-framt-magic-link.php',
             'includes/class-framt-main-plugin-bridge.php',
             // Portal v2.0 classes
             'includes/class-framt-portal-schema.php',
@@ -373,6 +374,7 @@ final class FRA_Member_Tools {
             'ai_verification' => 'FRAMT_AI_Verification',
             'member_notices' => 'FRAMT_Member_Notices',
             'member_emails' => 'FRAMT_Member_Emails',
+            'magic_link' => 'FRAMT_Magic_Link',
         );
 
         foreach ($component_classes as $key => $class) {

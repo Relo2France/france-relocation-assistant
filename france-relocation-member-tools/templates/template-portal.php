@@ -348,6 +348,22 @@ $react_settings = array(
             max-width: 420px;
         }
 
+        .portal-login-divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 24px 0 16px;
+            color: #6b7280;
+            font-family: 'Karla', 'Helvetica Neue', Arial, sans-serif;
+            font-size: 13px;
+        }
+        .portal-login-divider::before,
+        .portal-login-divider::after {
+            content: '';
+            flex: 1;
+            border-top: 1px solid #e5e7eb;
+        }
+
         .portal-login-wordmark {
             display: block;
             text-align: center;
@@ -584,6 +600,9 @@ $react_settings = array(
                 <p class="portal-login-subtitle">Sign in to access your member portal</p>
 
                 <div id="portal-login-error" class="portal-login-error" style="display: none;"></div>
+                <?php if ( isset( $_GET['link'] ) && 'expired' === $_GET['link'] ) : // phpcs:ignore WordPress.Security.NonceVerification ?>
+                    <div class="portal-login-error">That sign-in link has expired or was already used. Ask for a new one below, or sign in with your password.</div>
+                <?php endif; ?>
 
                 <form id="portal-login-form" class="portal-login-form" method="post">
                     <div class="portal-form-group">
@@ -616,6 +635,11 @@ $react_settings = array(
 
                     <?php wp_nonce_field( 'portal_login_nonce', 'portal_nonce' ); ?>
                 </form>
+
+                <?php if ( class_exists( 'FRAMT_Magic_Link' ) ) : ?>
+                    <div class="portal-login-divider"><span>or, without a password</span></div>
+                    <?php echo FRAMT_Magic_Link::form_html(); // phpcs:ignore WordPress.Security.EscapeOutput -- built and escaped in the class. ?>
+                <?php endif; ?>
 
                 <?php
                 // Check if registration is enabled
