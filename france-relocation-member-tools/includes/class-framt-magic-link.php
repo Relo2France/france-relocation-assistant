@@ -46,9 +46,28 @@ class FRAMT_Magic_Link {
         // Signing out ends on the portal's card, worded for it. MemberPress
         // applies its own after-logout URL late on this filter; ours runs after.
         add_filter( 'logout_redirect', array( $this, 'logout_redirect' ), PHP_INT_MAX, 3 );
+        // MemberPress's after-logout setting redirects from inside wp_logout
+        // and exits, before logout_redirect is ever applied. Go first.
+        add_action( 'wp_logout', array( $this, 'redirect_on_logout' ), -1000 );
         // One sign-in screen: /login/, /logged-out/ and a signed-out
         // /account/ all forward to the portal's card.
         add_action( 'template_redirect', array( $this, 'account_needs_sign_in' ), 1 );
+    }
+
+    /**
+     * At sign-out, if the link asked for the portal card, go there now. The
+     * session and cookies are already cleared when wp_logout fires.
+     */
+    public function redirect_on_logout() {
+        $requested = isset( $_REQUEST['redirect_to'] ) ? esc_url_raw( wp_unslash( $_REQUEST['redirect_to'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification
+        if ( '' === $requested ) {
+            return;
+        }
+        $target = $this->logout_redirect( '', $requested );
+        if ( '' !== $target ) {
+            wp_safe_redirect( $target );
+            exit;
+        }
     }
 
     /**
