@@ -17,6 +17,7 @@ import {
   Globe,
   HelpCircle,
   LifeBuoy,
+  LogOut,
   Mail,
   MessageSquare,
   Settings,
@@ -26,6 +27,7 @@ import {
 import { useDashboard, useSupportTickets, useTasks } from '@/hooks/useApi';
 import { JOURNEY, type JourneyStage, currentStage, progressFor, timeToGo } from '@/journey/journey';
 import { usePortalStore } from '@/store';
+import { signOutUrl } from '@/utils/signOut';
 
 function StageRing({ state }: { state: 'done' | 'now' | 'ahead' }) {
   if (state === 'done') {
@@ -231,6 +233,17 @@ export default function Sidebar() {
                 </li>
               );
             })}
+            <li>
+              <a
+                href={signOutUrl()}
+                className={clsx('nav-item w-full py-1.5', collapsed && 'justify-center px-2')}
+                title={collapsed ? 'Sign out' : undefined}
+                aria-label={collapsed ? 'Sign out' : undefined}
+              >
+                <LogOut className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
+                {!collapsed && <span className="text-[0.85rem]">Sign out</span>}
+              </a>
+            </li>
           </ul>
         </div>
       </nav>

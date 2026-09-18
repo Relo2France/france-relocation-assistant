@@ -536,7 +536,9 @@ $react_settings = array(
                 userId: <?php echo (int) get_current_user_id(); ?>,
                 siteUrl: '<?php echo esc_url( home_url() ); ?>',
                 pluginUrl: '<?php echo esc_url( FRAMT_PLUGIN_URL ); ?>',
-                isAdmin: <?php echo current_user_can( 'manage_options' ) ? 'true' : 'false'; ?>
+                isAdmin: <?php echo current_user_can( 'manage_options' ) ? 'true' : 'false'; ?>,
+                // Nonced by WordPress; signs out and returns to the home page.
+                logoutUrl: '<?php echo esc_url_raw( wp_logout_url( home_url( '/' ) ) ); ?>'
             };
         </script>
 

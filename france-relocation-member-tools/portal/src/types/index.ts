@@ -1852,6 +1852,8 @@ declare global {
       siteUrl: string;
       pluginUrl: string;
       isAdmin: boolean;
+      /** WordPress's nonced sign-out link, back to the home page. */
+      logoutUrl?: string;
     };
     PORTAL_SETTINGS?: PortalSettings;
     PORTAL_USER?: PortalUser;

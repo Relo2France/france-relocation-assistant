@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { AlertTriangle, Bell, CheckCircle, Info, Mail, Menu, Scale, User, X } from 'lucide-react';
+import { AlertTriangle, Bell, CheckCircle, ChevronDown, Info, LogOut, Mail, Menu, Scale, Settings, User, X } from 'lucide-react';
 import { buildFileAlerts, useDismissedAlerts } from '@/alerts/alerts';
 import { useCurrentUser, useDashboard, useSupportTickets, useTasks } from '@/hooks/useApi';
 import { usePortalStore } from '@/store';
 import type { Task } from '@/types';
+import { signOutUrl } from '@/utils/signOut';
 
 const viewTitles: Record<string, string> = {
   dashboard: 'Where you are',
@@ -35,6 +36,8 @@ export default function Header() {
   const [showNotifications, setShowNotifications] = useState(false);
   const { isDismissed, dismiss, refresh } = useDismissedAlerts();
   const notificationRef = useRef<HTMLDivElement>(null);
+  const [showAccount, setShowAccount] = useState(false);
+  const accountRef = useRef<HTMLDivElement>(null);
 
   const title = viewTitles[activeView] || 'Where you are';
 
@@ -44,11 +47,19 @@ export default function Header() {
       if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
         setShowNotifications(false);
       }
+      if (accountRef.current && !accountRef.current.contains(event.target as Node)) {
+        setShowAccount(false);
+      }
     };
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setShowAccount(false);
+    };
+    document.addEventListener('keydown', handleEscape);
     document.addEventListener('mousedown', handleClickOutside);
     window.addEventListener('framt:alerts-changed', refresh);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
       window.removeEventListener('framt:alerts-changed', refresh);
     };
   }, [refresh]);
@@ -168,27 +179,44 @@ export default function Header() {
           )}
         </div>
 
-        {/* User menu */}
-        <div className="flex items-center gap-3 pl-4 border-l border-gray-200">
-          {user?.avatar_url ? (
-            <img
-              src={user.avatar_url}
-              alt={user.display_name}
-              className="w-8 h-8 rounded-full"
-            />
-          ) : (
-            <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
-              <User className="w-4 h-4 text-gray-500" />
+        {/* Account menu: profile, settings, sign out */}
+        <div ref={accountRef} className="relative pl-4 border-l border-gray-200">
+          <button
+            type="button"
+            onClick={() => setShowAccount(!showAccount)}
+            className="flex items-center gap-3 rounded-lg py-1 pr-1 hover:bg-gray-50 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-500"
+            aria-haspopup="menu"
+            aria-expanded={showAccount}
+            aria-controls="account-menu"
+            aria-label="Account menu"
+          >
+            {user?.avatar_url ? (
+              <img src={user.avatar_url} alt="" className="w-8 h-8 rounded-full" />
+            ) : (
+              <span className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                <User className="w-4 h-4 text-gray-500" aria-hidden="true" />
+              </span>
+            )}
+            <span className="hidden sm:block text-left">
+              <span className="block font-sans text-sm font-medium text-ink">{user?.display_name || 'Loading...'}</span>
+              <span className="block text-xs text-gray-500">{user?.is_member ? 'Member' : 'Free'}</span>
+            </span>
+            <ChevronDown className="w-4 h-4 text-gray-400" aria-hidden="true" />
+          </button>
+          {showAccount ? (
+            <div id="account-menu" role="menu" className="absolute right-0 mt-2 w-56 bg-card border border-rule rounded-lg shadow-lg z-50 py-1">
+              <button role="menuitem" type="button" className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-ink hover:bg-card-2" onClick={() => { setShowAccount(false); setActiveView('profile'); }}>
+                <User className="w-4 h-4 text-gray-500" aria-hidden="true" /> Profile
+              </button>
+              <button role="menuitem" type="button" className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-ink hover:bg-card-2" onClick={() => { setShowAccount(false); setActiveView('settings'); }}>
+                <Settings className="w-4 h-4 text-gray-500" aria-hidden="true" /> Settings
+              </button>
+              <div className="my-1 border-t border-rule" />
+              <a role="menuitem" href={signOutUrl()} className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-semibold text-ink hover:bg-card-2">
+                <LogOut className="w-4 h-4 text-gray-500" aria-hidden="true" /> Sign out
+              </a>
             </div>
-          )}
-          <div className="hidden sm:block">
-            <p className="font-sans text-sm font-medium text-ink">
-              {user?.display_name || 'Loading...'}
-            </p>
-            <p className="text-xs text-gray-500">
-              {user?.is_member ? 'Member' : 'Free'}
-            </p>
-          </div>
+          ) : null}
         </div>
       </div>
     </header>
