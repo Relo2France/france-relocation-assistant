@@ -66,10 +66,12 @@ export default defineConfig({
         manualChunks: {
           // Vendor chunks - rarely change, cached longer
           'vendor-react': ['react', 'react-dom'],
-          'vendor-router': [],
           'vendor-query': ['@tanstack/react-query'],
           'vendor-virtual': ['@tanstack/react-virtual'],
           'vendor-utils': ['clsx', 'zustand'],
+          // Icons in one file. Split per icon, the portal waited on dozens of
+          // tiny requests that WordPress.com serves one after another.
+          'vendor-icons': ['lucide-react'],
         },
       },
     },

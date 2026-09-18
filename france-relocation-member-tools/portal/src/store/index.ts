@@ -88,6 +88,9 @@ interface PortalState {
   sidebarCollapsed: boolean;
   toggleSidebar: () => void;
   setSidebarCollapsed: (collapsed: boolean) => void;
+  /** Phones: the rail slides in over the page. */
+  mobileNavOpen: boolean;
+  setMobileNavOpen: (open: boolean) => void;
 
   // Track if sidebar was manually expanded (to restore after auto-collapse)
   sidebarManuallyExpanded: boolean;
@@ -173,6 +176,8 @@ export const usePortalStore = create<PortalState>((set, get) => {
         };
       }),
     setSidebarCollapsed: (sidebarCollapsed) => set({ sidebarCollapsed }),
+    mobileNavOpen: false,
+    setMobileNavOpen: (mobileNavOpen) => set({ mobileNavOpen }),
 
     // Track if sidebar was manually expanded (to restore after auto-collapse)
     sidebarManuallyExpanded: !initialSettings.layout.sidebarCollapsed,
@@ -180,7 +185,8 @@ export const usePortalStore = create<PortalState>((set, get) => {
 
     // Active view - initialized from URL ?view= parameter
     activeView: getInitialView(),
-    setActiveView: (activeView) => set({ activeView }),
+    // Any navigation closes the phone menu.
+    setActiveView: (activeView) => set({ activeView, mobileNavOpen: false }),
     activeStage: null,
     setActiveStage: (activeStage) => set({ activeStage }),
     activeGuide: null,

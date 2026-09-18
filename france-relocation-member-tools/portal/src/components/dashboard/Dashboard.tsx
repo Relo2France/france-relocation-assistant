@@ -192,8 +192,55 @@ export default function Dashboard() {
       </div>
 
       <div className="grid lg:grid-cols-3 gap-5 px-6 md:px-8 pt-5 pb-6">
-        {/* The stage, walked through */}
+        {/* The next step first, then the stage told in plain words */}
         <div className="lg:col-span-2 flex flex-col gap-5">
+          {/* Do this next */}
+          <section className="card overflow-hidden" aria-labelledby="next-title">
+            <div className="flex justify-between items-baseline px-5 py-4 border-b border-rule">
+              <span id="next-title" className="font-display font-semibold text-[1.1rem]">Do this next</span>
+              <button onClick={() => openStage(nowId)} className="text-sm font-semibold text-primary-500 hover:text-primary-700">
+                {stageTasks.length ? `All ${stageTasks.length} steps in ${now.name}${doneCount ? ` · ${doneCount} done` : ''}` : `Open ${now.name}`}
+              </button>
+            </div>
+            {next ? (
+              <>
+                <div className="px-5 pt-4 pb-3 flex flex-col gap-2">
+                  <h3 className="font-display text-[1.25rem] font-semibold tracking-[-0.018em] leading-snug m-0"><Jargon text={next.title} /></h3>
+                  {next.description ? <p className="text-gray-600 max-w-[60ch] line-clamp-3 m-0"><Jargon text={next.description} /></p> : null}
+                  <div className="flex flex-wrap items-center gap-3 mt-1">
+                    <button className="btn btn-primary" onClick={() => openTask(next)}>Open this step</button>
+                    {next.due_date ? <span className={clsx('font-mono text-[0.7rem] uppercase', next.is_overdue ? 'text-red-600' : 'text-accent-500')}>{dueLabel(next)}</span> : null}
+                  </div>
+                </div>
+                {nextList.length > 1 ? (
+                  <ul className="divide-y divide-rule-soft border-t border-rule-soft">
+                    {nextList.slice(1).map((task) => (
+                      <li key={task.id}>
+                        <button onClick={() => openTask(task)} className="w-full flex items-center gap-3.5 px-5 py-3 text-left hover:bg-card-2 transition-colors">
+                          {task.status === 'done' ? <CheckCircle2 className="w-5 h-5 text-primary-500 flex-shrink-0" /> : <Circle className={clsx('w-5 h-5 flex-shrink-0', task.is_overdue ? 'text-accent-500' : 'text-gray-300')} />}
+                          <span className="flex-1 min-w-0 truncate text-[0.95rem]" title={task.title}><Jargon text={task.title} /></span>
+                          <span className={clsx('font-mono text-[0.7rem]', task.is_overdue ? 'text-accent-500' : 'text-gray-500')}>{dueLabel(task).split(' · ')[0]}</span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+              </>
+            ) : (
+              <div className="px-5 py-5 flex flex-col gap-3">
+                <p className="text-gray-600 m-0 max-w-[60ch]">
+                  {project.target_move_date
+                    ? (all.length ? 'Every step on file is done. Open the stage to add your own, or read the guides for it.' : 'No steps on file yet. Choose a visa route in your profile and the plan writes itself.')
+                    : 'Set your move date and every step gets a date counted back from it.'}
+                </p>
+                {project.target_move_date
+                  ? <button className="btn btn-secondary self-start" onClick={() => openStage(nowId)}>Open {now.name}</button>
+                  : <button className="btn btn-primary self-start" onClick={() => setShowMoveDateModal(true)}>Set your move date</button>}
+              </div>
+            )}
+          </section>
+
+          {/* The stage, walked through */}
           <section className="card p-6 flex flex-col gap-5" aria-labelledby="walk-title">
             <div className="flex flex-col gap-2">
               <span className="eyebrow text-primary-500">{now.name}, in plain words</span>
@@ -239,52 +286,6 @@ export default function Dashboard() {
               <span className="eyebrow text-primary-700">{after ? `Ready for ${after.name} when` : 'From here'}</span>
               <p className="text-[0.92rem] text-ink m-0 max-w-[60ch]"><Jargon text={walk.readyWhen} /></p>
             </div>
-          </section>
-
-          {/* Do this next */}
-          <section className="card overflow-hidden" aria-labelledby="next-title">
-            <div className="flex justify-between items-baseline px-5 py-4 border-b border-rule">
-              <span id="next-title" className="font-display font-semibold text-[1.1rem]">Do this next</span>
-              <button onClick={() => openStage(nowId)} className="text-sm font-semibold text-primary-500 hover:text-primary-700">
-                {stageTasks.length ? `All ${stageTasks.length} steps in ${now.name}${doneCount ? ` · ${doneCount} done` : ''}` : `Open ${now.name}`}
-              </button>
-            </div>
-            {next ? (
-              <>
-                <div className="px-5 pt-4 pb-3 flex flex-col gap-2">
-                  <h3 className="font-display text-[1.25rem] font-semibold tracking-[-0.018em] leading-snug m-0"><Jargon text={next.title} /></h3>
-                  {next.description ? <p className="text-gray-600 max-w-[60ch] line-clamp-3 m-0"><Jargon text={next.description} /></p> : null}
-                  <div className="flex flex-wrap items-center gap-3 mt-1">
-                    <button className="btn btn-primary" onClick={() => openTask(next)}>Open this step</button>
-                    {next.due_date ? <span className={clsx('font-mono text-[0.7rem] uppercase', next.is_overdue ? 'text-red-600' : 'text-accent-500')}>{dueLabel(next)}</span> : null}
-                  </div>
-                </div>
-                {nextList.length > 1 ? (
-                  <ul className="divide-y divide-rule-soft border-t border-rule-soft">
-                    {nextList.slice(1).map((task) => (
-                      <li key={task.id}>
-                        <button onClick={() => openTask(task)} className="w-full flex items-center gap-3.5 px-5 py-3 text-left hover:bg-card-2 transition-colors">
-                          {task.status === 'done' ? <CheckCircle2 className="w-5 h-5 text-primary-500 flex-shrink-0" /> : <Circle className={clsx('w-5 h-5 flex-shrink-0', task.is_overdue ? 'text-accent-500' : 'text-gray-300')} />}
-                          <span className="flex-1 min-w-0 truncate text-[0.95rem]" title={task.title}><Jargon text={task.title} /></span>
-                          <span className={clsx('font-mono text-[0.7rem]', task.is_overdue ? 'text-accent-500' : 'text-gray-500')}>{dueLabel(task).split(' · ')[0]}</span>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
-              </>
-            ) : (
-              <div className="px-5 py-5 flex flex-col gap-3">
-                <p className="text-gray-600 m-0 max-w-[60ch]">
-                  {project.target_move_date
-                    ? (all.length ? 'Every step on file is done. Open the stage to add your own, or read the guides for it.' : 'No steps on file yet. Choose a visa route in your profile and the plan writes itself.')
-                    : 'Set your move date and every step gets a date counted back from it.'}
-                </p>
-                {project.target_move_date
-                  ? <button className="btn btn-secondary self-start" onClick={() => openStage(nowId)}>Open {now.name}</button>
-                  : <button className="btn btn-primary self-start" onClick={() => setShowMoveDateModal(true)}>Set your move date</button>}
-              </div>
-            )}
           </section>
         </div>
 

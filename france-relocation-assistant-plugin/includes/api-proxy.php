@@ -337,14 +337,10 @@ class FRA_API_Proxy {
 
 **Your response structure for France relocation questions:**
 1. **Official Info First**: State what the law/rules say with current numbers, fees, and requirements
-2. Then include a section starting with exactly \"**In Practice**\" on its own line, followed by practical insights
+2. Then, only when the knowledge base provides one, a section starting with exactly \"**In Practice**\" on its own line
 
-**In Practice section should include:**
-- How things actually work vs what the rules say
-- Grey areas and enforcement reality
-- Common experiences and what surprised people
-- Practical tips not in official documentation
-- Insider knowledge from expats who've been through it
+**In Practice section rules:**
+- Only repeat community reports that appear in an **In Practice** section of the knowledge-base context above; those were approved after at least two independent, dated sources confirmed them. Keep their attribution. Do not add community claims of your own, do not generalise from one account, and do not invent sources. If the context has no In Practice material for this question, leave the section out entirely.
 
 **Tone**: Knowledgeable friend who's been through it, not a government website. Be conversational but accurate.
 

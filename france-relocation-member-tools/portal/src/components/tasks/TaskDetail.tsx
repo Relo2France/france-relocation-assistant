@@ -108,13 +108,20 @@ export default function TaskDetail({ task, isOpen, onClose }: TaskDetailProps) {
             onClick={() => setShowDeleteConfirm(true)}
             className="btn btn-ghost text-red-600 hover:bg-red-50"
           >
-            <Trash2 className="w-4 h-4" />
+            <Trash2 className="w-4 h-4" aria-hidden="true" />
             Delete
           </button>
           <div className="flex gap-2">
             <button onClick={onClose} className="btn btn-secondary">
               Close
             </button>
+            {task ? (
+              task.status === 'done' ? (
+                <button onClick={() => handleStatusChange('todo')} className="btn btn-secondary">Mark not done</button>
+              ) : (
+                <button onClick={() => handleStatusChange('done')} className="btn btn-primary">Mark as done</button>
+              )
+            ) : null}
           </div>
         </div>
       }

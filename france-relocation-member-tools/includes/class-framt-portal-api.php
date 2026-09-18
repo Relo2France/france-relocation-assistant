@@ -5822,7 +5822,7 @@ Signature:
         $bridge = FRAMT_Main_Plugin_Bridge::get_instance();
 
         $practice_instruction = $include_practice
-            ? "\n\n**REAL-WORLD INSIGHTS:** Include an \"**In Practice**\" section covering:\n- Common experiences from expats and forums\n- Practical tips not in official documentation\n- Grey areas and how rules are actually applied\n- Things that surprise or catch people off guard\nCite sources like \"(Source: Reddit r/expats)\" or \"(Source: expat forums)\" when sharing community insights."
+            ? "\n\n**REAL-WORLD INSIGHTS:** You may add a section headed \"**In Practice**\". Only repeat community reports that appear in an **In Practice** section of the knowledge-base context above; those were approved after at least two independent, dated sources confirmed them. Keep their attribution. Do not add community claims of your own, do not generalise from one account, and do not invent sources. If the context has no In Practice material for this question, leave the section out entirely."
             : '';
 
         // Build personalization instructions based on user context

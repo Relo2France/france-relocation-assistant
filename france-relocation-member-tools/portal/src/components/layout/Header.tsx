@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { AlertTriangle, Bell, CheckCircle, Info, Mail, Scale, User, X } from 'lucide-react';
+import { AlertTriangle, Bell, CheckCircle, Info, Mail, Menu, Scale, User, X } from 'lucide-react';
 import { buildFileAlerts, useDismissedAlerts } from '@/alerts/alerts';
 import { useCurrentUser, useDashboard, useSupportTickets, useTasks } from '@/hooks/useApi';
 import { usePortalStore } from '@/store';
@@ -27,7 +27,7 @@ const viewTitles: Record<string, string> = {
 };
 
 export default function Header() {
-  const { activeView, setActiveView, setActiveStage, setTaskFilters, setOpenTaskId, setOpenMessageId } = usePortalStore();
+  const { activeView, setActiveView, setActiveStage, setTaskFilters, setOpenTaskId, setOpenMessageId, setMobileNavOpen } = usePortalStore();
   const { data: user } = useCurrentUser();
   const { data: dashboardData } = useDashboard();
   const { data: ticketsData } = useSupportTickets();
@@ -64,10 +64,18 @@ export default function Header() {
   const notificationCount = visible.length;
 
   return (
-    <header className="h-16 bg-card border-b border-rule flex items-center justify-between px-6">
-      {/* Title */}
-      <div>
-        <h1 className="font-display text-2xl font-semibold tracking-[-0.018em] text-ink">{title}</h1>
+    <header className="h-16 bg-card border-b border-rule flex items-center justify-between gap-3 px-4 md:px-6 sticky top-0 z-20">
+      {/* Menu on phones, then the title */}
+      <div className="flex items-center gap-2 min-w-0">
+        <button
+          type="button"
+          onClick={() => setMobileNavOpen(true)}
+          className="md:hidden -ml-1 p-2 rounded-lg text-gray-600 hover:bg-gray-100"
+          aria-label="Open menu"
+        >
+          <Menu className="w-5 h-5" aria-hidden="true" />
+        </button>
+        <h1 className="font-display text-xl md:text-2xl font-semibold tracking-[-0.018em] text-ink truncate">{title}</h1>
       </div>
 
       {/* Right side */}

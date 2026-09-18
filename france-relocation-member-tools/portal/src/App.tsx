@@ -115,6 +115,8 @@ export default function App() {
     sidebarManuallyExpanded,
     activeView,
     setUser,
+    mobileNavOpen,
+    setMobileNavOpen,
   } = usePortalStore();
   const { data: user } = useCurrentUser();
   const prevViewRef = useRef<string>(activeView);
@@ -148,12 +150,20 @@ export default function App() {
       <ErrorBoundary compact>
         <Sidebar />
       </ErrorBoundary>
+      {mobileNavOpen ? (
+        <button
+          type="button"
+          className="fixed inset-0 z-30 md:hidden cursor-default"
+          aria-label="Close menu"
+          onClick={() => setMobileNavOpen(false)}
+        />
+      ) : null}
 
       {/* Main content */}
       <div
         className={clsx(
           'transition-all duration-300',
-          sidebarCollapsed ? 'ml-16' : 'ml-64'
+          sidebarCollapsed ? 'md:ml-16' : 'md:ml-64'
         )}
       >
         {/* Header */}

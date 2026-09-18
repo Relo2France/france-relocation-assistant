@@ -82,6 +82,18 @@
     @apply w-64;
   }
 
+  /* Phones: the rail is a slide-out menu, always full width with labels. */
+  @media (max-width: 767px) {
+    .sidebar {
+      width: 16rem;
+      transform: translateX(-100%);
+    }
+    .sidebar.sidebar-mobile-open {
+      transform: none;
+      box-shadow: 0 0 0 100vmax rgb(28 36 32 / 0.45);
+    }
+  }
+
   /* Navigation item styles */
   .nav-item {
     @apply flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors cursor-pointer text-[0.9rem];

@@ -3,8 +3,8 @@ import { coverage, totalTopics } from './coverage';
 
 describe('coverage', () => {
   it('adds up to the live knowledge base total', () => {
-    // 31 topics as returned by GET /wp-json/fra/v1/review/topics.
-    expect(totalTopics).toBe(31);
+    // 42 topics as returned by GET /wp-json/fra/v1/review/topics on 2026-09-18.
+    expect(totalTopics).toBe(42);
     expect(coverage.reduce((s, a) => s + a.topics, 0)).toBe(totalTopics);
   });
 
