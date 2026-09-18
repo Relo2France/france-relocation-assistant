@@ -745,6 +745,10 @@ export const supportApi = {
       method: 'DELETE',
     }),
 
+  // Put a message back to unread
+  markUnread: (ticketId: number) =>
+    apiFetch<{ success: boolean }>(`/support/tickets/${ticketId}/unread`, { method: 'POST' }),
+
   // Get unread count
   getUnreadCount: () =>
     apiFetch<{ count: number }>('/support/unread-count'),

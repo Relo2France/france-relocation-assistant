@@ -911,6 +911,17 @@ export function useReplyToSupportTicket() {
   });
 }
 
+export function useMarkSupportTicketUnread() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: supportApi.markUnread,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.supportTickets });
+      queryClient.invalidateQueries({ queryKey: queryKeys.supportUnreadCount });
+    },
+  });
+}
+
 export function useDeleteSupportTicket() {
   const queryClient = useQueryClient();
 

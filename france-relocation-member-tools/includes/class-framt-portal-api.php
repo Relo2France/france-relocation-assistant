@@ -1165,6 +1165,16 @@ class FRAMT_Portal_API {
 
         register_rest_route(
             self::NAMESPACE,
+            '/support/tickets/(?P<id>\d+)/unread',
+            array(
+                'methods'             => 'POST',
+                'callback'            => array( $this, 'mark_support_ticket_unread' ),
+                'permission_callback' => array( $this, 'check_support_ticket_permission' ),
+            )
+        );
+
+        register_rest_route(
+            self::NAMESPACE,
             '/support/tickets/(?P<id>\d+)/reply',
             array(
                 'methods'             => 'POST',
@@ -11248,6 +11258,18 @@ SECTIONS;
      * @param WP_REST_Request $request Request object.
      * @return WP_REST_Response|WP_Error
      */
+    /**
+     * Put a message back to unread, so it reads as new again.
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response
+     */
+    public function mark_support_ticket_unread( $request ) {
+        global $wpdb;
+        $wpdb->update( $wpdb->prefix . 'framt_messages', array( 'has_unread_user' => 1 ), array( 'id' => (int) $request->get_param( 'id' ) ), array( '%d' ), array( '%d' ) );
+        return rest_ensure_response( array( 'success' => true ) );
+    }
+
     public function delete_support_ticket( $request ) {
         global $wpdb;
         $ticket_id      = (int) $request->get_param( 'id' );

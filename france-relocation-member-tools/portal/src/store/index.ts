@@ -121,6 +121,9 @@ interface PortalState {
   };
   setTaskFilters: (filters: Partial<PortalState['taskFilters']>) => void;
   resetTaskFilters: () => void;
+  /** A step to open in the drawer as soon as the steps view has it. */
+  openTaskId: number | null;
+  setOpenTaskId: (id: number | null) => void;
 
   // Modal state
   activeModal: string | null;
@@ -197,6 +200,8 @@ export const usePortalStore = create<PortalState>((set, get) => {
       set({
         taskFilters: { stage: null, status: null, taskType: null },
       }),
+    openTaskId: null,
+    setOpenTaskId: (id) => set({ openTaskId: id }),
 
     // Modal state
     activeModal: null,

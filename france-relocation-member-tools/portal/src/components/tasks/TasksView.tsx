@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useDashboard, useTasks, useUpdateTaskStatus } from '@/hooks/useApi';
 import { JOURNEY, stageForTask } from '@/journey/journey';
 import { usePortalStore } from '@/store';
@@ -13,7 +13,7 @@ export default function TasksView() {
   // View state
   const [view, setView] = useState<'list' | 'board'>('board');
   const [searchQuery, setSearchQuery] = useState('');
-  const { taskFilters, setTaskFilters, resetTaskFilters, setActiveView, setActiveStage } = usePortalStore();
+  const { taskFilters, setTaskFilters, resetTaskFilters, setActiveView, setActiveStage, openTaskId, setOpenTaskId } = usePortalStore();
 
   // Modal state
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -30,6 +30,17 @@ export default function TasksView() {
     dashboard?.project?.id || 0
   );
   const updateTaskStatus = useUpdateTaskStatus();
+
+  // Arrived here to open one step (from a message or the home page).
+  useEffect(() => {
+    if (openTaskId === null || tasks.length === 0) return;
+    const task = tasks.find((t) => t.id === openTaskId);
+    setOpenTaskId(null);
+    if (task) {
+      setSelectedTask(task);
+      setShowTaskDetail(true);
+    }
+  }, [openTaskId, tasks, setOpenTaskId]);
 
   // Filter tasks
   const filteredTasks = useMemo(() => {
