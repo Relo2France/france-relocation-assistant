@@ -31,6 +31,11 @@ async function deliver(env: Env, reportId: number, body: Record<string, unknown>
     headers: { authorization: `Bearer ${(env.WP_SHARED_SECRET ?? '').trim()}`, 'content-type': 'application/json' },
     body: JSON.stringify(body),
   });
+  if (response.status === 404) {
+    // The row is gone (the member removed the report); nothing to deliver to.
+    console.warn(`report ${reportId} no longer exists; not delivering`);
+    return;
+  }
   if (!response.ok) {
     throw new Error(`WordPress rejected the report (${response.status}): ${(await response.text()).slice(0, 200)}`);
   }
@@ -45,7 +50,9 @@ export class ReportWorkflow extends WorkflowEntrypoint<Env, ReportParams> {
       'generate',
       { retries: { limit: 1, delay: '30 seconds' }, timeout: '20 minutes' },
       async (): Promise<Generated> => {
-        const outcome = await sendMessage(this.env, {
+        let outcome;
+        try {
+          outcome = await sendMessage(this.env, {
           tier: this.env.MODEL_TIER,
           system: params.system,
           prompt: params.prompt,
@@ -56,6 +63,11 @@ export class ReportWorkflow extends WorkflowEntrypoint<Env, ReportParams> {
           continueOnTruncation: true,
           maxContinuations: 1,
         });
+        } catch (error) {
+          // Returned, so the deliver step can tell the member; a thrown error
+          // here left the report row neither written nor failed.
+          return { ok: false, error: error instanceof Error ? error.message : String(error), model: 'unknown' };
+        }
         const content = extractJson<Record<string, unknown>>(outcome.text);
         if (!content) {
           return {

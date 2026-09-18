@@ -126,7 +126,10 @@ export async function sendMessage(env: Env, options: MessageOptions): Promise<Me
 
   const maxContinuations = options.maxContinuations ?? 2;
 
-  for (let turn = 0; turn < 10; turn++) {
+  // Server-side search pauses the turn once per search; a fifteen-search
+  // draft needs more turns than a plain answer.
+  const maxTurns = options.webSearchUses ? 6 + options.webSearchUses * 2 : 10;
+  for (let turn = 0; turn < maxTurns; turn++) {
     const payload: Record<string, unknown> = {
       model,
       max_tokens: options.maxTokens ?? 8000,
@@ -176,7 +179,8 @@ export async function sendMessage(env: Env, options: MessageOptions): Promise<Me
       // The model is gone. Refresh the catalogue and try its replacement.
       if (!modelRetried && isModelError(body.error.type, message)) {
         modelRetried = true;
-        const replacement = await resolveModel(env, tierOf(model));
+        // Forced: the cached catalogue is what still lists the retired model.
+        const replacement = await resolveModel(env, tierOf(model), true);
         if (replacement !== model) {
           model = replacement;
           continue;

@@ -4,7 +4,7 @@
 import { researchInPractice, vetInPractice } from './practice';
 import { extractJson, sendMessage } from './anthropic';
 import { buildReviewPrompt } from './prompt';
-import { findTopic, postSuggestion } from './wordpress';
+import { findTopic, postSuggestion, type SuggestionPayload } from './wordpress';
 import type { Env, ReviewResult } from './types';
 
 export interface ReviewOutcome {
@@ -18,6 +18,8 @@ export interface ReviewOutcome {
   web_sources: number;
   web_search_errors: string[];
   practice_withheld?: string;
+  /** What to post, when the caller asked to post separately. */
+  pending?: SuggestionPayload;
   truncated: boolean;
   continued: boolean;
   usage: { input: number; output: number };
@@ -28,7 +30,7 @@ export async function reviewTopic(
   env: Env,
   category: string,
   topicKey: string,
-  options: { dryRun?: boolean } = {}
+  options: { dryRun?: boolean; post?: boolean } = {}
 ): Promise<ReviewOutcome> {
   const started = Date.now();
 
@@ -117,14 +119,22 @@ export async function reviewTopic(
     result.changes_summary = 'In Practice section added from community research; official text unchanged.';
   }
 
-  const posted = await postSuggestion(env, {
+  const payload: SuggestionPayload = {
     topic,
     result: { ...result, in_practice_content: practice.content, practice_sources: practice.sources },
     practiceWithheld: practice.withheld,
     practiceCorroboration: practice.corroboration,
     webSources: outcome.webSources,
     model: outcome.model,
-  });
+  };
+
+  // The workflow posts in its own step, so a WordPress hiccup retries the
+  // post and not five minutes of model work.
+  if (options.post === false) {
+    return { ...base, needs_update: true, pending: payload, practice_withheld: practice.withheld || undefined, duration_ms: Date.now() - started };
+  }
+
+  const posted = await postSuggestion(env, payload);
 
   return { ...base, posted: true, review_id: posted.review_id, practice_withheld: practice.withheld || undefined, duration_ms: Date.now() - started };
 }

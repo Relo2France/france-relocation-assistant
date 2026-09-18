@@ -99,6 +99,26 @@ describe('sendMessage', () => {
     expect(posts).toHaveLength(2);
   });
 
+  it('refreshes the catalogue when the cached copy still lists the retired model', async () => {
+    // The cache is a day old and still names claude-opus-6 as newest; only a
+    // forced refresh from the Models API knows it is gone.
+    const staleCache = [
+      { id: 'claude-opus-6', display_name: 'Opus 6', created_at: '2026-05-01T00:00:00Z' },
+      ...catalogue.data,
+    ];
+    const staleEnv = {
+      ...env,
+      MODEL_CACHE: { get: async () => staleCache, put: async () => undefined },
+    } as unknown as Env;
+    queue = [
+      errorReply({ type: 'not_found_error', message: 'model: claude-opus-6 not found' }),
+      streamReply([text('recovered')], 'end_turn'),
+    ];
+    const out = await sendMessage(staleEnv, { model: 'claude-opus-6', prompt: 'q' });
+    expect(out.text).toBe('recovered');
+    expect(out.model).toBe('claude-opus-5');
+  });
+
   it('downgrades the web search tool for older models', async () => {
     queue = [
       errorReply({ type: 'invalid_request_error', message: 'tool type web_search_20260209 is not supported' }),

@@ -27,6 +27,22 @@ describe('isRetryable', () => {
     }
   });
 
+  it('retries a busy WordPress but not a full queue', () => {
+    expect(isRetryable('Could not post suggestion: HTTP 409 fra_review_busy Another suggestion is being written.')).toBe(true);
+    expect(isRetryable('Could not post suggestion: HTTP 409 fra_review_queue_full The pending review queue is full (200).')).toBe(false);
+    expect(isRetryable('Could not post suggestion: HTTP 503 service unavailable')).toBe(true);
+  });
+
+  it('does not mistake words that contain "rate" for a rate limit', () => {
+    for (const message of [
+      'The draft did not name a usable category or topic; could not generate',
+      'Could not corroborate the claim',
+      'separate failure',
+    ]) {
+      expect(isRetryable(message), message).toBe(false);
+    }
+  });
+
   it('treats an unrecognised failure as permanent rather than looping', () => {
     expect(isRetryable('Something nobody anticipated')).toBe(false);
   });

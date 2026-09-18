@@ -112,11 +112,11 @@ export function pickFromCatalogue(models: AnthropicModel[], tier: string): strin
   return null;
 }
 
-export async function resolveModel(env: Env, tier?: string): Promise<string> {
+export async function resolveModel(env: Env, tier?: string, force = false): Promise<string> {
   const wanted = (tier ?? env.MODEL_TIER ?? 'sonnet').toLowerCase();
 
   try {
-    const models = await getCatalogue(env);
+    const models = await getCatalogue(env, force);
     const picked = pickFromCatalogue(models, wanted);
     if (picked) return picked;
   } catch {

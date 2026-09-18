@@ -14,7 +14,7 @@ import type { ContentBlock, MessagesResponse } from './types';
 interface StreamEvent {
   type: string;
   index?: number;
-  delta?: { type?: string; text?: string; stop_reason?: string };
+  delta?: { type?: string; text?: string; partial_json?: string; stop_reason?: string };
   content_block?: ContentBlock;
   message?: { usage?: { input_tokens?: number } };
   usage?: { output_tokens?: number };
@@ -29,6 +29,7 @@ export async function readMessageStream(response: Response): Promise<MessagesRes
 
   const blocks: ContentBlock[] = [];
   const textParts = new Map<number, string[]>();
+  const jsonParts = new Map<number, string[]>();
   let stopReason: string | undefined;
   let inputTokens = 0;
   let outputTokens = 0;
@@ -51,6 +52,23 @@ export async function readMessageStream(response: Response): Promise<MessagesRes
         if (typeof event.index === 'number' && event.delta?.type === 'text_delta') {
           const parts = textParts.get(event.index);
           if (parts) parts.push(event.delta.text ?? '');
+        }
+        // A server tool's input arrives as JSON fragments; a paused turn is
+        // resumed by sending the block back, so the input must be whole.
+        if (typeof event.index === 'number' && event.delta?.type === 'input_json_delta') {
+          const parts = jsonParts.get(event.index) ?? [];
+          parts.push(event.delta.partial_json ?? '');
+          jsonParts.set(event.index, parts);
+        }
+        break;
+
+      case 'content_block_stop':
+        if (typeof event.index === 'number' && jsonParts.has(event.index)) {
+          const raw = (jsonParts.get(event.index) ?? []).join('');
+          const block = blocks[event.index] as { input?: unknown } | undefined;
+          if (block) {
+            try { block.input = raw ? JSON.parse(raw) : {}; } catch { block.input = {}; }
+          }
         }
         break;
 

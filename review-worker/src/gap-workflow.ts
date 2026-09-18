@@ -20,7 +20,7 @@ export class GapWorkflow extends WorkflowEntrypoint<Env, GapParams> {
 
     const gaps = await step.do('list ready gaps', async () => {
       const ready = await fetchGaps(this.env);
-      return ready.slice(0, limit);
+      return ready.filter((g) => !g.stale).slice(0, limit);
     });
 
     if (gaps.length === 0) {

@@ -15,14 +15,16 @@ export function isRetryable(message: string): boolean {
   // These fail identically next time.
   if (lower.includes('unknown topic')) return false;
   if (lower.includes('no json object found')) return false;
+  if (lower.includes('queue is full') || lower.includes('fra_review_queue_full')) return false;
 
   return (
-    lower.includes('timeout') ||
-    lower.includes('timed out') ||
-    lower.includes('429') ||
-    lower.includes('rate') ||
+    /\btime(d)?[ -]?out\b/.test(lower) ||
+    /\b429\b/.test(lower) ||
+    /\brate[ _-]?limit/.test(lower) ||
     lower.includes('overloaded') ||
-    lower.includes('http 5') ||
-    lower.includes('network')
+    /\bhttp 5\d\d\b/.test(lower) ||
+    lower.includes('network') ||
+    // WordPress serialises writes; a busy lock clears in seconds.
+    lower.includes('fra_review_busy')
   );
 }

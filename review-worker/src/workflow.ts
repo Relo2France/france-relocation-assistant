@@ -16,7 +16,7 @@
 import { WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep } from 'cloudflare:workers';
 import { isRetryable } from './retry';
 import { reviewTopic } from './review';
-import { fetchTopics, postRunReport } from './wordpress';
+import { fetchTopics, postRunReport, postSuggestion, type SuggestionPayload } from './wordpress';
 import type { Env } from './types';
 
 export interface ReviewParams {
@@ -37,11 +37,26 @@ interface TopicOutcome {
   output_tokens?: number;
   web_sources?: number;
   web_search_errors?: string[];
+  practice_withheld?: string;
+  /** Carried between the review step and the post step, never into the summary. */
+  pending?: SuggestionPayload;
 }
 
 export class ReviewWorkflow extends WorkflowEntrypoint<Env, ReviewParams> {
   async run(event: WorkflowEvent<ReviewParams>, step: WorkflowStep) {
     const params = event.payload ?? {};
+    try {
+      return await this.runReview(event, step, params);
+    } catch (error) {
+      // WordPress marked the run as started; tell it the run died, so the
+      // admin screen does not show "in progress" forever.
+      const message = error instanceof Error ? error.message : String(error);
+      await postRunReport(this.env, { state: 'failed', instance_id: event.instanceId, error: message, dry_run: Boolean(params.dryRun) }).catch(() => undefined);
+      throw error;
+    }
+  }
+
+  private async runReview(event: WorkflowEvent<ReviewParams>, step: WorkflowStep, params: ReviewParams) {
 
     // Steps persist their return value, so keep this to identifiers rather
     // than the topic bodies - the content is large and is not needed again.
@@ -81,41 +96,69 @@ export class ReviewWorkflow extends WorkflowEntrypoint<Env, ReviewParams> {
       // Sequential on purpose. Running these in parallel would be faster but
       // would also multiply the Anthropic request rate and the cost spike; a
       // weekly overnight job does not need the wall-clock saving.
-      const outcome = await step.do(
-        `review ${target}`,
-        {
-          retries: { limit: 2, delay: '30 seconds', backoff: 'exponential' },
-          // Observed durations for a single topic: 236s, 341s, 647s. The
-          // spread is wide enough that 15 minutes was uncomfortably close to
-          // the top of it; 25 still bounds a wedged request.
-          timeout: '25 minutes',
-        },
-        async (): Promise<TopicOutcome> => {
-          try {
-            const result = await reviewTopic(this.env, category, topicKey, {
-              dryRun: params.dryRun,
-            });
-            return {
-              topic: target,
-              ok: true,
-              posted: result.posted,
-              needs_update: result.needs_update,
-              review_id: result.review_id,
-              duration_ms: result.duration_ms,
-              output_tokens: result.usage.output,
-              web_sources: result.web_sources,
-              web_search_errors: result.web_search_errors,
-            };
-          } catch (error) {
-            // Returned, not thrown: a topic we genuinely cannot review should
-            // not consume the retry budget or stop the other thirty. Transient
-            // failures still throw from inside reviewTopic and do retry.
-            const message = error instanceof Error ? error.message : String(error);
-            if (isRetryable(message)) throw error;
-            return { topic: target, ok: false, error: message };
+      //
+      // Two steps: the model work, then the post. A WordPress hiccup on the
+      // post retries the post, not five minutes of model work. Nothing thrown
+      // here escapes the loop: a topic that exhausts its retries is recorded
+      // as failed and the run carries on to the next one.
+      let outcome: TopicOutcome;
+      try {
+        outcome = await step.do(
+          `review ${target}`,
+          {
+            retries: { limit: 2, delay: '30 seconds', backoff: 'exponential' },
+            // Observed durations for a single topic: 236s, 341s, 647s. The
+            // spread is wide enough that 15 minutes was uncomfortably close to
+            // the top of it; 25 still bounds a wedged request.
+            timeout: '25 minutes',
+          },
+          async (): Promise<TopicOutcome> => {
+            try {
+              const result = await reviewTopic(this.env, category, topicKey, {
+                dryRun: params.dryRun,
+                post: false,
+              });
+              return {
+                topic: target,
+                ok: true,
+                posted: false,
+                needs_update: result.needs_update,
+                duration_ms: result.duration_ms,
+                output_tokens: result.usage.output,
+                web_sources: result.web_sources,
+                web_search_errors: result.web_search_errors,
+                practice_withheld: result.practice_withheld,
+                pending: result.pending,
+              };
+            } catch (error) {
+              // Returned, not thrown: a topic we genuinely cannot review should
+              // not consume the retry budget or stop the other thirty. Transient
+              // failures still throw from inside reviewTopic and do retry.
+              const message = error instanceof Error ? error.message : String(error);
+              if (isRetryable(message)) throw error;
+              return { topic: target, ok: false, error: message };
+            }
           }
+        );
+      } catch (error) {
+        outcome = { topic: target, ok: false, error: `Gave up after retries: ${error instanceof Error ? error.message : String(error)}` };
+      }
+
+      if (outcome.ok && outcome.pending) {
+        const pending = outcome.pending;
+        try {
+          const posted = await step.do(
+            `post ${target}`,
+            { retries: { limit: 3, delay: '20 seconds', backoff: 'exponential' }, timeout: '2 minutes' },
+            async () => postSuggestion(this.env, pending)
+          );
+          outcome = { ...outcome, posted: true, review_id: posted.review_id, pending: undefined };
+        } catch (error) {
+          outcome = { ...outcome, ok: false, posted: false, pending: undefined, error: `Reviewed but not posted: ${error instanceof Error ? error.message : String(error)}` };
         }
-      );
+      } else if (outcome.ok) {
+        outcome = { ...outcome, pending: undefined };
+      }
 
       outcomes.push(outcome);
     }
@@ -144,6 +187,7 @@ export class ReviewWorkflow extends WorkflowEntrypoint<Env, ReviewParams> {
         total_duration_ms: reviewed.reduce((sum, o) => sum + (o.duration_ms ?? 0), 0),
         web_sources: reviewed.reduce((sum, o) => sum + (o.web_sources ?? 0), 0),
         web_search_errors: reviewed.flatMap((o) => o.web_search_errors ?? []),
+        practice_withheld: reviewed.filter((o) => o.practice_withheld).map((o) => ({ topic: o.topic, reason: o.practice_withheld })),
         // Per-topic seconds, sorted. The spread matters more than the total:
         // it is what decides whether the step timeout is safe.
         topic_seconds: durations,

@@ -133,7 +133,21 @@ export default {
           unmatched = params.only.filter((t) => !available.includes(t));
         }
 
+        // One review at a time: a cron and a manual run overlapping would post
+        // every suggestion twice and double the bill.
+        const activeId = await env.MODEL_CACHE.get('active-review-run');
+        if (activeId) {
+          try {
+            const active = await env.REVIEW_WORKFLOW.get(activeId);
+            const s = await active.status();
+            if (s.status === 'running' || s.status === 'queued' || s.status === 'paused') {
+              return json({ started: false, reason: 'a review is already running', instance_id: activeId, status: s }, 409);
+            }
+          } catch { /* unknown instance: fall through and start */ }
+        }
+
         const instance = await env.REVIEW_WORKFLOW.create({ params });
+        await env.MODEL_CACHE.put('active-review-run', instance.id, { expirationTtl: 6 * 3600 });
         return json({
           started: true,
           instance_id: instance.id,
