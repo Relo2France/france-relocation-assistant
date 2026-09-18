@@ -6,6 +6,7 @@
  * it used to open is not a deadline list.
  */
 import { clsx } from 'clsx';
+import { CompactErrorFallback } from '@/components/shared/ErrorBoundary';
 import { CheckCircle2, Circle } from 'lucide-react';
 import Jargon from '@/components/shared/Jargon';
 import { useDashboard, useTasks, useUpdateTaskStatus } from '@/hooks/useApi';
@@ -28,9 +29,9 @@ function dueLabel(iso: string): string {
 }
 
 export default function DeadlinesView() {
-  const { data } = useDashboard();
+  const { data, isError: dashFailed, refetch: refetchDash } = useDashboard();
   const project = data?.project;
-  const { data: tasks } = useTasks(project?.id ?? 0);
+  const { data: tasks, isError: tasksFailed, refetch: refetchTasks } = useTasks(project?.id ?? 0);
   const updateStatus = useUpdateTaskStatus();
   const { setActiveView, setActiveStage, setTaskFilters, setOpenTaskId } = usePortalStore();
 
@@ -51,12 +52,13 @@ export default function DeadlinesView() {
     <div className="flex flex-col">
       <header className="px-6 md:px-8 pt-6 pb-5 bg-card border-b border-rule">
         <span className="eyebrow">Across all six stages</span>
-        <h2 className="font-display text-[1.75rem] font-semibold tracking-[-0.018em] leading-tight">Deadlines</h2>
         <p className="text-gray-600 max-w-[60ch]">Every dated step, counted back from your move. Overdue first, then month by month.</p>
       </header>
 
       <div className="flex flex-col gap-5 px-6 md:px-8 py-5">
-        {dated.length === 0 ? (
+        {dashFailed || tasksFailed ? (
+          <div className="card"><CompactErrorFallback message="Your steps could not be loaded." onRetry={() => { void refetchDash(); void refetchTasks(); }} /></div>
+        ) : dated.length === 0 ? (
           <div className="card p-6">
             <p className="font-display font-semibold text-lg">Nothing is dated yet.</p>
             <p className="text-sm text-gray-600 mt-1">Set your move date and the plan dates itself.</p>

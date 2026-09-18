@@ -8,7 +8,8 @@
 import { useState } from 'react';
 import { clsx } from 'clsx';
 import { ChevronDown, ChevronUp, ExternalLink, MessageSquare } from 'lucide-react';
-import { JOURNEY } from '@/journey/journey';
+import { useDashboard } from '@/hooks/useApi';
+import { JOURNEY, currentStage } from '@/journey/journey';
 import { usePortalStore } from '@/store';
 
 const PARTS: { title: string; body: string; view: string; label: string }[] = [
@@ -50,10 +51,11 @@ const OFFICIAL: { label: string; url: string; note: string }[] = [
 
 export default function HelpView() {
   const { setActiveView, setActiveStage } = usePortalStore();
+  const { data: dashboard } = useDashboard();
   const [open, setOpen] = useState<number | null>(0);
 
   const go = (view: string) => {
-    if (view === 'stage') setActiveStage('prepare');
+    if (view === 'stage') setActiveStage(dashboard?.project ? currentStage(dashboard.project, dashboard.profile_visa_type) : 'decide');
     setActiveView(view);
   };
 

@@ -8,10 +8,8 @@ import type { Task } from '@/types';
 const viewTitles: Record<string, string> = {
   dashboard: 'Where you are',
   tasks: 'Tasks',
-  timeline: 'Timeline',
   messages: 'Messages',
   documents: 'Documents',
-  guides: 'Guides',
   deadlines: 'Deadlines',
   support: 'Support',
   files: 'Files',
@@ -22,7 +20,6 @@ const viewTitles: Record<string, string> = {
   checklists: 'Checklists',
   glossary: 'Glossary',
   chat: 'Ask about my case',
-  membership: 'Membership',
   research: 'Explore France',
   schengen: 'Schengen days',
   stage: 'Your move',
@@ -30,7 +27,7 @@ const viewTitles: Record<string, string> = {
 };
 
 export default function Header() {
-  const { activeView, setActiveView, setActiveStage, setTaskFilters, setOpenTaskId } = usePortalStore();
+  const { activeView, setActiveView, setActiveStage, setTaskFilters, setOpenTaskId, setOpenMessageId } = usePortalStore();
   const { data: user } = useCurrentUser();
   const { data: dashboardData } = useDashboard();
   const { data: ticketsData } = useSupportTickets();
@@ -39,7 +36,7 @@ export default function Header() {
   const { isDismissed, dismiss, refresh } = useDismissedAlerts();
   const notificationRef = useRef<HTMLDivElement>(null);
 
-  const title = viewTitles[activeView] || 'Dashboard';
+  const title = viewTitles[activeView] || 'Where you are';
 
   // Close dropdown when clicking outside; follow dismissals made on Messages.
   useEffect(() => {
@@ -61,6 +58,7 @@ export default function Header() {
     setActiveView: (v: string) => { setShowNotifications(false); setActiveView(v); },
     setActiveStage,
     openTask: (t: Task) => { setShowNotifications(false); setTaskFilters({ stage: null, status: null, taskType: null }); setOpenTaskId(t.id); setActiveView('tasks'); },
+    openMessage: (id: number) => { setShowNotifications(false); setOpenMessageId(id); setActiveView('messages'); },
   };
   const visible = buildFileAlerts(dashboardData, tasks ?? [], ticketsData?.tickets ?? [], nav).filter((n) => !isDismissed(n.id));
   const notificationCount = visible.length;
@@ -79,11 +77,13 @@ export default function Header() {
           <button
             onClick={() => setShowNotifications(!showNotifications)}
             className="relative p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-            aria-label={`Notifications${notificationCount > 0 ? ` (${notificationCount} new)` : ''}`}
+            aria-label={notificationCount > 0 ? `Notifications: ${notificationCount} thing${notificationCount === 1 ? '' : 's'} your file or the team raised` : 'Notifications: nothing new'}
           >
-            <Bell className="w-5 h-5" />
+            <Bell className="w-5 h-5" aria-hidden="true" />
             {notificationCount > 0 && (
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+              <span className="absolute -top-0.5 -right-0.5 min-w-[1.1rem] h-[1.1rem] px-1 rounded-full bg-accent-500 text-white font-mono text-[0.62rem] leading-[1.1rem] text-center" aria-hidden="true">
+                {notificationCount > 9 ? '9+' : notificationCount}
+              </span>
             )}
           </button>
 
@@ -132,6 +132,7 @@ export default function Header() {
                             </p>
                           </div>
                         </button>
+                        {notification.tone !== 'message' ? (
                         <button
                           onClick={() => dismiss(notification.id)}
                           className="p-1 rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-100 flex-shrink-0"
@@ -140,6 +141,7 @@ export default function Header() {
                         >
                           <X className="w-4 h-4" aria-hidden="true" />
                         </button>
+                        ) : null}
                       </div>
                     ))}
                     <div className="px-4 py-2.5">

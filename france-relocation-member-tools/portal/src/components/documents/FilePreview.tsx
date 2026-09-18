@@ -183,6 +183,7 @@ export default function FilePreview({ file: openedFile, isOpen, onClose, project
                 <button
                   onClick={onClose}
                   className="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+                  aria-label="Close preview"
                 >
                   <X className="w-5 h-5" />
                 </button>

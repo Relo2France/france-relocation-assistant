@@ -7,6 +7,7 @@
  * calendar.
  */
 import { useState } from 'react';
+import { CompactErrorFallback } from '@/components/shared/ErrorBoundary';
 import { clsx } from 'clsx';
 import { ArrowRight, CheckCircle2, Circle } from 'lucide-react';
 import { AssignSelect, PersonChip, personOf } from '@/components/family/Assign';
@@ -27,11 +28,11 @@ function dueLabel(task: Task): string {
 
 export default function StageView() {
   const { activeStage, setActiveView, setActiveStage, setTaskFilters, setActiveGuide, setOpenTaskId } = usePortalStore();
-  const { data } = useDashboard();
+  const { data, isError: dashFailed, refetch: refetchDash } = useDashboard();
   const stage = stageById(activeStage) ?? JOURNEY[0];
   const project = data?.project;
   const nowStage = project ? currentStage(project, data?.profile_visa_type) : 'decide';
-  const { data: tasks } = useTasks(project?.id ?? 0);
+  const { data: tasks, isError: tasksFailed, refetch: refetchTasks } = useTasks(project?.id ?? 0);
   const { data: family } = useFamilyMembers();
   const updateStatus = useUpdateTaskStatus();
   const [person, setPerson] = useState<'me' | number>('me');
@@ -55,6 +56,14 @@ export default function StageView() {
   const nextHard = own.filter((t) => t.status !== 'done' && t.due_date).sort((a, b) => (a.due_date ?? '').localeCompare(b.due_date ?? ''))[0];
   const isNow = stage.id === nowStage;
   const professionals = (data?.professionals ?? []).filter((p) => p.stage === stage.id);
+
+  if (dashFailed || tasksFailed) {
+    return (
+      <div className="p-6">
+        <div className="card"><CompactErrorFallback message="This stage could not be loaded." onRetry={() => { void refetchDash(); void refetchTasks(); }} /></div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col">

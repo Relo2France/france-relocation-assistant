@@ -5,7 +5,6 @@ import {
   CheckCircle,
   Circle,
   Clock,
-  MoreVertical,
   Plus,
 } from 'lucide-react';
 import VirtualList from '@/components/shared/VirtualList';
@@ -229,6 +228,7 @@ function TaskListItem({ task, onClick, onStatusChange, compact }: TaskListItemPr
           'hover:opacity-80'
         )}
         title={`Status: ${task.status_label}`}
+        aria-label={`${task.title}: ${task.status_label}. Change status`}
       >
         <StatusIcon className={clsx('w-4 h-4', config.color)} />
       </button>
@@ -277,12 +277,6 @@ function TaskListItem({ task, onClick, onStatusChange, compact }: TaskListItemPr
         )}
 
         {/* Menu */}
-        <button
-          onClick={(e) => e.stopPropagation()}
-          className="p-1 text-gray-400 hover:text-gray-600 rounded"
-        >
-          <MoreVertical className="w-4 h-4" />
-        </button>
       </div>
     </div>
   );

@@ -117,13 +117,8 @@ export default function ChecklistsView() {
 
   return (
     <div className="p-6">
-      {/* Page header */}
-      <div className="mb-6">
-        <h1 className="font-display text-2xl font-semibold tracking-[-0.018em] text-ink">Checklists</h1>
-        <p className="text-gray-600 mt-1">
-          The document lists for each stage, ticked off as they come in
-        </p>
-      </div>
+      {/* The title is in the top bar; one line under it. */}
+      <p className="text-gray-600 mb-6 max-w-[64ch]">The document lists for each stage, ticked off as they come in.</p>
 
       {/* Overall progress card */}
       <div className="card mb-6 bg-gradient-to-br from-primary-50 to-primary-100/50">

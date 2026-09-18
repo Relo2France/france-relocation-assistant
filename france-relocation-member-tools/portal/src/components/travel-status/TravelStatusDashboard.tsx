@@ -161,8 +161,7 @@ export default function TravelStatusDashboard() {
       {/* Page header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Schengen Tracker</h1>
-          <p className="text-gray-600 mt-1">
+          <p className="text-gray-600">
             Track your 90/180 day Schengen zone compliance
           </p>
         </div>

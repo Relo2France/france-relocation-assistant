@@ -1098,6 +1098,74 @@ class FRAMT_Task_Howto {
                 'links' => array( array( 'Where to write for vital records (CDC)', $cdc ), array( 'Apostille offices by state (NASS)', $nass ) ),
             ),
 
+            'Translate birth certificates' => array(
+                'steps' => array(
+                    array( 'After arrival, not for the consulate', 'The consulate takes each child\'s apostilled birth certificate in English. The school, CPAM and the prefecture want a sworn French translation.' ),
+                    array( 'Use a traducteur assermenté', 'Registered with a French cour d\'appel; works from scans of the certificate and its apostille.' ),
+                ),
+                'bring' => array( 'Scans of each apostilled certificate' ),
+                'time'  => 'A week or two.', 'cost' => 'Roughly €30 to €80 per certificate.',
+                'links' => array(),
+            ),
+            'Gather children vaccination records' => array(
+                'steps' => array(
+                    array( 'Get the full record from your paediatrician', 'Every vaccine with its date, on the practice\'s letterhead. French schools and crèches check vaccinations at enrolment.' ),
+                    array( 'Compare with the French schedule', 'France makes a set of childhood vaccines compulsory for school; a French doctor can say whether a catch-up dose is needed. service-public.fr lists the schedule.', 'https://www.service-public.fr/' ),
+                    array( 'Carry it with the originals', 'Hand luggage, with the birth certificates.' ),
+                ),
+                'bring' => array( 'Vaccination record for each child' ),
+                'time'  => 'A call to the paediatrician.', 'cost' => 'Usually nothing.',
+                'links' => array( array( 'service-public.fr', 'https://www.service-public.fr/' ) ),
+            ),
+            'Research French schools' => array(
+                'steps' => array(
+                    array( 'Know the three kinds', 'Public schools are free and assigned by address through the mairie; private schools under contract with the state follow the national curriculum for modest fees; international and bilingual schools charge more and have waiting lists.' ),
+                    array( 'Check the address rule', 'For a public school, your address decides the school. Settle where you will live with that in mind.' ),
+                    array( 'Ask about support for non-French speakers', 'Many areas run classes for newly arrived children who do not yet speak French; ask the mairie or the rectorat for your area.' ),
+                ),
+                'bring' => array(),
+                'time'  => 'A few evenings.', 'cost' => 'Nothing.',
+                'links' => array( array( 'service-public.fr', 'https://www.service-public.fr/' ) ),
+            ),
+            'Apply for child visas' => array(
+                'steps' => array(
+                    array( 'One application per child', 'On France-Visas, in the child\'s name, same route and dates as the parent\'s.', 'https://france-visas.gouv.fr/' ),
+                    array( 'Same appointment as a parent', 'Book consecutive TLScontact slots; children over twelve give fingerprints.', 'https://visas-fr.tlscontact.com/' ),
+                    array( 'Bring the family papers', 'The apostilled birth certificate naming both parents and, if one parent is not moving, their notarised consent.' ),
+                ),
+                'bring' => array( 'Child\'s passport', 'Apostilled birth certificate', 'Parental consent if needed' ),
+                'time'  => 'With the parent\'s.', 'cost' => 'The visa fee and service fee per child.',
+                'links' => array( array( 'France-Visas', 'https://france-visas.gouv.fr/' ), array( 'TLScontact France', 'https://visas-fr.tlscontact.com/' ) ),
+            ),
+            'Enroll children in school' => array(
+                'steps' => array(
+                    array( 'Register at the mairie', 'For a public primary school, the mairie of your commune registers the child and names the school; for collège and lycée, the school or the rectorat does.' ),
+                    array( 'Bring the file', 'Proof of address, the child\'s birth certificate (translated), the vaccination record, and your ID.' ),
+                    array( 'Then the school itself', 'The school confirms the place and the start date.' ),
+                ),
+                'bring' => array( 'Proof of address', 'Birth certificate with translation', 'Vaccination record', 'Parent ID' ),
+                'time'  => 'A visit or two in the first week.', 'cost' => 'Free for public school.',
+                'links' => array( array( 'service-public.fr', 'https://www.service-public.fr/' ) ),
+            ),
+            'Apply for family CAF benefits' => array(
+                'steps' => array(
+                    array( 'Check what applies', 'Family allowances depend on the number of children and on residence; CAF\'s simulator on caf.fr says what your family may receive.', 'https://www.caf.fr/' ),
+                    array( 'Apply online', 'With your residence permit, the children\'s birth certificates, proof of address and a RIB.' ),
+                ),
+                'bring' => array( 'Residence permit', 'Children\'s birth certificates', 'Proof of address', 'RIB' ),
+                'time'  => 'An hour to file.', 'cost' => 'Nothing.',
+                'links' => array( array( 'CAF', 'https://www.caf.fr/' ) ),
+            ),
+            'Register children for health coverage' => array(
+                'steps' => array(
+                    array( 'No waiting period for children', 'Minors are affiliated to French health cover from arrival, without the three months of residence adults need.' ),
+                    array( 'Add them to a parent\'s file at CPAM', 'Through your ameli account or by post, with each child\'s birth certificate (translated) and passport.', 'https://www.ameli.fr/' ),
+                ),
+                'bring' => array( 'Birth certificates with translations', 'Passports' ),
+                'time'  => 'Weeks to process.', 'cost' => 'Free.',
+                'links' => array( array( 'ameli.fr', 'https://www.ameli.fr/' ) ),
+            ),
+
             // ---------------- Pets ----------------
             'Research pet travel requirements' => array(
                 'steps' => array(

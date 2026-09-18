@@ -79,6 +79,7 @@ export default function Modal({
             <button
               onClick={onClose}
               className="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
+              aria-label="Close"
             >
               <X className="w-5 h-5" />
             </button>
@@ -176,6 +177,7 @@ export function Drawer({
           <button
             onClick={onClose}
             className="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
+            aria-label="Close"
           >
             <X className="w-5 h-5" />
           </button>

@@ -100,6 +100,7 @@ export default function ChecklistItem({
           {/* Status icon (clickable) */}
           <button
             onClick={handleStatusClick}
+            aria-label={`${item.title}: ${item.status === 'complete' ? 'ready. Change status' : item.status === 'in_progress' ? 'waiting. Change status' : 'not started. Change status'}`}
             disabled={isUpdating}
             className={clsx(
               'flex-shrink-0 mt-0.5 transition-all hover:scale-110',

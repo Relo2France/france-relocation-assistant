@@ -265,7 +265,7 @@ export default function Dashboard() {
                       <li key={task.id}>
                         <button onClick={() => openTask(task)} className="w-full flex items-center gap-3.5 px-5 py-3 text-left hover:bg-card-2 transition-colors">
                           {task.status === 'done' ? <CheckCircle2 className="w-5 h-5 text-primary-500 flex-shrink-0" /> : <Circle className={clsx('w-5 h-5 flex-shrink-0', task.is_overdue ? 'text-accent-500' : 'text-gray-300')} />}
-                          <span className="flex-1 min-w-0 truncate text-[0.95rem]"><Jargon text={task.title} /></span>
+                          <span className="flex-1 min-w-0 truncate text-[0.95rem]" title={task.title}><Jargon text={task.title} /></span>
                           <span className={clsx('font-mono text-[0.7rem]', task.is_overdue ? 'text-accent-500' : 'text-gray-500')}>{dueLabel(task).split(' · ')[0]}</span>
                         </button>
                       </li>
@@ -298,7 +298,7 @@ export default function Dashboard() {
                 const isReady = item.status === 'complete' || item.handled_own;
                 return (
                   <li key={item.id} className="flex justify-between gap-3">
-                    <span className="truncate"><Jargon text={item.title} /></span>
+                    <span className="truncate" title={item.title}><Jargon text={item.title} /></span>
                     <span className={clsx('flex-shrink-0 font-semibold', isReady ? 'text-primary-500' : item.status === 'in_progress' ? 'text-gray-600' : 'text-gray-400')}>
                       {isReady ? 'Ready' : item.status === 'in_progress' ? 'Waiting' : 'Not started'}
                     </span>

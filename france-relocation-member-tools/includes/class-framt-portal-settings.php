@@ -733,6 +733,29 @@ class FRAMT_Portal_Settings {
                 <tr><th>Portal page</th><td><a href="<?php echo esc_url( home_url( '/portal/' ) ); ?>" target="_blank" rel="noopener"><?php echo esc_html( home_url( '/portal/' ) ); ?></a></td></tr>
             </table>
         </div>
+
+        <?php $crashes = get_option( 'framt_client_errors', array() ); $crashes = is_array( $crashes ) ? array_slice( $crashes, 0, 10 ) : array(); ?>
+        <div class="framt-settings-card">
+            <h2>Portal crashes</h2>
+            <p style="color:#5f6e66;margin-top:0;">What a member saw when a page broke. The portal reports these itself; the last twenty are kept.</p>
+            <?php if ( empty( $crashes ) ) : ?>
+                <p><strong>None recorded.</strong></p>
+            <?php else : ?>
+                <table class="framt-status">
+                    <?php foreach ( $crashes as $c ) : ?>
+                        <tr>
+                            <th style="white-space:nowrap;"><?php echo esc_html( (string) ( $c['when'] ?? '' ) ); ?><br><span style="font-weight:normal;color:#5f6e66;">user <?php echo (int) ( $c['user_id'] ?? 0 ); ?></span></th>
+                            <td>
+                                <strong><?php echo esc_html( (string) ( $c['message'] ?? '' ) ); ?></strong><br>
+                                <span style="color:#5f6e66;"><?php echo esc_html( (string) ( $c['url'] ?? '' ) ); ?></span>
+                                <?php if ( ! empty( $c['component'] ) ) : ?><details><summary>Where</summary><pre style="white-space:pre-wrap;font-size:11px;"><?php echo esc_html( (string) $c['component'] ); ?></pre></details><?php endif; ?>
+                                <?php if ( ! empty( $c['stack'] ) ) : ?><details><summary>Stack</summary><pre style="white-space:pre-wrap;font-size:11px;"><?php echo esc_html( (string) $c['stack'] ); ?></pre></details><?php endif; ?>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </table>
+            <?php endif; ?>
+        </div>
         <?php
     }
 

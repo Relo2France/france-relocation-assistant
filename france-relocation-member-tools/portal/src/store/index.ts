@@ -124,6 +124,12 @@ interface PortalState {
   /** A step to open in the drawer as soon as the steps view has it. */
   openTaskId: number | null;
   setOpenTaskId: (id: number | null) => void;
+  /** A message to open as soon as Messages has it. */
+  openMessageId: number | null;
+  setOpenMessageId: (id: number | null) => void;
+  /** A profile section to open and scroll to when Profile loads. */
+  profileSection: string | null;
+  setProfileSection: (id: string | null) => void;
 
   // Modal state
   activeModal: string | null;
@@ -202,6 +208,10 @@ export const usePortalStore = create<PortalState>((set, get) => {
       }),
     openTaskId: null,
     setOpenTaskId: (id) => set({ openTaskId: id }),
+    openMessageId: null,
+    setOpenMessageId: (id) => set({ openMessageId: id }),
+    profileSection: null,
+    setProfileSection: (id) => set({ profileSection: id }),
 
     // Modal state
     activeModal: null,

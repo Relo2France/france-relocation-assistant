@@ -8,7 +8,8 @@
  * conversation you started; that is Support. Each alert's action opens the
  * exact thing it is about, and each message can be marked unread or deleted.
  */
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { CompactErrorFallback } from '@/components/shared/ErrorBoundary';
 import { clsx } from 'clsx';
 import { AlertTriangle, ArrowLeft, Bell, CalendarClock, Mail, MailOpen, RotateCcw, Scale, Trash2, X } from 'lucide-react';
 import { buildFileAlerts, useDismissedAlerts } from '@/alerts/alerts';
@@ -21,10 +22,18 @@ import type { SupportTicket, Task } from '@/types';
 export default function MessagesView() {
   const [openId, setOpenId] = useState<number | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
-  const { data: ticketsData, isLoading } = useSupportTickets();
+  const { data: ticketsData, isLoading, isError: ticketsFailed, refetch: refetchTickets } = useSupportTickets();
   const { data: dashboard } = useDashboard();
   const { data: tasks } = useTasks(dashboard?.project?.id ?? 0);
-  const { setActiveView, setActiveStage, setTaskFilters, setOpenTaskId } = usePortalStore();
+  const { setActiveView, setActiveStage, setTaskFilters, setOpenTaskId, openMessageId, setOpenMessageId } = usePortalStore();
+
+  // Arrived from the bell to read one message.
+  useEffect(() => {
+    if (openMessageId !== null) {
+      setOpenId(openMessageId);
+      setOpenMessageId(null);
+    }
+  }, [openMessageId, setOpenMessageId]);
   const markUnread = useMarkSupportTicketUnread();
   const remove = useDeleteSupportTicket();
 
@@ -47,7 +56,6 @@ export default function MessagesView() {
     <div className="flex flex-col">
       <header className="flex flex-col gap-1.5 px-6 md:px-8 pt-6 pb-5 bg-card border-b border-rule">
         <span className="eyebrow">From Relo2France</span>
-        <h2 className="font-display text-[1.75rem] font-semibold tracking-[-0.018em] leading-tight">Messages</h2>
         <p className="text-ink/80 max-w-[64ch]">What the site and your own file have to tell you. To ask us something, use Support.</p>
       </header>
 
@@ -101,6 +109,8 @@ export default function MessagesView() {
           </div>
           {isLoading ? (
             <div className="p-5"><div className="h-10 animate-pulse bg-card-2 rounded" /></div>
+          ) : ticketsFailed ? (
+            <CompactErrorFallback message="Messages could not be loaded." onRetry={() => void refetchTickets()} />
           ) : fromSite.length === 0 ? (
             <p className="px-5 py-6 text-sm text-gray-500 m-0">Nothing yet. When a rule on your route changes, or we have something for you, it lands here and in your inbox.</p>
           ) : (

@@ -7,7 +7,8 @@
  * Refactored to use extracted sub-components for better maintainability.
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { usePortalStore } from '@/store';
 import { clsx } from 'clsx';
 import {
   Briefcase,
@@ -85,6 +86,7 @@ const sections: ProfileSection[] = [
 export default function ProfileView() {
   const { data: profile, isLoading: profileLoading } = useMemberProfile();
   const { data: completion } = useProfileCompletion();
+  const { profileSection, setProfileSection } = usePortalStore();
   const [openSections, setOpenSections] = useState<Set<SectionId>>(
     new Set(['personal', 'applicant', 'visa', 'location', 'timeline', 'financial', 'documents'])
   );
@@ -100,6 +102,16 @@ export default function ProfileView() {
       return next;
     });
   };
+
+  // Arrived to change one thing ("Change it in my profile"): open that
+  // section and bring it into view.
+  useEffect(() => {
+    if (profileLoading || !profileSection) return;
+    const id = profileSection as SectionId;
+    setProfileSection(null);
+    setOpenSections((prev) => new Set(prev).add(id));
+    window.setTimeout(() => document.getElementById(`section-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+  }, [profileLoading, profileSection, setProfileSection]);
 
   if (profileLoading) {
     return <ProfileSkeleton />;
@@ -125,13 +137,8 @@ export default function ProfileView() {
 
   return (
     <div className="p-6">
-      {/* Page header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">My Profile</h1>
-        <p className="text-gray-600 mt-1">
-          Manage your personal information for visa applications
-        </p>
-      </div>
+      {/* The title is in the top bar; one line under it. */}
+      <p className="text-gray-600 mb-6 max-w-[64ch]">What the plan is built from. Every answer here changes your steps and dates.</p>
 
       {/* Profile completion indicator */}
       <ProfileCompletionCard completion={completionPercentage} missing={missing} onGoTo={goToField} />

@@ -1,16 +1,12 @@
+import { useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  activityApi,
   chatApi,
   checklistsApi,
   dashboardApi,
-  documentGeneratorApi,
   familyApi,
   filesApi,
   glossaryApi,
-  guidesApi,
-  membershipApi,
-  notesApi,
   profileApi,
   projectsApi,
   researchApi,
@@ -26,15 +22,12 @@ import type {
   ChatRequest,
   ChecklistItemStatus,
   DashboardData,
-  DocumentGenerationRequest,
   FamilyMember,
   FileCategory,
   FileFilters,
-  JurisdictionCategory,
   JurisdictionType,
   MemberProfile,
   NoteFilters,
-  NoteVisibility,
   Project,
   Task,
   TaskFilters,
@@ -43,7 +36,6 @@ import type {
   TravelStatusTrip,
   UKTies,
   UpdateProfileData,
-  UpdateUserJurisdictionRequest,
   UserSettings,
 } from '@/types';
 
@@ -159,6 +151,8 @@ export function useUpdateSettings() {
   const queryClient = useQueryClient();
 
   return useMutation({
+    // This screen shows its own error inline.
+    meta: { silentError: true },
     mutationFn: (data: Partial<UserSettings>) => userApi.updateSettings(data),
     // Optimistic update: immediately update cache before API completes
     onMutate: async (newData) => {
@@ -204,24 +198,6 @@ export function useResetProfile() {
   });
 }
 
-// Projects hooks
-export function useProjects() {
-  return useQuery({
-    queryKey: queryKeys.projects,
-    queryFn: projectsApi.list,
-    staleTime: STALE_TIME.DEFAULT, // 30 seconds
-  });
-}
-
-export function useProject(id: number) {
-  return useQuery({
-    queryKey: queryKeys.project(id),
-    queryFn: () => projectsApi.get(id),
-    enabled: id > 0,
-    staleTime: STALE_TIME.DEFAULT, // 30 seconds
-  });
-}
-
 export function useUpdateProject() {
   const queryClient = useQueryClient();
 
@@ -245,15 +221,6 @@ export function useTasks(projectId: number, filters?: TaskFilters) {
     queryKey: queryKeys.tasks(projectId, filters),
     queryFn: () => tasksApi.list(projectId, filters),
     enabled: projectId > 0,
-    staleTime: STALE_TIME.DEFAULT, // 30 seconds
-  });
-}
-
-export function useTask(id: number) {
-  return useQuery({
-    queryKey: queryKeys.task(id),
-    queryFn: () => tasksApi.get(id),
-    enabled: id > 0,
     staleTime: STALE_TIME.DEFAULT, // 30 seconds
   });
 }
@@ -311,31 +278,12 @@ export function useDeleteTask() {
   });
 }
 
-// Activity hooks
-export function useActivity(projectId: number, options?: { limit?: number; offset?: number }) {
-  return useQuery({
-    queryKey: queryKeys.activity(projectId),
-    queryFn: () => activityApi.list(projectId, options),
-    enabled: projectId > 0,
-    staleTime: STALE_TIME.DYNAMIC, // 10 seconds - activity is more dynamic
-  });
-}
-
 // Files hooks
 export function useFiles(projectId: number, filters?: FileFilters) {
   return useQuery({
     queryKey: queryKeys.files(projectId, filters),
     queryFn: () => filesApi.list(projectId, filters),
     enabled: projectId > 0,
-    staleTime: STALE_TIME.DEFAULT, // 30 seconds
-  });
-}
-
-export function useFile(id: number) {
-  return useQuery({
-    queryKey: queryKeys.file(id),
-    queryFn: () => filesApi.get(id),
-    enabled: id > 0,
     staleTime: STALE_TIME.DEFAULT, // 30 seconds
   });
 }
@@ -407,75 +355,6 @@ export function useDownloadFile() {
   };
 }
 
-// Notes hooks
-export function useNotes(projectId: number, filters?: NoteFilters) {
-  return useQuery({
-    queryKey: queryKeys.notes(projectId, filters),
-    queryFn: () => notesApi.list(projectId, filters),
-    enabled: projectId > 0,
-    staleTime: STALE_TIME.DEFAULT, // 30 seconds
-  });
-}
-
-export function useNote(id: number) {
-  return useQuery({
-    queryKey: queryKeys.note(id),
-    queryFn: () => notesApi.get(id),
-    enabled: id > 0,
-    staleTime: STALE_TIME.DEFAULT, // 30 seconds
-  });
-}
-
-export function useCreateNote(projectId: number) {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (data: { content: string; task_id?: number; visibility?: NoteVisibility }) =>
-      notesApi.create(projectId, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.notes(projectId) });
-      queryClient.invalidateQueries({ queryKey: queryKeys.activity(projectId) });
-    },
-  });
-}
-
-export function useUpdateNote() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: { content?: string; visibility?: NoteVisibility } }) =>
-      notesApi.update(id, data),
-    onSuccess: (updatedNote) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.notes(updatedNote.project_id) });
-      queryClient.setQueryData(queryKeys.note(updatedNote.id), updatedNote);
-    },
-  });
-}
-
-export function useDeleteNote() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ id, projectId }: { id: number; projectId: number }) =>
-      notesApi.delete(id).then((result) => ({ ...result, projectId })),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.notes(variables.projectId) });
-    },
-  });
-}
-
-export function useToggleNotePin() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (id: number) => notesApi.togglePin(id),
-    onSuccess: (updatedNote) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.notes(updatedNote.project_id) });
-      queryClient.setQueryData(queryKeys.note(updatedNote.id), updatedNote);
-    },
-  });
-}
-
 // ============================================
 // Profile Hooks (Full 30+ fields)
 // ============================================
@@ -492,6 +371,8 @@ export function useUpdateMemberProfile() {
   const queryClient = useQueryClient();
 
   return useMutation({
+    // This screen shows its own error inline.
+    meta: { silentError: true },
     mutationFn: (data: Partial<MemberProfile>) => profileApi.update(data),
     // Optimistic update: immediately update cache before API completes
     onMutate: async (newData) => {
@@ -522,6 +403,11 @@ export function useUpdateMemberProfile() {
       // Replace with server data (in case of computed fields)
       queryClient.setQueryData(queryKeys.profile, updatedProfile);
       queryClient.invalidateQueries({ queryKey: queryKeys.profileCompletion });
+      // The route, the move date and the household drive the stage, the plan
+      // and the alerts; a profile save can change all three.
+      queryClient.invalidateQueries({ queryKey: queryKeys.dashboard });
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['checklists'] });
     },
   });
 }
@@ -623,50 +509,6 @@ export function useDeleteTaskChecklistItem(taskId: number) {
 // Document Generation Hooks
 // ============================================
 
-export function useDocumentTypes() {
-  return useQuery({
-    queryKey: queryKeys.documentTypes,
-    queryFn: documentGeneratorApi.getTypes,
-    staleTime: STALE_TIME.LONG, // 1 hour
-  });
-}
-
-export function useGeneratedDocuments(projectId: number) {
-  return useQuery({
-    queryKey: queryKeys.generatedDocuments(projectId),
-    queryFn: () => documentGeneratorApi.listGenerated(projectId),
-    enabled: projectId > 0,
-    staleTime: STALE_TIME.SHORT, // 1 minute
-  });
-}
-
-export function usePreviewDocument() {
-  return useMutation({
-    mutationFn: (data: DocumentGenerationRequest) => documentGeneratorApi.preview(data),
-  });
-}
-
-export function useGenerateDocument(projectId: number) {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (data: DocumentGenerationRequest) => documentGeneratorApi.generate(projectId, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.generatedDocuments(projectId) });
-      queryClient.invalidateQueries({ queryKey: queryKeys.files(projectId) });
-    },
-  });
-}
-
-export function useDownloadGeneratedDocument() {
-  return {
-    download: (id: number, format: 'pdf' | 'docx' = 'pdf') => {
-      const url = documentGeneratorApi.downloadGenerated(id, format);
-      window.open(url, '_blank');
-    },
-  };
-}
-
 // ============================================
 // Glossary Hooks
 // ============================================
@@ -676,14 +518,6 @@ export function useGlossary() {
     queryKey: queryKeys.glossary,
     queryFn: glossaryApi.getAll,
     staleTime: STALE_TIME.LONG, // 1 hour
-  });
-}
-
-export function useGlossarySearch(query: string) {
-  return useQuery({
-    queryKey: queryKeys.glossarySearch(query),
-    queryFn: () => glossaryApi.search(query),
-    enabled: query.length >= SEARCH.MIN_QUERY_LENGTH,
   });
 }
 
@@ -716,43 +550,6 @@ export function useVerificationHistory(projectId: number) {
 // Personalized Guides Hooks
 // ============================================
 
-export function useGuides() {
-  return useQuery({
-    queryKey: queryKeys.guides,
-    queryFn: guidesApi.list,
-    staleTime: STALE_TIME.MEDIUM, // 5 minutes
-  });
-}
-
-export function useGuide(type: string) {
-  return useQuery({
-    queryKey: queryKeys.guide(type),
-    queryFn: () => guidesApi.get(type),
-    enabled: !!type,
-    staleTime: STALE_TIME.LONG, // 1 hour - guides are static content
-  });
-}
-
-export function usePersonalizedGuide(type: string) {
-  return useQuery({
-    queryKey: queryKeys.personalizedGuide(type),
-    queryFn: () => guidesApi.getPersonalized(type),
-    enabled: !!type,
-    staleTime: STALE_TIME.MEDIUM, // 5 minutes
-  });
-}
-
-export function useGenerateAIGuide() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (guideType: string) => guidesApi.generateAI(guideType),
-    onSuccess: (_, guideType) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.personalizedGuide(guideType) });
-    },
-  });
-}
-
 // ============================================
 // Knowledge Base Chat Hooks
 // ============================================
@@ -767,6 +564,8 @@ export function useChatCategories() {
 
 export function useSendChatMessage() {
   return useMutation({
+    // This screen shows its own error inline.
+    meta: { silentError: true },
     mutationFn: (data: ChatRequest) => chatApi.send(data),
   });
 }
@@ -784,74 +583,6 @@ export function useSearchChatTopics(query: string) {
 // MemberPress/Membership Hooks
 // ============================================
 
-export function useMembership() {
-  return useQuery({
-    queryKey: queryKeys.membership,
-    queryFn: membershipApi.getInfo,
-    staleTime: STALE_TIME.MEDIUM, // 5 minutes
-  });
-}
-
-export function useSubscriptions() {
-  return useQuery({
-    queryKey: queryKeys.subscriptions,
-    queryFn: membershipApi.getSubscriptions,
-    staleTime: STALE_TIME.MEDIUM, // 5 minutes
-  });
-}
-
-export function usePayments() {
-  return useQuery({
-    queryKey: queryKeys.payments,
-    queryFn: membershipApi.getPayments,
-    staleTime: STALE_TIME.MEDIUM, // 5 minutes
-  });
-}
-
-export function useCancelSubscription() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (subscriptionId: number) => membershipApi.cancelSubscription(subscriptionId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.subscriptions });
-      queryClient.invalidateQueries({ queryKey: queryKeys.membership });
-    },
-  });
-}
-
-export function useSuspendSubscription() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (subscriptionId: number) => membershipApi.suspendSubscription(subscriptionId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.subscriptions });
-      queryClient.invalidateQueries({ queryKey: queryKeys.membership });
-    },
-  });
-}
-
-export function useResumeSubscription() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (subscriptionId: number) => membershipApi.resumeSubscription(subscriptionId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.subscriptions });
-      queryClient.invalidateQueries({ queryKey: queryKeys.membership });
-    },
-  });
-}
-
-export function useUpgradeOptions() {
-  return useQuery({
-    queryKey: queryKeys.upgradeOptions,
-    queryFn: membershipApi.getUpgradeOptions,
-    staleTime: STALE_TIME.LONG, // 1 hour
-  });
-}
-
 // ============================================
 // Support Ticket Hooks
 // ============================================
@@ -861,11 +592,15 @@ export function useSupportTickets() {
     queryKey: queryKeys.supportTickets,
     queryFn: supportApi.getTickets,
     staleTime: STALE_TIME.DEFAULT, // 30 seconds
+    // The rail badge and the bell read this; poll so a message from the team
+    // appears without a reload.
+    refetchInterval: REFETCH_INTERVAL.SUPPORT_UNREAD,
   });
 }
 
 export function useSupportTicket(ticketId: number | null) {
-  return useQuery({
+  const queryClient = useQueryClient();
+  const query = useQuery({
     queryKey: queryKeys.supportTicket(ticketId || 0),
     queryFn: () => {
       // Guard is redundant due to `enabled: !!ticketId` but satisfies type checker
@@ -875,15 +610,17 @@ export function useSupportTicket(ticketId: number | null) {
     enabled: !!ticketId,
     staleTime: STALE_TIME.DYNAMIC, // 10 seconds
   });
-}
 
-export function useSupportUnreadCount() {
-  return useQuery({
-    queryKey: queryKeys.supportUnreadCount,
-    queryFn: supportApi.getUnreadCount,
-    staleTime: STALE_TIME.DEFAULT, // 30 seconds
-    refetchInterval: REFETCH_INTERVAL.SUPPORT_UNREAD, // 1 minute
-  });
+  // Opening a thread marks it read on the server; mirror that in the list the
+  // rail badge, the bell and Messages all read, straight away.
+  useEffect(() => {
+    if (!ticketId || !query.data) return;
+    queryClient.setQueryData<{ tickets?: Array<{ id: number; has_unread_user?: boolean }> }>(queryKeys.supportTickets, (old) =>
+      old?.tickets ? { ...old, tickets: old.tickets.map((t) => (t.id === ticketId ? { ...t, has_unread_user: false } : t)) } : old
+    );
+  }, [ticketId, query.data, queryClient]);
+
+  return query;
 }
 
 export function useCreateSupportTicket() {
@@ -968,18 +705,12 @@ export function useFamilyMembers() {
   });
 }
 
-export function useFamilyFeatureStatus() {
-  return useQuery({
-    queryKey: queryKeys.familyFeatureStatus,
-    queryFn: familyApi.getFeatureStatus,
-    staleTime: STALE_TIME.MEDIUM, // 5 minutes
-  });
-}
-
 export function useCreateFamilyMember() {
   const queryClient = useQueryClient();
 
   return useMutation({
+    // This screen shows its own error inline.
+    meta: { silentError: true },
     mutationFn: familyApi.create,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.familyMembers });
@@ -1015,6 +746,8 @@ export function useInviteFamilyMember() {
   const queryClient = useQueryClient();
 
   return useMutation({
+    // This screen shows its own error inline.
+    meta: { silentError: true },
     mutationFn: ({ memberId, email }: { memberId: number; email: string }) => familyApi.invite(memberId, email),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.familyMembers });
@@ -1043,14 +776,6 @@ export function useTravelStatusTrips() {
   return useQuery({
     queryKey: queryKeys.travelStatusTrips,
     queryFn: travelStatusApi.getTrips,
-    staleTime: STALE_TIME.DEFAULT, // 30 seconds
-  });
-}
-
-export function useTravelStatusSummary() {
-  return useQuery({
-    queryKey: queryKeys.travelStatusSummary,
-    queryFn: travelStatusApi.getSummary,
     staleTime: STALE_TIME.DEFAULT, // 30 seconds
   });
 }
@@ -1159,14 +884,6 @@ export function useTravelStatusLocationToday() {
   });
 }
 
-export function useTravelStatusLocationSettings() {
-  return useQuery({
-    queryKey: queryKeys.travelStatusLocationSettings,
-    queryFn: travelStatusApi.getLocationSettings,
-    staleTime: STALE_TIME.MEDIUM, // 5 minutes
-  });
-}
-
 export function useStoreTravelStatusLocation() {
   const queryClient = useQueryClient();
 
@@ -1200,24 +917,6 @@ export function useClearTravelStatusLocationHistory() {
       queryClient.invalidateQueries({ queryKey: queryKeys.travelStatusLocationHistory });
       queryClient.invalidateQueries({ queryKey: queryKeys.travelStatusLocationToday });
     },
-  });
-}
-
-export function useUpdateTravelStatusLocationSettings() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: travelStatusApi.updateLocationSettings,
-    onSuccess: (updatedSettings) => {
-      queryClient.setQueryData(queryKeys.travelStatusLocationSettings, updatedSettings);
-    },
-  });
-}
-
-export function useGeocodeLocation() {
-  return useMutation({
-    mutationFn: ({ lat, lng }: { lat: number; lng: number }) =>
-      travelStatusApi.geocode(lat, lng),
   });
 }
 
@@ -1349,49 +1048,12 @@ export function useJurisdictions(type?: JurisdictionType) {
 }
 
 /**
- * Get jurisdiction rules by category (visa, tax, immigration, custom)
- */
-export function useJurisdictionsByCategory(category?: JurisdictionCategory) {
-  return useQuery({
-    queryKey: ['jurisdictionsByCategory', category] as const,
-    queryFn: () => travelStatusApi.getJurisdictionsByCategory(category),
-    staleTime: STALE_TIME.LONG,
-    throwOnError: false,
-  });
-}
-
-/**
- * Get a single jurisdiction rule by code
- */
-export function useJurisdiction(code: string) {
-  return useQuery({
-    queryKey: ['jurisdiction', code] as const,
-    queryFn: () => travelStatusApi.getJurisdiction(code),
-    staleTime: STALE_TIME.LONG,
-    throwOnError: false,
-    enabled: !!code,
-  });
-}
-
-/**
  * Get user's tracked jurisdictions with preferences
  */
 export function useTrackedJurisdictions() {
   return useQuery({
     queryKey: ['trackedJurisdictions'] as const,
     queryFn: travelStatusApi.getTrackedJurisdictions,
-    staleTime: STALE_TIME.DEFAULT,
-    throwOnError: false,
-  });
-}
-
-/**
- * Get user jurisdiction preferences (includes alert thresholds, display order)
- */
-export function useUserJurisdictions() {
-  return useQuery({
-    queryKey: ['userJurisdictions'] as const,
-    queryFn: travelStatusApi.getUserJurisdictions,
     staleTime: STALE_TIME.DEFAULT,
     throwOnError: false,
   });
@@ -1432,35 +1094,6 @@ export function useRemoveTrackedJurisdiction() {
 }
 
 /**
- * Update user jurisdiction preferences (alert threshold, display order, enabled)
- */
-export function useUpdateUserJurisdiction() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (data: UpdateUserJurisdictionRequest) =>
-      travelStatusApi.updateUserJurisdiction(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['userJurisdictions'] });
-      queryClient.invalidateQueries({ queryKey: ['complianceOverview'] });
-    },
-  });
-}
-
-/**
- * Get compliance summary for a single jurisdiction
- */
-export function useJurisdictionSummary(code: string, date?: string) {
-  return useQuery({
-    queryKey: ['jurisdictionSummary', code, date] as const,
-    queryFn: () => travelStatusApi.getJurisdictionSummary(code, date),
-    staleTime: STALE_TIME.DEFAULT,
-    throwOnError: false,
-    enabled: !!code,
-  });
-}
-
-/**
  * Get compliance summaries for all tracked jurisdictions
  */
 export function useMultiJurisdictionSummary() {
@@ -1469,32 +1102,6 @@ export function useMultiJurisdictionSummary() {
     queryFn: travelStatusApi.getMultiJurisdictionSummary,
     staleTime: STALE_TIME.DEFAULT,
     throwOnError: false,
-  });
-}
-
-/**
- * Get compliance overview with alerts across all tracked jurisdictions
- */
-export function useComplianceOverview() {
-  return useQuery({
-    queryKey: ['complianceOverview'] as const,
-    queryFn: travelStatusApi.getComplianceOverview,
-    staleTime: STALE_TIME.DEFAULT,
-    throwOnError: false,
-    refetchInterval: REFETCH_INTERVAL.SUPPORT_UNREAD, // Refresh periodically for alerts
-  });
-}
-
-/**
- * Get compliance history snapshots for a jurisdiction
- */
-export function useComplianceHistory(code: string, options?: { days?: number }) {
-  return useQuery({
-    queryKey: ['complianceHistory', code, options?.days] as const,
-    queryFn: () => travelStatusApi.getComplianceHistory(code, options?.days),
-    staleTime: STALE_TIME.MEDIUM, // 5 minutes
-    throwOnError: false,
-    enabled: !!code,
   });
 }
 
@@ -1533,36 +1140,6 @@ export function useUpdateUserFactors() {
   });
 }
 
-/**
- * Get all EU tax jurisdictions
- */
-export function useEUTaxJurisdictions() {
-  return useQuery({
-    queryKey: ['euTaxJurisdictions'] as const,
-    queryFn: travelStatusApi.getEUTaxJurisdictions,
-    staleTime: STALE_TIME.LONG, // 30 minutes - static data
-    throwOnError: false,
-  });
-}
-
-/**
- * Bulk enable/disable jurisdictions
- */
-export function useBulkUpdateJurisdictions() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ action, codes }: { action: 'enable' | 'disable'; codes: string[] }) =>
-      travelStatusApi.bulkUpdateJurisdictions(action, codes),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['trackedJurisdictions'] });
-      queryClient.invalidateQueries({ queryKey: ['userJurisdictions'] });
-      queryClient.invalidateQueries({ queryKey: ['multiJurisdictionSummary'] });
-      queryClient.invalidateQueries({ queryKey: ['complianceOverview'] });
-    },
-  });
-}
-
 // ============================================
 // UK SRT Hooks (Phase 3)
 // ============================================
@@ -1595,18 +1172,6 @@ export function useUpdateUKTies() {
       queryClient.invalidateQueries({ queryKey: ['multiJurisdictionSummary'] });
       queryClient.invalidateQueries({ queryKey: ['complianceOverview'] });
     },
-  });
-}
-
-/**
- * Get UK SRT result
- */
-export function useUKSRTResult(date?: string) {
-  return useQuery({
-    queryKey: ['ukSrtResult', date] as const,
-    queryFn: () => travelStatusApi.getUKSRTResult(date),
-    staleTime: STALE_TIME.DEFAULT, // 30 seconds
-    throwOnError: false,
   });
 }
 
@@ -1662,78 +1227,6 @@ export function useDeleteNotification() {
 
   return useMutation({
     mutationFn: travelStatusApi.deleteNotification,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      queryClient.invalidateQueries({ queryKey: ['notificationUnreadCount'] });
-    },
-  });
-}
-
-export function usePushStatus() {
-  return useQuery({
-    queryKey: ['pushStatus'] as const,
-    queryFn: travelStatusApi.getPushStatus,
-    staleTime: STALE_TIME.MEDIUM, // 5 minutes
-    throwOnError: false,
-  });
-}
-
-export function useSubscribePush() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: travelStatusApi.subscribePush,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['pushStatus'] });
-    },
-  });
-}
-
-export function useUnsubscribePush() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: travelStatusApi.unsubscribePush,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['pushStatus'] });
-    },
-  });
-}
-
-export function useVapidKey() {
-  return useQuery({
-    queryKey: ['vapidKey'] as const,
-    queryFn: travelStatusApi.getVapidKey,
-    staleTime: STALE_TIME.LONG, // 1 hour - key doesn't change
-    throwOnError: false,
-  });
-}
-
-export function useNotificationPreferences() {
-  return useQuery({
-    queryKey: ['notificationPreferences'] as const,
-    queryFn: travelStatusApi.getNotificationPreferences,
-    staleTime: STALE_TIME.MEDIUM, // 5 minutes
-    throwOnError: false,
-  });
-}
-
-export function useUpdateNotificationPreferences() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: travelStatusApi.updateNotificationPreferences,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notificationPreferences'] });
-    },
-  });
-}
-
-export function useSendTestNotification() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: travelStatusApi.sendTestNotification,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
       queryClient.invalidateQueries({ queryKey: ['notificationUnreadCount'] });

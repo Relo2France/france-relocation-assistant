@@ -199,7 +199,7 @@ export default function KnowledgeBaseChat() {
           </button>
           <MessageSquare className="w-6 h-6 text-primary-600" />
           <div>
-            <h1 className="font-display text-xl font-semibold text-gray-900">Ask about my case</h1>
+            <p className="font-display text-lg font-semibold text-gray-900 m-0">Your question</p>
             <p className="text-sm text-gray-600">
               {selectedCategory
                 ? `Asking about ${

@@ -761,16 +761,8 @@ export default function GlossaryView() {
 
   return (
     <div className="p-6">
-      {/* Page header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-          <Book className="w-7 h-7 text-primary-600" />
-          French Glossary
-        </h1>
-        <p className="text-gray-600 mt-1">
-          Essential French terms and definitions for your relocation journey
-        </p>
-      </div>
+      {/* The title is in the top bar; one line under it. */}
+      <p className="text-gray-600 mb-6 max-w-[64ch]">Essential French terms and definitions for your relocation journey.</p>
 
       {/* Search bar */}
       <div className="mb-6">

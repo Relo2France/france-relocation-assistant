@@ -52,11 +52,11 @@ function StageRing({ state }: { state: 'done' | 'now' | 'ahead' }) {
 
 const TOOLS: { id: string; label: string; icon: typeof MessageSquare; views: string[] }[] = [
   { id: 'chat', label: 'Ask about my case', icon: MessageSquare, views: ['chat', 'glossary'] },
-  { id: 'documents', label: 'Documents & files', icon: FileText, views: ['documents', 'files'] },
+  { id: 'documents', label: 'Documents & files', icon: FileText, views: ['documents', 'files', 'checklists'] },
   { id: 'family', label: 'Family plans', icon: Users, views: ['family'] },
   { id: 'deadlines', label: 'Deadlines', icon: Calendar, views: ['deadlines', 'timeline', 'tasks'] },
   { id: 'schengen', label: 'Schengen days', icon: Globe, views: ['schengen'] },
-  { id: 'research', label: 'Explore France', icon: BookOpen, views: ['research', 'guides'] },
+  { id: 'research', label: 'Explore France', icon: BookOpen, views: ['research', 'guides', 'guide'] },
   { id: 'messages', label: 'Messages', icon: Mail, views: ['messages'] },
 ];
 
@@ -183,7 +183,10 @@ export default function Sidebar() {
                     <Icon className="w-[18px] h-[18px] flex-shrink-0" aria-hidden="true" />
                     {!sidebarCollapsed && <span className="text-[0.9rem]">{tool.label}</span>}
                     {tool.id === 'messages' && unreadMessages > 0 ? (
-                      <span className={clsx('ml-auto font-mono text-[0.66rem] rounded-full px-1.5 py-0.5 bg-white/15 text-sidebar-textActive', sidebarCollapsed && 'absolute top-1 right-1 ml-0')} aria-label={`${unreadMessages} unread`}>{unreadMessages}</span>
+                      <>
+                        <span className={clsx('ml-auto font-mono text-[0.66rem] rounded-full px-1.5 py-0.5 bg-white/15 text-sidebar-textActive', sidebarCollapsed && 'absolute top-1 right-1 ml-0')} aria-hidden="true">{unreadMessages}</span>
+                        <span className="sr-only">{unreadMessages} unread</span>
+                      </>
                     ) : null}
                   </button>
                 </li>
@@ -197,7 +200,7 @@ export default function Sidebar() {
           <ul className="space-y-0.5">
             {ACCOUNT.filter((a) => a.id === 'profile' || a.id === 'support' || isMenuItemVisible(a.id)).map((item) => {
               const Icon = item.icon;
-              const active = [item.id, item.id === 'profile' ? 'membership' : ''].includes(activeView);
+              const active = item.id === activeView;
               return (
                 <li key={item.id}>
                   <button

@@ -7049,13 +7049,12 @@ Focus on practical advice while being careful not to state incorrect facts. When
             )
         );
 
-        // Delete generated documents
-        $wpdb->query(
-            $wpdb->prepare(
-                "DELETE FROM {$wpdb->prefix}framt_generated_documents WHERE user_id = %d",
-                $user_id
-            )
-        );
+        // Delete generated documents, where that table exists (it is only
+        // created on sites that ran the old document generator).
+        $gen_table = $wpdb->prefix . 'framt_generated_documents';
+        if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $gen_table ) ) === $gen_table ) {
+            $wpdb->query( $wpdb->prepare( "DELETE FROM {$gen_table} WHERE user_id = %d", $user_id ) );
+        }
 
         // Delete user's saved research report links (the reports themselves are shared)
         $wpdb->query(
@@ -8601,7 +8600,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
      * @return void
      */
     private function refresh_template_tasks( $user_id, $project_id ) {
-        if ( ! $user_id || ! $project_id || '1' === get_user_meta( $user_id, 'framt_task_templates_v6', true ) ) {
+        if ( ! $user_id || ! $project_id || '1' === get_user_meta( $user_id, 'framt_task_templates_v7', true ) ) {
             return;
         }
         $visa    = (string) get_user_meta( $user_id, 'fra_visa_type', true );
@@ -8659,7 +8658,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                 $task->save();
             }
         }
-        update_user_meta( $user_id, 'framt_task_templates_v6', '1' );
+        update_user_meta( $user_id, 'framt_task_templates_v7', '1' );
     }
 
     /**
@@ -8789,7 +8788,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                 'person'      => 'children',
                 'title'       => 'Get birth certificates apostilled',
                 'description' => 'Have children\'s birth certificates apostilled for French recognition.',
-                'stage'       => 'pre-arrival',
+                'stage'       => 'prepare',
                 'priority'    => 'high',
                 'task_type'   => 'document',
                 'days_offset' => -90, // 3 months before move
@@ -8797,17 +8796,17 @@ Focus on practical advice while being careful not to state incorrect facts. When
             array(
                 'person'      => 'children',
                 'title'       => 'Translate birth certificates',
-                'description' => 'Get certified French translations of children\'s birth certificates.',
-                'stage'       => 'pre-arrival',
+                'description' => 'Not for the consulate, which takes English, but for the school, CPAM and the prefecture after arrival: a sworn French translation of each child\'s apostilled birth certificate.',
+                'stage'       => 'arrive',
                 'priority'    => 'high',
                 'task_type'   => 'document',
-                'days_offset' => -75, // 2.5 months before move
+                'days_offset' => 45, // after arrival, before school and CPAM ask
             ),
             array(
                 'person'      => 'children',
                 'title'       => 'Gather children vaccination records',
                 'description' => 'Collect immunization records - France requires specific vaccinations for school.',
-                'stage'       => 'pre-arrival',
+                'stage'       => 'prepare',
                 'priority'    => 'high',
                 'task_type'   => 'document',
                 'days_offset' => -60, // 2 months before move
@@ -8816,7 +8815,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                 'person'      => 'children',
                 'title'       => 'Research French schools',
                 'description' => 'Research public, private, and international school options in your target area.',
-                'stage'       => 'pre-arrival',
+                'stage'       => 'prepare',
                 'priority'    => 'medium',
                 'task_type'   => 'task',
                 'days_offset' => -120, // 4 months before move (early research)
@@ -8824,8 +8823,8 @@ Focus on practical advice while being careful not to state incorrect facts. When
             array(
                 'person'      => 'children',
                 'title'       => 'Apply for child visas',
-                'description' => 'Submit visa applications for dependent children.',
-                'stage'       => 'pre-arrival',
+                'description' => 'Each child has an application of their own, filed with a parent\'s at the same appointment.',
+                'stage'       => 'apply',
                 'priority'    => 'high',
                 'task_type'   => 'task',
                 'days_offset' => -60, // 2 months before move
@@ -8834,7 +8833,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                 'person'      => 'children',
                 'title'       => 'Enroll children in school',
                 'description' => 'Complete school registration with your local mairie or chosen private school.',
-                'stage'       => 'arrival',
+                'stage'       => 'arrive',
                 'priority'    => 'high',
                 'task_type'   => 'task',
                 'days_offset' => 7, // 1 week after move
@@ -8843,7 +8842,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                 'person'      => 'children',
                 'title'       => 'Apply for family CAF benefits',
                 'description' => 'Apply for allocations familiales and other family benefits through CAF.',
-                'stage'       => 'settlement',
+                'stage'       => 'settle',
                 'priority'    => 'medium',
                 'task_type'   => 'financial',
                 'days_offset' => 45, // 1.5 months after move
@@ -8851,9 +8850,9 @@ Focus on practical advice while being careful not to state incorrect facts. When
             array(
                 'person'      => 'children',
                 'title'       => 'Register children for health coverage',
-                'description' => 'Add children as ayants droit for French health insurance.',
+                'description' => 'Children are covered from arrival, without the three-month wait adults have: add them to a parent\'s file with CPAM.',
                 'days_offset' => 21, // 3 weeks after move
-                'stage'       => 'arrival',
+                'stage'       => 'arrive',
                 'priority'    => 'high',
                 'task_type'   => 'task',
             ),

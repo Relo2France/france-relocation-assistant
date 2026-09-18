@@ -553,5 +553,5 @@ function formatShortDate(dateStr: string): string {
   if (diff < -1) return `${Math.abs(diff)}d ago`;
   if (diff <= 7) return `${diff}d`;
 
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
 }

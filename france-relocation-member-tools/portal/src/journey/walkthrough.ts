@@ -17,7 +17,7 @@
  */
 import { US_STATES } from '@/config/profile';
 import type { ChecklistItem, FamilyMember, MemberProfile, Project, StateFacts, Task } from '@/types';
-import { ARRIVAL_WINDOW_DAYS, stageForTask } from './journey';
+import { ARRIVAL_WINDOW_DAYS, parseDate, stageForTask } from './journey';
 import type { JourneyStageId } from './journey';
 
 export type Route = 'visitor' | 'retiree' | 'employee' | 'talent_passport' | 'entrepreneur' | 'student' | 'spouse_french' | 'family' | 'other' | 'undecided';
@@ -56,12 +56,6 @@ export interface Walkthrough {
 }
 
 const DAY = 86_400_000;
-
-function parseDate(iso: string | null | undefined): Date | null {
-  if (!iso) return null;
-  const d = new Date(`${iso.slice(0, 10)}T00:00:00Z`);
-  return Number.isNaN(d.getTime()) ? null : d;
-}
 
 function monthOf(d: Date): string {
   return d.toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' });

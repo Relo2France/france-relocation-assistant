@@ -68,13 +68,8 @@ export default function SettingsView() {
 
   return (
     <div className="p-6">
-      {/* Page header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-        <p className="text-gray-600 mt-1">
-          Manage your profile and preferences
-        </p>
-      </div>
+      {/* The title is in the top bar; one line under it. */}
+      <p className="text-gray-600 mb-6 max-w-[64ch]">Your sign-in, your visa details and how we reach you.</p>
 
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Sidebar navigation */}
@@ -566,7 +561,7 @@ function VisaProfileSection() {
   const sections: ProfileSection[] = [
     {
       id: 'personal',
-      title: '👤 Personal Information',
+      title: 'Personal Information',
       description: 'Legal names as they appear on your passport',
       fields: [
         { key: 'legal_first_name', label: 'Legal First Name', type: 'text', placeholder: 'As shown on passport' },
@@ -606,7 +601,7 @@ function VisaProfileSection() {
     },
     {
       id: 'visa',
-      title: '📋 Visa & Employment',
+      title: 'Visa & Employment',
       description: 'Your visa type and work situation',
       fields: [
         { key: 'visa_type', label: 'Visa Type', type: 'select', options: [
@@ -640,7 +635,7 @@ function VisaProfileSection() {
     },
     {
       id: 'location',
-      title: '📍 Locations',
+      title: 'Locations',
       description: 'Current location and destination in France',
       fields: [
         { key: 'current_state', label: 'Current US State', type: 'select', options: US_STATES },
@@ -657,7 +652,7 @@ function VisaProfileSection() {
     },
     {
       id: 'timeline',
-      title: '📅 Timeline & Plans',
+      title: 'Timeline & Plans',
       description: 'When are you planning to move?',
       fields: [
         { key: 'timeline', label: 'Move Timeline', type: 'select', options: [
@@ -682,7 +677,7 @@ function VisaProfileSection() {
     },
     {
       id: 'financial',
-      title: '💰 Financial',
+      title: 'Financial',
       description: 'Income and financial planning',
       fields: [
         { key: 'french_proficiency', label: 'French Language Proficiency', type: 'select', options: [
@@ -701,7 +696,7 @@ function VisaProfileSection() {
     },
     {
       id: 'documents',
-      title: '📄 Document Status',
+      title: 'Document Status',
       description: 'Track your vital documents',
       fields: [
         { key: 'has_birth_cert', label: 'Have certified birth certificate?', type: 'select', options: [

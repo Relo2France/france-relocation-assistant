@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useDashboard, useTasks, useUpdateTaskStatus } from '@/hooks/useApi';
+import { CompactErrorFallback } from '@/components/shared/ErrorBoundary';
 import { JOURNEY, stageForTask } from '@/journey/journey';
 import { usePortalStore } from '@/store';
 import type { Task, TaskStatus } from '@/types';
@@ -25,7 +26,7 @@ export default function TasksView() {
   }>({});
 
   // Data
-  const { data: dashboard, isLoading: dashboardLoading } = useDashboard();
+  const { data: dashboard, isLoading: dashboardLoading, isError: dashFailed, refetch: refetchDash } = useDashboard();
   const { data: tasks = [], isLoading: tasksLoading } = useTasks(
     dashboard?.project?.id || 0
   );
@@ -104,12 +105,11 @@ export default function TasksView() {
     return <TasksViewSkeleton />;
   }
 
-  if (!dashboard?.project) {
+  if (dashFailed || !dashboard?.project) {
     return (
       <div className="p-6">
-        <div className="card p-8 text-center">
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">No Project Found</h2>
-          <p className="text-gray-600">Please set up your relocation project first.</p>
+        <div className="card">
+          <CompactErrorFallback message="Your steps could not be loaded." onRetry={() => void refetchDash()} />
         </div>
       </div>
     );
@@ -120,13 +120,8 @@ export default function TasksView() {
 
   return (
     <div className="p-6">
-      {/* Page header */}
-      <div className="mb-6">
-        <h1 className="font-display text-2xl font-semibold tracking-[-0.018em] text-ink">Tasks</h1>
-        <p className="text-gray-600 mt-1">
-          Every step, across all six stages
-        </p>
-      </div>
+      {/* The title is in the top bar; one line under it. */}
+      <p className="text-gray-600 mb-6 max-w-[64ch]">Every step, across all six stages.</p>
 
       {/* Filter bar */}
       <div className="card mb-6">

@@ -78,38 +78,25 @@ function TicketList({
 
   return (
     <>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Customer Support</h1>
-          <p className="text-gray-600 mt-1">
-            Contact us for help with your membership or site issues
+      {/* The title is in the top bar. What Support is for, and the one button. */}
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
+        <div className="flex flex-col gap-1 max-w-[64ch]">
+          <span className="eyebrow">To Relo2France</span>
+          <p className="text-gray-600 m-0">
+            Write to us about your membership, something on the site that looks wrong, or a page that broke. We answer within a day. Questions about your own move go to Ask about my case; what we send you is in Messages.
           </p>
         </div>
-        <button
-          onClick={onCompose}
-          className="btn btn-primary flex items-center gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          New Message
+        <button onClick={onCompose} className="btn btn-primary flex items-center gap-2 self-start whitespace-nowrap">
+          <Plus className="w-4 h-4" aria-hidden="true" />
+          Write to us
         </button>
       </div>
 
-      {/* Support Scope Notice */}
-      <div className="card mb-6 border-l-4 border-l-blue-500 bg-blue-50">
-        <div className="p-4 flex gap-3">
-          <Info className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm text-blue-800 font-medium">What we can help with:</p>
-            <p className="text-sm text-blue-700 mt-1">
-              Membership questions, site errors, or content that needs correction.
-            </p>
-            <p className="text-xs text-blue-600 mt-2">
-              We do not provide visa assistance, as this is a legal question that should be directed to a qualified immigration professional.
-              This site is provided as a convenience to assist with the visa application process only.
-            </p>
-          </div>
-        </div>
+      <div className="card mb-6 px-4 py-3 flex gap-3 items-start">
+        <Info className="w-4 h-4 text-gray-500 flex-shrink-0 mt-0.5" aria-hidden="true" />
+        <p className="text-[0.85rem] text-gray-600 m-0">
+          We are not lawyers or tax advisers, so we cannot answer legal questions about your visa. Where a step needs a professional, the portal says so and why.
+        </p>
       </div>
 
       {/* Tickets List */}
@@ -144,18 +131,16 @@ function TicketCard({
     <button
       onClick={onClick}
       className={clsx(
-        'card w-full text-left p-4 hover:bg-gray-50 transition-colors',
-        ticket.has_unread_user && 'ring-2 ring-primary-500 bg-primary-50'
+        'card w-full text-left p-4 hover:bg-card-2 transition-colors',
+        ticket.has_unread_user && 'border-primary-500'
       )}
     >
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <h3 className="font-medium text-gray-900 truncate">{ticket.subject}</h3>
+            <h3 className={clsx('text-gray-900 line-clamp-2 m-0', ticket.has_unread_user ? 'font-semibold' : 'font-medium')} title={ticket.subject}>{ticket.subject}</h3>
             {ticket.has_unread_user && (
-              <span className="px-2 py-0.5 text-xs font-medium bg-primary-500 text-white rounded-full">
-                New Reply
-              </span>
+              <span className="badge bg-primary-500 text-white whitespace-nowrap">New reply</span>
             )}
           </div>
           <p className="text-sm text-gray-500 mt-1 line-clamp-1">
@@ -255,7 +240,7 @@ function ComposeTicket({
           className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to Messages
+          Back to Support
         </button>
         <h1 className="text-2xl font-bold text-gray-900">New Support Message</h1>
         <p className="text-gray-600 mt-1">
@@ -379,7 +364,7 @@ function TicketDetail({
       <div className="card p-8 text-center">
         <p className="text-gray-600">Ticket not found.</p>
         <button onClick={onBack} className="btn btn-secondary mt-4">
-          Back to Messages
+          Back to Support
         </button>
       </div>
     );
@@ -396,7 +381,7 @@ function TicketDetail({
           className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to Messages
+          Back to Support
         </button>
         <div className="flex items-start justify-between">
           <div>

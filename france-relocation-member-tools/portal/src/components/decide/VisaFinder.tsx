@@ -308,7 +308,7 @@ export default function VisaFinder({ currentRoute, currentLabel }: { currentRout
   const [result, setResult] = useState<Result | null>(null);
   const [saved, setSaved] = useState(false);
   const update = useUpdateMemberProfile();
-  const { setActiveView, setActiveGuide, setChatDraft, setSettingsTab } = usePortalStore();
+  const { setActiveView, setActiveGuide, setChatDraft, setProfileSection } = usePortalStore();
 
   const step = path[path.length - 1];
   const q = QUESTIONS[step];
@@ -415,7 +415,7 @@ export default function VisaFinder({ currentRoute, currentLabel }: { currentRout
               Ask about my case
             </button>
             {saved ? (
-              <button onClick={() => { setSettingsTab('visa-profile'); setActiveView('profile'); }} className="text-sm text-primary-500 hover:text-primary-700">Open my profile</button>
+              <button onClick={() => { setProfileSection('visa'); setActiveView('profile'); }} className="text-sm text-primary-500 hover:text-primary-700">Open my profile</button>
             ) : null}
           </div>
 

@@ -25,6 +25,7 @@ export interface AlertNav {
   setActiveView: (v: string) => void;
   setActiveStage: (s: string) => void;
   openTask: (t: Task) => void;
+  openMessage?: (id: number) => void;
 }
 
 export function buildFileAlerts(
@@ -34,7 +35,7 @@ export function buildFileAlerts(
   nav: AlertNav
 ): FileAlert[] {
   if (!dashboard) return [];
-  const { setActiveView, setActiveStage, openTask } = nav;
+  const { setActiveView, setActiveStage, openTask, openMessage } = nav;
   const alerts: FileAlert[] = [];
 
   const overdue = dashboard.task_stats?.overdue ?? 0;
@@ -50,7 +51,10 @@ export function buildFileAlerts(
     });
   }
 
-  const soon = dashboard.upcoming_tasks.filter((t) => t.days_until_due !== null && t.days_until_due !== undefined && t.days_until_due <= 14 && t.status !== 'done');
+  // Counted from the whole plan: the dashboard's upcoming list is capped at five.
+  const soon = (tasks.length ? tasks : dashboard.upcoming_tasks)
+    .filter((t) => t.days_until_due !== null && t.days_until_due !== undefined && t.days_until_due >= 0 && t.days_until_due <= 14 && t.status !== 'done')
+    .sort((a, b) => (a.due_date ?? '').localeCompare(b.due_date ?? ''));
   if (soon.length > 0) {
     alerts.push({
       id: 'soon',
@@ -102,7 +106,7 @@ export function buildFileAlerts(
       title: t.subject,
       body: 'A new message from Relo2France.',
       when: t.relative_time,
-      action: { label: 'Read it', go: () => setActiveView('messages') },
+      action: { label: 'Read it', go: () => (openMessage ? openMessage(t.id) : setActiveView('messages')) },
     });
   }
 

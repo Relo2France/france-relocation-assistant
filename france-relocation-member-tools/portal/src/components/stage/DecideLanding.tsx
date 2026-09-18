@@ -25,7 +25,7 @@ interface Block {
 }
 
 export default function DecideLanding({ project, visaType }: { project: Project; visaType: string | null }) {
-  const { setActiveView, setSettingsTab, setActiveGuide } = usePortalStore();
+  const { setActiveView, setProfileSection, setActiveGuide } = usePortalStore();
   const openGuide = (slug: string) => () => { setActiveGuide(slug); setActiveView('guide'); };
   const { data: profile } = useMemberProfile();
   const { data: family } = useFamilyMembers();
@@ -45,7 +45,7 @@ export default function DecideLanding({ project, visaType }: { project: Project;
       done: routeChosen,
       doneNote: routeChosen ? project.visa_type_label : undefined,
       primary: { label: routeChosen ? 'Check my route' : 'Find my route', onClick: openGuide('long-stay-visa-overview') },
-      secondary: { label: routeChosen ? 'Change it in my profile' : 'I already know it', onClick: () => { setSettingsTab('visa-profile'); setActiveView('profile'); } },
+      secondary: { label: routeChosen ? 'Change it in my profile' : 'I already know it', onClick: () => { setProfileSection('visa'); setActiveView('profile'); } },
     },
     {
       id: 'where',

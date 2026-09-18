@@ -108,7 +108,7 @@ export function stageById(id: string | null | undefined): JourneyStage | undefin
   return JOURNEY.find((s) => s.id === id);
 }
 
-function parseDate(iso: string | null | undefined): Date | null {
+export function parseDate(iso: string | null | undefined): Date | null {
   if (!iso) return null;
   const d = new Date(`${iso.slice(0, 10)}T00:00:00Z`);
   return Number.isNaN(d.getTime()) ? null : d;

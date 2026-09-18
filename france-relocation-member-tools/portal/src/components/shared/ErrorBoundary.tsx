@@ -1,152 +1,135 @@
 /**
- * ErrorBoundary Component
+ * ErrorBoundary
  *
- * Catches JavaScript errors in child component tree and displays a fallback UI.
- * Prevents the entire app from crashing when a component fails.
+ * Catches a crash in the part of the portal it wraps, shows the member what
+ * broke, and reports it to the server so it appears under Portal crashes on
+ * the settings screen. The member is told it was reported only once the
+ * report has gone.
  *
  * Usage:
- * <ErrorBoundary fallback={<ErrorFallback />}>
- *   <YourComponent />
- * </ErrorBoundary>
+ * <ErrorBoundary compact>…</ErrorBoundary>  for the rail and the top bar
+ * <ErrorBoundary>…</ErrorBoundary>          for a page
  */
-
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { AlertTriangle, Home, RefreshCw } from 'lucide-react';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
-  fallback?: ReactNode;
+  /** A small inline fallback, for the rail and the top bar. */
+  compact?: boolean;
   onError?: (error: Error, errorInfo: ErrorInfo) => void;
 }
 
 interface ErrorBoundaryState {
   hasError: boolean;
   error: Error | null;
+  reported: boolean;
+}
+
+/** Send a crash to the server. Resolves true when it was recorded. */
+export async function reportCrash(error: Error, componentStack = ''): Promise<boolean> {
+  try {
+    const wp = window.fraPortalData;
+    if (!wp?.apiUrl) return false;
+    const base = wp.apiUrl.endsWith('/') ? wp.apiUrl : `${wp.apiUrl}/`;
+    const response = await fetch(`${base}portal/client-error`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': wp.nonce ?? '' },
+      body: JSON.stringify({
+        message: error.message,
+        stack: (error.stack ?? '').slice(0, 2000),
+        component: componentStack.slice(0, 1500),
+        url: window.location.href,
+      }),
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
 }
 
 export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
-    this.state = { hasError: false, error: null };
+    this.state = { hasError: false, error: null, reported: false };
   }
 
-  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+  static getDerivedStateFromError(error: Error): Partial<ErrorBoundaryState> {
     return { hasError: true, error };
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
-    // Log error to console in development
     console.error('ErrorBoundary caught an error:', error, errorInfo);
-
-    // And to the server, so a crash a member sees once is on record.
-    try {
-      const wp = (window as unknown as { fraPortalData?: { restUrl?: string; nonce?: string } }).fraPortalData;
-      if (wp?.restUrl) {
-        void fetch(`${wp.restUrl}portal/client-error`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': wp.nonce ?? '' },
-          body: JSON.stringify({ message: error.message, stack: (error.stack ?? '').slice(0, 2000), component: (errorInfo.componentStack ?? '').slice(0, 1500), url: window.location.href }),
-        });
-      }
-    } catch { /* reporting must never throw */ }
-
-    // Call optional error handler
-    if (this.props.onError) {
-      this.props.onError(error, errorInfo);
-    }
+    void reportCrash(error, errorInfo.componentStack ?? '').then((ok) => {
+      if (ok) this.setState({ reported: true });
+    });
+    this.props.onError?.(error, errorInfo);
   }
 
   handleRetry = (): void => {
-    this.setState({ hasError: false, error: null });
+    this.setState({ hasError: false, error: null, reported: false });
   };
 
   handleGoHome = (): void => {
-    this.setState({ hasError: false, error: null });
-    // Navigate to dashboard
-    window.location.hash = '#dashboard';
-    window.location.reload();
+    // Views are chosen by ?view=, not the hash.
+    const url = new URL(window.location.href);
+    url.searchParams.set('view', 'dashboard');
+    url.hash = '';
+    window.location.assign(url.toString());
   };
 
   render(): ReactNode {
-    if (this.state.hasError) {
-      // Render custom fallback if provided
-      if (this.props.fallback) {
-        return this.props.fallback;
-      }
-
-      // Default fallback UI
-      return (
-        <ErrorFallback
-          error={this.state.error}
-          onRetry={this.handleRetry}
-          onGoHome={this.handleGoHome}
-        />
-      );
+    if (!this.state.hasError) return this.props.children;
+    if (this.props.compact) {
+      return <CompactErrorFallback onRetry={this.handleRetry} />;
     }
-
-    return this.props.children;
+    return (
+      <ErrorFallback
+        error={this.state.error}
+        reported={this.state.reported}
+        onRetry={this.handleRetry}
+        onGoHome={this.handleGoHome}
+      />
+    );
   }
 }
 
-/**
- * Default error fallback UI
- */
 interface ErrorFallbackProps {
   error: Error | null;
+  reported: boolean;
   onRetry: () => void;
   onGoHome: () => void;
 }
 
-function ErrorFallback({ error, onRetry, onGoHome }: ErrorFallbackProps) {
+function ErrorFallback({ error, reported, onRetry, onGoHome }: ErrorFallbackProps) {
   return (
-    <div
-      className="min-h-[400px] flex items-center justify-center p-8"
-      role="alert"
-      aria-live="assertive"
-    >
+    <div className="min-h-[400px] flex items-center justify-center p-8" role="alert" aria-live="assertive">
       <div className="text-center max-w-md">
-        {/* Error icon */}
         <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
           <AlertTriangle className="w-8 h-8 text-red-600" aria-hidden="true" />
         </div>
-
-        {/* Error message */}
-        <h2 className="text-xl font-semibold text-gray-900 mb-2">
-          Something went wrong
-        </h2>
+        <h2 className="font-display text-xl font-semibold text-gray-900 mb-2">Something went wrong</h2>
         <p className="text-gray-600 mb-6">
-          Something on this page broke. It has been reported. Try again, or go back to Where you are; if it happens twice, tell Support what you clicked.
+          Something on this page broke.{reported ? ' It has been reported.' : ''} Try again, or go back to Where you are; if it happens twice, tell Support what you clicked.
         </p>
-
-        {/* Error details: always shown, so a member can pass them on */}
-        {error && (
+        {error ? (
           <details className="mb-6 text-left">
-            <summary className="text-sm text-gray-500 cursor-pointer hover:text-gray-700">
-              Error details
-            </summary>
+            <summary className="text-sm text-gray-500 cursor-pointer hover:text-gray-700">Error details</summary>
             <pre className="mt-2 p-3 bg-gray-100 rounded-lg text-xs text-red-600 overflow-auto max-h-32">
               {error.message}
               {error.stack && `\n\n${error.stack}`}
             </pre>
           </details>
-        )}
-
-        {/* Action buttons */}
+        ) : null}
         <div className="flex items-center justify-center gap-3">
-          <button
-            onClick={onRetry}
-            className="btn btn-primary flex items-center gap-2"
-          >
+          <button onClick={onRetry} className="btn btn-primary flex items-center gap-2">
             <RefreshCw className="w-4 h-4" aria-hidden="true" />
-            Try Again
+            Try again
           </button>
-          <button
-            onClick={onGoHome}
-            className="btn btn-secondary flex items-center gap-2"
-          >
+          <button onClick={onGoHome} className="btn btn-secondary flex items-center gap-2">
             <Home className="w-4 h-4" aria-hidden="true" />
-            Go to Dashboard
+            Where you are
           </button>
         </div>
       </div>
@@ -155,31 +138,21 @@ function ErrorFallback({ error, onRetry, onGoHome }: ErrorFallbackProps) {
 }
 
 /**
- * Compact error fallback for smaller sections
+ * Compact fallback: for the rail, the top bar, and a section whose data
+ * failed to load.
  */
-export function CompactErrorFallback({
-  onRetry,
-}: {
-  onRetry?: () => void;
-}) {
+export function CompactErrorFallback({ onRetry, message }: { onRetry?: () => void; message?: string }) {
   return (
-    <div
-      className="p-6 text-center"
-      role="alert"
-      aria-live="polite"
-    >
-      <div className="flex items-center justify-center gap-2 text-red-600 mb-2">
-        <AlertTriangle className="w-5 h-5" aria-hidden="true" />
-        <span className="font-medium">Failed to load</span>
+    <div className="p-4 text-center" role="alert" aria-live="polite">
+      <div className="flex items-center justify-center gap-2 text-red-600 mb-1.5">
+        <AlertTriangle className="w-4 h-4" aria-hidden="true" />
+        <span className="text-sm font-medium">{message ?? 'This could not be loaded.'}</span>
       </div>
-      {onRetry && (
-        <button
-          onClick={onRetry}
-          className="text-sm text-primary-600 hover:text-primary-700 underline"
-        >
+      {onRetry ? (
+        <button onClick={onRetry} className="text-sm font-semibold text-primary-500 hover:text-primary-700">
           Try again
         </button>
-      )}
+      ) : null}
     </div>
   );
 }

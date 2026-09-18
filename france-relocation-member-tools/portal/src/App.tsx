@@ -5,6 +5,7 @@ import Header from '@/components/layout/Header';
 import Sidebar from '@/components/layout/Sidebar';
 import ErrorBoundary from '@/components/shared/ErrorBoundary';
 import PWAPrompt from '@/components/shared/PWAPrompt';
+import Toaster from '@/components/shared/Toaster';
 import { useCurrentUser } from '@/hooks/useApi';
 import { usePortalStore } from '@/store';
 
@@ -17,17 +18,14 @@ const IMMERSIVE_VIEWS: string[] = [];
 const TasksView = lazy(() => import('@/components/tasks/TasksView'));
 const DocumentsView = lazy(() => import('@/components/documents/DocumentsView'));
 const MessagesView = lazy(() => import('@/components/messages/MessagesView'));
-const TimelineView = lazy(() => import('@/components/timeline/TimelineView'));
 const SettingsView = lazy(() => import('@/components/settings/SettingsView'));
 const HelpView = lazy(() => import('@/components/help/HelpView'));
 const SupportView = lazy(() => import('@/components/support/SupportView'));
-const GuidesView = lazy(() => import('@/components/guides/GuidesView'));
 const FamilyView = lazy(() => import('@/components/family/FamilyView'));
 const ProfileView = lazy(() => import('@/components/profile/ProfileView'));
 const ChecklistsView = lazy(() => import('@/components/checklists/ChecklistsView'));
 const GlossaryView = lazy(() => import('@/components/glossary/GlossaryView'));
 const KnowledgeBaseChat = lazy(() => import('@/components/chat/KnowledgeBaseChat'));
-const MembershipView = lazy(() => import('@/components/membership/MembershipView'));
 const ResearchView = lazy(() => import('@/components/research/ResearchView'));
 const TravelStatusDashboard = lazy(() => import('@/components/travel-status/TravelStatusDashboard'));
 const StageView = lazy(() => import('@/components/stage/StageView'));
@@ -67,10 +65,11 @@ function ViewRouter() {
       case 'documents':
       case 'files':
         return <DocumentsView />;
+      // Old view names still arriving in bookmarks land on their replacements.
       case 'timeline':
-        return <TimelineView />;
+        return <DeadlinesView />;
       case 'guides':
-        return <GuidesView />;
+        return <ResearchView />;
       case 'family':
         return <FamilyView />;
       case 'settings':
@@ -87,8 +86,6 @@ function ViewRouter() {
         return <GlossaryView />;
       case 'chat':
         return <KnowledgeBaseChat />;
-      case 'membership':
-        return <MembershipView />;
       case 'research':
         return <ResearchView />;
       case 'schengen':
@@ -147,8 +144,10 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Sidebar */}
-      <Sidebar />
+      {/* Sidebar: its own boundary, so a crash here never blanks the page */}
+      <ErrorBoundary compact>
+        <Sidebar />
+      </ErrorBoundary>
 
       {/* Main content */}
       <div
@@ -158,7 +157,9 @@ export default function App() {
         )}
       >
         {/* Header */}
-        <Header />
+        <ErrorBoundary compact>
+          <Header />
+        </ErrorBoundary>
 
         {/* Page content */}
         <main className="min-h-[calc(100vh-4rem)]">
@@ -170,6 +171,7 @@ export default function App() {
 
       {/* PWA Install Prompt & Update Banner */}
       <PWAPrompt />
+      <Toaster />
     </div>
   );
 }
