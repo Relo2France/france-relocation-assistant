@@ -9,7 +9,7 @@
 export const WP_ORIGIN = 'https://relo2france.com';
 
 export const external = {
-  signIn: `${WP_ORIGIN}/login/`,
+  signIn: `${WP_ORIGIN}/portal/`,
   /** MemberPress checkout. One product: lifetime access. */
   join: `${WP_ORIGIN}/register/lifetime-membership/`,
   portal: `${WP_ORIGIN}/portal/`,

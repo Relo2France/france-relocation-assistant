@@ -41,7 +41,7 @@
                     <a class="btn btn-outline" href="<?php echo esc_url(home_url('/account/')); ?>"><?php esc_html_e('Account', 'relo2france'); ?></a>
                     <a class="btn btn-primary" href="<?php echo esc_url(home_url('/portal/')); ?>"><?php esc_html_e('Member portal', 'relo2france'); ?></a>
                 <?php else : ?>
-                    <a class="btn btn-outline" href="<?php echo esc_url(home_url('/login/')); ?>"><?php esc_html_e('Sign in', 'relo2france'); ?></a>
+                    <a class="btn btn-outline" href="<?php echo esc_url(home_url('/portal/')); ?>"><?php esc_html_e('Sign in', 'relo2france'); ?></a>
                     <a class="btn btn-primary" href="<?php echo esc_url(home_url('/pricing/')); ?>"><?php esc_html_e('Get started', 'relo2france'); ?></a>
                 <?php endif; ?>
             </div>

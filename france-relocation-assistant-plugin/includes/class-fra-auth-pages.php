@@ -917,7 +917,7 @@ class FRA_Auth_Pages {
                 <div class="fra-auth-security">🔒 Secure payment via Stripe</div>
                 
                 <div class="fra-auth-card-footer">
-                    <p>Already a member? <a href="<?php echo esc_url(home_url('/login/')); ?>"><strong>Sign in</strong></a></p>
+                    <p>Already a member? <a href="<?php echo esc_url(home_url('/portal/')); ?>"><strong>Sign in</strong></a></p>
                 </div>
             </div>
         </div>
@@ -944,7 +944,7 @@ class FRA_Auth_Pages {
                 </div>
                 
                 <div class="fra-auth-actions">
-                    <a href="<?php echo esc_url(home_url('/login/')); ?>" class="fra-auth-btn fra-auth-btn-primary">Sign back in</a>
+                    <a href="<?php echo esc_url(home_url('/portal/')); ?>" class="fra-auth-btn fra-auth-btn-primary">Sign back in</a>
                     <a href="<?php echo esc_url(home_url('/')); ?>" class="fra-auth-btn fra-auth-btn-secondary">Back to the site</a>
                 </div>
             </div>

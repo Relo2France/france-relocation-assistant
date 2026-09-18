@@ -37,7 +37,7 @@ class FRA_Site_Header {
         'site_header_cta_color'        => '#f97316',
         'site_header_utility_text'     => 'Your complete guide to relocating to France',
         'site_header_login_text'       => 'Login',
-        'site_header_login_url'        => '/login/',
+        'site_header_login_url'        => '/portal/',
         'site_header_contact_text'     => 'Contact',
         'site_header_contact_url'      => '/contact/',
         'site_header_cta_text'         => 'Get Lifetime Access',

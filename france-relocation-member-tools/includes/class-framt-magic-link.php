@@ -51,9 +51,26 @@ class FRAMT_Magic_Link {
         add_action( 'template_redirect', array( $this, 'account_needs_sign_in' ), 1 );
     }
 
+    /**
+     * One sign-in screen: the portal's. The /login/ page forwards there,
+     * except for MemberPress's password-reset steps, which live on it
+     * (?action=forgot_password, ?action=reset_password). A signed-out visitor
+     * to /account/ goes there too, instead of MemberPress's bare form.
+     */
     public function account_needs_sign_in() {
+        if ( ! empty( $_REQUEST[ self::QUERY_VAR ] ) ) {
+            return; // an old sign-in link: handle_link deals with it.
+        }
+        if ( is_page( 'login' ) && empty( $_GET['action'] ) && 'POST' !== ( $_SERVER['REQUEST_METHOD'] ?? '' ) ) { // phpcs:ignore WordPress.Security.NonceVerification
+            $to = home_url( '/portal/' );
+            if ( isset( $_GET['link'] ) && 'expired' === $_GET['link'] ) { // phpcs:ignore WordPress.Security.NonceVerification
+                $to = add_query_arg( 'link', 'expired', $to );
+            }
+            wp_safe_redirect( $to );
+            exit;
+        }
         if ( ! is_user_logged_in() && is_page( 'account' ) ) {
-            wp_safe_redirect( home_url( '/login/' ) );
+            wp_safe_redirect( home_url( '/portal/' ) );
             exit;
         }
     }
@@ -125,7 +142,7 @@ class FRAMT_Magic_Link {
             'hash'    => self::digest( $token ),
             'expires' => time() + self::TTL,
         ) );
-        $url   = add_query_arg( array( self::QUERY_VAR => $token, 'u' => (int) $user->ID ), home_url( '/login/' ) );
+        $url   = add_query_arg( array( self::QUERY_VAR => $token, 'u' => (int) $user->ID ), home_url( '/portal/' ) );
         $first = $user->first_name ?: strtok( $user->display_name, ' ' );
         $body  = '<p style="margin:0 0 12px;">Use the button below to sign in to your Relo2France portal. It works once, for the next fifteen minutes.</p>'
             . '<p style="margin:0;color:#5f6e66;font-size:14px;">If you did not ask for this, ignore the email; nothing happens unless the link is used.</p>';
@@ -164,7 +181,7 @@ class FRAMT_Magic_Link {
         $token   = sanitize_text_field( wp_unslash( $_REQUEST[ self::QUERY_VAR ] ) );
         $user_id = absint( $_REQUEST['u'] ?? 0 );
         $user    = self::check( $user_id, $token );
-        $expired = add_query_arg( 'link', 'expired', home_url( '/login/' ) );
+        $expired = add_query_arg( 'link', 'expired', home_url( '/portal/' ) );
 
         if ( ! $user ) {
             wp_safe_redirect( $expired );
@@ -208,7 +225,7 @@ button:hover{background:#23443a}button:focus-visible{outline:2px solid #2c5346;o
 <div class="mark">Relo<span>2</span>France</div>
 <h1>Sign in</h1>
 <p>Continue as <?php echo esc_html( $masked ); ?>. This link works once.</p>
-<form method="post" action="<?php echo esc_url( home_url( '/login/' ) ); ?>">
+<form method="post" action="<?php echo esc_url( home_url( '/portal/' ) ); ?>">
 <input type="hidden" name="<?php echo esc_attr( self::QUERY_VAR ); ?>" value="<?php echo esc_attr( $token ); ?>">
 <input type="hidden" name="u" value="<?php echo (int) $user->ID; ?>">
 <button type="submit">Continue to your portal</button>

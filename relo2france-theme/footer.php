@@ -38,7 +38,7 @@
                         <li><a href="<?php echo esc_url(home_url('/how-it-works/')); ?>"><?php esc_html_e('How it works', 'relo2france'); ?></a></li>
                         <li><a href="<?php echo esc_url(home_url('/pricing/')); ?>"><?php esc_html_e('Pricing — $35 for life', 'relo2france'); ?></a></li>
                         <li><a href="<?php echo esc_url(home_url('/register/lifetime-membership/')); ?>"><?php esc_html_e('Join', 'relo2france'); ?></a></li>
-                        <li><a href="<?php echo esc_url(home_url('/login/')); ?>"><?php esc_html_e('Sign in', 'relo2france'); ?></a></li>
+                        <li><a href="<?php echo esc_url(home_url('/portal/')); ?>"><?php esc_html_e('Sign in', 'relo2france'); ?></a></li>
                         <li><a href="<?php echo esc_url(home_url('/account/')); ?>"><?php esc_html_e('Your account', 'relo2france'); ?></a></li>
                     </ul>
                 </div>
