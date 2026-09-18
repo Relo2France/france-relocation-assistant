@@ -18,7 +18,7 @@
 if (!defined('ABSPATH')) {
     exit;
 }
-?>
+
 get_header();
 ?>
 <div class="r2f-auth-page content-narrow">
