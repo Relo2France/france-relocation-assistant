@@ -1,6 +1,6 @@
 {
-  "_Assign-DFmghiWB.js": {
-    "file": "js/Assign-DFmghiWB.js",
+  "_Assign-gT88xqD8.js": {
+    "file": "js/Assign-gT88xqD8.js",
     "name": "Assign",
     "imports": [
       "_vendor-query-aXLgDoqj.js",
@@ -27,8 +27,8 @@
       "_vendor-utils-hDeTKz2a.js"
     ]
   },
-  "_vendor-icons-Dp03DeuW.js": {
-    "file": "js/vendor-icons-Dp03DeuW.js",
+  "_vendor-icons-Cok5Q4kL.js": {
+    "file": "js/vendor-icons-Cok5Q4kL.js",
     "name": "vendor-icons",
     "imports": [
       "_vendor-query-aXLgDoqj.js"
@@ -61,7 +61,7 @@
     ]
   },
   "index.html": {
-    "file": "js/main-DFnOVqWF.js",
+    "file": "js/main-B_VjckBl.js",
     "name": "main",
     "src": "index.html",
     "isEntry": true,
@@ -69,7 +69,7 @@
       "_vendor-query-aXLgDoqj.js",
       "_vendor-virtual-Bx84C3U3.js",
       "_vendor-utils-hDeTKz2a.js",
-      "_vendor-icons-Dp03DeuW.js"
+      "_vendor-icons-Cok5Q4kL.js"
     ],
     "dynamicImports": [
       "src/components/tasks/TasksView.tsx",
@@ -90,11 +90,11 @@
       "src/components/deadlines/DeadlinesView.tsx"
     ],
     "css": [
-      "css/main-lfOoFdB3.css"
+      "css/main-BPGa3MA_.css"
     ]
   },
   "src/components/chat/KnowledgeBaseChat.tsx": {
-    "file": "js/KnowledgeBaseChat-CFdnC9lD.js",
+    "file": "js/KnowledgeBaseChat-BIgRJ2dM.js",
     "name": "KnowledgeBaseChat",
     "src": "src/components/chat/KnowledgeBaseChat.tsx",
     "isDynamicEntry": true,
@@ -103,12 +103,12 @@
       "_vendor-utils-hDeTKz2a.js",
       "index.html",
       "_MarkdownMessage-DoGKHeuv.js",
-      "_vendor-icons-Dp03DeuW.js",
+      "_vendor-icons-Cok5Q4kL.js",
       "_vendor-virtual-Bx84C3U3.js"
     ]
   },
   "src/components/checklists/ChecklistsView.tsx": {
-    "file": "js/ChecklistsView-CqG8xyEb.js",
+    "file": "js/ChecklistsView-NwCt-JQ0.js",
     "name": "ChecklistsView",
     "src": "src/components/checklists/ChecklistsView.tsx",
     "isDynamicEntry": true,
@@ -116,12 +116,12 @@
       "_vendor-query-aXLgDoqj.js",
       "_vendor-utils-hDeTKz2a.js",
       "index.html",
-      "_vendor-icons-Dp03DeuW.js",
+      "_vendor-icons-Cok5Q4kL.js",
       "_vendor-virtual-Bx84C3U3.js"
     ]
   },
   "src/components/deadlines/DeadlinesView.tsx": {
-    "file": "js/DeadlinesView-CfICL6dk.js",
+    "file": "js/DeadlinesView-BUEKaLrf.js",
     "name": "DeadlinesView",
     "src": "src/components/deadlines/DeadlinesView.tsx",
     "isDynamicEntry": true,
@@ -129,12 +129,12 @@
       "_vendor-query-aXLgDoqj.js",
       "_vendor-utils-hDeTKz2a.js",
       "index.html",
-      "_vendor-icons-Dp03DeuW.js",
+      "_vendor-icons-Cok5Q4kL.js",
       "_vendor-virtual-Bx84C3U3.js"
     ]
   },
   "src/components/documents/DocumentsView.tsx": {
-    "file": "js/DocumentsView-Duat1U1U.js",
+    "file": "js/DocumentsView-BHCg7pg_.js",
     "name": "DocumentsView",
     "src": "src/components/documents/DocumentsView.tsx",
     "isDynamicEntry": true,
@@ -142,13 +142,13 @@
       "_vendor-query-aXLgDoqj.js",
       "_vendor-utils-hDeTKz2a.js",
       "index.html",
-      "_vendor-icons-Dp03DeuW.js",
+      "_vendor-icons-Cok5Q4kL.js",
       "_useVirtualization-Qutxmlyd.js",
       "_vendor-virtual-Bx84C3U3.js"
     ]
   },
   "src/components/family/FamilyView.tsx": {
-    "file": "js/FamilyView-Cj064o84.js",
+    "file": "js/FamilyView-B2ne5QfS.js",
     "name": "FamilyView",
     "src": "src/components/family/FamilyView.tsx",
     "isDynamicEntry": true,
@@ -156,13 +156,13 @@
       "_vendor-query-aXLgDoqj.js",
       "_vendor-utils-hDeTKz2a.js",
       "index.html",
-      "_Assign-DFmghiWB.js",
-      "_vendor-icons-Dp03DeuW.js",
+      "_Assign-gT88xqD8.js",
+      "_vendor-icons-Cok5Q4kL.js",
       "_vendor-virtual-Bx84C3U3.js"
     ]
   },
   "src/components/glossary/GlossaryView.tsx": {
-    "file": "js/GlossaryView-B3j0IiuO.js",
+    "file": "js/GlossaryView-CEGsr6eE.js",
     "name": "GlossaryView",
     "src": "src/components/glossary/GlossaryView.tsx",
     "isDynamicEntry": true,
@@ -170,12 +170,12 @@
       "_vendor-query-aXLgDoqj.js",
       "_vendor-utils-hDeTKz2a.js",
       "index.html",
-      "_vendor-icons-Dp03DeuW.js",
+      "_vendor-icons-Cok5Q4kL.js",
       "_vendor-virtual-Bx84C3U3.js"
     ]
   },
   "src/components/guide/GuideView.tsx": {
-    "file": "js/GuideView-hQyi-BNZ.js",
+    "file": "js/GuideView-uVaEvfp0.js",
     "name": "GuideView",
     "src": "src/components/guide/GuideView.tsx",
     "isDynamicEntry": true,
@@ -183,12 +183,12 @@
       "_vendor-query-aXLgDoqj.js",
       "_vendor-utils-hDeTKz2a.js",
       "index.html",
-      "_vendor-icons-Dp03DeuW.js",
+      "_vendor-icons-Cok5Q4kL.js",
       "_vendor-virtual-Bx84C3U3.js"
     ]
   },
   "src/components/help/HelpView.tsx": {
-    "file": "js/HelpView-eE3dRgeC.js",
+    "file": "js/HelpView-CO6nUqRB.js",
     "name": "HelpView",
     "src": "src/components/help/HelpView.tsx",
     "isDynamicEntry": true,
@@ -196,12 +196,12 @@
       "_vendor-query-aXLgDoqj.js",
       "_vendor-utils-hDeTKz2a.js",
       "index.html",
-      "_vendor-icons-Dp03DeuW.js",
+      "_vendor-icons-Cok5Q4kL.js",
       "_vendor-virtual-Bx84C3U3.js"
     ]
   },
   "src/components/messages/MessagesView.tsx": {
-    "file": "js/MessagesView-CPl_NbiL.js",
+    "file": "js/MessagesView-s6KvfBkY.js",
     "name": "MessagesView",
     "src": "src/components/messages/MessagesView.tsx",
     "isDynamicEntry": true,
@@ -210,12 +210,12 @@
       "index.html",
       "_vendor-utils-hDeTKz2a.js",
       "_MarkdownMessage-DoGKHeuv.js",
-      "_vendor-icons-Dp03DeuW.js",
+      "_vendor-icons-Cok5Q4kL.js",
       "_vendor-virtual-Bx84C3U3.js"
     ]
   },
   "src/components/profile/ProfileView.tsx": {
-    "file": "js/ProfileView-Q_PNJ4Xo.js",
+    "file": "js/ProfileView-BMtHD952.js",
     "name": "ProfileView",
     "src": "src/components/profile/ProfileView.tsx",
     "isDynamicEntry": true,
@@ -223,12 +223,12 @@
       "_vendor-query-aXLgDoqj.js",
       "index.html",
       "_vendor-utils-hDeTKz2a.js",
-      "_vendor-icons-Dp03DeuW.js",
+      "_vendor-icons-Cok5Q4kL.js",
       "_vendor-virtual-Bx84C3U3.js"
     ]
   },
   "src/components/research/ResearchView.tsx": {
-    "file": "js/ResearchView-DeaNcBMz.js",
+    "file": "js/ResearchView-BhhPI6LU.js",
     "name": "ResearchView",
     "src": "src/components/research/ResearchView.tsx",
     "isDynamicEntry": true,
@@ -236,13 +236,13 @@
       "_vendor-query-aXLgDoqj.js",
       "index.html",
       "_string-D0kBVMUz.js",
-      "_vendor-icons-Dp03DeuW.js",
+      "_vendor-icons-Cok5Q4kL.js",
       "_vendor-virtual-Bx84C3U3.js",
       "_vendor-utils-hDeTKz2a.js"
     ]
   },
   "src/components/settings/SettingsView.tsx": {
-    "file": "js/SettingsView-EmNdluqV.js",
+    "file": "js/SettingsView-NMp7OpK-.js",
     "name": "SettingsView",
     "src": "src/components/settings/SettingsView.tsx",
     "isDynamicEntry": true,
@@ -250,12 +250,12 @@
       "_vendor-query-aXLgDoqj.js",
       "_vendor-utils-hDeTKz2a.js",
       "index.html",
-      "_vendor-icons-Dp03DeuW.js",
+      "_vendor-icons-Cok5Q4kL.js",
       "_vendor-virtual-Bx84C3U3.js"
     ]
   },
   "src/components/stage/StageView.tsx": {
-    "file": "js/StageView-DZyrPHgn.js",
+    "file": "js/StageView-ewpSJf0X.js",
     "name": "StageView",
     "src": "src/components/stage/StageView.tsx",
     "isDynamicEntry": true,
@@ -263,13 +263,13 @@
       "_vendor-query-aXLgDoqj.js",
       "index.html",
       "_vendor-utils-hDeTKz2a.js",
-      "_Assign-DFmghiWB.js",
-      "_vendor-icons-Dp03DeuW.js",
+      "_Assign-gT88xqD8.js",
+      "_vendor-icons-Cok5Q4kL.js",
       "_vendor-virtual-Bx84C3U3.js"
     ]
   },
   "src/components/support/SupportView.tsx": {
-    "file": "js/SupportView-BqBdSilP.js",
+    "file": "js/SupportView-CfLVUawZ.js",
     "name": "SupportView",
     "src": "src/components/support/SupportView.tsx",
     "isDynamicEntry": true,
@@ -277,12 +277,12 @@
       "_vendor-query-aXLgDoqj.js",
       "_vendor-utils-hDeTKz2a.js",
       "index.html",
-      "_vendor-icons-Dp03DeuW.js",
+      "_vendor-icons-Cok5Q4kL.js",
       "_vendor-virtual-Bx84C3U3.js"
     ]
   },
   "src/components/tasks/TasksView.tsx": {
-    "file": "js/TasksView-DS0_KRio.js",
+    "file": "js/TasksView-CKxpN6ZD.js",
     "name": "TasksView",
     "src": "src/components/tasks/TasksView.tsx",
     "isDynamicEntry": true,
@@ -290,13 +290,13 @@
       "_vendor-query-aXLgDoqj.js",
       "index.html",
       "_vendor-utils-hDeTKz2a.js",
-      "_vendor-icons-Dp03DeuW.js",
+      "_vendor-icons-Cok5Q4kL.js",
       "_useVirtualization-Qutxmlyd.js",
       "_vendor-virtual-Bx84C3U3.js"
     ]
   },
   "src/components/travel-status/TravelStatusDashboard.tsx": {
-    "file": "js/TravelStatusDashboard-DwA7KN5s.js",
+    "file": "js/TravelStatusDashboard-BAWBjywZ.js",
     "name": "TravelStatusDashboard",
     "src": "src/components/travel-status/TravelStatusDashboard.tsx",
     "isDynamicEntry": true,
@@ -304,7 +304,7 @@
       "_vendor-query-aXLgDoqj.js",
       "_vendor-utils-hDeTKz2a.js",
       "index.html",
-      "_vendor-icons-Dp03DeuW.js",
+      "_vendor-icons-Cok5Q4kL.js",
       "_string-D0kBVMUz.js",
       "_vendor-virtual-Bx84C3U3.js"
     ]

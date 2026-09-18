@@ -20,6 +20,7 @@ import { AIVerificationModal } from './AIVerification';
 import FileGrid from './FileGrid';
 import FilePreview from './FilePreview';
 import FileUpload from './FileUpload';
+import LettersSection from './LettersSection';
 
 const categoryOptions: { value: FileCategory | ''; label: string }[] = [
   { value: '', label: 'All Categories' },
@@ -68,12 +69,18 @@ export default function DocumentsView() {
     return `${wpData.apiUrl}/research/report/${id}/html?_wpnonce=${wpData.nonce}`;
   };
 
-  const { data: files = [], isLoading: filesLoading, refetch: refetchFiles } = useFiles(
+  const { data: allFiles = [], isLoading: filesLoading, refetch: refetchFiles } = useFiles(
     projectId,
     {
       category: categoryFilter || undefined,
       file_type: typeFilter || undefined,
     }
+  );
+
+  // Letters have their own section above, with their own actions.
+  const files = useMemo(
+    () => allFiles.filter((f) => !(f.metadata as { letter?: unknown } | null | undefined)?.letter),
+    [allFiles]
   );
 
   const { download } = useDownloadFile();
@@ -154,7 +161,9 @@ export default function DocumentsView() {
   return (
     <div className="p-6">
       {/* The page title is in the top bar; this is the one line under it. */}
-      <p className="text-gray-600 mb-6 max-w-[60ch]">Upload a document and it is recognised, checked against its requirement and filed to the dossier line it satisfies. Your Explore France reports are kept here too.</p>
+      <p className="text-gray-600 mb-6 max-w-[60ch]">Upload a document and it is recognised, checked against its requirement and filed to the dossier line it satisfies. The letters your visa route needs are drafted here, and your Explore France reports are kept here too.</p>
+
+      <LettersSection projectId={projectId} />
 
       {/* Saved Research Reports Section */}
       {savedReports.length > 0 && (
@@ -319,7 +328,7 @@ export default function DocumentsView() {
           </div>
 
           {/* Filter row */}
-          <div className="flex items-center gap-3 mt-4 pt-4 border-t border-gray-100">
+          <div className="flex flex-wrap items-center gap-3 mt-4 pt-4 border-t border-gray-100">
             <Filter className="w-4 h-4 text-gray-400" />
 
             {/* Category filter */}

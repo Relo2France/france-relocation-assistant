@@ -57,6 +57,9 @@ import TripForm from './TripForm';
 import TripList from './TripList';
 import { useTravelStatusStore } from './useTravelStatusStore';
 
+/** Turn on when the Schengen tracker launches as its own app. */
+const CHECK_IN_PROMPTS = false;
+
 type ViewTab = 'trips' | 'family' | 'analytics' | 'jurisdictions' | 'calendar' | 'sync' | 'planning' | 'location' | 'settings';
 
 export default function TravelStatusDashboard() {
@@ -318,11 +321,16 @@ export default function TravelStatusDashboard() {
         </div>
       </div>
 
-      {/* Smart location detection banner - always enabled, can be dismissed */}
-      <LocationDetectionBanner enabled />
-
-      {/* Quick location check-in widget */}
-      <LocationTracker compact />
+      {/* Daily check-in prompts wait for the tracker's own launch: asking a
+          member to check in every day to a tool marked "coming soon" asks
+          for a habit we have not yet promised to keep. The Location tab
+          still works for anyone who looks for it. */}
+      {CHECK_IN_PROMPTS ? (
+        <>
+          <LocationDetectionBanner enabled />
+          <LocationTracker compact />
+        </>
+      ) : null}
 
       {/* Warning banners */}
       {summary.status === 'warning' && (

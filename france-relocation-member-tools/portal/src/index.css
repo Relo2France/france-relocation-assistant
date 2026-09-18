@@ -35,6 +35,12 @@
 
 /* Custom base styles */
 @layer base {
+  /* A grid column may shrink below its longest unbroken line (a truncated
+     title, say); without this a phone gets a page wider than the screen. */
+  .grid > * {
+    min-width: 0;
+  }
+
   html {
     font-family: var(--font-ui);
     font-size: 16px;

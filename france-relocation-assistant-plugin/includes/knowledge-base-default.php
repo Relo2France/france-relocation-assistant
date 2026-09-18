@@ -43,7 +43,7 @@ return array(
             'title' => 'Spouse & Family Visas',
             'content' => "**Family Visas for France**\n\n**Spouse of French Citizen:**\n• Apply for \"vie privée et familiale\" visa\n• Immediate right to work\n• Required: Marriage certificate, spouse's French ID\n\n**Spouse of Non-EU Resident (Family Reunification):**\n• Your spouse applies for regroupement familial\n• 18-month wait after they obtained residency\n• Income and housing requirements apply\n\n**PACS Partners (Civil Union):**\n• PACS registered 1+ year\n• Proof of shared life required\n\n**Both Spouses Moving Together:**\n• Each needs own visa\n• Talent Passport: Spouse automatically gets work rights\n\n**Children:** Minor children included on parent's application.",
             'keywords' => array('spouse visa', 'family visa', 'husband', 'wife', 'married', 'partner', 'pacs', 'family reunification', 'children'),
-            'sources' => array(array('name' => 'Service-Public.fr', 'url' => 'https://www.service-public.fr'))
+            'sources' => array(array('name' => 'Service-Public.fr', 'url' => 'https://www.service-public.gouv.fr'))
         ),
         'validation' => array(
             'title' => 'Visa Validation (OFII)',
@@ -57,7 +57,7 @@ return array(
             'keywords' => array('vls-ts', 'vls ts', 'carte de sejour', 'carte de séjour', 'solliciter', 'visa types', 'residence permit', 'titre de sejour', 'prefecture', 'ofii validation', 'visitor visa type', 'which visa', 'visa difference'),
             'sources' => array(
                 array('name' => 'France-Visas', 'url' => 'https://france-visas.gouv.fr'),
-                array('name' => 'Service-Public.fr', 'url' => 'https://www.service-public.fr/particuliers/vosdroits/F39')
+                array('name' => 'Service-Public.fr', 'url' => 'https://www.service-public.gouv.fr/particuliers/vosdroits/F39')
             )
         )
     ),
@@ -142,13 +142,13 @@ return array(
             'title' => 'Driving Overview',
             'content' => "**Driving in France as an American**\n\n**Short-Term (under 1 year):**\n• US license valid\n• International Driving Permit recommended\n\n**Long-Term (residents):**\n• Must exchange license OR take French test\n• Exchange only from certain US states\n• Must do this within first year\n\n**Key Rules:**\n• Drive on the RIGHT\n• Priority to the right at unmarked intersections\n• Speed in km/h\n• Strict drink-driving laws (0.05% limit)",
             'keywords' => array('driving', 'license', 'car', 'drive in france', 'overview'),
-            'sources' => array(array('name' => 'Service-Public.fr', 'url' => 'https://www.service-public.fr'))
+            'sources' => array(array('name' => 'Service-Public.fr', 'url' => 'https://www.service-public.gouv.fr'))
         ),
         'exchange' => array(
             'title' => 'License Exchange',
             'content' => "**Exchanging US License for French License**\n\nOnly from states with reciprocal agreements:\n\n**Eligible States:**\nArkansas, Colorado, Connecticut, Delaware, Florida, Illinois, Iowa, Kansas, Kentucky, Maryland, Massachusetts, Michigan, New Hampshire, Ohio, Oklahoma, Pennsylvania, South Carolina, Texas, Virginia, Wisconsin\n\n**If Eligible:**\n• Apply within first year\n• Submit: License, residence proof, passport, photos\n• Processing: 2-6 months\n• Fee: ~€25\n\n**If NOT Eligible:**\n• Must pass French driving test\n• Written + practical exam\n• Cost: €1,500-2,500 with driving school\n\n**Important:** After 1 year of residency, US license no longer valid in France.",
             'keywords' => array('license exchange', 'exchange license', 'which states', 'eligible states', 'convert license'),
-            'sources' => array(array('name' => 'Service-Public.fr', 'url' => 'https://www.service-public.fr'))
+            'sources' => array(array('name' => 'Service-Public.fr', 'url' => 'https://www.service-public.gouv.fr'))
         )
     ),
     
@@ -181,7 +181,7 @@ return array(
             'title' => 'Settling In',
             'content' => "**Getting Established in France**\n\n**First Week:**\n• Get French phone number\n• Set up internet\n• Find local shops, pharmacy\n\n**First Month:**\n• Open bank account\n• Validate visa online (OFII)\n• Register at mairie if required\n\n**First 3 Months:**\n• Apply for Carte Vitale\n• Exchange driver's license\n• Start French lessons\n\n**Useful Apps:** Doctolib (doctors), Améli (health), SNCF Connect (trains)\n\n**Tips:**\n• Learn basic French - \"Bonjour\" and \"Merci\" matter\n• Patience with bureaucracy is essential",
             'keywords' => array('settling', 'getting started', 'first steps', 'utilities', 'establish'),
-            'sources' => array(array('name' => 'Service-Public.fr', 'url' => 'https://www.service-public.fr'))
+            'sources' => array(array('name' => 'Service-Public.fr', 'url' => 'https://www.service-public.gouv.fr'))
         )
     ),
 

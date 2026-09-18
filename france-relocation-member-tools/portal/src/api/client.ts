@@ -39,6 +39,8 @@ import type {
   JurisdictionSummary,
   JurisdictionType,
   KnowledgeCategory,
+  Letter,
+  LettersResponse,
   LocationHistoryResponse,
   LocationSettings,
   LocationSource,
@@ -659,6 +661,16 @@ export const membershipApi = {
 };
 
 // Research API
+export const lettersApi = {
+  list: () => apiFetch<LettersResponse>('/letters'),
+  saveAnswers: (answers: Record<string, string>) =>
+    apiFetch<LettersResponse>('/letters/answers', { method: 'PUT', body: JSON.stringify({ answers }) }),
+  draft: (type: string, person: 'you' | 'partner', answers?: Record<string, string>) =>
+    apiFetch<Letter>(`/letters/draft/${encodeURIComponent(type)}`, { method: 'POST', body: JSON.stringify({ person, answers }) }),
+  edit: (fileId: number, text: string) =>
+    apiFetch<Letter>(`/letters/file/${fileId}`, { method: 'PUT', body: JSON.stringify({ text }) }),
+};
+
 export const researchApi = {
   // Communes search
   searchCommunes: (params: { department?: string; q?: string; limit?: number }, signal?: AbortSignal) => {

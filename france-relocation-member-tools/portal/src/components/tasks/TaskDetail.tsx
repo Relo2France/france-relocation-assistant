@@ -6,6 +6,7 @@ import {
   CheckCircle,
   Circle,
   Clock,
+  FileSignature,
   FileText,
   Flag,
   MessageSquare,
@@ -13,8 +14,10 @@ import {
   Trash2,
   User,
 } from 'lucide-react';
+import { letterForStep } from '@/components/documents/letterForStep';
 import { Drawer } from '@/components/shared/Modal';
-import { useDeleteTask, useUpdateTask, useUpdateTaskStatus } from '@/hooks/useApi';
+import { useDeleteTask, useLetters, useUpdateTask, useUpdateTaskStatus } from '@/hooks/useApi';
+import { usePortalStore } from '@/store';
 import type { Task, TaskHowto, TaskPriority, TaskStatus } from '@/types';
 import TaskChecklist from './TaskChecklist';
 
@@ -188,6 +191,9 @@ export default function TaskDetail({ task, isOpen, onClose }: TaskDetailProps) {
 
       {/* How to do this: the walkthrough attached to generated steps */}
       {howtoValid ? <HowTo howto={howtoValid} /> : null}
+
+      {/* A step the portal can draft the letter for */}
+      <DraftLetterPrompt title={task.title} onGo={onClose} />
 
       {/* Task Checklist */}
       <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
@@ -435,5 +441,37 @@ function HowTo({ howto }: { howto: TaskHowto }) {
         </div>
       ) : null}
     </section>
+  );
+}
+
+/**
+ * "Draft it for me" on a step whose letter the member's route calls for.
+ * Opens Documents at that letter.
+ */
+function DraftLetterPrompt({ title, onGo }: { title: string; onGo: () => void }) {
+  const type = letterForStep(title);
+  const { data } = useLetters();
+  const { setActiveView, setOpenLetter } = usePortalStore();
+  const letter = type ? data?.letters.find((l) => l.type === type && l.person === 'you') : undefined;
+  if (!letter) return null;
+  const drafted = !!letter.file;
+  return (
+    <div className="mb-6 p-4 rounded-lg border border-primary-100 bg-primary-50 flex flex-wrap items-center justify-between gap-3">
+      <p className="text-sm text-gray-800 flex items-start gap-2 min-w-0">
+        <FileSignature className="w-4 h-4 mt-0.5 shrink-0 text-primary-600" aria-hidden="true" />
+        {drafted ? `Your ${letter.title.toLowerCase()} is drafted in Documents.` : `The portal can draft your ${letter.title.toLowerCase()} from your profile.`}
+      </p>
+      <button
+        type="button"
+        className="btn btn-primary btn-sm"
+        onClick={() => {
+          setOpenLetter(type);
+          setActiveView('documents');
+          onGo();
+        }}
+      >
+        {drafted ? 'Open it' : 'Draft it for me'}
+      </button>
+    </div>
   );
 }

@@ -36,7 +36,7 @@ export const portalFeatures: PortalFeature[] = [
   },
   {
     name: 'Documents drafted for you',
-    what: 'Cover letters, financial statements and the declaration of no professional activity, filled in from your profile.',
+    what: 'The letters your visa route calls for, drafted from your profile as PDFs you can edit, download and sign: the cover letter, the declaration not to work, a statement of resources, and where they apply a host\'s attestation d\'hébergement, a sponsor\'s attestation de prise en charge, an employer letter for remote work, a relationship statement or a business-plan outline.',
     publicVersion: 'The guides describe what each one has to say.',
   },
   {

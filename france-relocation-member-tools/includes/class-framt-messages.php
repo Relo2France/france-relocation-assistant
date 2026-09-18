@@ -603,6 +603,10 @@ class FRAMT_Messages {
         if (!$user) {
             return;
         }
+        // "Email updates" off in Settings: the message waits in the portal.
+        if (class_exists('FRAMT_Member_Emails') && !FRAMT_Member_Emails::wants(FRAMT_Member_Emails::owner_of($user->ID), 'email_notifications')) {
+            return;
+        }
 
         $first = $user->first_name ?: strtok($user->display_name, ' ');
         $subject = $message['subject'];
@@ -619,7 +623,8 @@ class FRAMT_Messages {
             $lead,
             self::markdown_to_html($content),
             'Open in the portal',
-            home_url('/portal/?view=messages')
+            add_query_arg(array('view' => 'messages', 'message' => (int) $message_id), home_url('/portal/')),
+            true
         );
 
         self::send_html($user->user_email, $subject, $html);
@@ -654,10 +659,14 @@ class FRAMT_Messages {
      * @param string $body_html Rendered body.
      * @param string $cta_label Button text.
      * @param string $cta_url   Button link.
+     * @param bool   $member_update An update a member can switch off: adds a link to Settings.
      * @return string
      */
-    public static function render_email($title, $lead, $body_html, $cta_label, $cta_url) {
+    public static function render_email($title, $lead, $body_html, $cta_label, $cta_url, $member_update = false) {
         $site = home_url('/');
+        $manage = $member_update
+            ? ' <a href="' . esc_url(add_query_arg('view', 'settings', home_url('/portal/'))) . '" style="color:#2c5346;">Choose which emails you get</a>.'
+            : '';
         return '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>' . esc_html($title) . '</title></head>'
             . '<body style="margin:0;padding:0;background:#f4f6f4;">'
             . '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f4;padding:32px 16px;">'
@@ -670,7 +679,7 @@ class FRAMT_Messages {
             . '<tr><td style="padding:18px 32px 0;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif;font-size:16px;line-height:1.6;color:#1c2420;">' . $body_html . '</td></tr>'
             . ('' !== $cta_url ? '<tr><td style="padding:26px 32px 0;"><a href="' . esc_url($cta_url) . '" style="display:inline-block;background:#2c5346;color:#ffffff;text-decoration:none;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif;font-size:15px;font-weight:600;padding:12px 22px;border-radius:999px;">' . esc_html($cta_label) . '</a></td></tr>' : '')
             . '<tr><td style="padding:28px 32px 28px;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif;font-size:13px;line-height:1.5;color:#5f6e66;border-top:1px solid #ebefeb;">'
-            . 'Sent by Relo2France because you have an account at <a href="' . esc_url($site) . '" style="color:#2c5346;">relo2france.com</a>. Reply from the portal, not to this email.'
+            . 'Sent by Relo2France because you have an account at <a href="' . esc_url($site) . '" style="color:#2c5346;">relo2france.com</a>. Reply from the portal, not to this email.' . $manage
             . '</td></tr></table></td></tr></table></body></html>';
     }
 

@@ -38,6 +38,7 @@ export interface GuideSource {
  * the site is willing to state as fact.
  */
 export const OFFICIAL_DOMAINS = [
+  'service-public.gouv.fr',
   'service-public.fr',
   'france-visas.gouv.fr',
   'notaires.fr',
@@ -85,7 +86,7 @@ export const guides: GuideDoc[] = [
     sourceCount: 3,
     sources: [
       { label: 'france-visas.gouv.fr', kind: 'official' },
-      { label: 'service-public.fr', kind: 'official' },
+      { label: 'service-public.gouv.fr', kind: 'official' },
       { label: 'visas-fr.tlscontact.com', kind: 'official' },
     ],
     sections: [
@@ -202,7 +203,7 @@ export const guides: GuideDoc[] = [
     sourceCount: 2,
     sources: [
       { label: 'france-visas.gouv.fr', kind: 'official' },
-      { label: 'service-public.fr', kind: 'official' },
+      { label: 'service-public.gouv.fr', kind: 'official' },
     ],
     sections: [
       {
@@ -270,7 +271,7 @@ export const guides: GuideDoc[] = [
         heading: 'A new annual health contribution',
         paragraphs: [
           'Once your status makes you eligible for French public health cover, the 2026 Social Security Financing Law creates a mandatory annual contribution ({{participation financière}}, CSS Article L.160-1-1), estimated at {{€300–600}} a year.',
-          'It is separate from the existing Cotisation Subsidiaire Maladie. The exact amount is set by an implementing decree that had not been published as of mid-2026 — check service-public.fr for the current figure rather than assuming you are exempt.',
+          'It is separate from the existing Cotisation Subsidiaire Maladie. The exact amount is set by an implementing decree that had not been published as of mid-2026 — check service-public.gouv.fr for the current figure rather than assuming you are exempt.',
         ],
       },
       {
@@ -300,7 +301,7 @@ export const guides: GuideDoc[] = [
     sourceCount: 2,
     sources: [
       { label: 'notaires.fr', kind: 'official' },
-      { label: 'service-public.fr', kind: 'official' },
+      { label: 'service-public.gouv.fr', kind: 'official' },
     ],
     sections: [
       {
@@ -438,7 +439,7 @@ export const guides: GuideDoc[] = [
     sourceCount: 3,
     sources: [
       { label: 'ameli.fr', kind: 'official' },
-      { label: 'service-public.fr', kind: 'official' },
+      { label: 'service-public.gouv.fr', kind: 'official' },
       { label: 'cleiss.fr', kind: 'official' },
     ],
     sections: [
@@ -510,7 +511,7 @@ export const guides: GuideDoc[] = [
     sourceCount: 2,
     sources: [
       { label: 'ameli.fr', kind: 'official' },
-      { label: 'service-public.fr', kind: 'official' },
+      { label: 'service-public.gouv.fr', kind: 'official' },
     ],
     sections: [
       {
@@ -552,7 +553,7 @@ export const guides: GuideDoc[] = [
           'For anyone drawing a French salary, standard payroll {{CSG/CRDS}} of {{9.2%}} plus {{0.5%}} on {{98.25%}} of gross pay — a general social charge, not a PUMA membership fee',
         ],
         caveat:
-          'Most salaried workers and retirees on modest pensions pay neither. But the 2026 Social Security Financing Law introduces a new contribution for PUMA beneficiaries who owe no CSG, CRDS or health-insurance contributions under an international agreement — which may catch US retirees covered by the bilateral agreements. The implementing decree setting the amount had not been published as of mid-2026, so watch ameli.fr and service-public.fr.',
+          'Most salaried workers and retirees on modest pensions pay neither. But the 2026 Social Security Financing Law introduces a new contribution for PUMA beneficiaries who owe no CSG, CRDS or health-insurance contributions under an international agreement — which may catch US retirees covered by the bilateral agreements. The implementing decree setting the amount had not been published as of mid-2026, so watch ameli.fr and service-public.gouv.fr.',
       },
     ],
     practice: {
@@ -652,7 +653,7 @@ export const guides: GuideDoc[] = [
     verified: '2026-09',
     sourceCount: 3,
     sources: [
-      { label: 'service-public.fr', kind: 'official' },
+      { label: 'service-public.gouv.fr', kind: 'official' },
       { label: 'irs.gov', kind: 'official' },
       { label: 'fincen.gov', kind: 'official' },
     ],
@@ -854,7 +855,7 @@ export const guides: GuideDoc[] = [
     verified: '2026-09',
     sourceCount: 2,
     sources: [
-      { label: 'service-public.fr', kind: 'official' },
+      { label: 'service-public.gouv.fr', kind: 'official' },
       { label: 'france-visas.gouv.fr', kind: 'official' },
     ],
     sections: [
@@ -978,7 +979,7 @@ export const guides: GuideDoc[] = [
     sourceCount: 2,
     sources: [
       { label: 'france-visas.gouv.fr', kind: 'official' },
-      { label: 'service-public.fr', kind: 'official' },
+      { label: 'service-public.gouv.fr', kind: 'official' },
     ],
     sections: [
       {

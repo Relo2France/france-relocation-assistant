@@ -734,6 +734,49 @@ class FRAMT_Portal_API {
         );
 
         // ============================================
+        // Letters for the application (2.9.25)
+        // ============================================
+        register_rest_route(
+            self::NAMESPACE,
+            '/letters',
+            array(
+                'methods'             => 'GET',
+                'callback'            => array( $this, 'get_letters' ),
+                'permission_callback' => array( $this, 'check_member_permission' ),
+            )
+        );
+
+        register_rest_route(
+            self::NAMESPACE,
+            '/letters/answers',
+            array(
+                'methods'             => 'PUT',
+                'callback'            => array( $this, 'save_letter_answers' ),
+                'permission_callback' => array( $this, 'check_member_permission' ),
+            )
+        );
+
+        register_rest_route(
+            self::NAMESPACE,
+            '/letters/draft/(?P<type>[a-z-]+)',
+            array(
+                'methods'             => 'POST',
+                'callback'            => array( $this, 'draft_letter' ),
+                'permission_callback' => array( $this, 'check_member_permission' ),
+            )
+        );
+
+        register_rest_route(
+            self::NAMESPACE,
+            '/letters/file/(?P<id>\d+)',
+            array(
+                'methods'             => 'PUT',
+                'callback'            => array( $this, 'edit_letter' ),
+                'permission_callback' => array( $this, 'check_member_permission' ),
+            )
+        );
+
+        // ============================================
         // Document Generator endpoints
         // ============================================
         register_rest_route(
@@ -3407,6 +3450,8 @@ class FRAMT_Portal_API {
             'target_move_date'      => get_user_meta( $user_id, 'fra_target_move_date', true ),
             'move_date_certainty'   => get_user_meta( $user_id, 'fra_move_date_certainty', true ) ?: 'anticipated',
             'application_location'  => get_user_meta( $user_id, 'fra_application_location', true ),
+            'consulate'             => get_user_meta( $user_id, 'fra_consulate', true ),
+            'mailing_address'       => get_user_meta( $user_id, 'fra_mailing_address', true ),
 
             // Financial
             'financial_resources'   => get_user_meta( $user_id, 'fra_financial_resources', true ),
@@ -3488,6 +3533,8 @@ class FRAMT_Portal_API {
             'target_move_date',
             'move_date_certainty',
             'application_location',
+            'consulate',
+            'mailing_address',
 
             // Financial
             'financial_resources',
@@ -3534,6 +3581,10 @@ class FRAMT_Portal_API {
                     $value = '';
                 } elseif ( in_array( $field, $integer_fields, true ) ) {
                     $value = (int) $value;
+                } elseif ( 'mailing_address' === $field && is_scalar( $value ) ) {
+                    $value = mb_substr( sanitize_textarea_field( (string) $value ), 0, 500 );
+                } elseif ( 'consulate' === $field ) {
+                    $value = in_array( $value, FRAMT_Letters::CONSULATES, true ) ? $value : '';
                 } elseif ( is_scalar( $value ) ) {
                     $value = sanitize_text_field( (string) $value );
                 } else {
@@ -3819,6 +3870,8 @@ class FRAMT_Portal_API {
             }
         }
 
+        $letter_notes = 'visa-application' === $type ? $this->letter_dossier_notes( $user_id ) : array();
+
         // Merge progress with items
         foreach ( $items as &$item ) {
             $own_tick             = ! empty( $progress[ $item['id'] ]['completed'] );
@@ -3837,6 +3890,12 @@ class FRAMT_Portal_API {
                 $item['note'] = $auto[ $item['id'] ][1];
                 if ( $auto[ $item['id'] ][0] && ! $own_tick ) {
                     $item['completed'] = true;
+                }
+            }
+            if ( '' === $item['note'] && ! $item['completed'] && isset( $letter_notes[ $item['id'] ] ) ) {
+                $item['note'] = $letter_notes[ $item['id'] ][0];
+                if ( ! $item['file_id'] ) {
+                    $item['file_id'] = $letter_notes[ $item['id'] ][1];
                 }
             }
             $item['status'] = $item['completed'] ? 'complete' : 'pending';
@@ -4196,6 +4255,323 @@ class FRAMT_Portal_API {
     // =========================================================================
     // Document Generator Methods
     // =========================================================================
+
+    // =========================================================================
+    // Letters
+    // =========================================================================
+
+    /**
+     * The letter context for a household: profile, answers and the route's
+     * dossier, which the cover letter lists as enclosures.
+     *
+     * @param int $user_id Household owner.
+     * @return array
+     */
+    private function letter_context( $user_id ) {
+        $visa = (string) get_user_meta( $user_id, 'fra_visa_type', true );
+        return FRAMT_Letters::context( $user_id, $this->get_visa_dossier_items( $visa ) );
+    }
+
+    /**
+     * The household's current letter files, newest per letter and person.
+     *
+     * @param int $user_id Household owner.
+     * @return object[] keyed "type|person"
+     */
+    private function letter_files( $user_id ) {
+        global $wpdb;
+        $table = $this->tbl( 'files' );
+        $rows  = $wpdb->get_results( $wpdb->prepare(
+            "SELECT * FROM $table WHERE user_id = %d AND metadata LIKE %s ORDER BY id DESC",
+            $user_id,
+            '%' . $wpdb->esc_like( '"letter":' ) . '%'
+        ) );
+        $out = array();
+        foreach ( (array) $rows as $row ) {
+            $meta   = json_decode( (string) $row->metadata, true );
+            $letter = is_array( $meta ) ? ( $meta['letter'] ?? null ) : null;
+            if ( ! is_array( $letter ) || empty( $letter['type'] ) ) {
+                continue;
+            }
+            $key = $letter['type'] . '|' . ( $letter['person'] ?? 'you' );
+            if ( ! isset( $out[ $key ] ) ) {
+                $out[ $key ] = $row;
+            }
+        }
+        return $out;
+    }
+
+    /**
+     * Blanks still to fill: bracketed prompts left in the text.
+     */
+    private function letter_blanks( $text ) {
+        $printed = preg_replace( '/^\s*\/\/.*$/m', '', (string) $text );
+        preg_match_all( '/\[(?!signature\])[^\]\n]{1,120}\]/', $printed, $m );
+        return count( $m[0] );
+    }
+
+    private function format_letter( $def, $file, $c ) {
+        $out = array(
+            'type'     => $def['type'],
+            'person'   => $def['person'],
+            'title'    => $def['title'],
+            'why'      => $def['why'],
+            'optional' => (bool) $def['optional'],
+            'fields'   => array_values( $def['fields'] ),
+            'guidance' => array_values( $def['guidance'] ),
+            'item_id'  => $def['item_id'],
+            'file'     => null,
+        );
+        if ( $file ) {
+            $meta   = json_decode( (string) $file->metadata, true );
+            $letter = $meta['letter'] ?? array();
+            $text   = (string) ( $letter['text'] ?? '' );
+            $out['file'] = array(
+                'id'           => (int) $file->id,
+                'name'         => $file->original_name,
+                'size'         => size_format( (int) $file->file_size ),
+                'text'         => $text,
+                'missing'      => array_values( (array) ( $letter['missing'] ?? array() ) ),
+                'blanks'       => $this->letter_blanks( $text ),
+                'generated_at' => $letter['generated_at'] ?? $file->created_at,
+                'edited_at'    => $letter['edited_at'] ?? null,
+                'edited'       => ! empty( $letter['edited'] ),
+                'stale'        => ( $letter['fingerprint'] ?? '' ) !== FRAMT_Letters::fingerprint( $def['type'], $c, $def['person'] ),
+                'preview_url'  => $this->get_file_preview_url( $file ),
+                'download_url' => $this->get_secure_download_url( $file ),
+            );
+        }
+        return $out;
+    }
+
+    /**
+     * GET /letters: what this route calls for, with any drafts on file.
+     */
+    public function get_letters( $request ) {
+        $user_id = $this->acting_user_id();
+        $c       = $this->letter_context( $user_id );
+        $files   = $this->letter_files( $user_id );
+        $letters = array();
+        foreach ( FRAMT_Letters::catalogue( $c ) as $def ) {
+            $letters[] = $this->format_letter( $def, $files[ $def['type'] . '|' . $def['person'] ] ?? null, $c );
+        }
+        return rest_ensure_response( array(
+            'visa_type' => $c['visa'],
+            'letters'   => $letters,
+            'fields'    => FRAMT_Letters::fields(),
+            'first'     => FRAMT_Letters::first_fields(),
+            'answers'   => (object) $c['answers'],
+        ) );
+    }
+
+    /**
+     * PUT /letters/answers: save what the member typed, merged over what
+     * they typed before.
+     */
+    public function save_letter_answers( $request ) {
+        $user_id = $this->acting_user_id();
+        $params  = $request->get_json_params();
+        FRAMT_Letters::save_answers( $user_id, $params['answers'] ?? array() );
+        return $this->get_letters( $request );
+    }
+
+    /**
+     * Write PDF bytes into the member's private folder.
+     *
+     * @return array|false filename, path, size
+     */
+    private function write_letter_pdf( $user_id, $bytes ) {
+        $upload_dir = wp_upload_dir();
+        $dir        = $upload_dir['basedir'] . '/fra-portal/' . (int) $user_id;
+        if ( ! file_exists( $dir ) ) {
+            wp_mkdir_p( $dir );
+            file_put_contents( $dir . '/.htaccess', 'deny from all' );
+        }
+        $name = wp_generate_password( 24, false, false ) . '.pdf';
+        $path = $dir . '/' . $name;
+        if ( false === file_put_contents( $path, $bytes ) ) {
+            return false;
+        }
+        return array( 'filename' => $name, 'path' => $path, 'size' => strlen( $bytes ) );
+    }
+
+    /**
+     * Save a letter's PDF, replacing the file it had before so the member
+     * keeps one current copy of each letter.
+     *
+     * @param int         $user_id  Household owner.
+     * @param array       $def      Letter definition.
+     * @param string      $filename Name the member sees.
+     * @param string      $text     Letter markup.
+     * @param array       $letter   Letter metadata.
+     * @param object|null $existing The file row to replace.
+     * @return object|WP_Error The file row.
+     */
+    private function store_letter( $user_id, $def, $filename, $text, $letter, $existing ) {
+        global $wpdb;
+        $table   = $this->tbl( 'files' );
+        $written = $this->write_letter_pdf( $user_id, FRAMT_Letters::render_pdf( $def['title'], $text ) );
+        if ( ! $written ) {
+            return new WP_Error( 'letter_not_saved', 'The letter could not be saved. Try again in a minute.', array( 'status' => 500 ) );
+        }
+        $metadata = array(
+            'title'  => $def['title'],
+            'letter' => $letter,
+        );
+        $row = array(
+            'filename'      => $written['filename'],
+            'original_name' => $filename,
+            'file_type'     => 'pdf',
+            'file_size'     => $written['size'],
+            'mime_type'     => 'application/pdf',
+            'file_path'     => $written['path'],
+            'category'      => 'visa',
+            'metadata'      => wp_json_encode( $metadata ),
+        );
+        if ( $existing ) {
+            $wpdb->update( $table, $row, array( 'id' => (int) $existing->id ) );
+            if ( $existing->file_path && $existing->file_path !== $written['path'] && file_exists( $existing->file_path ) ) {
+                @unlink( $existing->file_path );
+            }
+            $file_id = (int) $existing->id;
+        } else {
+            $project = FRAMT_Project::get_or_create( $user_id );
+            $wpdb->insert(
+                $table,
+                array_merge( $row, array(
+                    'project_id' => $project ? (int) $project->id : 0,
+                    'user_id'    => $user_id,
+                    'task_id'    => null,
+                    'visibility' => 'private',
+                ) )
+            );
+            $file_id = (int) $wpdb->insert_id;
+            if ( ! $file_id ) {
+                @unlink( $written['path'] );
+                return new WP_Error( 'letter_not_saved', 'The letter could not be saved. Try again in a minute.', array( 'status' => 500 ) );
+            }
+            if ( $project ) {
+                FRAMT_Activity::log( (int) $project->id, get_current_user_id(), 'file_uploaded', 'file', $file_id, $filename );
+            }
+        }
+        return $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE id = %d", $file_id ) );
+    }
+
+    /**
+     * POST /letters/draft/{type}: draft a letter, or redraft it from the
+     * profile and answers, replacing the member's edits. Answers sent with
+     * the request are saved first.
+     */
+    public function draft_letter( $request ) {
+        $user_id = $this->acting_user_id();
+        $type    = sanitize_key( $request->get_param( 'type' ) );
+        $params  = (array) $request->get_json_params();
+        $person  = 'partner' === ( $params['person'] ?? 'you' ) ? 'partner' : 'you';
+
+        if ( ! empty( $params['answers'] ) && is_array( $params['answers'] ) ) {
+            FRAMT_Letters::save_answers( $user_id, $params['answers'] );
+        }
+
+        $c   = $this->letter_context( $user_id );
+        $def = null;
+        foreach ( FRAMT_Letters::catalogue( $c ) as $candidate ) {
+            if ( $candidate['type'] === $type && $candidate['person'] === $person ) {
+                $def = $candidate;
+                break;
+            }
+        }
+        if ( ! $def ) {
+            return new WP_Error( 'letter_not_for_route', 'That letter is not part of your visa route. Check the visa type in your profile.', array( 'status' => 400 ) );
+        }
+
+        $built = FRAMT_Letters::build( $type, $c, $person );
+        $files = $this->letter_files( $user_id );
+        $file  = $this->store_letter(
+            $user_id,
+            $def,
+            $built['filename'],
+            $built['text'],
+            array(
+                'type'         => $type,
+                'person'       => $person,
+                'item_id'      => $def['item_id'],
+                'text'         => $built['text'],
+                'missing'      => $built['missing'],
+                'fingerprint'  => FRAMT_Letters::fingerprint( $type, $c, $person ),
+                'generated_at' => current_time( 'mysql' ),
+                'edited'       => false,
+            ),
+            $files[ $type . '|' . $person ] ?? null
+        );
+        if ( is_wp_error( $file ) ) {
+            return $file;
+        }
+        return rest_ensure_response( $this->format_letter( $def, $file, $c ) );
+    }
+
+    /**
+     * PUT /letters/file/{id}: save the member's own wording and rebuild
+     * the PDF from it.
+     */
+    public function edit_letter( $request ) {
+        global $wpdb;
+        $user_id = $this->acting_user_id();
+        $table   = $this->tbl( 'files' );
+        $file    = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE id = %d", (int) $request->get_param( 'id' ) ) );
+        $meta    = $file ? json_decode( (string) $file->metadata, true ) : null;
+        if ( ! $file || (int) $file->user_id !== (int) $user_id || empty( $meta['letter']['type'] ) ) {
+            return new WP_Error( 'letter_not_found', 'That letter is no longer on file.', array( 'status' => 404 ) );
+        }
+        $params = (array) $request->get_json_params();
+        $text   = trim( sanitize_textarea_field( (string) ( $params['text'] ?? '' ) ) );
+        if ( '' === $text ) {
+            return new WP_Error( 'letter_empty', 'The letter is empty. Redraft it from your profile instead.', array( 'status' => 400 ) );
+        }
+        if ( mb_strlen( $text ) > 20000 ) {
+            return new WP_Error( 'letter_too_long', 'The letter is too long to save.', array( 'status' => 400 ) );
+        }
+
+        $c      = $this->letter_context( $user_id );
+        $letter = $meta['letter'];
+        $def    = FRAMT_Letters::definition( $letter['type'], $c, $letter['person'] ?? 'you' );
+        if ( ! $def ) {
+            return new WP_Error( 'letter_not_for_route', 'That letter is not part of your visa route any more.', array( 'status' => 400 ) );
+        }
+        $def['type']     = $letter['type'];
+        $def['person']   = $letter['person'] ?? 'you';
+        $def['optional'] = false;
+
+        $letter['text']      = $text;
+        $letter['edited']    = true;
+        $letter['edited_at'] = current_time( 'mysql' );
+        $letter['missing']   = array();
+        $saved = $this->store_letter( $user_id, $def, $file->original_name, $text, $letter, $file );
+        if ( is_wp_error( $saved ) ) {
+            return $saved;
+        }
+        return rest_ensure_response( $this->format_letter( $def, $saved, $c ) );
+    }
+
+    /**
+     * Dossier notes for items a drafted letter answers: the draft is not
+     * the signed document, so it points at it without ticking the item.
+     *
+     * @param int $user_id Household owner.
+     * @return array item_id => array( note, file_id )
+     */
+    private function letter_dossier_notes( $user_id ) {
+        $notes = array();
+        foreach ( $this->letter_files( $user_id ) as $row ) {
+            $meta   = json_decode( (string) $row->metadata, true );
+            $letter = $meta['letter'] ?? array();
+            $item   = (string) ( $letter['item_id'] ?? '' );
+            if ( '' === $item || isset( $notes[ $item ] ) ) {
+                continue;
+            }
+            $notes[ $item ] = array( 'Drafted in Documents · print it, sign it, then tick this off', (int) $row->id );
+        }
+        return $notes;
+    }
 
     /**
      * Get available document types for generation
@@ -5558,7 +5934,7 @@ Signature:
 
         if ( ! empty( $search_api_key ) ) {
             // Use Brave Search API for comprehensive results
-            $results['official'] = $this->brave_search( $search_api_key, $base_query . ' site:service-public.fr OR site:france-visas.gouv.fr OR site:impots.gouv.fr OR site:ameli.fr', 3 );
+            $results['official'] = $this->brave_search( $search_api_key, $base_query . ' site:service-public.gouv.fr OR site:service-public.fr OR site:france-visas.gouv.fr OR site:impots.gouv.fr OR site:ameli.fr', 3 );
             $results['community'] = $this->brave_search( $search_api_key, $base_query . ' France expat experience reddit OR forum', 3 );
         } else {
             // Fallback: Use Claude's knowledge with explicit web source prompting
@@ -5664,13 +6040,13 @@ Signature:
     private function get_web_context_from_ai( $message, $context ) {
         // Define reliable sources by category
         $official_sources = array(
-            'visas' => array( 'france-visas.gouv.fr', 'service-public.fr' ),
-            'healthcare' => array( 'ameli.fr', 'service-public.fr' ),
-            'property' => array( 'notaires.fr', 'service-public.fr' ),
-            'banking' => array( 'banque-france.fr', 'service-public.fr' ),
+            'visas' => array( 'france-visas.gouv.fr', 'service-public.gouv.fr', 'service-public.fr' ),
+            'healthcare' => array( 'ameli.fr', 'service-public.gouv.fr', 'service-public.fr' ),
+            'property' => array( 'notaires.fr', 'service-public.gouv.fr', 'service-public.fr' ),
+            'banking' => array( 'banque-france.fr', 'service-public.gouv.fr', 'service-public.fr' ),
             'taxes' => array( 'impots.gouv.fr', 'irs.gov' ),
-            'driving' => array( 'service-public.fr', 'securite-routiere.gouv.fr' ),
-            'settling' => array( 'service-public.fr', 'diplomatie.gouv.fr' ),
+            'driving' => array( 'service-public.gouv.fr', 'service-public.fr', 'securite-routiere.gouv.fr' ),
+            'settling' => array( 'service-public.gouv.fr', 'service-public.fr', 'diplomatie.gouv.fr' ),
         );
 
         $community_sources = array(
@@ -5687,7 +6063,7 @@ Signature:
             'official' => array(
                 array(
                     'title' => 'Official French Sources',
-                    'url' => 'https://' . ( $official_sources[ $context ][0] ?? 'service-public.fr' ),
+                    'url' => 'https://' . ( $official_sources[ $context ][0] ?? 'service-public.gouv.fr' ),
                     'snippet' => 'Check official French government sources for current requirements and procedures.',
                     'date' => date( 'Y' ),
                 ),
@@ -5701,7 +6077,7 @@ Signature:
                 ),
             ),
             'sources_to_cite' => array_merge(
-                $official_sources[ $context ] ?? array( 'service-public.fr' ),
+                $official_sources[ $context ] ?? array( 'service-public.gouv.fr', 'service-public.fr' ),
                 array_slice( $community_sources, 0, 3 )
             ),
         );
@@ -5800,7 +6176,7 @@ Signature:
             return $response;
         }
 
-        return "I couldn't find specific information about this topic. Please check official French sources like service-public.fr or france-visas.gouv.fr for accurate information.";
+        return "I couldn't find specific information about this topic. Please check official French sources like service-public.gouv.fr or france-visas.gouv.fr for accurate information.";
     }
 
     /**
@@ -5866,7 +6242,7 @@ Before answering ANY legal, technical, or procedural question:
 
 **USE WEB SEARCH RESULTS:**
 The context below may include OFFICIAL SOURCES from web search with current information from:
-- French government sites (france-visas.gouv.fr, service-public.fr)
+- French government sites (france-visas.gouv.fr, service-public.gouv.fr)
 - US State Department
 - French consulate websites
 USE these official sources to provide accurate, current information. Cite URLs when available.
@@ -7954,7 +8330,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
         } elseif ( 'no' === $facts['licence_exchange'] ) {
             $templates[] = array(
                 'title'       => 'Pass the French driving test before your US licence stops counting',
-                'description' => $facts['name'] . ' has no reciprocal agreement with France (list as of ' . $facts['verified'] . '; confirm on service-public.fr, it changes). Your US licence is valid for one year from the start of residence and then it is not, so the French licence has to be earned inside that year. The process: 1. Register with a driving school (auto-école) or, to save money, as a candidat libre through ANTS; a school package runs roughly €1,200 to €3,800 and most areas expect at least 20 hours of lessons. 2. Pass the theory test, the code de la route, about €30, sat at an approved centre; apps and books exist in English but the exam is in French. 3. Book the practical exam through the school or ANTS, €32 to €50 depending on the prefecture; waits for a slot run weeks to months. 4. On passing you get a provisional certificate and then the card; new licences carry a three-year probation with a lower alcohol limit. Get an International Driving Permit from AAA before you leave for the first year, and book the school within the first months: the year goes quickly.',
+                'description' => $facts['name'] . ' has no reciprocal agreement with France (list as of ' . $facts['verified'] . '; confirm on service-public.gouv.fr, it changes). Your US licence is valid for one year from the start of residence and then it is not, so the French licence has to be earned inside that year. The process: 1. Register with a driving school (auto-école) or, to save money, as a candidat libre through ANTS; a school package runs roughly €1,200 to €3,800 and most areas expect at least 20 hours of lessons. 2. Pass the theory test, the code de la route, about €30, sat at an approved centre; apps and books exist in English but the exam is in French. 3. Book the practical exam through the school or ANTS, €32 to €50 depending on the prefecture; waits for a slot run weeks to months. 4. On passing you get a provisional certificate and then the card; new licences carry a three-year probation with a lower alcohol limit. Get an International Driving Permit from AAA before you leave for the first year, and book the school within the first months: the year goes quickly.',
                 'stage'       => 'settle',
                 'priority'    => 'high',
                 'days_offset' => 60,
@@ -8487,7 +8863,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
             case 'student':
                 $route = array(
                     $t( 'Get university acceptance letter', 'An official attestation d\'inscription or convention d\'accueil from an institution recognised to enrol international students. Applications close early; this is the longest lead time on the route.', 'prepare', -180, 'high', 'document' ),
-                    $t( 'Check whether Campus France Études en France applies to you', 'The Études en France procedure is compulsory only for a list of countries, and the United States is not on it, so most US applicants apply straight through France-Visas. Practice varies by consular district; confirm on usa.campusfrance.org before booking anything.', 'prepare', -170, 'high', 'task' ),
+                    $t( 'Complete the Campus France Études en France application', 'Campus France USA runs the Études en France pre-consular procedure for US students admitted to a programme in France, and it must be completed before you apply for the student visa. Once your file is processed you receive the confirmation that lets you book the visa appointment.', 'prepare', -150, 'high', 'task' ),
                     $t( 'Apply for CROUS housing', 'Subsidised student housing through CROUS where your institution offers it; the confirmation doubles as proof of accommodation.', 'prepare', -120, 'medium', 'task' ),
                     $t( 'Prove financial resources for studies', 'A monthly minimum set by decree, about €877.50 a month from August 2026, for the length of the stay: bank statements, a scholarship letter, or a sponsor\'s attestation de prise en charge with their statements.', 'prepare', -90, 'high', 'financial' ),
                     $t( 'Complete university enrollment', 'Finalise the inscription in person and collect the student card; the university\'s own deadlines run in September.', 'arrive', 7, 'high', 'task' ),
@@ -8581,6 +8957,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
             'Prove business funding',
             'Register business in France',
             'Register on Campus France',
+            'Check whether Campus France Études en France applies to you',
             'Arrange pension transfer',
             'Research S1 health form',
         );
@@ -8600,7 +8977,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
      * @return void
      */
     private function refresh_template_tasks( $user_id, $project_id ) {
-        if ( ! $user_id || ! $project_id || '1' === get_user_meta( $user_id, 'framt_task_templates_v7', true ) ) {
+        if ( ! $user_id || ! $project_id || '1' === get_user_meta( $user_id, 'framt_task_templates_v8', true ) ) {
             return;
         }
         $visa    = (string) get_user_meta( $user_id, 'fra_visa_type', true );
@@ -8658,7 +9035,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                 $task->save();
             }
         }
-        update_user_meta( $user_id, 'framt_task_templates_v7', '1' );
+        update_user_meta( $user_id, 'framt_task_templates_v8', '1' );
     }
 
     /**
@@ -9308,14 +9685,12 @@ SYSTEM;
         // Parse the report content
         $content = is_string( $report['content'] ) ? json_decode( $report['content'], true ) : $report['content'];
 
-        // Load PDF class
-        require_once FRAMT_PLUGIN_DIR . 'vendor/class-simple-pdf.php';
-
-        $pdf = new FRAMT_Simple_PDF();
-        $pdf->addPage();
+        // Several pages, accents and the euro sign: the old one-page writer
+        // cut long reports off and turned "Aix-en-Provence · €" into "?".
+        $title = $content['header']['title'] ?? $report['location_name'];
+        $pdf   = new FRAMT_PDF( $title );
 
         // Write header
-        $title = $content['header']['title'] ?? $report['location_name'];
         $pdf->writeTitle( $title );
 
         if ( ! empty( $content['header']['tagline'] ) ) {
@@ -10608,7 +10983,7 @@ REQUIRED JSON FORMAT:
   },
   "footer": {
     "data_sources": "Data from INSEE, [regional-website.fr], and official French government sources (2024-2025)",
-    "reference_links": ["insee.fr", "[regional-site.fr]", "service-public.fr"],
+    "reference_links": ["insee.fr", "[regional-site.fr]", "service-public.gouv.fr"],
     "generated_date": "{$current_date}",
     "version": 1
   }
@@ -10955,7 +11330,7 @@ SECTIONS;
             ),
             'sections' => $sections,
             'footer'   => array(
-                'data_sources'      => array( 'INSEE', 'Eurostat', 'service-public.fr' ),
+                'data_sources'      => array( 'INSEE', 'Eurostat', 'service-public.gouv.fr' ),
                 'generated_date'    => gmdate( 'Y-m-d' ),
                 'version'           => 1,
                 'note'              => 'This is a template report. AI-generated reports will include specific local data and details.',

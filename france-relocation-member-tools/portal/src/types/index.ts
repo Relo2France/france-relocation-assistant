@@ -175,6 +175,8 @@ export interface PortalFile {
   document_type?: string | null;
   /** How the document measures up to the requirement it has to meet. */
   check?: { status: 'ok' | 'flag' | 'none'; note: string } | null;
+  /** Server-side details: the dossier item it answers, a drafted letter's text. */
+  metadata?: Record<string, unknown> | null;
   id: number;
   project_id: number;
   user_id: number;
@@ -356,6 +358,10 @@ export interface MemberProfile {
   target_location: string;
   housing_plan: HousingPlan;
   application_location: ApplicationLocation;
+  /** The French consulate nearest the member, for their letters. */
+  consulate?: string;
+  /** Multi-line mailing address, for the top of their letters. */
+  mailing_address?: string;
 
   // Timeline
   timeline: TimelineType;
@@ -1851,4 +1857,54 @@ declare global {
     PORTAL_USER?: PortalUser;
     PORTAL_API?: PortalApi;
   }
+}
+
+// Letters for the visa application (member tools 2.9.25)
+export type LetterFieldType = 'text' | 'textarea' | 'select' | 'date' | 'number';
+
+export interface LetterField {
+  label: string;
+  type: LetterFieldType;
+  hint: string;
+  options?: { value: string; label: string }[];
+}
+
+export interface LetterFile {
+  id: number;
+  name: string;
+  size: string;
+  /** The letter's editable text, in the small markup the PDF is built from. */
+  text: string;
+  /** Answers that were blank when it was drafted. */
+  missing: string[];
+  /** Bracketed blanks still in the printed text. */
+  blanks: number;
+  generated_at: string;
+  edited_at: string | null;
+  edited: boolean;
+  /** The profile or the answers have changed since it was drafted. */
+  stale: boolean;
+  preview_url: string;
+  download_url: string;
+}
+
+export interface Letter {
+  type: string;
+  person: 'you' | 'partner';
+  title: string;
+  why: string;
+  optional: boolean;
+  fields: string[];
+  guidance: string[];
+  item_id: string;
+  file: LetterFile | null;
+}
+
+export interface LettersResponse {
+  visa_type: string;
+  letters: Letter[];
+  fields: Record<string, LetterField>;
+  /** Asked before any letter: the consulate and the mailing address. */
+  first: string[];
+  answers: Record<string, string>;
 }

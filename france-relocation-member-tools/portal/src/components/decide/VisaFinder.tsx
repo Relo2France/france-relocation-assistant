@@ -3,7 +3,7 @@
  *
  * Six questions at most, one at a time, ending on a route the member can
  * set with one click. Every fact in the results comes from the knowledge
- * base's visa topics (france-visas.gouv.fr, service-public.fr); where the
+ * base's visa topics (france-visas.gouv.fr, service-public.gouv.fr); where the
  * knowledge base does not cover a route yet, the result says so rather than
  * guessing. The point is to turn "seven routes, which one?" into a choice
  * the member can defend to a consulate.
@@ -263,7 +263,7 @@ const QUESTIONS: Record<Step, Question> = {
         label: 'Not yet',
         next: {
           ...RESULTS.student('The student route needs the acceptance letter first; the application follows the enrolment, not the other way round.'),
-          caution: 'For US applicants the enrolment usually goes through Campus France before the visa. Our knowledge base covers the visa itself; the enrolment path is not written up yet.',
+          caution: 'Once admitted, US students complete the Campus France Études en France procedure before applying for the visa. Your plan walks you through it.',
         },
       },
     ],
@@ -420,7 +420,7 @@ export default function VisaFinder({ currentRoute, currentLabel }: { currentRout
           </div>
 
           <p className="text-[0.8rem] text-gray-500 m-0 border-t border-rule-soft pt-3">
-            Based on the official requirements as published on france-visas.gouv.fr and service-public.fr and re-checked weekly. It is not legal advice. If your situation does not fit one answer cleanly, an immigration lawyer can confirm the route before you spend on documents.
+            Based on the official requirements as published on france-visas.gouv.fr and service-public.gouv.fr and re-checked weekly. It is not legal advice. If your situation does not fit one answer cleanly, an immigration lawyer can confirm the route before you spend on documents.
           </p>
           <div className="flex gap-4">
             <button onClick={back} className="text-sm text-gray-500 hover:text-ink inline-flex items-center gap-1"><ArrowLeft className="w-3.5 h-3.5" /> Change my last answer</button>

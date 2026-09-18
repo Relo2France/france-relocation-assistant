@@ -513,36 +513,43 @@ function NotificationsSection() {
   const toggles = [
     {
       key: 'email_notifications' as keyof UserSettings,
-      label: 'Email Notifications',
-      description: 'Receive email updates about your relocation progress',
+      label: 'Email updates',
+      description: 'An email when we write to you, answer your support request, or finish a report. Off, and everything still arrives in Messages; the reminders and digest below stop too.',
     },
     {
       key: 'task_reminders' as keyof UserSettings,
-      label: 'Task Reminders',
-      description: 'Get reminded about upcoming and overdue tasks',
+      label: 'Step reminders',
+      description: 'One email on days a step is a week away, due tomorrow, or has just passed its date. It goes to whoever the step is assigned to.',
     },
     {
       key: 'weekly_digest' as keyof UserSettings,
-      label: 'Weekly Digest',
-      description: 'Receive a weekly summary of your progress',
+      label: 'Weekly digest',
+      description: 'Monday morning: what you finished last week and what is dated for the next two weeks.',
     },
   ];
 
   return (
     <div className="card p-6">
-      <h2 className="text-lg font-semibold text-gray-900 mb-6">Notification Preferences</h2>
+      <h2 className="text-lg font-semibold text-gray-900 mb-1">Emails</h2>
+      <p className="text-sm text-gray-500 mb-6 max-w-[65ch]">These apply to your whole household. Invitations and password emails are always sent.</p>
 
       <div className="space-y-6">
         {toggles.map((toggle) => (
-          <div key={toggle.key} className="flex items-center justify-between">
-            <div>
-              <h3 className="font-medium text-gray-900">{toggle.label}</h3>
-              <p className="text-sm text-gray-500">{toggle.description}</p>
+          <div key={toggle.key} className="flex items-center justify-between gap-4">
+            <div className="min-w-0 max-w-[65ch]">
+              <h3 id={`switch-${toggle.key}`} className="font-medium text-gray-900">{toggle.label}</h3>
+              <p id={`switch-${toggle.key}-desc`} className="text-sm text-gray-500">{toggle.description}</p>
             </div>
             <button
               type="button"
+              role="switch"
+              aria-checked={!!settings?.[toggle.key]}
+              aria-labelledby={`switch-${toggle.key}`}
+              aria-describedby={`switch-${toggle.key}-desc`}
+              disabled={toggle.key !== 'email_notifications' && !settings?.email_notifications}
               onClick={() => handleToggle(toggle.key, !settings?.[toggle.key])}
               className={clsx(
+                'disabled:opacity-50 disabled:cursor-not-allowed',
                 'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
                 settings?.[toggle.key] ? 'bg-primary-600' : 'bg-gray-200'
               )}

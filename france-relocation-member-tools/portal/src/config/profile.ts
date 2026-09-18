@@ -138,6 +138,20 @@ export const WORK_IN_FRANCE_OPTIONS = [
 ] as const;
 
 // Application location options
+/** The French consulates general that take visa files in the US; matches FRAMT_Letters::CONSULATES. */
+export const FRENCH_CONSULATES = [
+  'Atlanta',
+  'Boston',
+  'Chicago',
+  'Houston',
+  'Los Angeles',
+  'Miami',
+  'New Orleans',
+  'New York',
+  'San Francisco',
+  'Washington',
+].map((city) => ({ value: city, label: `Consulate General of France in ${city}` }));
+
 export const APPLICATION_LOCATION_OPTIONS = [
   { value: 'us', label: 'United States (US Consulate)' },
   { value: 'france', label: 'France (Already in France)' },

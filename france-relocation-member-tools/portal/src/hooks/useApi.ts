@@ -7,6 +7,7 @@ import {
   familyApi,
   filesApi,
   glossaryApi,
+  lettersApi,
   profileApi,
   projectsApi,
   researchApi,
@@ -79,6 +80,7 @@ export const queryKeys = {
   supportUnreadCount: ['supportUnreadCount'] as const,
   // Research
   savedReports: ['savedReports'] as const,
+  letters: ['letters'] as const,
   // Family members
   familyMembers: ['familyMembers'] as const,
   familyMember: (id: number) => ['familyMember', id] as const,
@@ -1362,5 +1364,58 @@ export function useTravelStatusAnalytics() {
     queryFn: travelStatusApi.getAnalytics,
     staleTime: 5 * 60 * 1000, // 5 minutes
     refetchOnWindowFocus: false,
+  });
+}
+
+// ============================================================================
+// Letters for the application
+// ============================================================================
+
+export function useLetters() {
+  return useQuery({
+    queryKey: queryKeys.letters,
+    queryFn: lettersApi.list,
+    staleTime: STALE_TIME.DEFAULT,
+  });
+}
+
+/** A letter changes the files, the dossier notes and, for the consulate and address, the profile. */
+function useInvalidateLetters() {
+  const queryClient = useQueryClient();
+  return () => {
+    queryClient.invalidateQueries({ queryKey: queryKeys.letters });
+    queryClient.invalidateQueries({ queryKey: ['files'] });
+    queryClient.invalidateQueries({ queryKey: ['checklist'] });
+    queryClient.invalidateQueries({ queryKey: queryKeys.profile });
+    queryClient.invalidateQueries({ queryKey: queryKeys.dashboard });
+  };
+}
+
+export function useSaveLetterAnswers() {
+  const invalidate = useInvalidateLetters();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (answers: Record<string, string>) => lettersApi.saveAnswers(answers),
+    onSuccess: (data) => {
+      queryClient.setQueryData(queryKeys.letters, data);
+      invalidate();
+    },
+  });
+}
+
+export function useDraftLetter() {
+  const invalidate = useInvalidateLetters();
+  return useMutation({
+    mutationFn: ({ type, person, answers }: { type: string; person: 'you' | 'partner'; answers?: Record<string, string> }) =>
+      lettersApi.draft(type, person, answers),
+    onSuccess: invalidate,
+  });
+}
+
+export function useEditLetter() {
+  const invalidate = useInvalidateLetters();
+  return useMutation({
+    mutationFn: ({ fileId, text }: { fileId: number; text: string }) => lettersApi.edit(fileId, text),
+    onSuccess: invalidate,
   });
 }

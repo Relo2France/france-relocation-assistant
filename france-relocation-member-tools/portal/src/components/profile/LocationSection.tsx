@@ -7,7 +7,7 @@
 
 import { useEffect, useState } from 'react';
 import SaveButton from '@/components/shared/SaveButton';
-import { APPLICATION_LOCATION_OPTIONS, US_STATES } from '@/config/profile';
+import { APPLICATION_LOCATION_OPTIONS, FRENCH_CONSULATES, US_STATES } from '@/config/profile';
 import { useUpdateMemberProfile } from '@/hooks/useApi';
 import type { ApplicationLocation, MemberProfile } from '@/types';
 
@@ -27,6 +27,8 @@ export default function LocationSection({ profile }: LocationSectionProps) {
     marriage_country: '',
     target_location: '',
     application_location: 'us' as ApplicationLocation,
+    mailing_address: '',
+    consulate: '',
   });
   const [initialized, setInitialized] = useState(false);
 
@@ -42,6 +44,8 @@ export default function LocationSection({ profile }: LocationSectionProps) {
         marriage_country: profile.marriage_country || '',
         target_location: profile.target_location || '',
         application_location: (profile.application_location as ApplicationLocation) || 'us',
+        mailing_address: profile.mailing_address || '',
+        consulate: profile.consulate || '',
       });
       setInitialized(true);
     }
@@ -108,6 +112,50 @@ export default function LocationSection({ profile }: LocationSectionProps) {
               placeholder="e.g., New York"
               autoComplete="address-level2"
             />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label htmlFor="mailing_address" className="block text-sm font-medium text-gray-700 mb-1">
+              Current mailing address
+            </label>
+            <textarea
+              id="mailing_address"
+              name="mailing_address"
+              rows={3}
+              value={formData.mailing_address}
+              onChange={(e) => setFormData({ ...formData, mailing_address: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              placeholder={'123 Main Street\nDenver, CO 80202'}
+              autoComplete="street-address"
+              aria-describedby="mailing_address_hint"
+            />
+            <p id="mailing_address_hint" className="mt-1 text-sm text-gray-500">
+              Street, city, state and ZIP. It goes at the top of the letters drafted in Documents.
+            </p>
+          </div>
+
+          <div>
+            <label htmlFor="consulate" className="block text-sm font-medium text-gray-700 mb-1">
+              The French consulate nearest you
+            </label>
+            <select
+              id="consulate"
+              name="consulate"
+              value={formData.consulate}
+              onChange={(e) => setFormData({ ...formData, consulate: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              aria-describedby="consulate_hint"
+            >
+              <option value="">Choose…</option>
+              {FRENCH_CONSULATES.map((c) => (
+                <option key={c.value} value={c.value}>{c.label}</option>
+              ))}
+            </select>
+            <p id="consulate_hint" className="mt-1 text-sm text-gray-500">
+              Each consulate serves a set of states; France-Visas confirms yours when you start the application. Your letters are addressed to it.
+            </p>
           </div>
         </div>
       </fieldset>

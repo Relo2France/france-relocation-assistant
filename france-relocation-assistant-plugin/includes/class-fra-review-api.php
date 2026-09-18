@@ -257,11 +257,12 @@ class FRA_Review_API {
                 continue;
             }
             if ($messages && method_exists($messages, 'create_admin_message')) {
+                // The message always lands in the portal; its email follows the member's Settings.
                 // create_admin_message emails the member itself, in the site's layout.
                 $messages->create_admin_message($user_id, "Your {$name} report is ready", $body_md, $admin_id);
-            } elseif (class_exists('FRAMT_Messages')) {
+            } elseif (class_exists('FRAMT_Messages') && (!class_exists('FRAMT_Member_Emails') || FRAMT_Member_Emails::wants(FRAMT_Member_Emails::owner_of($user_id), 'email_notifications'))) {
                 $first = $user->first_name ?: strtok($user->display_name, ' ');
-                $html  = FRAMT_Messages::render_email("Your {$name} report is ready", 'Hello ' . $first . ',', FRAMT_Messages::markdown_to_html($body_md), 'Open Documents & files', $portal);
+                $html  = FRAMT_Messages::render_email("Your {$name} report is ready", 'Hello ' . $first . ',', FRAMT_Messages::markdown_to_html($body_md), 'Open Documents & files', $portal, true);
                 FRAMT_Messages::send_html($user->user_email, "Your {$name} report is ready", $html);
             }
         }

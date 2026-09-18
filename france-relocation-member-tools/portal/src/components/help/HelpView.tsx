@@ -42,7 +42,7 @@ const OFFICIAL: { label: string; url: string; note: string }[] = [
   { label: 'France-Visas', url: 'https://france-visas.gouv.fr/', note: 'The application, the wizard and the document list for your route.' },
   { label: 'TLScontact', url: 'https://visas-fr.tlscontact.com/', note: 'The appointment, at any of ten US centres.' },
   { label: 'ANEF', url: 'https://administration-etrangers-en-france.interieur.gouv.fr/', note: 'Validate the visa after arrival; renewals.' },
-  { label: 'service-public.fr', url: 'https://www.service-public.fr/', note: 'The official guide to every French procedure.' },
+  { label: 'service-public.gouv.fr', url: 'https://www.service-public.gouv.fr/', note: 'The official guide to every French procedure.' },
   { label: 'ameli.fr', url: 'https://www.ameli.fr/', note: 'Health cover and the carte Vitale.' },
   { label: 'ANTS', url: 'https://permisdeconduire.ants.gouv.fr/', note: 'Exchanging a driving licence.' },
   { label: 'Where to write for vital records (CDC)', url: 'https://www.cdc.gov/nchs/w2w/index.htm', note: 'Certified copies of US birth and marriage records, by state.' },

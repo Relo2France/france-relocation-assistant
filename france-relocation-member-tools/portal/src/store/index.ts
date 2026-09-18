@@ -71,6 +71,14 @@ const getInitialView = (): string => {
   return 'dashboard';
 };
 
+/** A numeric id from the URL, for links in emails: ?task=123, ?message=45. */
+const getInitialId = (param: string): number | null => {
+  if (typeof window === 'undefined') return null;
+  const raw = new URLSearchParams(window.location.search).get(param);
+  const id = raw ? Number.parseInt(raw, 10) : NaN;
+  return Number.isFinite(id) && id > 0 ? id : null;
+};
+
 interface PortalState {
   // User state
   user: User | null;
@@ -133,6 +141,9 @@ interface PortalState {
   /** A profile section to open and scroll to when Profile loads. */
   profileSection: string | null;
   setProfileSection: (id: string | null) => void;
+  /** A letter to open in Documents, as "type" or "type|partner". */
+  openLetter: string | null;
+  setOpenLetter: (key: string | null) => void;
 
   // Modal state
   activeModal: string | null;
@@ -212,12 +223,14 @@ export const usePortalStore = create<PortalState>((set, get) => {
       set({
         taskFilters: { stage: null, status: null, taskType: null },
       }),
-    openTaskId: null,
+    openTaskId: getInitialId('task'),
     setOpenTaskId: (id) => set({ openTaskId: id }),
-    openMessageId: null,
+    openMessageId: getInitialId('message'),
     setOpenMessageId: (id) => set({ openMessageId: id }),
     profileSection: null,
     setProfileSection: (id) => set({ profileSection: id }),
+    openLetter: null,
+    setOpenLetter: (key) => set({ openLetter: key }),
 
     // Modal state
     activeModal: null,

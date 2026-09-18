@@ -121,7 +121,7 @@ class FRAMT_Task_Howto {
         $fbi  = 'https://www.fbi.gov/how-we-can-help-you/more-fbi-services-and-information/identity-history-summary-checks';
         $chan = 'https://www.fbi.gov/how-we-can-help-you/more-fbi-services-and-information/identity-history-summary-checks/list-of-fbi-approved-channelers';
         $dos  = 'https://travel.state.gov/content/travel/en/records-and-authentications/authenticate-your-document/apostille-requirements.html';
-        $sp   = 'https://www.service-public.fr/';
+        $sp   = 'https://www.service-public.gouv.fr/';
         $ants = 'https://permisdeconduire.ants.gouv.fr/';
         $ameli = 'https://www.ameli.fr/';
 
@@ -207,6 +207,7 @@ class FRAMT_Task_Howto {
                 'steps' => array(
                     array( 'Say who you are and why France', 'One page, dated and signed. Where you will live, for how long, how you support yourself, and what you will do with your time. For a couple, each writes their own or both sign one.' ),
                     array( 'Match the file', 'Every figure and date in the letter must agree with the documents behind it: the same address as the accommodation proof, the same income as the statements.' ),
+                    array( 'Let the portal draft it', 'Documents has a draft written for your route from your profile. Check every line, print it, sign and date it.' ),
                     array( 'French or English', 'US consulates accept English. A short French version alongside is a courtesy, not a requirement.' ),
                 ),
                 'bring' => array(),
@@ -254,7 +255,7 @@ class FRAMT_Task_Howto {
             'Sign declaration not to work' => array(
                 'steps' => array(
                     array( 'Write the attestation sur l\'honneur', 'A short signed statement: "I, [name], born [date], declare on my honour that I will not carry out any professional activity in France during my stay." Dated and signed by each applicant. France-Visas gives the wording for the visitor route.', $fv ),
-                    array( 'Understand what it covers', 'Working for a French employer or French clients is out. Remote work for a US employer is a contested area; read the visitor guide before you sign, and if it applies to you, say so plainly in the cover letter.' ),
+                    array( 'Understand what it covers', 'Working for a French employer or French clients is out. On remote work for a US employer, the Interior Ministry indicated in a written answer on 23 June 2026 that it may be compatible when the work has no link to the French market; consulates apply this unevenly. Read the visitor guide before you sign, and if it applies to you, say so plainly in the cover letter. The letters in Documents include a remote-work version and an employer letter.' ),
                 ),
                 'bring' => array(),
                 'time'  => 'Ten minutes.',
@@ -567,12 +568,12 @@ class FRAMT_Task_Howto {
                 'bring' => array( 'Passport, visa, validation', 'Proof of address', 'Proof of resources', 'Translated civil records', 'Photos' ),
                 'time'  => 'File four months out; the card takes months.',
                 'cost'  => 'Stamp duty on the card, set annually.',
-                'links' => array( array( 'ANEF portal', $anef ), array( 'service-public.fr', $sp ) ),
+                'links' => array( array( 'ANEF portal', $anef ), array( 'service-public.gouv.fr', $sp ) ),
             ),
 
             '__licence_exchange' => array(
                 'steps' => array(
-                    array( 'Confirm {state} is still on the list', 'As of {verified} {state} has a reciprocal agreement with France ({classes} transfers). The list changes; check the official page before filing.', 'https://www.service-public.fr/particuliers/vosdroits/F1460' ),
+                    array( 'Confirm {state} is still on the list', 'As of {verified} {state} has a reciprocal agreement with France ({classes} transfers). The list changes; check the official page before filing.', 'https://www.service-public.gouv.fr/particuliers/vosdroits/F1460' ),
                     array( 'Gather the file', 'Scans of the US licence front and back, passport and visa or residence permit, a proof of address under three months old, and an ANTS-format digital photo (photo booths and photographers marked "agréé ANTS" produce the code). A sworn translation of the licence if asked; many prefectures accept English.' ),
                     array( 'Apply online at ANTS', 'Create the account, choose "échange de permis étranger", upload the file and pay the €40 stamp introduced in May 2026.', $ants ),
                     array( 'Post the original licence', 'By lettre recommandée avec accusé de réception to the address ANTS gives. Keep the tracking slip: it is your only proof the licence is with them.' ),
@@ -581,12 +582,12 @@ class FRAMT_Task_Howto {
                 'bring' => array( 'US licence (original, posted)', 'Passport and residence permit', 'Proof of address', 'ANTS digital photo' ),
                 'time'  => 'File inside the first year; three to twelve months to process.',
                 'cost'  => '€40 stamp, plus a translation if required.',
-                'links' => array( array( 'ANTS: exchange a foreign licence', $ants ), array( 'service-public.fr: échange de permis', 'https://www.service-public.fr/particuliers/vosdroits/F1460' ), array( 'International Driving Permit (AAA)', 'https://www.aaa.com/vacation/idpf.html' ) ),
+                'links' => array( array( 'ANTS: exchange a foreign licence', $ants ), array( 'service-public.gouv.fr: échange de permis', 'https://www.service-public.gouv.fr/particuliers/vosdroits/F1460' ), array( 'International Driving Permit (AAA)', 'https://www.aaa.com/vacation/idpf.html' ) ),
             ),
 
             'Pass the French driving test before your US licence stops counting' => array(
                 'steps' => array(
-                    array( 'Check the list once more', '{state} has no reciprocal agreement as of {verified}. If that changes before your first year ends, the exchange is the easier path.', 'https://www.service-public.fr/particuliers/vosdroits/F1460' ),
+                    array( 'Check the list once more', '{state} has no reciprocal agreement as of {verified}. If that changes before your first year ends, the exchange is the easier path.', 'https://www.service-public.gouv.fr/particuliers/vosdroits/F1460' ),
                     array( 'Get an International Driving Permit before you leave', 'From AAA in the US; it carries the French translation of your licence for the first year, when your US licence is still valid.', 'https://www.aaa.com/vacation/idpf.html' ),
                     array( 'Register: driving school or candidat libre', 'An auto-école handles the paperwork, lessons and exam bookings (roughly €1,200 to €3,800, at least 20 hours of lessons in most areas). Candidat libre means registering yourself on ANTS and booking exams directly, cheaper and slower.', $ants ),
                     array( 'Pass the code de la route', 'Forty questions at an approved centre, about €30. The exam is in French; the vocabulary is limited and learnable.' ),
@@ -596,18 +597,18 @@ class FRAMT_Task_Howto {
                 'bring' => array( 'Passport and residence permit', 'Proof of address', 'ANTS digital photo' ),
                 'time'  => 'Months; start early in the first year.',
                 'cost'  => '€1,200 to €3,800 through a school; exam fees on top.',
-                'links' => array( array( 'ANTS', $ants ), array( 'service-public.fr: échange de permis', 'https://www.service-public.fr/particuliers/vosdroits/F1460' ), array( 'International Driving Permit (AAA)', 'https://www.aaa.com/vacation/idpf.html' ) ),
+                'links' => array( array( 'ANTS', $ants ), array( 'service-public.gouv.fr: échange de permis', 'https://www.service-public.gouv.fr/particuliers/vosdroits/F1460' ), array( 'International Driving Permit (AAA)', 'https://www.aaa.com/vacation/idpf.html' ) ),
             ),
 
             'Check whether your state driving licence can be exchanged' => array(
                 'steps' => array(
                     array( 'Set your current state in your profile', 'This step then turns into the exchange through ANTS or the French driving test, with the process laid out.' ),
-                    array( 'Or check the list yourself', 'Eighteen states have an agreement as of {verified}; the official page lists them.', 'https://www.service-public.fr/particuliers/vosdroits/F1460' ),
+                    array( 'Or check the list yourself', 'Eighteen states have an agreement as of {verified}; the official page lists them.', 'https://www.service-public.gouv.fr/particuliers/vosdroits/F1460' ),
                 ),
                 'bring' => array(),
                 'time'  => 'A minute.',
                 'cost'  => 'Nothing.',
-                'links' => array( array( 'service-public.fr: échange de permis', 'https://www.service-public.fr/particuliers/vosdroits/F1460' ) ),
+                'links' => array( array( 'service-public.gouv.fr: échange de permis', 'https://www.service-public.gouv.fr/particuliers/vosdroits/F1460' ) ),
             ),
 
             // ---------------- Route-specific ----------------
@@ -673,12 +674,12 @@ class FRAMT_Task_Howto {
             'Confirm your Talent category and its threshold' => array(
                 'steps' => array(
                     array( 'Match your case to a category', 'Qualified employee (€39,582 gross a year in 2026), EU Blue Card (€59,373), company founder, investor (€300,000), researcher with a hosting agreement, artist. France-Visas describes each.', $fv ),
-                    array( 'Confirm the threshold in force', 'Set by ministerial order and revised; the figure that counts is the one in force when your contract is signed. service-public.fr carries the current text.', $sp ),
+                    array( 'Confirm the threshold in force', 'Set by ministerial order and revised; the figure that counts is the one in force when your contract is signed. service-public.gouv.fr carries the current text.', $sp ),
                 ),
                 'bring' => array(),
                 'time'  => 'An hour of reading.',
                 'cost'  => 'Nothing.',
-                'links' => array( array( 'France-Visas', $fv ), array( 'service-public.fr', $sp ) ),
+                'links' => array( array( 'France-Visas', $fv ), array( 'service-public.gouv.fr', $sp ) ),
             ),
 
             'Gather the category proof' => array(
@@ -707,13 +708,13 @@ class FRAMT_Task_Howto {
 
             'Check whether your profession is regulated in France' => array(
                 'steps' => array(
-                    array( 'Look your profession up', 'Law, accounting, medicine, architecture, and many trades are regulated; the national directory of regulated professions says which and what it takes.', 'https://www.service-public.fr/' ),
+                    array( 'Look your profession up', 'Law, accounting, medicine, architecture, and many trades are regulated; the national directory of regulated professions says which and what it takes.', 'https://www.service-public.gouv.fr/' ),
                     array( 'Prove the qualification', 'A regulated profession needs the same diploma or experience as a French national, recognised by the professional body; start that recognition early, it can take months.' ),
                 ),
                 'bring' => array( 'Diplomas and licences' ),
                 'time'  => 'Days to check; months for recognition.',
                 'cost'  => 'Recognition fees vary.',
-                'links' => array( array( 'service-public.fr', $sp ) ),
+                'links' => array( array( 'service-public.gouv.fr', $sp ) ),
             ),
 
             'Show income projections at or above the SMIC' => array(
@@ -771,16 +772,16 @@ class FRAMT_Task_Howto {
                 'links' => array( array( 'Campus France USA', 'https://usa.campusfrance.org/' ) ),
             ),
 
-            'Check whether Campus France Études en France applies to you' => array(
+            'Complete the Campus France Études en France application' => array(
                 'steps' => array(
-                    array( 'Read the US page', 'The Études en France procedure is compulsory only for a list of countries and the United States is not on it; usa.campusfrance.org says what US applicants do.', 'https://usa.campusfrance.org/' ),
-                    array( 'Run the France-Visas wizard', 'If a Campus France step is required for your district it appears in your personalised list.', $fv ),
-                    array( 'Ask the consulate if the two disagree', 'Practice varies by district; a CEF file, when required, must be done before the visa appointment.' ),
+                    array( 'Wait for the acceptance', 'The procedure is for students already admitted to a degree, study-abroad, dual-degree or other academic programme in France. Have the acceptance letter before you start.' ),
+                    array( 'Open your Études en France account', 'Campus France USA runs the pre-consular procedure for US applicants. Create the account, fill in your file, upload the acceptance letter, passport and the documents it asks for, and pay the application fee shown on the Campus France USA site.', 'https://www.usa.campusfrance.org/etudes-en-france-guideline' ),
+                    array( 'Then book the visa', 'Campus France USA says the procedure must be completed before you apply for the student visa. When your file is processed you get the confirmation email; only then book the TLScontact appointment.', 'https://www.usa.campusfrance.org/student-visa-guide' ),
                 ),
-                'bring' => array(),
-                'time'  => 'An hour.',
-                'cost'  => 'Nothing unless a CEF file is required.',
-                'links' => array( array( 'Campus France USA', 'https://usa.campusfrance.org/' ), array( 'France-Visas', $fv ) ),
+                'bring' => array( 'Acceptance letter', 'Passport', 'Transcripts and diplomas the file asks for' ),
+                'time'  => 'Allow several weeks before your visa appointment.',
+                'cost'  => 'The Études en France application fee, shown on the Campus France USA site.',
+                'links' => array( array( 'Études en France guide', 'https://www.usa.campusfrance.org/etudes-en-france-guideline' ), array( 'Student visa guide', 'https://www.usa.campusfrance.org/student-visa-guide' ) ),
             ),
 
             'Apply for CROUS housing' => array(
@@ -955,7 +956,7 @@ class FRAMT_Task_Howto {
             // ---------------- Route sub-cases ----------------
             'Assemble the qualified-employee proof: contract at the reference salary and your degree' => array(
                 'steps' => array(
-                    array( 'Confirm the reference salary in force', 'Set by ministerial order (€39,582 gross a year from 31 August 2025); the figure that counts is the one in force when the contract is signed.', 'https://www.service-public.fr/' ),
+                    array( 'Confirm the reference salary in force', 'Set by ministerial order (€39,582 gross a year from 31 August 2025); the figure that counts is the one in force when the contract is signed.', 'https://www.service-public.gouv.fr/' ),
                     array( 'Get the contract and the employer documents', 'A contract of three months or more at or above the reference salary, and the employer\'s Kbis extract.' ),
                     array( 'Prove the qualification', 'A master\'s degree or equivalent, or the professional experience the category accepts instead; in English is fine for the consulate.' ),
                 ),
@@ -1016,7 +1017,7 @@ class FRAMT_Task_Howto {
                 ),
                 'bring' => array( 'PACS certificate', 'Twelve months of joint documents' ),
                 'time'  => 'Twelve months, by definition.', 'cost' => 'Free at the mairie; €250 to €450 through a notaire.',
-                'links' => array( array( 'service-public.fr', 'https://www.service-public.fr/' ) ),
+                'links' => array( array( 'service-public.gouv.fr', 'https://www.service-public.gouv.fr/' ) ),
             ),
             'Plan the yearly renewals of a multi-year student permit' => array(
                 'steps' => array(
@@ -1110,12 +1111,12 @@ class FRAMT_Task_Howto {
             'Gather children vaccination records' => array(
                 'steps' => array(
                     array( 'Get the full record from your paediatrician', 'Every vaccine with its date, on the practice\'s letterhead. French schools and crèches check vaccinations at enrolment.' ),
-                    array( 'Compare with the French schedule', 'France makes a set of childhood vaccines compulsory for school; a French doctor can say whether a catch-up dose is needed. service-public.fr lists the schedule.', 'https://www.service-public.fr/' ),
+                    array( 'Compare with the French schedule', 'France makes a set of childhood vaccines compulsory for school; a French doctor can say whether a catch-up dose is needed. service-public.gouv.fr lists the schedule.', 'https://www.service-public.gouv.fr/' ),
                     array( 'Carry it with the originals', 'Hand luggage, with the birth certificates.' ),
                 ),
                 'bring' => array( 'Vaccination record for each child' ),
                 'time'  => 'A call to the paediatrician.', 'cost' => 'Usually nothing.',
-                'links' => array( array( 'service-public.fr', 'https://www.service-public.fr/' ) ),
+                'links' => array( array( 'service-public.gouv.fr', 'https://www.service-public.gouv.fr/' ) ),
             ),
             'Research French schools' => array(
                 'steps' => array(
@@ -1125,7 +1126,7 @@ class FRAMT_Task_Howto {
                 ),
                 'bring' => array(),
                 'time'  => 'A few evenings.', 'cost' => 'Nothing.',
-                'links' => array( array( 'service-public.fr', 'https://www.service-public.fr/' ) ),
+                'links' => array( array( 'service-public.gouv.fr', 'https://www.service-public.gouv.fr/' ) ),
             ),
             'Apply for child visas' => array(
                 'steps' => array(
@@ -1145,7 +1146,7 @@ class FRAMT_Task_Howto {
                 ),
                 'bring' => array( 'Proof of address', 'Birth certificate with translation', 'Vaccination record', 'Parent ID' ),
                 'time'  => 'A visit or two in the first week.', 'cost' => 'Free for public school.',
-                'links' => array( array( 'service-public.fr', 'https://www.service-public.fr/' ) ),
+                'links' => array( array( 'service-public.gouv.fr', 'https://www.service-public.gouv.fr/' ) ),
             ),
             'Apply for family CAF benefits' => array(
                 'steps' => array(

@@ -106,7 +106,7 @@ function fra_render_authority_badges() {
         <div class="fra-source-logos">
             <span class="fra-source-label">Powered by official sources:</span>
             <a href="https://france-visas.gouv.fr" target="_blank" rel="noopener noreferrer">France-Visas.gouv.fr</a>
-            <a href="https://www.service-public.fr" target="_blank" rel="noopener noreferrer">Service-Public.fr</a>
+            <a href="https://www.service-public.gouv.fr" target="_blank" rel="noopener noreferrer">Service-Public.gouv.fr</a>
             <a href="https://www.ameli.fr" target="_blank" rel="noopener noreferrer">Ameli.fr</a>
         </div>
     </div>

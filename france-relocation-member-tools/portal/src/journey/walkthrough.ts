@@ -215,11 +215,11 @@ export function walkthroughFor(stage: JourneyStageId, ctx: WalkContext): Walkthr
 
         case 'student':
           intro = [
-            'The acceptance letter comes first and has the longest lead time; the visa follows it. Études en France through Campus France is compulsory only for a list of countries and the United States is not on it, so most US students apply straight through France-Visas, but practice varies by consular district and you confirm it before booking anything. No FBI check on this route.',
+            'The acceptance letter comes first and has the longest lead time. Then the Études en France file with Campus France USA, which must be completed before you apply for the visa; its confirmation is what lets you book the appointment. No FBI check on this route.',
           ];
           milestones = [
             { title: 'The acceptance letter', why: 'An official attestation d’inscription from an institution recognised to enrol international students.', done: firstKnown(T(/acceptance letter/i), D('acceptance-letter')) },
-            { title: 'Does Campus France apply to you?', why: 'Check usa.campusfrance.org for your district. If a CEF file is required it must be done before the visa appointment.', done: firstKnown(T(/campus france/i)) },
+            { title: 'The Campus France Études en France file', why: 'Campus France USA requires it before the student visa application. Book the visa appointment only after its confirmation arrives.', done: firstKnown(T(/campus france/i)) },
             { title: 'Housing, through CROUS or a lease', why: 'The CROUS confirmation doubles as proof of accommodation.', done: firstKnown(T(/crous/i), D('proof-accommodation')) },
             civil, apostille, insurance, money,
           ];
@@ -391,8 +391,8 @@ export function walkthroughFor(stage: JourneyStageId, ctx: WalkContext): Walkthr
             title: 'The driving licence',
             why: (() => {
               const f = ctx.stateFacts;
-              if (f?.licence_exchange === 'yes') return `${f.name} exchanges${f.licence_classes && f.licence_classes !== 'all' ? ` (class ${f.licence_classes} only)` : ''}. Within your first year of residence: apply online at ANTS with the licence, passport, proof of address and a digital photo, pay the €40 stamp, post the original licence by registered mail and keep the slip. The attestation de dépôt keeps you driving while Nantes processes it, three to twelve months. List as of ${f.verified}; confirm on service-public.fr first.`;
-              if (f?.licence_exchange === 'no') return `${f.name} has no agreement as of ${f.verified}, so the French licence has to be earned inside your first year: a driving school or candidat libre, the code de la route, then the practical exam. Budget €1,200 to €3,800 and a few months of waits for exam slots; start in the first months. Confirm on service-public.fr; the list changes.`;
+              if (f?.licence_exchange === 'yes') return `${f.name} exchanges${f.licence_classes && f.licence_classes !== 'all' ? ` (class ${f.licence_classes} only)` : ''}. Within your first year of residence: apply online at ANTS with the licence, passport, proof of address and a digital photo, pay the €40 stamp, post the original licence by registered mail and keep the slip. The attestation de dépôt keeps you driving while Nantes processes it, three to twelve months. List as of ${f.verified}; confirm on service-public.gouv.fr first.`;
+              if (f?.licence_exchange === 'no') return `${f.name} has no agreement as of ${f.verified}, so the French licence has to be earned inside your first year: a driving school or candidat libre, the code de la route, then the practical exam. Budget €1,200 to €3,800 and a few months of waits for exam slots; start in the first months. Confirm on service-public.gouv.fr; the list changes.`;
               return 'Eighteen US states exchange licences with France and the rest sit the French test; your US licence counts for one year either way. Set your current state in your profile and this line walks you through yours.';
             })(),
             done: firstKnown(Tall(/driving licen/i)),

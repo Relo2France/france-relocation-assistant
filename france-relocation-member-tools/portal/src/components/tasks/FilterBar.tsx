@@ -45,9 +45,9 @@ export default function FilterBar({
   return (
     <div className="space-y-4">
       {/* Main toolbar */}
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         {/* Left side - View toggle and search */}
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3 min-w-0">
           {/* View toggle */}
           <div className="flex rounded-lg bg-gray-100 p-1">
             <button
@@ -105,7 +105,7 @@ export default function FilterBar({
       </div>
 
       {/* Filter row */}
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <Filter className="w-4 h-4 text-gray-400" />
 
         {/* Stage filter */}
