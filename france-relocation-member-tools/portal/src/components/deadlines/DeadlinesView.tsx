@@ -32,7 +32,7 @@ export default function DeadlinesView() {
   const project = data?.project;
   const { data: tasks } = useTasks(project?.id ?? 0);
   const updateStatus = useUpdateTaskStatus();
-  const { setActiveView, setActiveStage, setTaskFilters } = usePortalStore();
+  const { setActiveView, setActiveStage, setTaskFilters, setOpenTaskId } = usePortalStore();
 
   const dated = (tasks ?? []).filter((t): t is Task & { due_date: string } => !!t.due_date);
   const overdue = dated.filter((t) => t.is_overdue && t.status !== 'done').sort((a, b) => a.due_date.localeCompare(b.due_date));
@@ -44,7 +44,8 @@ export default function DeadlinesView() {
   }
 
   const openStage = (id: string) => { setActiveStage(id); setActiveView('stage'); };
-  const openTask = (task: Task) => { setTaskFilters({ stage: project ? stageForTask(task, project) : task.stage }); setActiveView('tasks'); };
+  // Opens the step itself in the drawer, not just the list it lives in.
+  const openTask = (task: Task) => { setTaskFilters({ stage: project ? stageForTask(task, project) : task.stage, status: null, taskType: null }); setOpenTaskId(task.id); setActiveView('tasks'); };
 
   return (
     <div className="flex flex-col">

@@ -26,7 +26,7 @@ function dueLabel(task: Task): string {
 }
 
 export default function StageView() {
-  const { activeStage, setActiveView, setActiveStage, setTaskFilters, setActiveGuide } = usePortalStore();
+  const { activeStage, setActiveView, setActiveStage, setTaskFilters, setActiveGuide, setOpenTaskId } = usePortalStore();
   const { data } = useDashboard();
   const stage = stageById(activeStage) ?? JOURNEY[0];
   const project = data?.project;
@@ -139,7 +139,7 @@ export default function StageView() {
                         <span className={clsx('font-mono text-[0.7rem]', task.is_overdue && !done ? 'text-accent-500' : 'text-gray-500')}>{dueLabel(task)}</span>
                         <AssignSelect task={task} household={household} />
                         <button
-                          onClick={() => { setTaskFilters({ stage: stage.id }); setActiveView('tasks'); }}
+                          onClick={() => { setTaskFilters({ stage: stage.id, status: null, taskType: null }); setOpenTaskId(task.id); setActiveView('tasks'); }}
                           className="text-sm font-semibold text-primary-500 hover:text-primary-700"
                         >
                           Open

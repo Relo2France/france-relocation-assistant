@@ -32,7 +32,7 @@ function dueLabel(task: Task): string {
 
 export default function Dashboard() {
   const { data, isLoading, error } = useDashboard();
-  const { setActiveView, setActiveStage, setTaskFilters } = usePortalStore();
+  const { setActiveView, setActiveStage, setTaskFilters, setOpenTaskId } = usePortalStore();
   const [showMoveDateModal, setShowMoveDateModal] = useState(false);
   const [newMoveDate, setNewMoveDate] = useState('');
   const updateProject = useUpdateProject();
@@ -107,7 +107,8 @@ export default function Dashboard() {
     : null;
 
   const openStage = (id: string) => { setActiveStage(id); setActiveView('stage'); };
-  const openTask = (task: Task) => { setTaskFilters({ stage: stageForTask(task, project) }); setActiveView('tasks'); };
+  // Opens the step itself in the drawer, not just the list it lives in.
+  const openTask = (task: Task) => { setTaskFilters({ stage: stageForTask(task, project), status: null, taskType: null }); setOpenTaskId(task.id); setActiveView('tasks'); };
 
   return (
     <div className="flex flex-col">
