@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { MenuItem, PortalSettings, Project, User } from '@/types';
+import { dropParam, pushLocation, readLocation } from './urlSync';
 
 // Default settings when not provided by PHP
 const defaultSettings: PortalSettings = {
@@ -59,17 +60,11 @@ const getInitialSettings = (): PortalSettings => {
   return defaultSettings;
 };
 
-// Get initial view from URL ?view= parameter
-const getInitialView = (): string => {
-  if (typeof window !== 'undefined') {
-    const params = new URLSearchParams(window.location.search);
-    const view = params.get('view');
-    if (view) {
-      return view;
-    }
-  }
-  return 'dashboard';
-};
+// Initial view, stage and guide from the URL (?view=, ?stage=, ?guide=)
+const getInitialLocation = () =>
+  typeof window !== 'undefined'
+    ? readLocation(window.location.search)
+    : { view: 'dashboard', stage: null, guide: null };
 
 /** A numeric id from the URL, for links in emails: ?task=123, ?message=45. */
 const getInitialId = (param: string): number | null => {
@@ -158,6 +153,7 @@ interface PortalState {
 
 export const usePortalStore = create<PortalState>((set, get) => {
   const initialSettings = getInitialSettings();
+  const initialLocation = getInitialLocation();
 
   return {
     // User state
@@ -195,13 +191,27 @@ export const usePortalStore = create<PortalState>((set, get) => {
     setSidebarManuallyExpanded: (sidebarManuallyExpanded) => set({ sidebarManuallyExpanded }),
 
     // Active view - initialized from URL ?view= parameter
-    activeView: getInitialView(),
-    // Any navigation closes the phone menu.
-    setActiveView: (activeView) => set({ activeView, mobileNavOpen: false }),
-    activeStage: null,
-    setActiveStage: (activeStage) => set({ activeStage }),
-    activeGuide: null,
-    setActiveGuide: (activeGuide) => set({ activeGuide }),
+    activeView: initialLocation.view,
+    // Any navigation closes the phone menu, and goes into the browser
+    // history so Back returns to the previous screen.
+    setActiveView: (activeView) => {
+      set({ activeView, mobileNavOpen: false });
+      const { activeStage, activeGuide } = get();
+      pushLocation({ view: activeView, stage: activeStage, guide: activeGuide });
+    },
+    activeStage: initialLocation.view === 'stage' ? initialLocation.stage : null,
+    setActiveStage: (activeStage) => {
+      set({ activeStage });
+      // Moving between stages while on a stage page is a navigation too.
+      const { activeView, activeGuide } = get();
+      if (activeView === 'stage') pushLocation({ view: activeView, stage: activeStage, guide: activeGuide });
+    },
+    activeGuide: initialLocation.view === 'guide' ? initialLocation.guide : null,
+    setActiveGuide: (activeGuide) => {
+      set({ activeGuide });
+      const { activeView, activeStage } = get();
+      if (activeView === 'guide') pushLocation({ view: activeView, stage: activeStage, guide: activeGuide });
+    },
     chatDraft: null,
     setChatDraft: (chatDraft) => set({ chatDraft }),
 
@@ -224,9 +234,16 @@ export const usePortalStore = create<PortalState>((set, get) => {
         taskFilters: { stage: null, status: null, taskType: null },
       }),
     openTaskId: getInitialId('task'),
-    setOpenTaskId: (id) => set({ openTaskId: id }),
+    setOpenTaskId: (id) => {
+      set({ openTaskId: id });
+      // Consumed: a reload should not open it again.
+      if (id === null) dropParam('task');
+    },
     openMessageId: getInitialId('message'),
-    setOpenMessageId: (id) => set({ openMessageId: id }),
+    setOpenMessageId: (id) => {
+      set({ openMessageId: id });
+      if (id === null) dropParam('message');
+    },
     profileSection: null,
     setProfileSection: (id) => set({ profileSection: id }),
     openLetter: null,
@@ -243,3 +260,22 @@ export const usePortalStore = create<PortalState>((set, get) => {
     isMenuItemVisible: (id) => get().settings.menu.some((item) => item.id === id),
   };
 });
+
+/**
+ * Follow the browser's Back and Forward buttons: put the screen the URL
+ * names back on show. Returns the cleanup for an effect.
+ */
+export function startUrlSync(): () => void {
+  if (typeof window === 'undefined') return () => undefined;
+  const onPopState = () => {
+    const loc = readLocation(window.location.search);
+    usePortalStore.setState((state) => ({
+      activeView: loc.view,
+      activeStage: loc.view === 'stage' ? loc.stage ?? state.activeStage : state.activeStage,
+      activeGuide: loc.view === 'guide' ? loc.guide ?? state.activeGuide : state.activeGuide,
+      mobileNavOpen: false,
+    }));
+  };
+  window.addEventListener('popstate', onPopState);
+  return () => window.removeEventListener('popstate', onPopState);
+}

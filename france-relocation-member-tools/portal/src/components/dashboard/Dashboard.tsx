@@ -153,10 +153,10 @@ export default function Dashboard() {
         }
       >
         <div className="space-y-4">
-          <p className="text-gray-600">Every deadline is counted back from this date. Change it and the plan moves with it.</p>
+          <p className="text-gray-600">Every deadline is counted back from this date. Change it and the plan moves with it. Already moved? Enter the day you arrived.</p>
           <div>
-            <label htmlFor="move-date" className="block text-sm font-medium text-gray-700 mb-1">Target move date</label>
-            <input id="move-date" type="date" value={newMoveDate} onChange={(e) => setNewMoveDate(e.target.value)} className="input" min={new Date().toISOString().split('T')[0]} />
+            <label htmlFor="move-date" className="block text-sm font-medium text-gray-700 mb-1">Move date</label>
+            <input id="move-date" type="date" value={newMoveDate} onChange={(e) => setNewMoveDate(e.target.value)} className="input" />
           </div>
         </div>
       </Modal>

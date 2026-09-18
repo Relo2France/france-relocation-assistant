@@ -17,6 +17,7 @@ import {
   Loader2,
   MapPin,
   MessageSquare,
+  RotateCcw,
   Search,
   Send,
   Ship,
@@ -24,6 +25,8 @@ import {
 } from 'lucide-react';
 import {
   useChatCategories,
+  useChatHistory,
+  useClearChatHistory,
   useSearchChatTopics,
   useSendChatMessage,
 } from '@/hooks/useApi';
@@ -77,6 +80,35 @@ export default function KnowledgeBaseChat() {
 
   const { data: categories, isLoading: categoriesLoading } = useChatCategories();
   const sendMessage = useSendChatMessage();
+  const { data: history } = useChatHistory();
+  const clearHistory = useClearChatHistory();
+  // The saved conversation is loaded once, and only onto an empty screen: a
+  // question asked before it arrives is not overwritten.
+  const historyApplied = useRef(false);
+  useEffect(() => {
+    if (historyApplied.current || !history) return;
+    historyApplied.current = true;
+    if (history.messages.length === 0) return;
+    setMessages((prev) =>
+      prev.length > 0
+        ? prev
+        : history.messages.map((m, i) => ({
+            id: `history-${i}`,
+            role: m.role,
+            content: m.content,
+            timestamp: m.timestamp ?? '',
+          }))
+    );
+  }, [history]);
+
+  // Start over: the server forgets the thread and the screen clears.
+  const handleNewConversation = () => {
+    setMessages([]);
+    setInputValue('');
+    sendMessage.reset();
+    clearHistory.mutate();
+    inputRef.current?.focus();
+  };
 
   // Handle category selection - clears messages to show new category topics
   const handleSelectCategory = (categoryId: string | null) => {
@@ -209,6 +241,18 @@ export default function KnowledgeBaseChat() {
                 : 'Answers against your file and the knowledge base'}
             </p>
           </div>
+          {messages.length > 0 ? (
+            <button
+              type="button"
+              onClick={handleNewConversation}
+              disabled={isLoading}
+              className="btn btn-secondary btn-sm ml-auto shrink-0 gap-1.5"
+              aria-label="Start a new conversation"
+            >
+              <RotateCcw className="w-4 h-4" aria-hidden="true" />
+              <span className="hidden sm:inline">New conversation</span>
+            </button>
+          ) : null}
         </div>
 
         {/* Messages area */}
@@ -422,7 +466,9 @@ function ChatMessage({ message }: ChatMessageProps) {
   };
 
   const formatTime = (timestamp: string) => {
+    if (!timestamp) return '';
     const date = new Date(timestamp);
+    if (Number.isNaN(date.getTime())) return '';
     return date.toLocaleTimeString('en-US', {
       hour: 'numeric',
       minute: '2-digit',
@@ -763,7 +809,11 @@ function ChatInput({
 
         {/* Input area */}
         <div className="relative">
+          <label htmlFor="chat-question" className="sr-only">
+            Your question
+          </label>
           <textarea
+            id="chat-question"
             ref={inputRef}
             value={value}
             onChange={(e) => onChange(e.target.value)}

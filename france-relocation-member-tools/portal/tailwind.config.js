@@ -150,6 +150,7 @@ export default {
         'card-2': 'var(--portal-card-2, #f4f6f4)',
         ink: 'var(--portal-ink, #1c2420)',
         rule: 'var(--portal-rule, #dde3de)',
+        'rule-soft': 'var(--portal-rule-soft, #ebefeb)',
 
         // Status colors
         status: {

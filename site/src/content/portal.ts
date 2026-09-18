@@ -41,13 +41,12 @@ export const portalFeatures: PortalFeature[] = [
   },
   {
     name: 'Schengen day counting',
-    status: 'soon',
-    what: 'Trips logged against the 90-in-180 rule, so you know where you stand before you book. Built as a standalone tool first, then included in membership at no extra cost.',
+    what: 'A working tracker in the portal today: log your trips against the 90-in-180 rule and see where you stand before you book. A standalone Schengen app is coming soon, and members will get it at no extra cost.',
     publicVersion: 'The guides explain the rule.',
   },
   {
     name: 'Research on demand',
-    what: 'Reports on a commune, a region or a specific requirement, written against current official sources and saved to your file.',
+    what: 'Reports on a commune or a region, written against current official sources and saved to your file.',
     publicVersion: 'The guides cover the common cases.',
   },
 ];

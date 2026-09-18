@@ -559,10 +559,12 @@ p { margin-bottom: 1em; text-align: justify; }
      * Create PDF file
      */
     private function create_pdf_file($content, $document, $doc_dir, $filename) {
-        // Load PDF class
-        require_once FRAMT_PLUGIN_DIR . 'vendor/class-simple-pdf.php';
+        // The multi-page writer; it keeps the old one-page writer's calls.
+        if (!class_exists('FRAMT_PDF')) {
+            require_once FRAMT_PLUGIN_DIR . 'includes/class-framt-pdf.php';
+        }
         
-        $pdf = new FRAMT_Simple_PDF();
+        $pdf = new FRAMT_PDF(isset($content['title']) ? (string) $content['title'] : '');
         $pdf->addPage();
         
         // Add title if exists

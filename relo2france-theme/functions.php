@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Theme version.
-define( 'R2F_VERSION', '2.0.4' );
+define( 'R2F_VERSION', '2.0.5' );
 
 /**
  * Sets up theme defaults and registers support for various WordPress features.
@@ -79,11 +79,27 @@ function relo2france_toolbar_for_admins_only($show) {
 add_filter('show_admin_bar', 'relo2france_toolbar_for_admins_only');
 
 /**
- * Sign-in, account, logged-out and thank-you are states, not pages. Keep
- * them out of the index so the public guides are what ranks.
+ * Sign-in, account, logged-out and thank-you are states, not pages; the
+ * portal and the travel-status tool are apps; the MemberPress registration
+ * pages are checkout. Keep them all out of the index so the public guides
+ * are what ranks.
  */
 function relo2france_noindex_state_pages($robots) {
-    if (is_page(array('login', 'account', 'logged-out', 'thank-you'))) {
+    $noindex = is_page(array('login', 'account', 'logged-out', 'thank-you', 'portal', 'my-travel-status', 'register'))
+        || is_singular('memberpressproduct');
+
+    // Children of /register/ (MemberPress registration pages nested under it).
+    if (!$noindex && is_page()) {
+        $ancestors = get_post_ancestors(get_queried_object_id());
+        foreach ($ancestors as $ancestor_id) {
+            if ('register' === get_post_field('post_name', $ancestor_id)) {
+                $noindex = true;
+                break;
+            }
+        }
+    }
+
+    if ($noindex) {
         $robots['noindex'] = true;
         $robots['nofollow'] = true;
     }

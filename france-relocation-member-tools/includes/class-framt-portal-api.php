@@ -581,7 +581,7 @@ class FRAMT_Portal_API {
             array(
                 'methods'             => 'POST',
                 'callback'            => array( $this, 'delete_account' ),
-                'permission_callback' => array( $this, 'check_member_permission' ),
+                'permission_callback' => array( $this, 'check_account_delete_permission' ),
             )
         );
 
@@ -777,59 +777,6 @@ class FRAMT_Portal_API {
         );
 
         // ============================================
-        // Document Generator endpoints
-        // ============================================
-        register_rest_route(
-            self::NAMESPACE,
-            '/documents/generator/types',
-            array(
-                'methods'             => 'GET',
-                'callback'            => array( $this, 'get_document_types' ),
-                'permission_callback' => array( $this, 'check_member_permission' ),
-            )
-        );
-
-        register_rest_route(
-            self::NAMESPACE,
-            '/documents/generator/preview',
-            array(
-                'methods'             => 'POST',
-                'callback'            => array( $this, 'preview_document' ),
-                'permission_callback' => array( $this, 'check_member_permission' ),
-            )
-        );
-
-        register_rest_route(
-            self::NAMESPACE,
-            '/projects/(?P<project_id>\d+)/documents/generate',
-            array(
-                'methods'             => 'POST',
-                'callback'            => array( $this, 'generate_document' ),
-                'permission_callback' => array( $this, 'check_project_permission_by_param' ),
-            )
-        );
-
-        register_rest_route(
-            self::NAMESPACE,
-            '/projects/(?P<project_id>\d+)/documents/generated',
-            array(
-                'methods'             => 'GET',
-                'callback'            => array( $this, 'get_generated_documents' ),
-                'permission_callback' => array( $this, 'check_project_permission_by_param' ),
-            )
-        );
-
-        register_rest_route(
-            self::NAMESPACE,
-            '/documents/generated/(?P<id>\d+)/download',
-            array(
-                'methods'             => 'GET',
-                'callback'            => array( $this, 'download_generated_document' ),
-                'permission_callback' => array( $this, 'check_member_permission' ),
-            )
-        );
-
-        // ============================================
         // Glossary endpoints
         // ============================================
         register_rest_route(
@@ -948,6 +895,24 @@ class FRAMT_Portal_API {
                 'methods'             => 'POST',
                 'callback'            => array( $this, 'send_chat_message' ),
                 'permission_callback' => array( $this, 'check_member_permission' ),
+            )
+        );
+
+        // Saved conversation: read it back, or clear it.
+        register_rest_route(
+            self::NAMESPACE,
+            '/chat/history',
+            array(
+                array(
+                    'methods'             => 'GET',
+                    'callback'            => array( $this, 'get_chat_history' ),
+                    'permission_callback' => array( $this, 'check_member_permission' ),
+                ),
+                array(
+                    'methods'             => 'DELETE',
+                    'callback'            => array( $this, 'clear_chat_history' ),
+                    'permission_callback' => array( $this, 'check_member_permission' ),
+                ),
             )
         );
 
@@ -4430,7 +4395,14 @@ class FRAMT_Portal_API {
             'metadata'      => wp_json_encode( $metadata ),
         );
         if ( $existing ) {
-            $wpdb->update( $table, $row, array( 'id' => (int) $existing->id ) );
+            $updated = $wpdb->update( $table, $row, array( 'id' => (int) $existing->id ) );
+            if ( false === $updated ) {
+                // The row still points at the old file: keep it, drop the new one.
+                if ( $written['path'] !== $existing->file_path && file_exists( $written['path'] ) ) {
+                    wp_delete_file( $written['path'] );
+                }
+                return new WP_Error( 'letter_not_saved', 'The letter could not be saved. Try again in a minute.', array( 'status' => 500 ) );
+            }
             if ( $existing->file_path && $existing->file_path !== $written['path'] && file_exists( $existing->file_path ) ) {
                 @unlink( $existing->file_path );
             }
@@ -4572,379 +4544,6 @@ class FRAMT_Portal_API {
             $notes[ $item ] = array( 'Drafted in Documents · print it, sign it, then tick this off', (int) $row->id );
         }
         return $notes;
-    }
-
-    /**
-     * Get available document types for generation
-     *
-     * @param WP_REST_Request $request Request object
-     * @return WP_REST_Response
-     */
-    public function get_document_types( $request ) {
-        $types = array(
-            array(
-                'id'          => 'cover-letter',
-                'title'       => 'Visa Cover Letter',
-                'description' => 'Professional cover letter for your visa application',
-                'fields'      => array( 'purpose', 'duration', 'destination_city' ),
-                'category'    => 'visa',
-            ),
-            array(
-                'id'          => 'attestation-hebergement',
-                'title'       => 'Attestation d\'hébergement',
-                'description' => 'Accommodation certificate from your host',
-                'fields'      => array( 'host_name', 'host_address', 'stay_dates' ),
-                'category'    => 'accommodation',
-            ),
-            array(
-                'id'          => 'lettre-motivation',
-                'title'       => 'Lettre de Motivation',
-                'description' => 'Motivation letter for studies or work',
-                'fields'      => array( 'purpose', 'background', 'goals' ),
-                'category'    => 'work',
-            ),
-            array(
-                'id'          => 'employment-attestation',
-                'title'       => 'Employment Attestation',
-                'description' => 'Letter confirming your employment status',
-                'fields'      => array( 'employer_name', 'position', 'salary', 'start_date' ),
-                'category'    => 'work',
-            ),
-            array(
-                'id'          => 'financial-attestation',
-                'title'       => 'Financial Self-Sufficiency Letter',
-                'description' => 'Declaration of financial resources',
-                'fields'      => array( 'income_sources', 'monthly_amount', 'savings' ),
-                'category'    => 'financial',
-            ),
-        );
-
-        return rest_ensure_response( $types );
-    }
-
-    /**
-     * Preview a document before generation
-     *
-     * @param WP_REST_Request $request Request object
-     * @return WP_REST_Response|WP_Error
-     */
-    public function preview_document( $request ) {
-        $params   = $request->get_json_params();
-        $type     = $params['type'] ?? '';
-        $data     = $params['data'] ?? array();
-        $user_id  = $this->acting_user_id();
-
-        // Get user profile for merge
-        $user = get_userdata( $user_id );
-        $profile = array(
-            'full_name'   => trim( $user->first_name . ' ' . $user->last_name ),
-            'email'       => $user->user_email,
-            'address'     => get_user_meta( $user_id, 'fra_current_address', true ),
-            'city'        => get_user_meta( $user_id, 'fra_current_city', true ),
-            'country'     => get_user_meta( $user_id, 'fra_current_country', true ),
-            'nationality' => get_user_meta( $user_id, 'fra_nationality', true ),
-            'passport'    => get_user_meta( $user_id, 'fra_passport_number', true ),
-        );
-
-        $content = $this->generate_document_content( $type, array_merge( $profile, $data ) );
-
-        if ( is_wp_error( $content ) ) {
-            return $content;
-        }
-
-        return rest_ensure_response( array(
-            'type'    => $type,
-            'content' => $content,
-            'preview' => true,
-        ) );
-    }
-
-    /**
-     * Generate and save a document
-     *
-     * @param WP_REST_Request $request Request object
-     * @return WP_REST_Response|WP_Error
-     */
-    public function generate_document( $request ) {
-        global $wpdb;
-
-        $project_id = $request->get_param( 'project_id' );
-        $params     = $request->get_json_params();
-        $type       = $params['type'] ?? '';
-        $data       = $params['data'] ?? array();
-        $user_id    = $this->acting_user_id();
-
-        // Get user profile
-        $user    = get_userdata( $user_id );
-        $profile = array(
-            'full_name'   => trim( $user->first_name . ' ' . $user->last_name ),
-            'email'       => $user->user_email,
-            'address'     => get_user_meta( $user_id, 'fra_current_address', true ),
-            'city'        => get_user_meta( $user_id, 'fra_current_city', true ),
-            'country'     => get_user_meta( $user_id, 'fra_current_country', true ),
-            'nationality' => get_user_meta( $user_id, 'fra_nationality', true ),
-            'passport'    => get_user_meta( $user_id, 'fra_passport_number', true ),
-        );
-
-        $content = $this->generate_document_content( $type, array_merge( $profile, $data ) );
-
-        if ( is_wp_error( $content ) ) {
-            return $content;
-        }
-
-        // Save document record
-        $table = FRAMT_Portal_Schema::get_table( 'generated_documents' );
-
-        // Check if table exists, if not use files table
-        $table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) === $table;
-
-        if ( $table_exists ) {
-            $wpdb->insert(
-                $table,
-                array(
-                    'project_id'    => $project_id,
-                    'user_id'       => $user_id,
-                    'document_type' => $type,
-                    'title'         => $this->get_document_title( $type ),
-                    'content'       => $content,
-                    'data'          => wp_json_encode( $data ),
-                    'status'        => 'generated',
-                    'created_at'    => current_time( 'mysql' ),
-                ),
-                array( '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s' )
-            );
-
-            $doc_id = $wpdb->insert_id;
-        } else {
-            // Fallback: store as file metadata
-            $doc_id = wp_insert_post( array(
-                'post_type'    => 'fra_document',
-                'post_title'   => $this->get_document_title( $type ),
-                'post_content' => $content,
-                'post_status'  => 'private',
-                'post_author'  => $user_id,
-                'meta_input'   => array(
-                    'project_id'    => $project_id,
-                    'document_type' => $type,
-                    'document_data' => $data,
-                ),
-            ) );
-        }
-
-        // Log activity
-        FRAMT_Activity::log(
-            $project_id,
-            $user_id,
-            'document_generated',
-            'document',
-            $doc_id,
-            'Generated ' . $this->get_document_title( $type )
-        );
-
-        // A generated document is part of the file, not a side product:
-        // it goes into the vault and completes the dossier item it answers.
-        if ( class_exists( 'FRAMT_Documents' ) ) {
-            FRAMT_Documents::file_generated_document( $user_id, (int) $project_id, $type, $this->get_document_title( $type ), (string) $content, (int) $doc_id );
-        }
-
-        return rest_ensure_response( array(
-            'id'      => $doc_id,
-            'type'    => $type,
-            'title'   => $this->get_document_title( $type ),
-            'content' => $content,
-        ) );
-    }
-
-    /**
-     * Get generated documents for a project
-     *
-     * @param WP_REST_Request $request Request object
-     * @return WP_REST_Response
-     */
-    public function get_generated_documents( $request ) {
-        global $wpdb;
-
-        $project_id = $request->get_param( 'project_id' );
-        $table      = FRAMT_Portal_Schema::get_table( 'generated_documents' );
-
-        // Check if custom table exists
-        $table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) === $table;
-
-        if ( $table_exists ) {
-            $docs = $wpdb->get_results( $wpdb->prepare(
-                "SELECT * FROM $table WHERE project_id = %d ORDER BY created_at DESC",
-                $project_id
-            ) );
-
-            $response = array();
-            foreach ( $docs as $doc ) {
-                $response[] = array(
-                    'id'         => (int) $doc->id,
-                    'type'       => $doc->document_type,
-                    'title'      => $doc->title,
-                    'status'     => $doc->status,
-                    'created_at' => $doc->created_at,
-                    'is_generated' => true,
-                );
-            }
-        } else {
-            // Fallback: get from posts
-            $posts = get_posts( array(
-                'post_type'   => 'fra_document',
-                'post_status' => 'private',
-                'meta_query'  => array(
-                    array(
-                        'key'   => 'project_id',
-                        'value' => $project_id,
-                    ),
-                ),
-                'numberposts' => -1,
-            ) );
-
-            $response = array();
-            foreach ( $posts as $post ) {
-                $response[] = array(
-                    'id'         => $post->ID,
-                    'type'       => get_post_meta( $post->ID, 'document_type', true ),
-                    'title'      => $post->post_title,
-                    'status'     => 'generated',
-                    'created_at' => $post->post_date,
-                    'is_generated' => true,
-                );
-            }
-        }
-
-        return rest_ensure_response( $response );
-    }
-
-    /**
-     * Download a generated document
-     *
-     * @param WP_REST_Request $request Request object
-     * @return WP_REST_Response|WP_Error
-     */
-    public function download_generated_document( $request ) {
-        global $wpdb;
-
-        $doc_id = $request->get_param( 'id' );
-        $table  = FRAMT_Portal_Schema::get_table( 'generated_documents' );
-
-        $table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) === $table;
-
-        if ( $table_exists ) {
-            $doc = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE id = %d", $doc_id ) );
-
-            if ( ! $doc || (int) $doc->user_id !== $this->acting_user_id() ) {
-                return new WP_Error( 'rest_doc_not_found', 'Document not found.', array( 'status' => 404 ) );
-            }
-
-            return rest_ensure_response( array(
-                'id'      => (int) $doc->id,
-                'title'   => $doc->title,
-                'content' => $doc->content,
-                'type'    => $doc->document_type,
-            ) );
-        } else {
-            $post = get_post( $doc_id );
-
-            if ( ! $post || (int) $post->post_author !== $this->acting_user_id() ) {
-                return new WP_Error( 'rest_doc_not_found', 'Document not found.', array( 'status' => 404 ) );
-            }
-
-            return rest_ensure_response( array(
-                'id'      => $post->ID,
-                'title'   => $post->post_title,
-                'content' => $post->post_content,
-                'type'    => get_post_meta( $post->ID, 'document_type', true ),
-            ) );
-        }
-    }
-
-    /**
-     * Generate document content based on type
-     *
-     * @param string $type Document type
-     * @param array  $data Merge data
-     * @return string|WP_Error Document content
-     */
-    private function generate_document_content( $type, $data ) {
-        $templates = array(
-            'cover-letter' => "
-[Your Name]
-[Your Address]
-[City, Country]
-[Date]
-
-To Whom It May Concern,
-
-I am writing to apply for a [visa_type] visa to France. My name is {full_name}, and I am a citizen of {nationality} with passport number {passport}.
-
-The purpose of my visit is {purpose}. I plan to stay in France for {duration}, primarily in {destination_city}.
-
-I have arranged accommodation and have sufficient financial resources to support myself during my stay. I have also obtained travel health insurance as required.
-
-I am committed to complying with all visa regulations and will return to my home country before my authorized stay expires.
-
-Thank you for considering my application.
-
-Sincerely,
-{full_name}
-",
-            'attestation-hebergement' => "
-ATTESTATION D'HÉBERGEMENT
-
-Je soussigné(e), {host_name},
-Demeurant à: {host_address}
-
-Certifie sur l'honneur héberger à mon domicile:
-
-Nom: {full_name}
-Nationalité: {nationality}
-Numéro de passeport: {passport}
-
-Pour la période du {stay_start} au {stay_end}.
-
-Fait à _____________, le {date}
-
-Signature:
-",
-        );
-
-        $template = $templates[ $type ] ?? null;
-
-        if ( ! $template ) {
-            return new WP_Error( 'invalid_type', 'Invalid document type.', array( 'status' => 400 ) );
-        }
-
-        // Replace placeholders with sanitized values
-        $data['date'] = date_i18n( 'F j, Y' );
-
-        foreach ( $data as $key => $value ) {
-            // Sanitize value to prevent XSS - use esc_html for text content
-            $safe_value = is_string( $value ) ? esc_html( $value ) : esc_html( (string) $value );
-            $template   = str_replace( '{' . $key . '}', $safe_value, $template );
-            $template   = str_replace( '[' . $key . ']', $safe_value, $template );
-        }
-
-        return trim( $template );
-    }
-
-    /**
-     * Get document title by type
-     *
-     * @param string $type Document type
-     * @return string Title
-     */
-    private function get_document_title( $type ) {
-        $titles = array(
-            'cover-letter'           => 'Visa Cover Letter',
-            'attestation-hebergement' => 'Attestation d\'hébergement',
-            'lettre-motivation'      => 'Lettre de Motivation',
-            'employment-attestation' => 'Employment Attestation',
-            'financial-attestation'  => 'Financial Self-Sufficiency Letter',
-        );
-
-        return $titles[ $type ] ?? 'Generated Document';
     }
 
     // =========================================================================
@@ -5584,6 +5183,46 @@ Signature:
             'sources'   => $sources,
             'timestamp' => current_time( 'mysql' ),
         ) );
+    }
+
+    /**
+     * GET /chat/history: the household's saved conversation, oldest first,
+     * the last 50 messages.
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response
+     */
+    public function get_chat_history( $request ) {
+        $history  = get_user_meta( $this->acting_user_id(), 'fra_chat_history', true );
+        $history  = is_array( $history ) ? array_slice( $history, -50 ) : array();
+        $messages = array();
+        foreach ( $history as $entry ) {
+            if ( ! is_array( $entry ) ) {
+                continue;
+            }
+            $role = ( $entry['role'] ?? '' ) === 'assistant' ? 'assistant' : 'user';
+            $text = (string) ( $entry['message'] ?? ( $entry['content'] ?? '' ) );
+            if ( '' === $text ) {
+                continue;
+            }
+            $messages[] = array(
+                'role'      => $role,
+                'content'   => $text,
+                'timestamp' => ! empty( $entry['timestamp'] ) ? (string) $entry['timestamp'] : null,
+            );
+        }
+        return rest_ensure_response( array( 'messages' => $messages ) );
+    }
+
+    /**
+     * DELETE /chat/history: forget the saved conversation.
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response
+     */
+    public function clear_chat_history( $request ) {
+        delete_user_meta( $this->acting_user_id(), 'fra_chat_history' );
+        return rest_ensure_response( array( 'cleared' => true ) );
     }
 
     /**
@@ -7607,18 +7246,12 @@ Focus on practical advice while being careful not to state incorrect facts. When
             // Delete task checklists for tasks in user's projects
 
             // Delete tasks
-            $wpdb->query(
-                $wpdb->prepare(
-                    "DELETE FROM {$this->tbl('tasks')} WHERE project_id IN ($project_ids)"
-                )
-            );
+            // $project_ids is a list of integers (intval above); nothing to prepare.
+            $wpdb->query( "DELETE FROM {$this->tbl('tasks')} WHERE project_id IN ($project_ids)" );
 
             // Delete notes
-            $wpdb->query(
-                $wpdb->prepare(
-                    "DELETE FROM {$this->tbl('notes')} WHERE project_id IN ($project_ids)"
-                )
-            );
+            // $project_ids is a list of integers (intval above); nothing to prepare.
+            $wpdb->query( "DELETE FROM {$this->tbl('notes')} WHERE project_id IN ($project_ids)" );
 
             // Delete files
             $files = $wpdb->get_results(
@@ -7669,11 +7302,19 @@ Focus on practical advice while being careful not to state incorrect facts. When
             )
         );
 
-        // Log out the user before deletion
-        wp_logout();
-
-        // Finally, delete the WordPress user
+        // Delete the WordPress user first. wp_logout() is not used: MemberPress
+        // hooks it with a redirect + exit, which would end this REST request
+        // before the deletion ran and hand the portal an empty 302.
         require_once ABSPATH . 'wp-admin/includes/user.php';
+        // Release any partner who joined this household, so their own sign-in
+        // does not keep pointing at an account that no longer exists.
+        $r2f_members = get_user_meta( $user_id, 'framt_family_members', true );
+        foreach ( is_array( $r2f_members ) ? $r2f_members : array() as $r2f_member ) {
+            $r2f_partner = (int) ( $r2f_member['invitedUserId'] ?? 0 );
+            if ( $r2f_partner && $r2f_partner !== (int) $user_id && (int) get_user_meta( $r2f_partner, 'framt_household_owner', true ) === (int) $user_id ) {
+                delete_user_meta( $r2f_partner, 'framt_household_owner' );
+            }
+        }
         $deleted = wp_delete_user( $user_id );
 
         if ( ! $deleted ) {
@@ -7684,10 +7325,16 @@ Focus on practical advice while being careful not to state incorrect facts. When
             );
         }
 
+        // End the session without firing the wp_logout action.
+        wp_destroy_current_session();
+        wp_clear_auth_cookie();
+        wp_set_current_user( 0 );
+
         return rest_ensure_response(
             array(
-                'deleted' => true,
-                'message' => 'Your account has been permanently deleted.',
+                'deleted'  => true,
+                'message'  => 'Your account has been permanently deleted.',
+                'redirect' => home_url( '/portal/?signed_out=1' ),
             )
         );
     }
@@ -12337,6 +11984,29 @@ SECTIONS;
         }
         if ( get_current_user_id() !== $this->acting_user_id() && ! current_user_can( 'manage_options' ) ) {
             return new WP_Error( 'rest_forbidden', 'Only the account holder can do this.', array( 'status' => 403 ) );
+        }
+        return true;
+    }
+
+    /**
+     * Deleting the account deletes the whole household file, so only the
+     * account holder may do it. A signed-in partner resolves to the owner
+     * through acting_user_id(); without this check they would delete the
+     * owner's account.
+     *
+     * @return true|WP_Error
+     */
+    public function check_account_delete_permission() {
+        $base = $this->check_member_permission();
+        if ( is_wp_error( $base ) ) {
+            return $base;
+        }
+        if ( get_current_user_id() !== $this->acting_user_id() ) {
+            return new WP_Error(
+                'rest_forbidden',
+                'Only the account holder can delete the household file.',
+                array( 'status' => 403 )
+            );
         }
         return true;
     }

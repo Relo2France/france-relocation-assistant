@@ -449,57 +449,6 @@ export interface TaskChecklistItem {
   sort_order: number;
 }
 
-// Document Generation types
-export interface GeneratedDocument {
-  id: number;
-  project_id: number;
-  user_id: number;
-  document_type: GeneratedDocumentType;
-  document_type_label: string;
-  language: 'en' | 'fr';
-  filename: string;
-  file_url: string;
-  answers: Record<string, unknown>;
-  created_at: string;
-}
-
-export type GeneratedDocumentType = 'cover-letter' | 'financial-statement' | 'no-work-attestation' | 'accommodation-letter';
-
-export interface DocumentGenerationRequest {
-  document_type: GeneratedDocumentType;
-  language: 'en' | 'fr';
-  answers: Record<string, unknown>;
-}
-
-export interface DocumentGenerationResponse {
-  success: boolean;
-  document?: GeneratedDocument;
-  preview?: DocumentPreview;
-  error?: string;
-}
-
-export interface DocumentPreview {
-  type: GeneratedDocumentType;
-  language: string;
-  content: DocumentContent;
-}
-
-export interface DocumentContent {
-  header?: {
-    date: string;
-    recipient: string[];
-  };
-  subject?: string;
-  salutation?: string;
-  paragraphs: string[];
-  closing?: string;
-  signature?: {
-    line: string;
-    name: string;
-    date_line: string;
-  };
-}
-
 // Glossary types
 export interface GlossaryCategory {
   id: string;
@@ -614,6 +563,17 @@ export interface ChatResponse {
   sources?: ChatSource[];
   is_premium_topic?: boolean;
   error?: string;
+}
+
+/** One turn of the saved conversation, as GET /chat/history returns it. */
+export interface ChatHistoryMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: string | null;
+}
+
+export interface ChatHistoryResponse {
+  messages: ChatHistoryMessage[];
 }
 
 export interface KnowledgeCategory {

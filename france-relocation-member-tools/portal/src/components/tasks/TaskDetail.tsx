@@ -9,14 +9,14 @@ import {
   FileSignature,
   FileText,
   Flag,
-  MessageSquare,
   Tag,
   Trash2,
   User,
 } from 'lucide-react';
 import { letterForStep } from '@/components/documents/letterForStep';
 import { Drawer } from '@/components/shared/Modal';
-import { useDeleteTask, useLetters, useUpdateTask, useUpdateTaskStatus } from '@/hooks/useApi';
+import { useDashboard, useDeleteTask, useLetters, useUpdateTask, useUpdateTaskStatus } from '@/hooks/useApi';
+import { stageById, stageForTask } from '@/journey/journey';
 import { usePortalStore } from '@/store';
 import type { Task, TaskHowto, TaskPriority, TaskStatus } from '@/types';
 import TaskChecklist from './TaskChecklist';
@@ -60,8 +60,16 @@ export default function TaskDetail({ task, isOpen, onClose }: TaskDetailProps) {
   }, [isEditing]);
   const updateStatus = useUpdateTaskStatus();
   const deleteTask = useDeleteTask();
+  const { data: dashboard } = useDashboard();
+  const setActiveView = usePortalStore((s) => s.setActiveView);
 
   if (!task) return null;
+
+  // The journey stage by name, the same placement the stage pages use.
+  const project = dashboard?.project;
+  const stageName = task.stage
+    ? (project ? stageById(stageForTask(task, project)) : stageById(task.stage))?.name ?? task.stage.replace(/[_-]/g, ' ')
+    : null;
 
   const handleStatusChange = (status: TaskStatus) => {
     updateStatus.mutate({ id: task.id, status });
@@ -103,7 +111,7 @@ export default function TaskDetail({ task, isOpen, onClose }: TaskDetailProps) {
     <Drawer
       isOpen={isOpen}
       onClose={onClose}
-      title="Task Details"
+      title="Step details"
       width="lg"
       footer={
         <div className="flex items-center justify-between w-full">
@@ -132,8 +140,8 @@ export default function TaskDetail({ task, isOpen, onClose }: TaskDetailProps) {
       {/* Task overdue warning */}
       {task.is_overdue && (
         <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-red-700">
-          <AlertTriangle className="w-5 h-5" />
-          <span className="text-sm font-medium">This task is overdue</span>
+          <AlertTriangle className="w-5 h-5" aria-hidden="true" />
+          <span className="text-sm font-medium">This step is overdue</span>
         </div>
       )}
 
@@ -147,13 +155,15 @@ export default function TaskDetail({ task, isOpen, onClose }: TaskDetailProps) {
               value={editedTitle}
               onChange={(e) => setEditedTitle(e.target.value)}
               className="input text-lg font-semibold"
-              placeholder="Task title"
+              placeholder="Step title"
+              aria-label="Step title"
             />
             <textarea
               value={editedDescription}
               onChange={(e) => setEditedDescription(e.target.value)}
               className="textarea h-24"
               placeholder="Add a description..."
+              aria-label="Step description"
             />
             <div className="flex gap-2">
               <button onClick={handleSaveEdit} className="btn btn-primary btn-sm">
@@ -267,11 +277,9 @@ export default function TaskDetail({ task, isOpen, onClose }: TaskDetailProps) {
         </PropertyRow>
 
         {/* Stage */}
-        {task.stage && (
+        {stageName && (
           <PropertyRow icon={Tag} label="Stage">
-            <span className="badge badge-primary capitalize">
-              {task.stage.replace('_', ' ')}
-            </span>
+            <span className="badge badge-primary">{stageName}</span>
           </PropertyRow>
         )}
 
@@ -297,19 +305,18 @@ export default function TaskDetail({ task, isOpen, onClose }: TaskDetailProps) {
       <div className="space-y-4">
         <h4 className="text-sm font-medium text-gray-700">Related</h4>
 
-        <button className="w-full flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors text-left">
-          <FileText className="w-5 h-5 text-gray-400" />
+        <button
+          type="button"
+          onClick={() => {
+            setActiveView('documents');
+            onClose();
+          }}
+          className="w-full flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors text-left"
+        >
+          <FileText className="w-5 h-5 text-gray-400" aria-hidden="true" />
           <div>
-            <p className="text-sm font-medium text-gray-900">Attachments</p>
-            <p className="text-xs text-gray-500">Add files to this task</p>
-          </div>
-        </button>
-
-        <button className="w-full flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors text-left">
-          <MessageSquare className="w-5 h-5 text-gray-400" />
-          <div>
-            <p className="text-sm font-medium text-gray-900">Comments</p>
-            <p className="text-xs text-gray-500">Add notes or comments</p>
+            <p className="text-sm font-medium text-gray-900">Documents</p>
+            <p className="text-xs text-gray-500">Files for this step live in Documents</p>
           </div>
         </button>
       </div>
@@ -328,7 +335,7 @@ export default function TaskDetail({ task, isOpen, onClose }: TaskDetailProps) {
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="bg-white rounded-xl p-6 max-w-sm mx-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Delete Task?</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Delete this step?</h3>
             <p className="text-gray-600 mb-4">
               Are you sure you want to delete &quot;{task.title}&quot;? This action cannot be undone.
             </p>
@@ -373,6 +380,15 @@ function PropertyRow({ icon: Icon, label, children }: PropertyRowProps) {
   );
 }
 
+/** The site a link goes to, for the link text; a malformed URL shows as written. */
+function hostOf(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '');
+  } catch {
+    return url;
+  }
+}
+
 function formatDaysUntil(days: number): string {
   if (days === 0) return '(Today)';
   if (days === 1) return '(Tomorrow)';
@@ -410,7 +426,7 @@ function HowTo({ howto }: { howto: TaskHowto }) {
                 <span className="block text-[0.85rem] text-gray-600 leading-snug mt-0.5">{step.detail}</span>
                 {step.url ? (
                   <a href={step.url} target="_blank" rel="noopener noreferrer" className="inline-block mt-1 text-[0.8rem] font-semibold text-primary-500 hover:text-primary-700">
-                    {new URL(step.url).hostname.replace(/^www\./, '')} ↗
+                    {hostOf(step.url)} ↗
                   </a>
                 ) : null}
               </div>

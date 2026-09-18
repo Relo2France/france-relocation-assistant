@@ -153,6 +153,6 @@ export const FRENCH_CONSULATES = [
 ].map((city) => ({ value: city, label: `Consulate General of France in ${city}` }));
 
 export const APPLICATION_LOCATION_OPTIONS = [
-  { value: 'us', label: 'United States (US Consulate)' },
+  { value: 'us', label: 'United States (French consulate)' },
   { value: 'france', label: 'France (Already in France)' },
 ] as const;

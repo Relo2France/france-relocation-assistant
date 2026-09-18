@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  HttpError,
   chatApi,
   checklistsApi,
   dashboardApi,
@@ -60,8 +61,6 @@ export const queryKeys = {
   profileCompletion: ['profileCompletion'] as const,
   checklists: (visaType?: string) => ['checklists', visaType] as const,
   checklist: (type: string) => ['checklist', type] as const,
-  documentTypes: ['documentTypes'] as const,
-  generatedDocuments: (projectId: number) => ['generatedDocuments', projectId] as const,
   glossary: ['glossary'] as const,
   glossarySearch: (query: string) => ['glossary', 'search', query] as const,
   verificationHistory: (projectId: number) => ['verificationHistory', projectId] as const,
@@ -70,6 +69,7 @@ export const queryKeys = {
   guide: (type: string) => ['guide', type] as const,
   personalizedGuide: (type: string) => ['personalizedGuide', type] as const,
   chatCategories: ['chatCategories'] as const,
+  chatHistory: ['chatHistory'] as const,
   membership: ['membership'] as const,
   subscriptions: ['subscriptions'] as const,
   payments: ['payments'] as const,
@@ -212,6 +212,7 @@ export function useUpdateProject() {
       // The server re-dates every template task from the new move date.
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       queryClient.invalidateQueries({ queryKey: ['checklists'] });
+      queryClient.invalidateQueries({ queryKey: ['checklist'] });
       queryClient.setQueryData(queryKeys.project(updatedProject.id), updatedProject);
     },
   });
@@ -233,7 +234,7 @@ export function useCreateTask(projectId: number) {
   return useMutation({
     mutationFn: (data: Partial<Task>) => tasksApi.create(projectId, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.tasks(projectId) });
+      queryClient.invalidateQueries({ queryKey: ['tasks', projectId] });
       queryClient.invalidateQueries({ queryKey: queryKeys.dashboard });
     },
   });
@@ -246,7 +247,7 @@ export function useUpdateTask() {
     mutationFn: ({ id, data }: { id: number; data: Partial<Task> & { person?: string } }) =>
       tasksApi.update(id, data),
     onSuccess: (updatedTask) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.tasks(updatedTask.project_id) });
+      queryClient.invalidateQueries({ queryKey: ['tasks', updatedTask.project_id] });
       queryClient.invalidateQueries({ queryKey: queryKeys.dashboard });
       queryClient.setQueryData(queryKeys.task(updatedTask.id), updatedTask);
     },
@@ -260,7 +261,7 @@ export function useUpdateTaskStatus() {
     mutationFn: ({ id, status }: { id: number; status: TaskStatus }) =>
       tasksApi.updateStatus(id, status),
     onSuccess: (updatedTask) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.tasks(updatedTask.project_id) });
+      queryClient.invalidateQueries({ queryKey: ['tasks', updatedTask.project_id] });
       queryClient.invalidateQueries({ queryKey: queryKeys.dashboard });
       queryClient.setQueryData(queryKeys.task(updatedTask.id), updatedTask);
     },
@@ -274,7 +275,7 @@ export function useDeleteTask() {
     mutationFn: ({ id, projectId }: { id: number; projectId: number }) =>
       tasksApi.delete(id).then((result) => ({ ...result, projectId })),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.tasks(variables.projectId) });
+      queryClient.invalidateQueries({ queryKey: ['tasks', variables.projectId] });
       queryClient.invalidateQueries({ queryKey: queryKeys.dashboard });
     },
   });
@@ -287,6 +288,8 @@ export function useFiles(projectId: number, filters?: FileFilters) {
     queryFn: () => filesApi.list(projectId, filters),
     enabled: projectId > 0,
     staleTime: STALE_TIME.DEFAULT, // 30 seconds
+    // Changing a filter keeps the current list on screen until the new one lands.
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -297,12 +300,13 @@ export function useUploadFile(projectId: number) {
     mutationFn: ({ file, data }: { file: File; data?: FileUploadData }) =>
       filesApi.upload(projectId, file, data),
     onSuccess: (_result, variables) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.files(projectId) });
+      queryClient.invalidateQueries({ queryKey: ['files', projectId] });
       queryClient.invalidateQueries({ queryKey: queryKeys.dashboard });
       if (variables.data?.checklist_type) {
         // The upload just completed a dossier item
         queryClient.invalidateQueries({ queryKey: queryKeys.checklist(variables.data.checklist_type) });
         queryClient.invalidateQueries({ queryKey: ['checklists'] });
+        queryClient.invalidateQueries({ queryKey: ['checklist'] });
       }
     },
   });
@@ -315,7 +319,7 @@ export function useUpdateFile() {
     mutationFn: ({ id, data }: { id: number; data: { category?: FileCategory; description?: string } }) =>
       filesApi.update(id, data),
     onSuccess: (updatedFile) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.files(updatedFile.project_id) });
+      queryClient.invalidateQueries({ queryKey: ['files', updatedFile.project_id] });
       queryClient.setQueryData(queryKeys.file(updatedFile.id), updatedFile);
     },
   });
@@ -327,8 +331,9 @@ export function useRecogniseFile() {
   return useMutation({
     mutationFn: ({ id }: { id: number; projectId: number }) => filesApi.recognise(id),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.files(variables.projectId) });
+      queryClient.invalidateQueries({ queryKey: ['files', variables.projectId] });
       queryClient.invalidateQueries({ queryKey: ['checklists'] });
+      queryClient.invalidateQueries({ queryKey: ['checklist'] });
       queryClient.invalidateQueries({ queryKey: queryKeys.dashboard });
     },
   });
@@ -341,7 +346,7 @@ export function useDeleteFile() {
     mutationFn: ({ id, projectId }: { id: number; projectId: number }) =>
       filesApi.delete(id).then((result) => ({ ...result, projectId })),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.files(variables.projectId) });
+      queryClient.invalidateQueries({ queryKey: ['files', variables.projectId] });
       queryClient.invalidateQueries({ queryKey: queryKeys.dashboard });
     },
   });
@@ -410,6 +415,9 @@ export function useUpdateMemberProfile() {
       queryClient.invalidateQueries({ queryKey: queryKeys.dashboard });
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       queryClient.invalidateQueries({ queryKey: ['checklists'] });
+      queryClient.invalidateQueries({ queryKey: ['checklist'] });
+      // Letters are drafted from profile answers.
+      queryClient.invalidateQueries({ queryKey: queryKeys.letters });
     },
   });
 }
@@ -572,6 +580,27 @@ export function useSendChatMessage() {
   });
 }
 
+/** The member's saved conversation with the assistant. */
+export function useChatHistory() {
+  return useQuery({
+    queryKey: queryKeys.chatHistory,
+    queryFn: chatApi.getHistory,
+    staleTime: Infinity,
+    retry: false,
+  });
+}
+
+export function useClearChatHistory() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: chatApi.clearHistory,
+    onSuccess: () => {
+      queryClient.setQueryData(queryKeys.chatHistory, { messages: [] });
+    },
+  });
+}
+
 export function useSearchChatTopics(query: string) {
   return useQuery({
     queryKey: queryKeys.chatSearch(query),
@@ -611,6 +640,8 @@ export function useSupportTicket(ticketId: number | null) {
     },
     enabled: !!ticketId,
     staleTime: STALE_TIME.DYNAMIC, // 10 seconds
+    // A deleted message will not come back on a retry.
+    retry: (failureCount, error) => !(error instanceof HttpError && error.status === 404) && failureCount < 3,
   });
 
   // Opening a thread marks it read on the server; mirror that in the list the

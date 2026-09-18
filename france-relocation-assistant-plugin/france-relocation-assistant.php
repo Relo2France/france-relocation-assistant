@@ -15,7 +15,7 @@
  * Plugin Name: France Relocation Assistant
  * Plugin URI:  https://relo2france.com
  * Description: AI-powered US to France relocation guidance with visa info, property guides, healthcare, taxes, and practical insights. Features weekly auto-updates, "In Practice" real-world advice, and comprehensive knowledge base.
- * Version:     3.13.19
+ * Version:     3.13.20
  * Author:      Relo2France
  * Author URI:  https://relo2france.com
  * License:     GPL v2 or later
@@ -36,7 +36,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 | Plugin Constants
 |--------------------------------------------------------------------------
 */
-define( 'FRA_VERSION', '3.13.19' );
+define( 'FRA_VERSION', '3.13.20' );
 define( 'FRA_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FRA_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'FRA_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
@@ -771,7 +771,8 @@ class France_Relocation_Assistant {
             'knowledgeBase' => $this->get_knowledge_base(),
             'aiEnabled' => get_option( 'fra_enable_ai', false ) && ! empty( self::get_api_key() ),
             'isLoggedIn' => is_user_logged_in(),
-            'logoutUrl' => wp_logout_url(home_url('/portal/?signed_out=1')),
+            // wp_logout_url() returns an HTML-escaped URL (&amp;); JS navigates to it, so unescape.
+            'logoutUrl' => str_replace('&amp;', '&', wp_logout_url(home_url('/portal/?signed_out=1'))),
             'loginError' => $login_error,
         ));
     }

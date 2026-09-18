@@ -192,7 +192,7 @@ export default function TaskBoard({
       <div
         className="flex gap-4 overflow-x-auto pb-4"
         role="region"
-        aria-label="Task board"
+        aria-label="Steps board"
       >
         {columns.map((column) => (
           <BoardColumn
@@ -340,7 +340,7 @@ function BoardColumn({
         ))}
         {tasks.length === 0 && (
           <div className="text-center py-8 text-gray-400 text-sm">
-            <p>No tasks</p>
+            <p>No steps</p>
             <button
               onClick={onAddTask}
               className="mt-2 text-primary-600 hover:text-primary-700"

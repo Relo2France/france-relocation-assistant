@@ -8,7 +8,7 @@ import { signOutUrl } from '@/utils/signOut';
 
 const viewTitles: Record<string, string> = {
   dashboard: 'Where you are',
-  tasks: 'Tasks',
+  tasks: 'Steps',
   messages: 'Messages',
   documents: 'Documents',
   deadlines: 'Deadlines',
@@ -25,6 +25,9 @@ const viewTitles: Record<string, string> = {
   schengen: 'Schengen days',
   stage: 'Your move',
   guide: 'Guide',
+  // Old view names still arriving in bookmarks; App shows their replacements.
+  timeline: 'Deadlines',
+  guides: 'Explore France',
 };
 
 export default function Header() {
@@ -52,7 +55,10 @@ export default function Header() {
       }
     };
     const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setShowAccount(false);
+      if (event.key === 'Escape') {
+        setShowAccount(false);
+        setShowNotifications(false);
+      }
     };
     document.addEventListener('keydown', handleEscape);
     document.addEventListener('mousedown', handleClickOutside);
@@ -95,6 +101,8 @@ export default function Header() {
         <div className="relative" ref={notificationRef}>
           <button
             onClick={() => setShowNotifications(!showNotifications)}
+            aria-expanded={showNotifications}
+            aria-controls="notifications-panel"
             className="relative p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
             aria-label={notificationCount > 0 ? `Notifications: ${notificationCount} thing${notificationCount === 1 ? '' : 's'} your file or the team raised` : 'Notifications: nothing new'}
           >
@@ -108,18 +116,25 @@ export default function Header() {
 
           {/* Notifications Dropdown */}
           {showNotifications && (
-            <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-200 z-50 overflow-hidden">
+            // On a phone the bell sits mid-header, so the panel pins to the
+            // screen edge rather than the bell and never runs off the left.
+            <div
+              id="notifications-panel"
+              className="fixed right-4 top-[4.5rem] sm:absolute sm:right-0 sm:top-full sm:mt-2 w-[min(20rem,calc(100vw-2rem))] bg-white rounded-xl shadow-lg border border-gray-200 z-50 overflow-hidden"
+            >
               <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-gray-50">
                 <h3 className="font-semibold text-gray-900">Notifications</h3>
                 <button
+                  type="button"
                   onClick={() => setShowNotifications(false)}
                   className="p-1 text-gray-400 hover:text-gray-600 rounded"
+                  aria-label="Close notifications"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-4 h-4" aria-hidden="true" />
                 </button>
               </div>
 
-              <div className="max-h-96 overflow-y-auto">
+              <div className="max-h-[min(24rem,calc(100dvh-8rem))] overflow-y-auto">
                 {visible.length > 0 ? (
                   <div className="divide-y divide-gray-100">
                     {visible.map((notification) => (

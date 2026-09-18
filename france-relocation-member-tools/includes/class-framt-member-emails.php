@@ -3,8 +3,11 @@
  * The emails the notification switches in Settings promise.
  *
  * Step reminders: only for stages the member has started (a step in it is
- * in progress, waiting or done), and only about the next two dated steps
- * there: a week before, the day before, and once when the date passes.
+ * in progress, waiting or done). Upcoming: the next two dated steps there
+ * that are not yet due, a week before and the day before. Overdue steps are
+ * tracked separately, so a missed date never hides what is coming: each is
+ * reminded once per due date, and an email lists at most the two most
+ * recently overdue.
  * One email a day at most, to whoever the step is assigned to (the owner
  * when nobody is). Weekly digest: Monday morning, the week behind and the
  * next steps ahead.
@@ -38,7 +41,7 @@ class FRAMT_Member_Emails {
 
     private static $instance = null;
 
-    /** @var array|null Next steps, worked out once per run. */
+    /** @var array|null Upcoming and overdue steps, worked out once per run. */
     private $next_cache = null;
 
     public static function get_instance() {
@@ -112,8 +115,11 @@ class FRAMT_Member_Emails {
     // Task reminders
     // ------------------------------------------------------------------
 
-    /** How many of the next steps a reminder looks at. */
+    /** How many of the next (not yet due) steps a reminder looks at. */
     const NEXT_STEPS = 2;
+
+    /** How many overdue steps one email lists: the most recently overdue. */
+    const OVERDUE_STEPS = 2;
 
     /**
      * Stages a household has started: any stage where at least one step
@@ -138,12 +144,15 @@ class FRAMT_Member_Emails {
     }
 
     /**
-     * The next dated steps for each household, in started stages only,
-     * earliest first.
+     * Dated steps for each household, in started stages only.
      *
-     * @return array project id => task rows (at most NEXT_STEPS)
+     * @return array project id => array(
+     *     'upcoming'      => the next NEXT_STEPS steps not yet due, earliest first,
+     *     'overdue'       => the OVERDUE_STEPS most recently overdue steps, latest first,
+     *     'overdue_count' => every open overdue step in started stages,
+     * )
      */
-    public function next_steps() {
+    private function dated_steps() {
         global $wpdb;
         if ( null !== $this->next_cache ) {
             return $this->next_cache;
@@ -152,6 +161,7 @@ class FRAMT_Member_Emails {
         $projects = FRAMT_Portal_Schema::get_table( 'projects' );
         $started  = $this->started_stages();
         if ( empty( $started ) ) {
+            $this->next_cache = array();
             return array();
         }
         $rows = $wpdb->get_results(
@@ -161,25 +171,53 @@ class FRAMT_Member_Emails {
                AND t.portal_visible = 1 AND p.status = 'active'
              ORDER BY t.project_id, t.due_date ASC, t.sort_order ASC, t.id ASC"
         );
-        $out = array();
+        $today = wp_date( 'Y-m-d' );
+        $out   = array();
         foreach ( (array) $rows as $row ) {
             $pid = (int) $row->project_id;
             if ( empty( $started[ $pid ][ (string) $row->stage ] ) ) {
                 continue;
             }
-            if ( count( $out[ $pid ] ?? array() ) < self::NEXT_STEPS ) {
-                $out[ $pid ][] = $row;
+            if ( ! isset( $out[ $pid ] ) ) {
+                $out[ $pid ] = array( 'upcoming' => array(), 'overdue' => array(), 'overdue_count' => 0 );
             }
+            if ( substr( (string) $row->due_date, 0, 10 ) < $today ) {
+                // Rows come earliest first; keep the latest overdue at the front.
+                array_unshift( $out[ $pid ]['overdue'], $row );
+                $out[ $pid ]['overdue_count']++;
+            } elseif ( count( $out[ $pid ]['upcoming'] ) < self::NEXT_STEPS ) {
+                $out[ $pid ]['upcoming'][] = $row;
+            }
+        }
+        foreach ( $out as $pid => $group ) {
+            $out[ $pid ]['overdue'] = array_slice( $group['overdue'], 0, self::OVERDUE_STEPS );
         }
         $this->next_cache = $out;
         return $out;
     }
 
     /**
-     * Reminders about the next steps only. A stage the member has not
-     * started sends nothing. For each of the next two dated steps: once a
-     * week before, once the day before, once when the date passes. At most
-     * one email per person per day; moving a date re-arms its reminders.
+     * The next dated steps not yet due for each household, in started
+     * stages only, earliest first.
+     *
+     * @return array project id => task rows (at most NEXT_STEPS)
+     */
+    public function next_steps() {
+        $out = array();
+        foreach ( $this->dated_steps() as $pid => $group ) {
+            if ( ! empty( $group['upcoming'] ) ) {
+                $out[ $pid ] = $group['upcoming'];
+            }
+        }
+        return $out;
+    }
+
+    /**
+     * Reminders. A stage the member has not started sends nothing. For each
+     * of the next two steps not yet due: once a week before, once the day
+     * before. Separately, each of the two most recently overdue steps is
+     * reminded once for its due date. At most one email per person per day;
+     * moving a date re-arms its reminders.
      *
      * @return int Emails sent.
      */
@@ -191,8 +229,15 @@ class FRAMT_Member_Emails {
         $outbox = array(); // recipient id => items
         $marks  = array(); // owner id => keys to record
 
-        foreach ( $this->next_steps() as $steps ) {
-            foreach ( $steps as $row ) {
+        foreach ( $this->dated_steps() as $group ) {
+            $candidates = array();
+            foreach ( $group['upcoming'] as $row ) {
+                $candidates[] = $row;
+            }
+            foreach ( $group['overdue'] as $row ) {
+                $candidates[] = $row;
+            }
+            foreach ( $candidates as $row ) {
                 $days = (int) round( ( strtotime( $row->due_date ) - strtotime( $today ) ) / DAY_IN_SECONDS );
                 if ( 7 === $days ) {
                     $kind = 'week';
@@ -207,34 +252,56 @@ class FRAMT_Member_Emails {
                 if ( ! self::wants( $owner, 'task_reminders' ) ) {
                     continue;
                 }
-                $key  = $row->id . ':' . $kind . ':' . $row->due_date;
+                $key  = $row->id . ':' . $kind . ':' . substr( (string) $row->due_date, 0, 10 );
                 $sent = get_user_meta( $owner, self::SENT_META, true );
                 if ( is_array( $sent ) && isset( $sent[ $key ] ) ) {
                     continue;
                 }
                 $to = $row->assignee_id && $this->in_household( (int) $row->assignee_id, $owner ) ? (int) $row->assignee_id : $owner;
-                $outbox[ $to ][]   = array( 'task' => $row, 'kind' => $kind, 'days' => $days );
-                $marks[ $owner ][] = $key;
+                $outbox[ $to ][]   = array( 'task' => $row, 'kind' => $kind, 'days' => $days, 'owner' => $owner, 'key' => $key );
             }
         }
 
         $count = 0;
         foreach ( $outbox as $recipient => $items ) {
+            // One email per person: the upcoming steps, and at most the two
+            // most recently overdue steps across their projects.
+            $upcoming = array_values( array_filter( $items, function ( $i ) {
+                return 'overdue' !== $i['kind'];
+            } ) );
+            $overdue  = array_values( array_filter( $items, function ( $i ) {
+                return 'overdue' === $i['kind'];
+            } ) );
+            usort( $overdue, function ( $a, $b ) {
+                return $b['days'] <=> $a['days'];
+            } );
+            $items = array_merge( $upcoming, array_slice( $overdue, 0, self::OVERDUE_STEPS ) );
             if ( $this->send_reminder_email( $recipient, $items ) ) {
                 $count++;
+                foreach ( $items as $item ) {
+                    $marks[ $item['owner'] ][] = $item['key'];
+                }
             }
         }
-        // Record what went out, and forget anything older than sixty days.
+        // Record what went out. Keys are pruned by the due date they carry,
+        // not by when they were sent: an overdue step stays open (and stays
+        // among the most recently overdue) for as long as the member leaves
+        // it, and pruning by send date would re-send its reminder every
+        // sixty days. A moved date makes a new key anyway, and a done step
+        // is never a candidate, so a key only has to outlive any plausible
+        // open date: keep those whose due date is within the last 400 days.
+        $cutoff = wp_date( 'Y-m-d', strtotime( '-400 days', current_time( 'timestamp' ) ) );
         foreach ( $marks as $owner => $keys ) {
             $sent = get_user_meta( $owner, self::SENT_META, true );
             $sent = is_array( $sent ) ? $sent : array();
             foreach ( $keys as $key ) {
                 $sent[ $key ] = $today;
             }
-            $cutoff = wp_date( 'Y-m-d', strtotime( '-60 days', current_time( 'timestamp' ) ) );
-            $sent   = array_filter( $sent, function ( $day ) use ( $cutoff ) {
-                return $day >= $cutoff;
-            } );
+            $sent = array_filter( $sent, function ( $day, $key ) use ( $cutoff ) {
+                $parts = explode( ':', (string) $key );
+                $due   = isset( $parts[2] ) ? $parts[2] : (string) $day;
+                return $due >= $cutoff;
+            }, ARRAY_FILTER_USE_BOTH );
             update_user_meta( $owner, self::SENT_META, $sent );
         }
         return $count;
@@ -333,8 +400,10 @@ class FRAMT_Member_Emails {
             $project->id,
             wp_date( 'Y-m-d 00:00:00', strtotime( '-7 days', current_time( 'timestamp' ) ) )
         ) );
-        $next  = $this->next_steps();
-        $ahead = $next[ (int) $project->id ] ?? array();
+        $groups  = $this->dated_steps();
+        $group   = $groups[ (int) $project->id ] ?? array();
+        $ahead   = $group['upcoming'] ?? array();
+        $overdue = (int) ( $group['overdue_count'] ?? 0 );
         $move = $project->target_move_date ?: (string) get_user_meta( $owner, 'fra_target_move_date', true );
         $lead = 'Your week in the plan.';
         if ( $move ) {
@@ -363,6 +432,14 @@ class FRAMT_Member_Emails {
             }, $ahead ) ) );
         } else {
             $body .= $section( 'Your next steps', '<p style="margin:0;">Nothing dated in the part of the plan you are working on. When you start the next stage, its steps show here.</p>' );
+        }
+        if ( $overdue > 0 ) {
+            $body .= '<p style="margin:10px 0 0;color:#8a5a14;">' . esc_html(
+                sprintf(
+                    1 === $overdue ? '%d step is past its date. Past dates are not failures; they are the order to work in.' : '%d steps are past their dates. Past dates are not failures; they are the order to work in.',
+                    $overdue
+                )
+            ) . '</p>';
         }
         $first = $user->first_name ?: strtok( $user->display_name, ' ' );
         $html  = FRAMT_Messages::render_email( 'Your week, ' . ( $first ?: 'there' ), $lead, $body, 'Open your plan', self::portal_url( 'dashboard' ), true );

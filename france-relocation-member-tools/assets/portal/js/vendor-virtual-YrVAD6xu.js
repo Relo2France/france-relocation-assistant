@@ -1,4 +1,4 @@
-import{r as Nn}from"./vendor-query-aXLgDoqj.js";var Mu={exports:{}},me={},Lu={exports:{}},Ou={};/**
+import{r as Nn}from"./vendor-query-Ck9LrCmH.js";var Mu={exports:{}},me={},Lu={exports:{}},Ou={};/**
  * @license React
  * scheduler.production.min.js
  *

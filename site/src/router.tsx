@@ -6,6 +6,8 @@ import { NotFound } from './pages/NotFound';
 import { HowItWorks } from './pages/HowItWorks';
 import { Pricing } from './pages/Pricing';
 import { About } from './pages/About';
+import { Legal } from './pages/Legal';
+import { legalPageByPath } from './content/legal';
 import { guideBySlug } from './content/guides';
 
 export interface PageMeta {
@@ -109,6 +111,19 @@ export function resolveRoute(path: string): { element: ReactElement; meta: PageM
         description:
           'What Relo2France is, where its information comes from, what membership is, and what it is not.',
         canonical: `${SITE}/about/`,
+        jsonLd: null,
+      },
+    };
+  }
+
+  const legal = legalPageByPath(clean);
+  if (legal) {
+    return {
+      element: <Legal page={legal} />,
+      meta: {
+        title: `${legal.title} — ${SITE_NAME}`,
+        description: legal.description,
+        canonical: `${SITE}${legal.path}`,
         jsonLd: null,
       },
     };

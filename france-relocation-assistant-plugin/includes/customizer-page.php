@@ -147,13 +147,13 @@ $defaults = array(
     'auth_signup_subtitle' => 'Create your account and get lifetime access',
     'auth_signup_price' => '$35 Lifetime Access',
     'auth_signup_price_note' => 'One-time payment, forever access',
-    'auth_signup_benefits' => "AI-powered visa guidance\nStep-by-step relocation checklists\nDocument templates & generators\n183-day Schengen counter\nPriority email support",
+    'auth_signup_benefits' => "Ask about your own situation\nYour dossier, tracked per person\nTasks and deadlines dated from your move\nCover letters and declarations drafted with your details\nThe full knowledge base, re-checked weekly",
     'auth_logout_title' => "You've Been Logged Out",
     'auth_logout_subtitle' => 'Thanks for using Relo2France! Your session has been securely ended.',
     'auth_account_title' => 'Your Account',
     'auth_account_subtitle' => 'Manage your membership and profile settings',
     'auth_thankyou_title' => 'Welcome to Relo2France!',
-    'auth_thankyou_subtitle' => 'Your account has been created successfully. You now have full access to all member tools.',
+    'auth_thankyou_subtitle' => 'Your account is ready. The first stage is deciding: your route, where in France, who is moving, and when.',
     'auth_title_size' => '24',
     'auth_subtitle_size' => '15',
     
@@ -881,7 +881,7 @@ if (isset($_POST['fra_reset_customizer']) && check_admin_referer('fra_customizer
                         <tr>
                             <th><label for="auth_thankyou_subtitle"><?php _e('Subtitle', 'france-relocation-assistant'); ?></label></th>
                             <td>
-                                <input type="text" name="auth_thankyou_subtitle" id="auth_thankyou_subtitle" value="<?php echo esc_attr(isset($settings['auth_thankyou_subtitle']) ? $settings['auth_thankyou_subtitle'] : 'Your account has been created successfully. You now have full access to all member tools.'); ?>" class="large-text">
+                                <input type="text" name="auth_thankyou_subtitle" id="auth_thankyou_subtitle" value="<?php echo esc_attr(isset($settings['auth_thankyou_subtitle']) ? $settings['auth_thankyou_subtitle'] : 'Your account is ready. The first stage is deciding: your route, where in France, who is moving, and when.'); ?>" class="large-text">
                             </td>
                         </tr>
                     </table>

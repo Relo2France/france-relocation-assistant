@@ -6,15 +6,16 @@
  * switcher is the family: each member has their own file on the same
  * calendar.
  */
-import { useState } from 'react';
-import { CompactErrorFallback } from '@/components/shared/ErrorBoundary';
+import { useId, useState } from 'react';
 import { clsx } from 'clsx';
-import { ArrowRight, CheckCircle2, Circle } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Circle, Plus } from 'lucide-react';
 import { AssignSelect, PersonChip, personOf } from '@/components/family/Assign';
+import { CompactErrorFallback } from '@/components/shared/ErrorBoundary';
 import Jargon from '@/components/shared/Jargon';
 import ProfessionalsCard from '@/components/shared/ProfessionalsCard';
-import { useDashboard, useFamilyMembers, useTasks, useUpdateTaskStatus } from '@/hooks/useApi';
+import { useCreateTask, useDashboard, useFamilyMembers, useTasks, useUpdateTaskStatus } from '@/hooks/useApi';
 import { JOURNEY, currentStage, groupByLeadTime, progressFor, stageById, stageForTask, timeToGo } from '@/journey/journey';
+import type { JourneyStageId } from '@/journey/journey';
 import { usePortalStore } from '@/store';
 import type { Task } from '@/types';
 import DecideLanding from './DecideLanding';
@@ -28,11 +29,12 @@ function dueLabel(task: Task): string {
 
 export default function StageView() {
   const { activeStage, setActiveView, setActiveStage, setTaskFilters, setActiveGuide, setOpenTaskId } = usePortalStore();
-  const { data, isError: dashFailed, refetch: refetchDash } = useDashboard();
+  const { data, isLoading: dashLoading, isError: dashFailed, refetch: refetchDash } = useDashboard();
   const stage = stageById(activeStage) ?? JOURNEY[0];
   const project = data?.project;
   const nowStage = project ? currentStage(project, data?.profile_visa_type) : 'decide';
-  const { data: tasks, isError: tasksFailed, refetch: refetchTasks } = useTasks(project?.id ?? 0);
+  const { data: tasks, isLoading: tasksLoading, isError: tasksFailed, refetch: refetchTasks } = useTasks(project?.id ?? 0);
+  const loading = dashLoading || tasksLoading;
   const { data: family } = useFamilyMembers();
   const updateStatus = useUpdateTaskStatus();
   const [person, setPerson] = useState<'me' | number>('me');
@@ -107,10 +109,19 @@ export default function StageView() {
             </div>
           ) : null}
 
-          {stage.id === 'decide' ? null : groups.length === 0 ? (
+          {stage.id !== 'decide' && project && !loading ? <AddStep projectId={project.id} stageId={stage.id} stageName={stage.name} /> : null}
+
+          {stage.id === 'decide' ? null : loading ? (
+            <div className="card p-5 flex flex-col gap-3" role="status" aria-label="Loading this stage">
+              <div className="h-5 w-40 bg-gray-200 rounded animate-pulse" />
+              <div className="h-4 w-full bg-gray-100 rounded animate-pulse" />
+              <div className="h-4 w-full bg-gray-100 rounded animate-pulse" />
+              <div className="h-4 w-2/3 bg-gray-100 rounded animate-pulse" />
+            </div>
+          ) : groups.length === 0 ? (
             <div className="card p-6">
               <p className="font-display font-semibold text-lg">Nothing dated here yet.</p>
-              <p className="text-sm text-gray-600 mt-1">Set your move date and this stage fills in, counted back from it.</p>
+              <p className="text-sm text-gray-600 mt-1">Set your move date and this stage fills in, counted back from it. You can also add a step of your own.</p>
             </div>
           ) : (
             groups.map((group) => (
@@ -123,7 +134,7 @@ export default function StageView() {
                   {group.tasks.map((task) => {
                     const done = task.status === 'done';
                     return (
-                      <li key={task.id} className="flex items-center gap-3.5 px-5 py-3">
+                      <li key={task.id} className="flex flex-wrap sm:flex-nowrap items-center gap-x-3.5 gap-y-2 px-5 py-3">
                         <button
                           onClick={() => updateStatus.mutate({ id: task.id, status: done ? 'todo' : 'done' })}
                           aria-label={done ? `Mark "${task.title}" not done` : `Mark "${task.title}" done`}
@@ -131,7 +142,7 @@ export default function StageView() {
                         >
                           {done ? <CheckCircle2 className="w-5 h-5" /> : <Circle className={clsx('w-5 h-5', task.is_overdue ? 'text-accent-500' : 'text-gray-300')} />}
                         </button>
-                        <div className="flex flex-col min-w-0 flex-1">
+                        <div className="flex flex-col min-w-0 flex-1 basis-[calc(100%-3rem)] sm:basis-auto">
                           <span className={clsx('text-[0.95rem]', done ? 'text-gray-500 line-through' : 'font-semibold')}>
                             <Jargon text={task.title} />
                           </span>
@@ -145,11 +156,12 @@ export default function StageView() {
                             ) : null}
                           </span>
                         </div>
-                        <span className={clsx('font-mono text-[0.7rem]', task.is_overdue && !done ? 'text-accent-500' : 'text-gray-500')}>{dueLabel(task)}</span>
+                        <span className={clsx('font-mono text-[0.7rem] ml-9 sm:ml-0', task.is_overdue && !done ? 'text-accent-500' : 'text-gray-500')}>{dueLabel(task)}</span>
                         <AssignSelect task={task} household={household} />
                         <button
                           onClick={() => { setTaskFilters({ stage: stage.id, status: null, taskType: null }); setOpenTaskId(task.id); setActiveView('tasks'); }}
                           className="text-sm font-semibold text-primary-500 hover:text-primary-700"
+                          aria-label={`Open "${task.title}"`}
                         >
                           Open
                         </button>
@@ -201,5 +213,75 @@ export default function StageView() {
         </aside>
       </div>
     </div>
+  );
+}
+
+/**
+ * "Add a step": a step of the member's own, filed under this stage. It
+ * carries the journey stage id, so stageForTask places it here, and the plan
+ * never re-dates or removes it.
+ */
+function AddStep({ projectId, stageId, stageName }: { projectId: number; stageId: JourneyStageId; stageName: string }) {
+  const [open, setOpen] = useState(false);
+  const [title, setTitle] = useState('');
+  const [due, setDue] = useState('');
+  const createTask = useCreateTask(projectId);
+  const titleId = useId();
+  const dueId = useId();
+
+  const close = () => {
+    setOpen(false);
+    setTitle('');
+    setDue('');
+    createTask.reset();
+  };
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title.trim() || createTask.isPending) return;
+    createTask.mutate(
+      { title: title.trim(), stage: stageId, due_date: due || undefined, status: 'todo', task_type: 'client' },
+      { onSuccess: close }
+    );
+  };
+
+  if (!open) {
+    return (
+      <button type="button" onClick={() => setOpen(true)} className="btn btn-secondary self-start gap-1.5">
+        <Plus className="w-4 h-4" aria-hidden="true" /> Add a step
+      </button>
+    );
+  }
+
+  return (
+    <form onSubmit={submit} className="card p-5 flex flex-col gap-3" aria-label={`Add a step to ${stageName}`}>
+      <span className="eyebrow">Add a step to {stageName}</span>
+      <div className="flex flex-col gap-1">
+        <label htmlFor={titleId} className="text-sm font-medium text-gray-700">What needs doing</label>
+        <input
+          id={titleId}
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          className="input"
+          placeholder="e.g. Book the movers for a quote"
+          required
+          // The form opens on a click meant to start typing.
+          // eslint-disable-next-line jsx-a11y/no-autofocus
+          autoFocus
+        />
+      </div>
+      <div className="flex flex-col gap-1">
+        <label htmlFor={dueId} className="text-sm font-medium text-gray-700">Due date <span className="font-normal text-gray-500">(optional)</span></label>
+        <input id={dueId} type="date" value={due} onChange={(e) => setDue(e.target.value)} className="input w-auto self-start" />
+      </div>
+      {createTask.isError ? <p className="text-sm text-red-600" role="alert">The step could not be added. Please try again.</p> : null}
+      <div className="flex flex-wrap gap-2">
+        <button type="submit" className="btn btn-primary" disabled={!title.trim() || createTask.isPending}>
+          {createTask.isPending ? 'Adding…' : 'Add step'}
+        </button>
+        <button type="button" onClick={close} className="btn btn-secondary">Cancel</button>
+      </div>
+    </form>
   );
 }

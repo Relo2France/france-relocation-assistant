@@ -49,7 +49,7 @@ export default function TaskList({
       return (
         <div className="text-center py-12 text-gray-500">
           <CheckCircle className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-          <p>No tasks found</p>
+          <p>No steps found</p>
         </div>
       );
     }
@@ -169,7 +169,7 @@ function TaskGroup({
         ))}
         {tasks.length === 0 && (
           <div className="p-6 text-center text-gray-500">
-            <p>No tasks in this section</p>
+            <p>No steps in this section</p>
           </div>
         )}
       </div>
@@ -200,6 +200,9 @@ function TaskListItem({ task, onClick, onStatusChange, compact }: TaskListItemPr
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    // Keys pressed on a control inside the row (the status button) belong to
+    // that control: only the row itself opens the drawer.
+    if (e.target !== e.currentTarget) return;
     if (onClick && (e.key === 'Enter' || e.key === ' ')) {
       e.preventDefault();
       onClick();
@@ -230,7 +233,7 @@ function TaskListItem({ task, onClick, onStatusChange, compact }: TaskListItemPr
         title={`Status: ${task.status_label}`}
         aria-label={`${task.title}: ${task.status_label}. Change status`}
       >
-        <StatusIcon className={clsx('w-4 h-4', config.color)} />
+        <StatusIcon className={clsx('w-4 h-4', config.color)} aria-hidden="true" />
       </button>
 
       {/* Task content */}

@@ -10,7 +10,10 @@
  * back, which scanners do not do.
  *
  * - The reply never says whether an account exists.
- * - Only an HMAC of the token is stored; a new request replaces the old.
+ * - Only an HMAC of the token is stored. A new request adds a token and
+ *   leaves earlier unexpired ones working (up to three), so a member who
+ *   asks twice can use either email. Signing in spends them all.
+ * - Administrators never get links: they sign in with their password.
  * - Requests are rate-limited per email and per IP address.
  * - The email is transactional and always sent, like a password reset.
  *
@@ -59,6 +62,11 @@ class FRAMT_Magic_Link {
      * session and cookies are already cleared when wp_logout fires.
      */
     public function redirect_on_logout() {
+        // Never redirect inside an AJAX or REST request: the caller expects
+        // JSON, and a 302 with an empty body loses the real response.
+        if ( wp_doing_ajax() || ( defined( 'REST_REQUEST' ) && REST_REQUEST ) ) {
+            return;
+        }
         $requested = isset( $_REQUEST['redirect_to'] ) ? esc_url_raw( wp_unslash( $_REQUEST['redirect_to'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification
         if ( '' === $requested ) {
             return;
@@ -84,6 +92,11 @@ class FRAMT_Magic_Link {
             $to = home_url( '/portal/' );
             if ( isset( $_GET['link'] ) && 'expired' === $_GET['link'] ) { // phpcs:ignore WordPress.Security.NonceVerification
                 $to = add_query_arg( 'link', 'expired', $to );
+            }
+            // Keep where the member was going, so signing in lands them there.
+            $back = self::safe_redirect_to( $_GET['redirect_to'] ?? '' ); // phpcs:ignore WordPress.Security.NonceVerification
+            if ( '' !== $back ) {
+                $to = add_query_arg( 'redirect_to', rawurlencode( $back ), $to );
             }
             wp_safe_redirect( $to );
             exit;
@@ -114,13 +127,83 @@ class FRAMT_Magic_Link {
     /** The one reply, whatever happened, so nobody can test which emails have accounts. */
     const REPLY = 'If that email belongs to an account, a sign-in link is on its way. It works once, for fifteen minutes. Check spam if it has not arrived in a couple of minutes.';
 
+    /**
+     * A same-site URL to go to after signing in, or '' when the value is
+     * empty or points somewhere else.
+     *
+     * @param mixed $raw Raw request value.
+     * @return string
+     */
+    public static function safe_redirect_to( $raw ) {
+        if ( ! is_string( $raw ) || '' === trim( $raw ) ) {
+            return '';
+        }
+        $url = esc_url_raw( wp_unslash( $raw ) );
+        if ( '' === $url ) {
+            return '';
+        }
+        $valid = wp_validate_redirect( $url, '' );
+        if ( '' === $valid ) {
+            return '';
+        }
+        // Only pages on this site; never back into sign-in or sign-out.
+        if ( 0 !== strpos( $valid, home_url( '/' ) ) || false !== strpos( $valid, 'wp-login.php' ) ) {
+            return '';
+        }
+        return $valid;
+    }
+
+    /** Administrators sign in with their password, never by emailed link. */
+    private static function refused( $user ) {
+        if ( ! $user instanceof WP_User ) {
+            return true;
+        }
+        if ( user_can( $user, 'manage_options' ) ) {
+            return true;
+        }
+        if ( function_exists( 'is_user_spammy' ) && is_user_spammy( $user ) ) {
+            return true;
+        }
+        return false;
+    }
+
+    /** Active (unexpired) stored token entries for a user, oldest first. */
+    private static function active_entries( $user_id ) {
+        $saved = get_user_meta( $user_id, self::META, true );
+        if ( ! is_array( $saved ) ) {
+            return array();
+        }
+        // Earlier versions stored one entry as array( hash, expires ).
+        if ( isset( $saved['hash'] ) ) {
+            $saved = array( $saved );
+        }
+        $now    = time();
+        $active = array();
+        foreach ( $saved as $entry ) {
+            if ( is_array( $entry ) && ! empty( $entry['hash'] ) && (int) ( $entry['expires'] ?? 0 ) >= $now ) {
+                $active[] = array(
+                    'hash'    => (string) $entry['hash'],
+                    'expires' => (int) $entry['expires'],
+                );
+            }
+        }
+        return $active;
+    }
+
+    private static function email_limit_key( $email ) {
+        return 'framt_ml_' . md5( 'email:' . strtolower( $email ) );
+    }
+
     private static function ip() {
         return isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
     }
 
     /** True when this key has been used more than $max times in $window seconds. */
     private static function limited( $key, $max, $window ) {
-        $name  = 'framt_ml_' . md5( $key );
+        return self::limited_name( 'framt_ml_' . md5( $key ), $max, $window );
+    }
+
+    private static function limited_name( $name, $max, $window ) {
         $count = (int) get_transient( $name );
         if ( $count >= $max ) {
             return true;
@@ -148,25 +231,32 @@ class FRAMT_Magic_Link {
         if ( self::limited( 'ip:' . self::ip(), 10, HOUR_IN_SECONDS ) ) {
             wp_send_json_error( 'Too many sign-in links requested from here. Try again in an hour, or sign in with your password.' );
         }
-        if ( self::limited( 'email:' . strtolower( $email ), 3, 15 * MINUTE_IN_SECONDS ) ) {
+        if ( self::limited_name( self::email_limit_key( $email ), 3, 15 * MINUTE_IN_SECONDS ) ) {
             // Same wording as success: the limit must not reveal the account either.
             wp_send_json_success( self::REPLY );
         }
 
         $user = get_user_by( 'email', $email );
-        if ( $user ) {
-            $this->send_link( $user );
+        if ( $user && ! self::refused( $user ) ) {
+            $this->send_link( $user, self::safe_redirect_to( $_POST['redirect_to'] ?? '' ) );
         }
         wp_send_json_success( self::REPLY );
     }
 
-    private function send_link( $user ) {
-        $token = bin2hex( random_bytes( 32 ) );
-        update_user_meta( $user->ID, self::META, array(
+    private function send_link( $user, $redirect_to = '' ) {
+        $token   = bin2hex( random_bytes( 32 ) );
+        $entries = self::active_entries( $user->ID );
+        $entries[] = array(
             'hash'    => self::digest( $token ),
             'expires' => time() + self::TTL,
-        ) );
-        $url   = add_query_arg( array( self::QUERY_VAR => $token, 'u' => (int) $user->ID ), home_url( '/portal/' ) );
+        );
+        // Earlier links stay valid until they expire; keep the newest three.
+        update_user_meta( $user->ID, self::META, array_slice( $entries, -3 ) );
+        $args = array( self::QUERY_VAR => $token, 'u' => (int) $user->ID );
+        if ( '' !== $redirect_to ) {
+            $args['redirect_to'] = rawurlencode( $redirect_to );
+        }
+        $url   = add_query_arg( $args, home_url( '/portal/' ) );
         $first = $user->first_name ?: strtok( $user->display_name, ' ' );
         $body  = '<p style="margin:0 0 12px;">Use the button below to sign in to your Relo2France portal. It works once, for the next fifteen minutes.</p>'
             . '<p style="margin:0;color:#5f6e66;font-size:14px;">If you did not ask for this, ignore the email; nothing happens unless the link is used.</p>';
@@ -188,11 +278,16 @@ class FRAMT_Magic_Link {
         if ( ! $user || ! is_string( $token ) || ! preg_match( '/^[a-f0-9]{64}$/', $token ) ) {
             return null;
         }
-        $saved = get_user_meta( $user->ID, self::META, true );
-        if ( ! is_array( $saved ) || empty( $saved['hash'] ) || (int) ( $saved['expires'] ?? 0 ) < time() ) {
+        if ( self::refused( $user ) ) {
             return null;
         }
-        return hash_equals( (string) $saved['hash'], self::digest( $token ) ) ? $user : null;
+        $digest = self::digest( $token );
+        foreach ( self::active_entries( $user->ID ) as $entry ) {
+            if ( hash_equals( $entry['hash'], $digest ) ) {
+                return $user;
+            }
+        }
+        return null;
     }
 
     /**
@@ -213,23 +308,26 @@ class FRAMT_Magic_Link {
         }
 
         if ( 'POST' === ( $_SERVER['REQUEST_METHOD'] ?? '' ) ) {
-            // One use: spend it before signing in.
+            // One use: spend it (and any other outstanding link) before signing in.
             delete_user_meta( $user->ID, self::META );
+            // A used link resets the per-email request limit.
+            delete_transient( self::email_limit_key( $user->user_email ) );
             wp_clear_auth_cookie();
             wp_set_current_user( $user->ID );
             wp_set_auth_cookie( $user->ID, true, is_ssl() );
             do_action( 'wp_login', $user->user_login, $user );
-            wp_safe_redirect( home_url( '/portal/' ) );
+            $back = self::safe_redirect_to( $_POST['redirect_to'] ?? '' ); // phpcs:ignore WordPress.Security.NonceVerification -- the token is the credential.
+            wp_safe_redirect( '' !== $back ? $back : home_url( '/portal/' ) );
             exit;
         }
 
         nocache_headers();
         header( 'Referrer-Policy: no-referrer' );
-        $this->render_continue( $user, $token );
+        $this->render_continue( $user, $token, self::safe_redirect_to( $_GET['redirect_to'] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification
         exit;
     }
 
-    private function render_continue( $user, $token ) {
+    private function render_continue( $user, $token, $redirect_to = '' ) {
         $parts  = explode( '@', $user->user_email );
         $masked = substr( $parts[0], 0, 1 ) . str_repeat( '•', max( 2, strlen( $parts[0] ) - 1 ) ) . '@' . ( $parts[1] ?? '' );
         ?><!DOCTYPE html>
@@ -252,6 +350,7 @@ button:hover{background:#23443a}button:focus-visible{outline:2px solid #2c5346;o
 <form method="post" action="<?php echo esc_url( home_url( '/portal/' ) ); ?>">
 <input type="hidden" name="<?php echo esc_attr( self::QUERY_VAR ); ?>" value="<?php echo esc_attr( $token ); ?>">
 <input type="hidden" name="u" value="<?php echo (int) $user->ID; ?>">
+<?php if ( '' !== $redirect_to ) : ?><input type="hidden" name="redirect_to" value="<?php echo esc_attr( $redirect_to ); ?>"><?php endif; ?>
 <button type="submit">Continue to your portal</button>
 </form>
 </main></body></html><?php
@@ -295,6 +394,7 @@ button:hover{background:#23443a}button:focus-visible{outline:2px solid #2c5346;o
     form.addEventListener('submit', function(e){
       e.preventDefault();
       var fd = new FormData(form); fd.append('action', '<?php echo esc_js( self::AJAX ); ?>');
+      var back = new URLSearchParams(window.location.search).get('redirect_to'); if (back) fd.append('redirect_to', back);
       btn.disabled = true; status.className = 'r2f-magic-status'; status.textContent = 'Sending…';
       fetch(box.dataset.ajax, {method:'POST', body:fd, credentials:'same-origin'})
         .then(function(r){ return r.json(); })

@@ -539,7 +539,10 @@ $inchat_auth_enabled = $customizer['inchat_auth_enabled'] ?? true;
                 $auth_signup_subtitle = $customizer['auth_signup_subtitle'] ?? 'Create your account and get lifetime access';
                 $auth_signup_price = $customizer['auth_signup_price'] ?? '$35 Lifetime Access';
                 $auth_signup_price_note = $customizer['auth_signup_price_note'] ?? 'One-time payment, forever access';
-                $auth_signup_benefits = $customizer['auth_signup_benefits'] ?? "AI-powered visa guidance\nStep-by-step relocation checklists\nDocument templates & generators\n183-day Schengen counter\nPriority email support";
+                // Same copy as the sign-up page, with the old-copy migration applied.
+                $auth_signup_benefits = class_exists('FRA_Auth_Pages')
+                    ? FRA_Auth_Pages::get_instance()->setting('auth_signup_benefits')
+                    : "Ask about your own situation\nYour dossier, tracked per person\nTasks and deadlines dated from your move\nCover letters and declarations drafted with your details\nThe full knowledge base, re-checked weekly";
                 $dashboard_title = $customizer['inchat_auth_dashboard_title'] ?? 'Member Dashboard';
                 $welcome_message = $customizer['inchat_auth_welcome_message'] ?? 'Welcome! Complete your profile to get personalized recommendations.';
                 $account_title = $customizer['auth_account_title'] ?? 'Your Account';

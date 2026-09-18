@@ -10,8 +10,10 @@ import {
   Trash2,
   User,
 } from 'lucide-react';
+import { HttpError } from '@/api/client';
 import {
   useCurrentUser,
+  useDashboard,
   useDeleteAccount,
   useResetProfile,
   useUpdateProfile,
@@ -48,7 +50,7 @@ export default function SettingsView() {
   return (
     <div className="p-6">
       {/* The title is in the top bar; one line under it. */}
-      <p className="text-gray-600 mb-6 max-w-[64ch]">Your sign-in, your visa details and how we reach you.</p>
+      <p className="text-gray-600 mb-6 max-w-[64ch]">Your sign-in, your account and how we reach you. Your visa details live in Profile.</p>
 
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Sidebar navigation */}
@@ -91,6 +93,9 @@ function PortalAccountSection() {
   const updateProfile = useUpdateProfile();
   const deleteAccount = useDeleteAccount();
   const resetProfile = useResetProfile();
+  // A partner works on the owner's file; only the account holder can delete it.
+  const { data: dashboard } = useDashboard();
+  const isPartner = dashboard?.household?.role === 'partner';
 
   const [formData, setFormData] = useState({
     first_name: '',
@@ -121,9 +126,9 @@ function PortalAccountSection() {
 
   const handleDeleteAccount = () => {
     deleteAccount.mutate(deleteConfirmText, {
-      onSuccess: () => {
-        // Redirect to homepage after successful deletion
-        window.location.href = window.fraPortalData?.siteUrl || '/';
+      onSuccess: (result) => {
+        // The server says where a signed-out member lands.
+        window.location.href = result.redirect || window.fraPortalData?.siteUrl || '/';
       },
     });
   };
@@ -402,7 +407,8 @@ function PortalAccountSection() {
           </div>
         </div>
 
-        {/* Delete Account Section */}
+        {/* Delete Account Section: the account holder only */}
+        {!isPartner && (
         <div className="p-4 bg-red-50 rounded-lg">
           <div className="flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
@@ -481,10 +487,12 @@ function PortalAccountSection() {
                   </div>
 
                   {deleteAccount.isError && (
-                    <p className="text-sm text-red-600">
-                      {deleteAccount.error instanceof Error
-                        ? deleteAccount.error.message
-                        : 'Failed to delete account. Please try again or contact support.'}
+                    <p className="text-sm text-red-600" role="alert">
+                      {deleteAccount.error instanceof HttpError && deleteAccount.error.status === 403
+                        ? deleteAccount.error.message || 'Only the account holder can delete the household file.'
+                        : deleteAccount.error instanceof Error
+                          ? deleteAccount.error.message
+                          : 'Failed to delete account. Please try again or contact support.'}
                     </p>
                   )}
                 </div>
@@ -492,6 +500,7 @@ function PortalAccountSection() {
             </div>
           </div>
         </div>
+        )}
       </div>
     </div>
   );
@@ -565,45 +574,6 @@ function NotificationsSection() {
         ))}
       </div>
 
-      {/* Language preference */}
-      <div className="mt-8 pt-6 border-t border-gray-200">
-        <h3 className="font-medium text-gray-900 mb-4">Regional Settings</h3>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="language" className="block text-sm font-medium text-gray-700 mb-1">
-              Language
-            </label>
-            <select
-              id="language"
-              value={settings?.language || 'en'}
-              onChange={(e) => updateSettings.mutate({ language: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-            >
-              <option value="en">English</option>
-              <option value="fr">Fran&#231;ais</option>
-            </select>
-          </div>
-
-          <div>
-            <label htmlFor="timezone" className="block text-sm font-medium text-gray-700 mb-1">
-              Timezone
-            </label>
-            <select
-              id="timezone"
-              value={settings?.timezone || 'Europe/Paris'}
-              onChange={(e) => updateSettings.mutate({ timezone: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-            >
-              <option value="Europe/Paris">Paris (CET)</option>
-              <option value="Europe/London">London (GMT)</option>
-              <option value="America/New_York">New York (EST)</option>
-              <option value="America/Los_Angeles">Los Angeles (PST)</option>
-              <option value="Asia/Tokyo">Tokyo (JST)</option>
-            </select>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

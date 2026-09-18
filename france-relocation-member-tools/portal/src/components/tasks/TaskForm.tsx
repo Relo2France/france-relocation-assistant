@@ -88,7 +88,7 @@ export default function TaskForm({
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
-      title="Add New Task"
+      title="Add a step"
       size="lg"
       footer={
         <>
@@ -100,7 +100,7 @@ export default function TaskForm({
             disabled={!title.trim() || createTask.isPending}
             className="btn btn-primary"
           >
-            {createTask.isPending ? 'Creating...' : 'Create Task'}
+            {createTask.isPending ? 'Creating...' : 'Add step'}
           </button>
         </>
       }
@@ -109,7 +109,7 @@ export default function TaskForm({
         {/* Title */}
         <div>
           <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
-            Task Title <span className="text-red-500">*</span>
+            Step title <span className="text-red-500">*</span>
           </label>
           <input
             ref={titleInputRef}

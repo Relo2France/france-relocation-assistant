@@ -100,7 +100,7 @@ export default function FilterBar({
         {/* Right side - Add task button */}
         <button onClick={onAddTask} className="btn btn-primary">
           <Plus className="w-4 h-4" />
-          Add Task
+          Add a step
         </button>
       </div>
 
@@ -160,8 +160,8 @@ export default function FilterBar({
         {/* Task count */}
         <span className="text-sm text-gray-500 ml-auto">
           {filteredTasks === totalTasks
-            ? `${totalTasks} tasks`
-            : `${filteredTasks} of ${totalTasks} tasks`}
+            ? `${totalTasks} steps`
+            : `${filteredTasks} of ${totalTasks} steps`}
         </span>
       </div>
     </div>

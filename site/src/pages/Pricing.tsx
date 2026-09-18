@@ -1,13 +1,16 @@
 import { Button, Label, Requirement, Requirements, SiteNav } from '../components';
-import { external, FAMILY_ADDON_NOTE, FAMILY_ADDON_PRICE, GUARANTEE, PRICE, PRICE_NOTE, REFUND_DAYS } from '../content/links';
+import { external, familyCopy, GUARANTEE, PRICE, PRICE_NOTE, REFUND_DAYS } from '../content/links';
+import { LEGAL_PAGES } from '../content/legal';
 import { portalFeatures } from '../content/portal';
 import { coverage, totalTopics } from '../content/coverage';
 import { useMember } from '../member';
 
+const family = familyCopy();
+
 const questions = [
   {
     q: 'Is there a subscription?',
-    a: 'No. One payment of ' + PRICE + ' and the account stays open. There is no renewal, no tier above this one, and no per-document charge.',
+    a: `No. One payment of ${PRICE} and the account stays open. ${family.extras}`,
   },
   {
     q: 'What if the rules change after I join?',
@@ -19,11 +22,11 @@ const questions = [
   },
   {
     q: 'What if it is not for me?',
-    a: `Email us within ${REFUND_DAYS} days of joining and you get a full refund. No form, no reason needed, no partial amounts.`,
+    a: `Email us within ${REFUND_DAYS} days of joining and you get a full refund. No form, no reason needed, no partial amounts. The refund policy page sets out exactly how it works.`,
   },
   {
     q: 'Does it cover my whole family?',
-    a: `Membership tracks you and dates every step for the people moving with you. The Family add-on (${FAMILY_ADDON_PRICE}, ${FAMILY_ADDON_NOTE}) gives each of them a file of their own, and your partner their own sign-in so you can split the work, or do it all yourself.`,
+    a: family.answer,
   },
   {
     q: 'Is this legal advice?',
@@ -83,7 +86,17 @@ export function Pricing() {
               </p>
             )}
             <p className="font-ui text-[0.76rem] text-muted mt-4 mb-0 pt-3 border-t border-rule-soft">
-              <span className="font-bold text-ink">Family add-on · {FAMILY_ADDON_PRICE}</span> {FAMILY_ADDON_NOTE}
+              <span className="font-bold text-ink">{family.cardTitle}</span> · {family.cardNote}
+            </p>
+            <p className="font-ui text-[0.74rem] text-muted text-center mt-4 mb-0" data-kind="legal-links">
+              {LEGAL_PAGES.map((page, i) => (
+                <span key={page.path}>
+                  {i > 0 ? ' · ' : ''}
+                  <a href={page.path} className="text-muted underline hover:text-ink">
+                    {page.linkText}
+                  </a>
+                </span>
+              ))}
             </p>
           </div>
 
@@ -102,10 +115,7 @@ export function Pricing() {
                 The full knowledge base — {totalTopics} topics across {coverage.length} areas, kept
                 current
               </Requirement>
-              <Requirement>
-                Every applicant in your household on one account — and with the Family add-on, a
-                file each and a sign-in for your partner
-              </Requirement>
+              <Requirement>{family.included}</Requirement>
               <Requirement>
                 Told plainly when a step needs a tax professional, a lawyer or a notaire, and why it
                 applies to your file

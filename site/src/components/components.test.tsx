@@ -46,6 +46,28 @@ describe('the official / anecdotal distinction', () => {
     expect(official.className).not.toContain('honey');
     expect(community.className).toContain('honey');
   });
+
+  it('links an official chip to the site it names, in a new tab', () => {
+    const { container } = render(
+      <>
+        <SourceChip kind="official">france-visas.gouv.fr</SourceChip>
+        <SourceChip kind="official">administration-etrangers-en-france.interieur.gouv.fr</SourceChip>
+        <SourceChip kind="official">Code général des impôts, art. 4B</SourceChip>
+        <SourceChip kind="community">r/expats · service-public.gouv.fr</SourceChip>
+      </>
+    );
+    const links = container.querySelectorAll('a[data-source="official"]');
+    expect(links).toHaveLength(2);
+    expect(links[0]!.getAttribute('href')).toBe('https://france-visas.gouv.fr/');
+    expect(links[1]!.getAttribute('href')).toBe('https://administration-etrangers-en-france.interieur.gouv.fr/');
+    for (const a of links) {
+      expect(a.getAttribute('target')).toBe('_blank');
+      expect(a.getAttribute('rel')).toContain('noopener');
+    }
+    // No known site: plain text. Community: never a link.
+    expect(container.querySelectorAll('span[data-source="official"]')).toHaveLength(1);
+    expect(container.querySelector('a[data-source="community"]')).toBeNull();
+  });
 });
 
 describe('Figure', () => {

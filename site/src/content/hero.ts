@@ -13,7 +13,7 @@ export interface HeroStep {
 }
 
 export const HERO_STEPS: HeroStep[] = [
-  { when: '12 months out', what: 'Choose your visa', note: 'Seven long-stay types. Retired and not working narrows it to one.' },
+  { when: '12 months out', what: 'Choose your visa', note: 'Five main long-stay types. Retired and not working narrows it to one.' },
   { when: '6 months out', what: 'Order apostilles', note: 'Marriage and birth certificates. State processing runs to weeks.' },
   { when: '3 months out', what: 'Book the consulate appointment', note: 'Slots fill first for spring movers.' },
   { when: 'On arrival', what: 'Validate through ANEF', note: 'Within three months, or the visa lapses.' },

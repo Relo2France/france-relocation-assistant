@@ -43,6 +43,11 @@ const fileTypeOptions: { value: FileType | ''; label: string }[] = [
   { value: 'other', label: 'Other' },
 ];
 
+/** A drafted letter: shown in the letters section, not the file grid. */
+function isLetter(f: PortalFile): boolean {
+  return !!(f.metadata as { letter?: unknown } | null | undefined)?.letter;
+}
+
 export default function DocumentsView() {
   // View state
   const [view, setView] = useState<'grid' | 'list'>('grid');
@@ -69,19 +74,17 @@ export default function DocumentsView() {
     return `${wpData.apiUrl}/research/report/${id}/html?_wpnonce=${wpData.nonce}`;
   };
 
-  const { data: allFiles = [], isLoading: filesLoading, refetch: refetchFiles } = useFiles(
-    projectId,
-    {
-      category: categoryFilter || undefined,
-      file_type: typeFilter || undefined,
-    }
-  );
+  // With no filter set this is the same query as the unfiltered one below,
+  // so the first load is a single request.
+  const fileFilters = categoryFilter || typeFilter
+    ? { category: categoryFilter || undefined, file_type: typeFilter || undefined }
+    : undefined;
+  const { data: allFiles = [], isLoading: filesLoading, refetch: refetchFiles } = useFiles(projectId, fileFilters);
+  // Every file, whatever the filters: the category cards count from this.
+  const { data: everyFile = [], isLoading: everyFileLoading } = useFiles(projectId);
 
   // Letters have their own section above, with their own actions.
-  const files = useMemo(
-    () => allFiles.filter((f) => !(f.metadata as { letter?: unknown } | null | undefined)?.letter),
-    [allFiles]
-  );
+  const files = useMemo(() => allFiles.filter((f) => !isLetter(f)), [allFiles]);
 
   const { download } = useDownloadFile();
 
@@ -95,14 +98,15 @@ export default function DocumentsView() {
     );
   }, [files, searchQuery]);
 
-  // Group files by category for summary
+  // Group files by category for summary: true counts, not the filtered view's.
   const categorySummary = useMemo(() => {
     const summary: Record<string, number> = {};
-    files.forEach((file) => {
+    everyFile.forEach((file) => {
+      if (isLetter(file)) return;
       summary[file.category] = (summary[file.category] || 0) + 1;
     });
     return summary;
-  }, [files]);
+  }, [everyFile]);
 
   const hasActiveFilters = categoryFilter || typeFilter || searchQuery;
 
@@ -142,8 +146,9 @@ export default function DocumentsView() {
     setTypeFilter('');
   };
 
-  // Loading state
-  if (dashboardLoading || filesLoading) {
+  // Loading state: the first load only. A filter change keeps the page (and
+  // the letters section) on screen while the new list arrives.
+  if (dashboardLoading || everyFileLoading) {
     return <DocumentsViewSkeleton />;
   }
 

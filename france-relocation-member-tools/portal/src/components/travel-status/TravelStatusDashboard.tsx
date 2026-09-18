@@ -315,6 +315,12 @@ export default function TravelStatusDashboard() {
                   Non-EU citizens may stay up to 90 days within any 180-day period
                   in the Schengen area without a visa.
                 </p>
+                <p className="mt-2">
+                  <span className="font-medium text-gray-700">Living in France?</span> Once you hold a
+                  French long-stay visa or residence permit, days in France don&apos;t count toward the
+                  90/180 limit. Use this counter for time in other Schengen countries, where the limit
+                  still applies, and for visits before your visa.
+                </p>
               </div>
             </div>
           </div>

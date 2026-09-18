@@ -5,6 +5,8 @@
  * cutover needs no redirects for these pages at all. Changing one is a
  * deliberate act with an SEO cost - see guides.test.ts, which pins them.
  */
+import { LEGAL_PAGES } from './legal';
+
 export interface GuideSection {
   heading: string;
   /** The walkthrough: what this is, how to approach it, what to watch. Every section has one. */
@@ -53,6 +55,9 @@ export const OFFICIAL_DOMAINS = [
   'irs.gov',
   'fincen.gov',
   'banque-france.fr',
+  // Campus France is the French state agency for international students; its
+  // US office runs the Études en France step the student visa depends on.
+  'campusfrance.org',
   'Code général des impôts',
   'France-Visas guidance',
 ] as const;
@@ -83,11 +88,12 @@ export const guides: GuideDoc[] = [
     description:
       'The main French long-stay visa categories for US citizens, how to tell which one fits, and the validation step that makes the visa work.',
     verified: '2026-09',
-    sourceCount: 3,
+    sourceCount: 4,
     sources: [
       { label: 'france-visas.gouv.fr', kind: 'official' },
       { label: 'service-public.gouv.fr', kind: 'official' },
       { label: 'visas-fr.tlscontact.com', kind: 'official' },
+      { label: 'usa.campusfrance.org', kind: 'official' },
     ],
     sections: [
       {
@@ -100,17 +106,31 @@ export const guides: GuideDoc[] = [
       {
         heading: 'The main categories',
         paragraphs: [
-          'Every long-stay applicant lands in one of a handful of categories, and the category decides what you may do once you arrive: work, study, or neither. Read the five below against your own plan rather than your hopes. If you will be earning in France in any way, the visitor route is not yours; if a French employer or institution is involved, the paperwork starts on their side before it starts on yours. The finder at the top of this page walks the same choice one question at a time.',
+          'Every long-stay applicant lands in one of a handful of categories, and the category decides what you may do once you arrive: work, study, or neither. Read the five below against your own plan rather than your hopes. If you will be earning in France in any way, the visitor route is not yours; if a French employer or institution is involved, the paperwork starts on their side before it starts on yours. Several narrower official categories exist too — intern, temporary and seasonal worker, posted employee, entrepreneur — but these five are the main ones.',
         ],
         requirements: [
           '{{Visitor}} (VLS-TS visiteur) — for those who will not work in France. Retirees and people living on savings or pensions; whether it covers remote work for a foreign employer is contested, and the visitor guide sets out where that stands',
           '{{Work}} (VLS-TS salarié) — requires a French job offer, and the employer must obtain the {{autorisation de travail}} before you apply',
-          '{{Talent Passport}} — highly-skilled workers, researchers, founders and investors. Valid up to {{4 years}}, with salary thresholds revised each January',
-          '{{Student}} (VLS-TS étudiant) — enrolment at a French institution, with work permitted up to {{964 hours}} a year',
+          '{{Talent Passport}} — highly-skilled workers, researchers, founders and investors. Valid up to {{4 years}}, with salary thresholds set by ministerial order',
+          '{{Student}} (VLS-TS étudiant) — enrolment at a French institution, after the Campus France step below, with work permitted up to {{964 hours}} a year',
           '{{Spouse / family}} — spouses of French or EU/EEA residents, and family reunification',
         ],
         caveat:
           'France still has no legally distinct digital nomad visa as of September 2026. Remote workers apply under the standard visitor visa; “digital nomad visa” is marketing language, not a France-Visas category. Some consulates now ask for more detail on the arrangement — an employer letter, and how your time will be split.',
+      },
+      {
+        heading: 'Students start with Campus France',
+        paragraphs: [
+          'Once admitted to a programme in France, US students must complete the Campus France “Études en France” pre-consular application before applying for the student visa. Campus France USA reviews that application; the visa application itself then goes through France-Visas and the consulate. You can book the visa appointment once Campus France confirms it has processed your Études en France file.',
+          'A programme shorter than 90 days needs neither a student visa nor the Études en France step.',
+        ],
+        requirements: [
+          'The Études en France application, reviewed by Campus France USA — with an application fee shown on the Campus France USA site',
+          'The visa application on France-Visas, reviewed by the consulate — its appointment booked only after Campus France’s confirmation',
+          'Proof of resources of at least {{€877.50}} a month from {{1 August 2026}}, up from {{€615}}',
+        ],
+        caveat:
+          'Fees, the document checklist and the resources figure are revised periodically. Confirm them on usa.campusfrance.org and france-visas.gouv.fr close to your application date.',
       },
       {
         heading: 'Validation is what makes it a residence permit',
@@ -148,10 +168,10 @@ export const guides: GuideDoc[] = [
           'Proof of financial means — typically {{3 months}} of bank statements, at a level set by the category',
           'Insurance meeting the Schengen minimum of {{€30,000}} for medical costs, repatriation and emergency care',
           'Proof of accommodation — a lease, a booking, or a signed {{attestation d’hébergement}}',
-          'A biometric appointment, completed at a VFS Global centre',
+          'A biometric appointment at a TLScontact centre — TLScontact replaced VFS Global as the US visa application centre on {{18 April 2025}}',
         ],
         caveat:
-          'Submit no earlier than {{3 months}} and no later than {{15 days}} before travel. US consulates take English-language documents as they are; sworn translations ({{traducteur assermenté}}) come after arrival, for the prefecture and CPAM.',
+          'Submit no earlier than {{3 months}} and no later than {{15 days}} before travel. Certified French translations by a sworn translator ({{traducteur assermenté}}) are listed for most official documents in a long-stay file, and the prefecture and CPAM ask for them again after arrival — check your consulate’s checklist for which it wants at submission.',
       },
       {
         heading: 'Documents only some categories need',
@@ -171,17 +191,17 @@ export const guides: GuideDoc[] = [
       {
         heading: 'What it actually costs',
         paragraphs: [
-          'The visa fee itself is the smallest line. What adds up is everything the file has to carry: an apostille for each certificate, the FBI check, the service and biometric fees at the visa centre, and, after arrival, a sworn translation of each certificate for the prefecture. Budget per document rather than per application, and add the optional extras only if you need them. The note below gives realistic totals for one applicant and for a family.',
+          'Two fees are fixed per applicant: the visa fee and the TLScontact service fee, which since the 2025 change of operator is the larger of the two. Everything else is priced per document: an apostille for each certificate, the FBI check, and a certified translation of each. Budget per document rather than per application, and add the optional extras only if you need them.',
         ],
         requirements: [
-          'Visa fee: {{€99}} long-stay, {{€50}} student, {{€90}} short-stay',
-          'VFS Global or TLScontact service fee: {{$52–68}}, plus biometric enrolment at about {{$35}}',
-          'Apostille: {{$38–75}} per document. Sworn translation, after arrival: {{$50–125}} per page',
-          'FBI background check: {{$18}} when applying from the US',
-          'Optional extras — priority booking, courier return, SMS updates — add {{$22–120}}',
+          'Visa fee: {{€99}} long-stay, {{€50}} student, {{€90}} short-stay — not refunded on a refusal',
+          'TLScontact service fee: about {{€220}} (around {{$235}}) for a long-stay visa, charged in dollars, paid online and not refunded if you cancel',
+          'Apostille: roughly {{$20–40}} per document. Certified translation: roughly {{$30–100}} per page',
+          'FBI background check: {{$18}}',
+          'Optional TLScontact extras — priority slots, SMS tracking, courier return — are priced by centre and do not speed up the decision',
         ],
         caveat:
-          'Realistic totals: {{$500–850}} for one long-stay applicant, {{$1,400–2,100}} for a family of four. The visa fee is the small part; the FBI check, the apostilles and, after arrival, the sworn translations are what add up, and all take time as well as money.',
+          'Before any documents, each long-stay applicant pays about {{€320}}: the €99 visa fee and the €220 TLScontact fee, so a family of four starts near {{€1,280}}. Spouses of French citizens pay no visa fee. The apostilles, the FBI check and the translations come on top, per document, and take time as well as money.',
       },
     ],
     practice: {
@@ -231,10 +251,22 @@ export const guides: GuideDoc[] = [
       {
         heading: 'The insurance is stricter than it sounds',
         paragraphs: [
-          'Basic travel or Schengen cover will not do. You need comprehensive private health insurance running the full visa duration, with at least {{€30,000}} of medical cover, repatriation, and — the condition people miss — no exclusion for pre-existing conditions.',
+          'Basic travel or Schengen cover will not do. You need comprehensive private health insurance written for the whole visa period, and it has to meet all four conditions below.',
         ],
         requirements: [
-          'Birth certificate with apostille (the translation comes after arrival, for the prefecture and CPAM)',
+          'At least {{€30,000}} of medical cover',
+          'Repatriation cover',
+          'No exclusion for pre-existing conditions',
+          'Cover running for the full visa period — travel and Schengen policies capped at {{30–90 days}} a trip are refused, even when they carry the same €30,000 figure',
+        ],
+      },
+      {
+        heading: 'Three more documents for the file',
+        paragraphs: [
+          'Beyond the passport, housing, money and insurance, the visitor file carries three documents of its own. The birth certificate is the slow one, because the apostille and the translation each take time; start it first.',
+        ],
+        requirements: [
+          'Birth certificate with apostille and a certified French translation',
           'A clean criminal background check — the FBI Identity History Summary for US citizens',
           'The signed {{attestation sur l’honneur}} promising not to work in France',
         ],
@@ -247,9 +279,9 @@ export const guides: GuideDoc[] = [
         ordered: true,
         requirements: [
           'Create an account on France-Visas.gouv.fr and complete the eligibility wizard',
-          'Book an appointment at your regional consulate or visa centre — TLScontact or VFS',
+          'Book an appointment at a TLScontact centre — any of the ten US centres, wherever you live',
           'Submit documents and biometrics, and pay the fee of about {{€99}}',
-          'Wait roughly {{2–8 weeks}} for a decision, longer in the June–September peak',
+          'Wait roughly {{2–6 weeks}} for a decision, longer in the June–September peak',
           'Collect your passport with the VLS-TS sticker in it',
         ],
       },
@@ -297,7 +329,7 @@ export const guides: GuideDoc[] = [
     summary: 'The process, and what it costs on top',
     description:
       'How property purchase works in France for US buyers: the five stages, the cooling-off period, and the 7-10% of fees on top of the price.',
-    verified: '2026-09',
+    verified: '2026-06',
     sourceCount: 2,
     sources: [
       { label: 'notaires.fr', kind: 'official' },
@@ -649,7 +681,7 @@ export const guides: GuideDoc[] = [
     when: 'On arrival',
     summary: 'And why FATCA makes it harder',
     description:
-      'Opening a French bank account as a US citizen: why some banks decline Americans, which ones do not, and the documents you will be asked for.',
+      'Opening a French bank account as a US citizen: why some banks decline Americans, what to do if one refuses you, and the documents you will be asked for.',
     verified: '2026-09',
     sourceCount: 3,
     sources: [
@@ -666,18 +698,19 @@ export const guides: GuideDoc[] = [
         ],
       },
       {
-        heading: 'Banks that accept Americans',
+        heading: 'If a bank says no: the droit au compte',
         paragraphs: [
-          'FATCA makes a US citizen extra work for a French bank, so some branches say no and others say yes to the same person. Start with the banks below, which are known to take American clients, and expect an online account to be the quickest way to a French IBAN while a traditional branch account follows.',
+          'A French bank may refuse to open an account. If it does not answer your written or in-person request within {{15 days}}, that counts as a refusal. When it refuses, it must give you, free of charge, an attestation of refusal and tell you about the Banque de France “droit au compte” procedure.',
+          'With that attestation, a photo ID and a proof of address less than three months old, you apply at a Banque de France branch, or ask the bank that refused you to forward the request. The Banque de France then designates a bank, which must open an account with basic banking services within {{3 business days}} of receiving the complete file.',
         ],
         requirements: [
-          '{{BNP Paribas International}} — generally the most US-friendly, with dedicated expat services',
-          '{{Crédit Agricole International}} — varies by region; some branches are more accommodating than others',
-          '{{Boursorama}} — online, owned by Société Générale. {{Hello Bank}} — BNP Paribas’ online subsidiary',
-          '{{Wise}} and {{Revolut}} — French IBAN accounts, useful early on',
-          '{{N26}} and {{Bunq}} — neobanks increasingly accepting US customers in France',
-          '{{Qonto}} — business banking that also offers personal accounts',
+          'A payment card with systematic authorisation, usable online and for cash withdrawals in the EU',
+          'Cashing of cheques and transfers',
+          'SEPA direct debits and transfers',
+          'Remote access to your balance, and monthly statements',
         ],
+        caveat:
+          'The procedure is only for people with no deposit account in France. It cannot be used to add a second bank.',
       },
       {
         heading: 'What your bank reports about you',
@@ -714,6 +747,13 @@ export const guides: GuideDoc[] = [
         ],
       },
     ],
+    practice: {
+      paragraphs: [
+        'Americans most often report success with BNP Paribas’ international desk, and with Crédit Agricole International, where branches vary by region. Boursorama and Hello Bank are the usual online options, and Wise or Revolut give a French IBAN early on while a branch account follows. N26, Bunq and Qonto also come up.',
+        'The same bank can say yes at one branch and no at another, so a refusal is worth retrying at a different branch or an international desk, alongside a droit au compte request.',
+      ],
+      sources: 'Reports from Americans banking in France, 2026',
+    },
   },
   {
     slug: 'work-visa-salarie',
@@ -757,13 +797,13 @@ export const guides: GuideDoc[] = [
       {
         heading: 'What you’ll need',
         paragraphs: [
-          'Your part of the file is the nine items below, most of which you can gather while the employer’s authorisation is pending. The apostilled background check and the diplomas are the slow ones; start them first. Translations are not needed for the consulate.',
+          'Your part of the file is the nine items below, most of which you can gather while the employer’s authorisation is pending. The apostilled background check and the diplomas, with their certified translations, are the slow ones; start them first.',
         ],
         requirements: [
           'Passport valid {{6+ months}} beyond your stay',
           'Signed work contract or a detailed job offer letter',
           'The employer’s work authorisation approval from DREETS via ANEF',
-          'Proof of qualifications — diplomas, in English, apostilled where the checklist asks',
+          'Proof of qualifications — diplomas with certified French translations',
           'Proof of accommodation in France',
           'Health insurance cover',
           'Proof of financial means',
@@ -777,7 +817,7 @@ export const guides: GuideDoc[] = [
         heading: 'Consider the Talent Passport instead',
         paragraphs: [
           'If you have advanced qualifications and a sufficiently high salary, or specialised in-demand skills, the Talent Passport is generally faster to process, carries a card valid for up to {{4 years}}, and automatically covers accompanying family members.',
-          'Its salary thresholds differ by sub-category and are indexed to the French minimum wage or an average reference salary, so the exact figure changes. Check the current threshold for your category on france-visas.gouv.fr rather than relying on a single number.',
+          'Its salary thresholds are set by ministerial order rather than indexed to the minimum wage. Since the Arrêté of {{21 August 2025}} the qualified-employee reference is {{€39,582}} a year gross and the EU Blue Card {{€59,373}}. The order is revised periodically, so confirm the amount in force when your contract is signed.',
         ],
       },
     ],
@@ -795,10 +835,13 @@ export const guides: GuideDoc[] = [
     when: '9 months out',
     summary: 'Multi-year, and your spouse can work',
     description:
-      'The French Passeport Talent for Americans: the categories, what each requires, the four-year validity, family rights, and why the salary thresholds move every January.',
+      'The French Passeport Talent for Americans: the categories, what each requires, the four-year validity, family rights, and the salary thresholds set by ministerial order.',
     verified: '2026-09',
-    sourceCount: 1,
-    sources: [{ label: 'france-visas.gouv.fr', kind: 'official' }],
+    sourceCount: 2,
+    sources: [
+      { label: 'france-visas.gouv.fr', kind: 'official' },
+      { label: 'legifrance.gouv.fr', kind: 'official' },
+    ],
     sections: [
       {
         heading: 'Who it’s for',
@@ -806,8 +849,8 @@ export const guides: GuideDoc[] = [
           'A multi-year visa for highly-qualified workers, researchers, company founders and investors, valid for up to {{4 years}} and renewable.',
         ],
         requirements: [
-          'Highly-qualified employee — a salary threshold plus a Master’s degree or equivalent experience',
-          'Young qualified professional — under 30, Master’s degree, with its own salary threshold',
+          'Qualified employee (Talent – salarié qualifié) — a Master’s degree or equivalent experience, a contract of at least {{3 months}}, and a salary of at least {{€39,582}} a year gross',
+          'EU Blue Card (Talent – carte bleue européenne) — the more senior variant, at a salary of at least {{€59,373}} a year gross',
           'Company founder — an innovative business in France, via a BPI France- or incubator-recognised project',
           'Investor — a minimum {{€300,000}} investment in a French company, with job-creation or job-maintenance commitments',
           'Researcher — a hosting agreement with a French research or higher-education institution',
@@ -815,13 +858,13 @@ export const guides: GuideDoc[] = [
         ],
       },
       {
-        heading: 'The thresholds move, so check the date',
+        heading: 'The thresholds are set by ministerial order',
         paragraphs: [
-          'Salary thresholds are indexed to the SMIC or to a reference average salary and are revised annually, typically each {{1 January}}. With the 2026 SMIC increase they have likely moved higher than in prior years.',
-          'Our knowledge base currently carries two figures for the highly-qualified employee route: {{€66,600}} a year, and a range commonly cited near {{€43,000–€58,000}} depending on the sub-route and year. Treat both as approximate and confirm the current number for your category on france-visas.gouv.fr before you rely on it.',
+          'The salary thresholds are fixed reference amounts set by ministerial order, not formulas indexed to the SMIC. The Arrêté of {{21 August 2025}}, in force for applications and renewals filed since {{31 August 2025}}, sets a single annual gross reference salary used for both cards (CESEDA articles R. 421-16 A and R. 421-21 A). The two 2026 SMIC increases did not change it.',
+          'On that basis the qualified employee needs at least {{€39,582}} a year gross, and the EU Blue Card at least 1.5 times that, {{€59,373}}.',
         ],
         caveat:
-          'A threshold quoted anywhere, including here, is only as current as the day it was checked. The consulate applies the figure in force when you apply.',
+          'The reference salary is revised periodically by a new order. Confirm the amount in force on the date your contract is signed, on legifrance.gouv.fr or service-public.gouv.fr, or with your consulate.',
       },
       {
         heading: 'What it gives you',
@@ -831,7 +874,7 @@ export const guides: GuideDoc[] = [
         requirements: [
           '{{4-year}} validity, renewable, with a simplified renewal process',
           'Your spouse or partner receives automatic work authorisation',
-          'Family members apply as “Passeport talent famille”',
+          'Family members apply under “Talent – famille”',
           'A path to permanent residency after {{5 years}} of continuous residence',
           'You can change employer within the same category by notification',
           'Exempt from the post-arrival medical visit and the integration contract that other categories are summoned to',
@@ -862,7 +905,7 @@ export const guides: GuideDoc[] = [
       {
         heading: 'Spouse of a French citizen',
         paragraphs: [
-          'You apply for a {{vie privée et familiale}} visa at the French consulate, and you have the right to work immediately on arrival. There is no income requirement on the French spouse.',
+          'You apply for a {{vie privée et familiale}} visa at the French consulate, and you have the right to work immediately on arrival. There is no income requirement on the French spouse, and no visa fee.',
         ],
         requirements: [
           'Your marriage certificate, apostilled — digital apostilles are now accepted',
@@ -870,15 +913,15 @@ export const guides: GuideDoc[] = [
           'Proof that the relationship is genuine',
         ],
         caveat:
-          'Processing runs {{2–10 weeks}} depending on the consulate. Family-based visas are often issued as “carte de séjour à solliciter” rather than a VLS-TS, which means a prefecture appointment within {{2 months}} of arrival instead of online validation — see the guide on the two visa types.',
+          'Processing is typically around {{4 weeks}}, and can run longer at some consulates or in high-demand periods. Family-based visas are often issued as “carte de séjour à solliciter” rather than a VLS-TS, which means a prefecture appointment within {{2 months}} of arrival instead of online validation — see the guide on the two visa types.',
       },
       {
         heading: 'Spouse of a non-EU resident: family reunification',
         paragraphs: [
-          'Here the spouse already in France applies for {{regroupement familial}} on your behalf, and only after holding their first residence permit for {{18 months}}.',
+          'Here the spouse already in France applies to OFII for {{regroupement familial}} on your behalf. They must have lived in France legally for at least {{18 months}} and hold a residence permit valid for at least one year.',
         ],
         requirements: [
-          'Sponsor income of {{1.3×}} the minimum wage — approximately {{€2,730}} a month as of 2026',
+          'Stable household resources over the previous {{12 months}}, measured against the SMIC: about {{€1,867}} a month for a household of two or three in 2026, {{1.1×}} the SMIC (about {{€2,054}}) for four or five, and {{1.2×}} for six or more',
           'Housing of adequate size and condition, verified by the prefecture',
           'Processing of {{6–15 months}} after submission',
         ],
@@ -906,7 +949,7 @@ export const guides: GuideDoc[] = [
     ],
     practice: {
       paragraphs: [
-        'Delays beyond the 2–10 week range for spouse-of-a-French-citizen files were reported through 2025 and 2026, and family reunification waits have lengthened past the 6–15 month range in reports from the same period.',
+        'Delays well beyond the typical four weeks for spouse-of-a-French-citizen files were reported through 2025 and 2026, and family reunification waits have lengthened past the 6–15 month range in reports from the same period.',
       ],
       sources: 'Applicant reports held in the knowledge base · 2025–2026',
     },
@@ -1049,13 +1092,13 @@ export const guides: GuideDoc[] = [
         ],
         requirements: [
           'A valid passport with {{6+ months}} validity beyond the intended stay',
-          'Stable monthly resources at or around net SMIC — roughly {{€1,426–€1,500}} a month in 2026 — or savings of roughly {{€17,000–€18,000}} to cover a year',
+          'Stable monthly resources at or around net SMIC — {{€1,477.93}} a month since {{1 June 2026}} — or savings of about {{€17,700–€18,000}} to cover a year',
           'Comprehensive health insurance covering the full stay, including repatriation and emergency care',
           'Proof of accommodation in France',
           'A signed declaration ({{attestation sur l’honneur}}) not to work in France',
         ],
         caveat:
-          'Figures you see quoted vary with whether a consulate is referencing gross SMIC, around {{€1,802}} a month, or net. The requirement is “sufficient means”, assessed case by case.',
+          'Figures you see quoted vary with whether a consulate is referencing gross SMIC, {{€1,867.02}} a month since 1 June 2026, or net. The requirement is “sufficient means”, assessed case by case.',
       },
       {
         heading: 'Consulates now ask about the arrangement',
@@ -1087,13 +1130,13 @@ export const guides: GuideDoc[] = [
       {
         heading: 'Lead times that catch people out',
         paragraphs: [
-          'The consulate’s own processing time is the short part. The long part is the paperwork that has to exist before you can book: the FBI check, the certified copies, the apostilles. Translations come later, for the prefecture, not the consulate. The seven lead times below are the ones that decide whether your timeline holds, and the first one is the one to start today.',
+          'The consulate’s own processing time is the short part. The long part is the paperwork that has to exist before you can book: the FBI check, the certified copies, the apostilles, the translations. The seven lead times below are the ones that decide whether your timeline holds, and the first one is the one to start today.',
         ],
         requirements: [
           'FBI background check: {{10–14 weeks}} by mail direct from the FBI, versus roughly {{3–7 business days}} through an FBI-approved channeler — use the channeler',
           'State apostilles: {{1–2 weeks}} in most states; some offer {{24–48 hour}} expedited service, others by mail can run {{4+ weeks}}',
           'Birth and marriage certificate apostilles: {{1–3 weeks}}, with the same variability',
-          'Sworn French translations ({{traducteur assermenté}}): not for the application, which US consulates take in English, but for the prefecture and CPAM after arrival; {{1–2 weeks}} per batch',
+          'Certified French translations ({{traducteur assermenté}}): listed for most official documents in a long-stay file, and asked for again by the prefecture and CPAM after arrival; {{1–2 weeks}} per batch',
           'Official stamped bank statements: allow {{1–2 weeks}}',
           'Academic transcripts and diploma authentication: {{2–3 weeks}}, longer if the institution is slow',
           'Medical examinations, where your category requires one: {{1–2 weeks}} for an appointment',
@@ -1131,4 +1174,5 @@ export const routes: string[] = [
   '/about/',
   '/guides/',
   ...guides.map((g) => `/guides/${g.slug}/`),
+  ...LEGAL_PAGES.map((p) => p.path),
 ];

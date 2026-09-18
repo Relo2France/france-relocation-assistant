@@ -81,7 +81,7 @@ export function HowItWorks() {
                 </h3>
                 <p className="text-[0.88rem] text-muted m-0">{f.what}</p>
               </div>
-              <p className="text-[0.85rem] text-muted/80 italic m-0 md:pt-6">{f.publicVersion}</p>
+              <p className="text-[0.85rem] text-muted italic m-0 md:pt-6">{f.publicVersion}</p>
             </div>
           ))}
         </div>

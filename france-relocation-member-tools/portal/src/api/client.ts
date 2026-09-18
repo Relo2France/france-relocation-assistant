@@ -12,6 +12,7 @@ import type {
   CalendarProvider,
   CalendarProviderInfo,
   CalendarSyncResult,
+  ChatHistoryResponse,
   ChatRequest,
   ChatResponse,
   Checklist,
@@ -21,15 +22,12 @@ import type {
   ComplianceSnapshot,
   CreateTicketRequest,
   DashboardData,
-  DocumentGenerationRequest,
-  DocumentGenerationResponse,
   EUTaxJurisdictionsResponse,
   FamilyFeatureStatus,
   FamilyMember,
   FamilyMembersResponse,
   FileCategory,
   FileFilters,
-  GeneratedDocument,
   GeocodeResult,
   GlossaryCategory,
   IPDetectionResult,
@@ -123,6 +121,17 @@ interface ApiRequestOptions extends Omit<RequestInit, 'signal'> {
   signal?: AbortSignal;
 }
 
+/** A failed request, carrying the HTTP status so callers can tell a 404 from a 500. */
+export class HttpError extends Error {
+  status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = 'HttpError';
+    this.status = status;
+  }
+}
+
 /**
  * Base fetch function with WordPress authentication and AbortController support
  *
@@ -154,7 +163,7 @@ async function apiFetch<T>(
     const error = await response.json().catch(() => ({
       message: 'An error occurred',
     }));
-    throw new Error(error.message || `HTTP error ${response.status}`);
+    throw new HttpError(error.message || `HTTP error ${response.status}`, response.status);
   }
 
   return response.json();
@@ -349,7 +358,7 @@ export const userApi = {
     }),
 
   deleteAccount: (confirmation: string) =>
-    apiFetch<{ deleted: boolean; message: string }>('/account/delete', {
+    apiFetch<{ deleted: boolean; message: string; redirect?: string }>('/account/delete', {
       method: 'POST',
       body: JSON.stringify({ confirmation }),
     }),
@@ -524,34 +533,6 @@ export const checklistsApi = {
     }),
 };
 
-// Document Generation API
-export const documentGeneratorApi = {
-  getTypes: () =>
-    apiFetch<{ type: string; label: string; description: string; requires_profile: string[] }[]>(
-      '/documents/generator/types'
-    ),
-
-  preview: (data: DocumentGenerationRequest) =>
-    apiFetch<DocumentGenerationResponse>('/documents/generator/preview', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
-
-  generate: (projectId: number, data: DocumentGenerationRequest) =>
-    apiFetch<DocumentGenerationResponse>(`/projects/${projectId}/documents/generate`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
-
-  listGenerated: (projectId: number) =>
-    apiFetch<GeneratedDocument[]>(`/projects/${projectId}/documents/generated`),
-
-  downloadGenerated: (id: number, format: 'pdf' | 'docx' = 'pdf') => {
-    const wpData = getWpData();
-    return `${wpData.apiUrl}/documents/generated/${id}/download?format=${format}&_wpnonce=${wpData.nonce}`;
-  },
-};
-
 // Glossary API
 export const glossaryApi = {
   getAll: () => apiFetch<GlossaryCategory[]>('/glossary'),
@@ -623,6 +604,22 @@ export const chatApi = {
     }),
 
   getCategories: () => apiFetch<KnowledgeCategory[]>('/chat/categories'),
+
+  /**
+   * The saved conversation. An older server without the route answers 404;
+   * that is an empty conversation, not an error.
+   */
+  getHistory: async (): Promise<ChatHistoryResponse> => {
+    try {
+      const data = await apiFetch<Partial<ChatHistoryResponse>>('/chat/history');
+      return { messages: Array.isArray(data?.messages) ? data.messages : [] };
+    } catch (err) {
+      if (err instanceof HttpError && err.status === 404) return { messages: [] };
+      throw err;
+    }
+  },
+
+  clearHistory: () => apiFetch<{ cleared: boolean }>('/chat/history', { method: 'DELETE' }),
 
   searchTopics: (query: string, signal?: AbortSignal) =>
     apiFetch<{ results: { title: string; category: string; is_premium: boolean }[] }>(

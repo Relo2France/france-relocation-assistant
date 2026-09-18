@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useDashboard, useTasks, useUpdateTaskStatus } from '@/hooks/useApi';
 import { CompactErrorFallback } from '@/components/shared/ErrorBoundary';
+import { useDashboard, useTasks, useUpdateTaskStatus } from '@/hooks/useApi';
 import { JOURNEY, stageForTask } from '@/journey/journey';
 import { usePortalStore } from '@/store';
 import type { Task, TaskStatus } from '@/types';
@@ -27,7 +27,7 @@ export default function TasksView() {
 
   // Data
   const { data: dashboard, isLoading: dashboardLoading, isError: dashFailed, refetch: refetchDash } = useDashboard();
-  const { data: tasks = [], isLoading: tasksLoading } = useTasks(
+  const { data: tasks = [], isLoading: tasksLoading, isError: tasksFailed, refetch: refetchTasks } = useTasks(
     dashboard?.project?.id || 0
   );
   const updateTaskStatus = useUpdateTaskStatus();
@@ -105,11 +105,17 @@ export default function TasksView() {
     return <TasksViewSkeleton />;
   }
 
-  if (dashFailed || !dashboard?.project) {
+  if (dashFailed || tasksFailed || !dashboard?.project) {
     return (
       <div className="p-6">
         <div className="card">
-          <CompactErrorFallback message="Your steps could not be loaded." onRetry={() => void refetchDash()} />
+          <CompactErrorFallback
+            message="Your steps could not be loaded."
+            onRetry={() => {
+              void refetchDash();
+              if (dashboard?.project) void refetchTasks();
+            }}
+          />
         </div>
       </div>
     );
@@ -166,7 +172,7 @@ export default function TasksView() {
       {/* Empty state */}
       {filteredTasks.length === 0 && tasks.length > 0 && (
         <div className="card p-8 text-center mt-6">
-          <p className="text-gray-500">No tasks match your filters</p>
+          <p className="text-gray-500">No steps match your filters</p>
           <button
             onClick={resetTaskFilters}
             className="mt-2 text-primary-600 hover:text-primary-700"

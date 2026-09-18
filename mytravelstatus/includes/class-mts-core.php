@@ -749,8 +749,9 @@ class MTS_Core {
 		if ( ! is_user_logged_in() ) {
 			return '<div class="mts-login-required">'
 				. '<p>' . esc_html__( 'Please log in to access the MyTravelStatus.', 'mytravelstatus' ) . '</p>'
-				. '<a href="' . esc_url( wp_login_url( get_permalink() ) ) . '" class="button">'
-				. esc_html__( 'Log In', 'mytravelstatus' )
+				// The site has one sign-in screen: the member portal's card.
+				. '<a href="' . esc_url( add_query_arg( 'redirect_to', rawurlencode( (string) get_permalink() ), home_url( '/portal/' ) ) ) . '" class="button">'
+				. esc_html__( 'Sign in', 'mytravelstatus' )
 				. '</a></div>';
 		}
 

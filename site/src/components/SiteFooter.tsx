@@ -1,5 +1,6 @@
 import { guides } from '../content/guides';
 import { external, PRICE } from '../content/links';
+import { LEGAL_PAGES } from '../content/legal';
 
 function Column({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -65,6 +66,11 @@ export function SiteFooter() {
         <Column title="Relo2France">
           <Item href={'/about/'}>About</Item>
           <Item href={external.portal}>Member portal</Item>
+          {LEGAL_PAGES.map((p) => (
+            <Item key={p.path} href={p.path}>
+              {p.title}
+            </Item>
+          ))}
         </Column>
       </div>
 

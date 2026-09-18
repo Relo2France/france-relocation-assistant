@@ -14,7 +14,7 @@
  * Plugin Name: France Relocation Member Tools
  * Plugin URI:  https://relo2france.com
  * Description: Premium member features including the Members Portal with project management, task tracking, document generation, checklists, guides, and personalized relocation planning.
- * Version:     2.9.30
+ * Version:     2.9.31
  * Author:      Relo2France
  * Author URI:  https://relo2france.com
  * License:     GPL v2 or later
@@ -31,7 +31,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Plugin constants.
-define( 'FRAMT_VERSION', '2.9.30' );
+define( 'FRAMT_VERSION', '2.9.31' );
 define('FRAMT_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('FRAMT_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('FRAMT_PLUGIN_BASENAME', plugin_basename(__FILE__));
@@ -2792,9 +2792,12 @@ STYLE:
             $file_ext = 'doc';
         } else {
             // PDF - use proper PDF generation
-            require_once FRAMT_PLUGIN_DIR . 'vendor/class-simple-pdf.php';
+            // The multi-page writer; it keeps the old one-page writer's calls.
+            if (!class_exists('FRAMT_PDF')) {
+                require_once FRAMT_PLUGIN_DIR . 'includes/class-framt-pdf.php';
+            }
 
-            $pdf = new FRAMT_Simple_PDF();
+            $pdf = new FRAMT_PDF(isset($content['title']) ? (string) $content['title'] : '');
             $pdf->addPage();
 
             // Add title
@@ -4272,8 +4275,15 @@ Please provide a helpful, accurate answer about their health insurance coverage 
             return;
         }
 
+        // A same-site page the member was headed to before signing in.
+        $redirect = '';
+        if ( class_exists( 'FRAMT_Magic_Link' ) ) {
+            $redirect = FRAMT_Magic_Link::safe_redirect_to( $_POST['redirect_to'] ?? '' );
+        }
+
         wp_send_json_success( array(
-            'message' => __( 'Login successful. Redirecting...', 'fra-member-tools' ),
+            'message'  => __( 'Login successful. Redirecting...', 'fra-member-tools' ),
+            'redirect' => $redirect,
         ) );
     }
 
@@ -4285,6 +4295,7 @@ Please provide a helpful, accurate answer about their health insurance coverage 
     public function deactivate() {
         // Clear scheduled events if any
         wp_clear_scheduled_hook('framt_daily_cleanup');
+        wp_clear_scheduled_hook('framt_member_emails_daily');
 
         // Flush rewrite rules
         flush_rewrite_rules();

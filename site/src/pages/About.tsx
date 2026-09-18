@@ -19,8 +19,8 @@ export function About() {
         <div className="prose-exact">
           <p className="mb-4">
             Relo2France is for Americans moving to France. It holds every requirement of the move
-            in one place, in the order you will meet it, from choosing a visa route to renewing a
-            residence permit years later.
+            in one place, in the order you will meet it, from choosing a visa route to validating
+            your visa and settling in during your first months in France.
           </p>
           <h2 className="font-display text-[1.15rem] font-semibold mt-7 mb-2 pb-2 border-b border-rule-soft">Where the information comes from</h2>
           <p className="mb-4">

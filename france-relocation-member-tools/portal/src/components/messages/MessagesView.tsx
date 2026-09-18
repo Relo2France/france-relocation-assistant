@@ -9,10 +9,10 @@
  * exact thing it is about, and each message can be marked unread or deleted.
  */
 import { useEffect, useState } from 'react';
-import { CompactErrorFallback } from '@/components/shared/ErrorBoundary';
 import { clsx } from 'clsx';
 import { AlertTriangle, ArrowLeft, Bell, CalendarClock, Mail, MailOpen, RotateCcw, Scale, Trash2, X } from 'lucide-react';
 import { buildFileAlerts, useDismissedAlerts } from '@/alerts/alerts';
+import { CompactErrorFallback } from '@/components/shared/ErrorBoundary';
 import Jargon from '@/components/shared/Jargon';
 import MarkdownMessage from '@/components/shared/MarkdownMessage';
 import { useDashboard, useDeleteSupportTicket, useMarkSupportTicketUnread, useReplyToSupportTicket, useSupportTicket, useSupportTickets, useTasks } from '@/hooks/useApi';
@@ -167,17 +167,35 @@ export default function MessagesView() {
 }
 
 function Thread({ ticketId, onBack }: { ticketId: number; onBack: () => void }) {
-  const { data, isLoading } = useSupportTicket(ticketId);
+  const { data, isLoading, isError } = useSupportTicket(ticketId);
   const reply = useReplyToSupportTicket();
   const [text, setText] = useState('');
+
+  // Deleted, or a stale link from an email: say so rather than load forever.
+  if (isError || (!isLoading && !data)) {
+    return (
+      <div className="flex flex-col">
+        <div className="px-6 md:px-8 py-8 max-w-[72ch]">
+          <div className="card p-6 flex flex-col items-start gap-3" role="alert">
+            <p className="font-display font-semibold text-lg m-0">This message is no longer available</p>
+            <p className="text-sm text-gray-600 m-0">It may have been deleted. Everything else is still in Messages.</p>
+            <button type="button" onClick={onBack} className="btn btn-secondary">
+              <ArrowLeft className="w-4 h-4" aria-hidden="true" /> Back to messages
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col">
       <header className="flex items-center gap-3 px-6 md:px-8 pt-6 pb-5 bg-card border-b border-rule">
-        <button onClick={onBack} className="btn btn-ghost" aria-label="Back to messages"><ArrowLeft className="w-4 h-4" /> Messages</button>
+        <button onClick={onBack} className="btn btn-ghost" aria-label="Back to messages"><ArrowLeft className="w-4 h-4" aria-hidden="true" /> Messages</button>
         <h2 className="font-display text-[1.3rem] font-semibold tracking-[-0.018em] leading-tight">{data?.ticket.subject ?? ''}</h2>
       </header>
       <div className="px-6 md:px-8 py-5 flex flex-col gap-4 max-w-[72ch]">
-        {isLoading || !data ? <div className="card h-24 animate-pulse" /> : null}
+        {isLoading ? <div className="card h-24 animate-pulse" role="status" aria-label="Loading message" /> : null}
         {data?.replies.map((r) => (
           <div key={r.id} className={clsx('card p-5', r.is_admin ? '' : 'bg-card-2')}>
             <div className="flex justify-between items-baseline mb-2">

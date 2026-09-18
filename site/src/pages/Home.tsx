@@ -128,7 +128,7 @@ export function Home() {
                 ) : null}
               </h3>
               <p className="text-[0.9rem] text-muted mb-2">{feature.what}</p>
-              <p className="text-[0.82rem] text-muted/80 italic m-0">{feature.publicVersion}</p>
+              <p className="text-[0.82rem] text-muted italic m-0">{feature.publicVersion}</p>
             </div>
           ))}
         </div>

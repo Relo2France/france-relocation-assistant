@@ -229,22 +229,34 @@ class FRAMT_Letters {
      * @return array|null rate (USD per EUR), date (Y-m-d)
      */
     public static function usd_rate() {
+        // Once per request, whatever the outcome.
+        static $memo = false;
+        if ( false !== $memo ) {
+            return $memo;
+        }
         $cached = get_transient( 'framt_ecb_usd' );
         if ( is_array( $cached ) && ! empty( $cached['rate'] ) ) {
-            return $cached;
+            $memo = $cached;
+            return $memo;
         }
-        $res = wp_remote_get( 'https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml', array( 'timeout' => 8 ) );
-        if ( ! is_wp_error( $res ) && 200 === (int) wp_remote_retrieve_response_code( $res ) ) {
-            $xml = (string) wp_remote_retrieve_body( $res );
-            if ( preg_match( "/time=['\"](\d{4}-\d{2}-\d{2})['\"]/", $xml, $d ) && preg_match( "/currency=['\"]USD['\"]\s+rate=['\"]([\d.]+)['\"]/", $xml, $r ) && (float) $r[1] > 0 ) {
-                $value = array( 'rate' => (float) $r[1], 'date' => $d[1] );
-                set_transient( 'framt_ecb_usd', $value, 12 * HOUR_IN_SECONDS );
-                update_option( 'framt_ecb_usd_last', $value, false );
-                return $value;
+        // The feed failed recently: do not wait on it again for half an hour.
+        if ( ! get_transient( 'framt_ecb_usd_fail' ) ) {
+            $res = wp_remote_get( 'https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml', array( 'timeout' => 8 ) );
+            if ( ! is_wp_error( $res ) && 200 === (int) wp_remote_retrieve_response_code( $res ) ) {
+                $xml = (string) wp_remote_retrieve_body( $res );
+                if ( preg_match( "/time=['\"](\d{4}-\d{2}-\d{2})['\"]/", $xml, $d ) && preg_match( "/currency=['\"]USD['\"]\s+rate=['\"]([\d.]+)['\"]/", $xml, $r ) && (float) $r[1] > 0 ) {
+                    $value = array( 'rate' => (float) $r[1], 'date' => $d[1] );
+                    set_transient( 'framt_ecb_usd', $value, 12 * HOUR_IN_SECONDS );
+                    update_option( 'framt_ecb_usd_last', $value, false );
+                    $memo = $value;
+                    return $memo;
+                }
             }
+            set_transient( 'framt_ecb_usd_fail', 1, 30 * MINUTE_IN_SECONDS );
         }
         $last = get_option( 'framt_ecb_usd_last' );
-        return is_array( $last ) && ! empty( $last['rate'] ) ? $last : null;
+        $memo = is_array( $last ) && ! empty( $last['rate'] ) ? $last : null;
+        return $memo;
     }
 
     /**

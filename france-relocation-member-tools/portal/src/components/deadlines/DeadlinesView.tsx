@@ -6,8 +6,8 @@
  * it used to open is not a deadline list.
  */
 import { clsx } from 'clsx';
-import { CompactErrorFallback } from '@/components/shared/ErrorBoundary';
 import { CheckCircle2, Circle } from 'lucide-react';
+import { CompactErrorFallback } from '@/components/shared/ErrorBoundary';
 import Jargon from '@/components/shared/Jargon';
 import { useDashboard, useTasks, useUpdateTaskStatus } from '@/hooks/useApi';
 import { JOURNEY, stageForTask } from '@/journey/journey';
@@ -29,9 +29,10 @@ function dueLabel(iso: string): string {
 }
 
 export default function DeadlinesView() {
-  const { data, isError: dashFailed, refetch: refetchDash } = useDashboard();
+  const { data, isLoading: dashLoading, isError: dashFailed, refetch: refetchDash } = useDashboard();
   const project = data?.project;
-  const { data: tasks, isError: tasksFailed, refetch: refetchTasks } = useTasks(project?.id ?? 0);
+  const { data: tasks, isLoading: tasksLoading, isError: tasksFailed, refetch: refetchTasks } = useTasks(project?.id ?? 0);
+  const loading = dashLoading || tasksLoading;
   const updateStatus = useUpdateTaskStatus();
   const { setActiveView, setActiveStage, setTaskFilters, setOpenTaskId } = usePortalStore();
 
@@ -58,6 +59,16 @@ export default function DeadlinesView() {
       <div className="flex flex-col gap-5 px-6 md:px-8 py-5">
         {dashFailed || tasksFailed ? (
           <div className="card"><CompactErrorFallback message="Your steps could not be loaded." onRetry={() => { void refetchDash(); void refetchTasks(); }} /></div>
+        ) : loading ? (
+          <div className="flex flex-col gap-5" role="status" aria-label="Loading deadlines">
+            {[1, 2].map((i) => (
+              <div key={i} className="card p-5 flex flex-col gap-3">
+                <div className="h-5 w-40 bg-gray-200 rounded animate-pulse" />
+                <div className="h-4 w-full bg-gray-100 rounded animate-pulse" />
+                <div className="h-4 w-3/4 bg-gray-100 rounded animate-pulse" />
+              </div>
+            ))}
+          </div>
         ) : dated.length === 0 ? (
           <div className="card p-6">
             <p className="font-display font-semibold text-lg">Nothing is dated yet.</p>

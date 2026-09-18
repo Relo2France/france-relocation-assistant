@@ -7,7 +7,7 @@ import ErrorBoundary from '@/components/shared/ErrorBoundary';
 import PWAPrompt from '@/components/shared/PWAPrompt';
 import Toaster from '@/components/shared/Toaster';
 import { useCurrentUser } from '@/hooks/useApi';
-import { usePortalStore } from '@/store';
+import { startUrlSync, usePortalStore } from '@/store';
 
 // Views that should auto-collapse the sidebar for more content space
 // No view collapses the rail on its own: it is the map, and a member who wants
@@ -121,6 +121,9 @@ export default function App() {
   const { data: user } = useCurrentUser();
   const prevViewRef = useRef<string>(activeView);
 
+  // Browser Back/Forward move between portal screens.
+  useEffect(() => startUrlSync(), []);
+
   // Set user in store when loaded
   useEffect(() => {
     if (user) {
@@ -173,7 +176,8 @@ export default function App() {
 
         {/* Page content */}
         <main className="min-h-[calc(100vh-4rem)]">
-          <ErrorBoundary>
+          {/* Keyed by view: a crash on one screen does not follow the member to the next. */}
+          <ErrorBoundary key={activeView}>
             <ViewRouter />
           </ErrorBoundary>
         </main>

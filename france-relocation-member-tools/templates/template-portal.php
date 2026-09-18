@@ -244,7 +244,25 @@ $react_settings = array(
 <head>
     <meta charset="<?php bloginfo( 'charset' ); ?>">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo esc_html( $settings['portal_title'] ); ?> - <?php echo esc_html( get_bloginfo( 'name' ) ); ?></title>
+    <?php
+    // One <title>: when the theme supports title-tag, wp_head() prints it,
+    // so set its text instead of printing a second one here.
+    $r2f_portal_title = $settings['portal_title'] . ' - ' . get_bloginfo( 'name' );
+    if ( current_theme_supports( 'title-tag' ) ) {
+        add_filter( 'pre_get_document_title', function () use ( $r2f_portal_title ) {
+            return $r2f_portal_title;
+        }, 100 );
+    } else {
+        echo '<title>' . esc_html( $r2f_portal_title ) . '</title>' . "\n";
+    }
+    // The portal is an app behind a sign-in: keep it out of search indexes.
+    // Printed by wp_head() through wp_robots, whatever the theme does.
+    add_filter( 'wp_robots', function ( $robots ) {
+        $robots['noindex']  = true;
+        $robots['nofollow'] = true;
+        return $robots;
+    }, 100 );
+    ?>
 
     <!-- Preconnect to Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -681,6 +699,11 @@ $react_settings = array(
                 formData.append('password', document.getElementById('portal-password').value);
                 formData.append('remember', form.querySelector('[name="remember"]').checked ? '1' : '0');
                 formData.append('nonce', document.querySelector('[name="portal_nonce"]').value);
+                // Where the member was going before sign-in (validated server-side).
+                var redirectTo = new URLSearchParams(window.location.search).get('redirect_to');
+                if (redirectTo) {
+                    formData.append('redirect_to', redirectTo);
+                }
 
                 fetch('<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>', {
                     method: 'POST',
@@ -704,8 +727,14 @@ $react_settings = array(
                 })
                 .then(function(data) {
                     if (data.success) {
-                        // Reload page to show portal
-                        window.location.reload();
+                        // Go where the member was headed (same-site only,
+                        // checked by the server), else reload to show the portal.
+                        var target = data.data && data.data.redirect;
+                        if (target && target.indexOf(window.location.origin + '/') === 0) {
+                            window.location.href = target;
+                        } else {
+                            window.location.reload();
+                        }
                     } else {
                         // Show error
                         errorDiv.textContent = data.data || 'Invalid username or password. Please try again.';

@@ -48,7 +48,7 @@ function dueLabel(task: Task): string {
 }
 
 export default function FamilyView() {
-  const { data, isLoading, error } = useFamilyMembers();
+  const { data, isLoading, error, refetch, isFetching } = useFamilyMembers();
   const { data: dashboard } = useDashboard();
   const { data: tasks = [] } = useTasks(dashboard?.project?.id ?? 0);
   const { setActiveView } = usePortalStore();
@@ -60,7 +60,10 @@ export default function FamilyView() {
       <div className="p-6 md:p-8">
         <div className="card p-6">
           <p className="font-display font-semibold text-lg">Family plans could not load.</p>
-          <p className="text-sm text-gray-600 mt-1">Refresh the page. If it keeps happening, tell us from Support.</p>
+          <p className="text-sm text-gray-600 mt-1">Try again. If it keeps happening, tell us from Support.</p>
+          <button type="button" onClick={() => void refetch()} disabled={isFetching} className="btn btn-secondary mt-3">
+            {isFetching ? 'Trying…' : 'Try again'}
+          </button>
         </div>
       </div>
     );

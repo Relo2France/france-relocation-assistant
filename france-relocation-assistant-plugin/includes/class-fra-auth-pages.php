@@ -78,17 +78,58 @@ class FRA_Auth_Pages {
             'auth_thankyou_title' => 'Welcome to Relo2France!',
             'auth_thankyou_subtitle' => 'Your account has been created successfully.',
         );
+        $saved = is_array( $saved ) ? $saved : array();
         foreach ( $old_defaults as $key => $old ) {
-            if ( isset( $saved[ $key ] ) && trim( (string) $saved[ $key ] ) === $old ) {
+            if ( isset( $saved[ $key ] ) && self::normalise_copy( $saved[ $key ] ) === self::normalise_copy( $old ) ) {
                 unset( $saved[ $key ] );
             }
+        }
+        // The old copy was saved in more than one variant (Windows line
+        // endings from the textarea, a longer thank-you line), so an exact
+        // match misses it. These lines are only in the old product's copy
+        // and describe things the product does not offer (priority support)
+        // or does not offer yet (the Schengen tracker is coming soon).
+        if ( isset( $saved['auth_signup_benefits'] ) ) {
+            $benefits = (string) $saved['auth_signup_benefits'];
+            if ( false !== stripos( $benefits, '183-day' ) || false !== stripos( $benefits, 'Priority email support' ) ) {
+                unset( $saved['auth_signup_benefits'] );
+            }
+        }
+        if ( isset( $saved['auth_thankyou_subtitle'] ) && false !== stripos( (string) $saved['auth_thankyou_subtitle'], 'Your account has been created successfully' ) ) {
+            unset( $saved['auth_thankyou_subtitle'] );
         }
         
         $this->settings = wp_parse_args($saved, $defaults);
     }
+
+    /**
+     * Copy compared for "is this still the old default": line endings,
+     * runs of spaces and blank edges do not count.
+     *
+     * @param mixed $value Saved value.
+     * @return string
+     */
+    private static function normalise_copy( $value ) {
+        $value = str_replace( array( "\r\n", "\r" ), "\n", (string) $value );
+        $lines = array_map( function ( $line ) {
+            return trim( preg_replace( '/[ \t]+/', ' ', $line ) );
+        }, explode( "\n", $value ) );
+        return trim( implode( "\n", array_filter( $lines, 'strlen' ) ) );
+    }
     
     private function get($key) {
         return isset($this->settings[$key]) ? $this->settings[$key] : '';
+    }
+
+    /**
+     * An auth-page setting with the old-copy migration applied, for other
+     * templates (the in-chat sign-up card) that show the same copy.
+     *
+     * @param string $key Setting key.
+     * @return string
+     */
+    public function setting($key) {
+        return (string) $this->get($key);
     }
 
     /**
@@ -1016,7 +1057,7 @@ class FRA_Auth_Pages {
         ?>
         <div class="fra-auth-container">
             <div class="fra-auth-card fra-auth-card-centered">
-                <div class="fra-auth-icon fra-auth-icon-blue">🎉</div>
+                <div class="fra-auth-icon" aria-hidden="true">✓</div>
                 
                 <div class="fra-auth-card-header">
                     <h1><?php echo esc_html($title); ?></h1>
