@@ -125,8 +125,17 @@ class FRA_Scheduled_Review {
             'completed_at' => null,
             'error_messages' => array()
         );
-        $status = get_option(self::STATUS_OPTION, array());
-        return wp_parse_args($status, $default);
+        $status = wp_parse_args(get_option(self::STATUS_OPTION, array()), $default);
+        // A worker run that started and never reported back is not running.
+        if (!empty($status['running']) && empty($status['completed_at']) && !empty($status['started_at'])
+            && false !== strpos((string) ($status['trigger'] ?? ''), 'worker')
+            && strtotime((string) $status['started_at']) < current_time('timestamp') - 12 * HOUR_IN_SECONDS) {
+            $status['running']        = false;
+            $status['error_messages'] = array('The run started at ' . $status['started_at'] . ' never reported back. Check the Cloudflare dashboard for the review workflow.');
+            $status['run_failed']     = true;
+            update_option(self::STATUS_OPTION, $status);
+        }
+        return $status;
     }
     
     /**
@@ -655,7 +664,7 @@ Research and write an \"**In Practice**\" section that covers:
     /**
      * Send completion email
      */
-    private function send_notification_email($status, $email) {
+    public function send_notification_email($status, $email) {
         $site_name = get_bloginfo('name');
         $admin_url = admin_url('admin.php?page=france-relocation-assistant-ai-review');
         

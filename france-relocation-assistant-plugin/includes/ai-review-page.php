@@ -206,6 +206,18 @@ foreach ($reviewable_topics as $cat => $topics) {
                 • <?php echo esc_html('worker (dry run)' === $bg_status['trigger'] ? 'Cloudflare worker, dry run (nothing written)' : 'run by the Cloudflare worker'); ?>
                 <?php endif; ?>
             </p>
+            <?php
+            $diag = array();
+            if (!empty($bg_status['run_failed'])) { $diag[] = 'The run did not finish.'; }
+            if (!empty($bg_status['unmatched_topics'])) { $diag[] = 'Asked for topics that do not exist: ' . implode(', ', (array) $bg_status['unmatched_topics']); }
+            if (isset($bg_status['search_errors']) && (int) $bg_status['search_errors'] > 0) { $diag[] = (int) $bg_status['search_errors'] . ' web searches failed'; }
+            if (isset($bg_status['web_sources'])) { $diag[] = (int) $bg_status['web_sources'] . ' web results used'; }
+            if (!empty($bg_status['practice_withheld'])) { $diag[] = (int) $bg_status['practice_withheld'] . ' In Practice sections withheld (fewer than two dated sources)'; }
+            if (!empty($bg_status['instance_id'])) { $diag[] = 'Run ' . $bg_status['instance_id']; }
+            ?>
+            <?php if ($diag): ?>
+            <p style="margin: 6px 0 0; color: #155724; font-size: 12px;"><?php echo esc_html(implode(' • ', $diag)); ?></p>
+            <?php endif; ?>
             <?php if (!empty($bg_status['error_messages'])): ?>
             <ul style="margin: 8px 0 0 18px; color: #155724; font-size: 12px;">
                 <?php foreach (array_slice((array) $bg_status['error_messages'], 0, 10) as $msg): ?>

@@ -15,7 +15,7 @@
  * Plugin Name: France Relocation Assistant
  * Plugin URI:  https://relo2france.com
  * Description: AI-powered US to France relocation guidance with visa info, property guides, healthcare, taxes, and practical insights. Features weekly auto-updates, "In Practice" real-world advice, and comprehensive knowledge base.
- * Version:     3.13.14
+ * Version:     3.13.15
  * Author:      Relo2France
  * Author URI:  https://relo2france.com
  * License:     GPL v2 or later
@@ -36,7 +36,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 | Plugin Constants
 |--------------------------------------------------------------------------
 */
-define( 'FRA_VERSION', '3.13.14' );
+define( 'FRA_VERSION', '3.13.15' );
 define( 'FRA_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FRA_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'FRA_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
@@ -230,7 +230,6 @@ class France_Relocation_Assistant {
         // AJAX handlers (logged-in and public)
         add_action('wp_ajax_fra_search', array($this, 'ajax_search'));
         add_action('wp_ajax_nopriv_fra_search', array($this, 'ajax_search'));
-        add_action('wp_ajax_fra_manual_update', array($this, 'ajax_manual_update'));
         add_action('wp_ajax_fra_ai_query', array($this, 'ajax_ai_query'));
         add_action('wp_ajax_nopriv_fra_ai_query', array($this, 'ajax_ai_query'));
         
@@ -692,26 +691,6 @@ class France_Relocation_Assistant {
         wp_clear_scheduled_hook(self::CRON_HOOK);
     }
     
-    /**
-     * Calculate next Sunday at 1:00 AM for cron scheduling
-     *
-     * @return int Unix timestamp
-     */
-    private function get_next_sunday_1am() {
-        $timezone = get_option('timezone_string') ?: 'America/New_York';
-        $dt = new DateTime('now', new DateTimeZone($timezone));
-        
-        // Find next Sunday
-        $days_until_sunday = (7 - $dt->format('w')) % 7;
-        if ($days_until_sunday === 0 && $dt->format('H') >= 1) {
-            $days_until_sunday = 7; // If it's Sunday after 1 AM, schedule for next Sunday
-        }
-        
-        $dt->modify("+{$days_until_sunday} days");
-        $dt->setTime(1, 0, 0);
-        
-        return $dt->getTimestamp();
-    }
     
     /*
     |--------------------------------------------------------------------------
@@ -997,6 +976,26 @@ class France_Relocation_Assistant {
         ?>
         <div class="wrap">
             <h1><?php esc_html_e('Knowledge Base Gaps', 'france-relocation-assistant'); ?></h1>
+            <?php $last_run = get_option('fra_gap_run_last', array()); ?>
+            <?php if (is_array($last_run) && !empty($last_run['date'])) : ?>
+                <div style="background:#fff;border:1px solid #dde3de;border-radius:6px;padding:12px 14px;margin:12px 0;max-width:80ch;">
+                    <strong><?php printf(esc_html__('Last overnight run, %1$s: drafted %2$d of %3$d.', 'france-relocation-assistant'), esc_html($last_run['date']), (int) ($last_run['drafted'] ?? 0), (int) ($last_run['considered'] ?? 0)); ?></strong>
+                    <?php $rows = array_merge(
+                        array_map(function ($d) { return array('Withheld (unverified)', $d['question'] ?: $d['gap_id'], $d['error']); }, (array) ($last_run['deferred'] ?? array())),
+                        array_map(function ($p) { return array('In Practice withheld', $p['question'] ?: $p['gap_id'], $p['reason']); }, (array) ($last_run['practice_withheld'] ?? array())),
+                        array_map(function ($f) { return array('Failed', $f['gap_id'], $f['error']); }, (array) ($last_run['failed'] ?? array()))
+                    ); ?>
+                    <?php if ($rows) : ?>
+                        <ul style="margin:8px 0 0 18px;">
+                            <?php foreach ($rows as $r) : ?>
+                                <li><strong><?php echo esc_html($r[0]); ?>:</strong> <?php echo esc_html($r[1]); ?> <span style="color:#5f6e66;">— <?php echo esc_html($r[2]); ?></span></li>
+                            <?php endforeach; ?>
+                        </ul>
+                    <?php else : ?>
+                        <p class="description" style="margin:6px 0 0;"><?php esc_html_e('Nothing withheld or failed.', 'france-relocation-assistant'); ?></p>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
             <?php
             $answer_stats = get_option('framt_chat_answer_stats', array());
             $direct_n = isset($answer_stats['direct']) ? (int) $answer_stats['direct'] : 0;
@@ -1148,20 +1147,6 @@ class France_Relocation_Assistant {
         wp_send_json_success($results);
     }
     
-    /**
-     * AJAX manual update handler (admin only)
-     */
-    public function ajax_manual_update() {
-        check_ajax_referer('fra_admin_nonce', 'nonce');
-        
-        if (!current_user_can('manage_options')) {
-            wp_send_json_error('Unauthorized');
-        }
-        
-        $result = $this->run_weekly_update();
-        
-        wp_send_json_success($result);
-    }
     
     /**
      * Search knowledge base
@@ -1219,272 +1204,11 @@ class France_Relocation_Assistant {
         return $results;
     }
     
-    /**
-     * Run weekly update
-     */
-    public function run_weekly_update() {
-        $update_log = array(
-            'timestamp' => current_time('timestamp'),
-            'status' => 'running',
-            'updates' => array(),
-            'added_count' => 0,
-            'updated_count' => 0
-        );
-        
-        try {
-            // Fetch updates from official sources
-            $updates = $this->fetch_official_updates();
-            
-            // Update knowledge base
-            $knowledge_base = $this->get_knowledge_base();
-            
-            foreach ($updates as $category => $category_updates) {
-                foreach ($category_updates as $topic_key => $topic_updates) {
-                    if (isset($knowledge_base[$category][$topic_key])) {
-                        // Track if anything actually changed
-                        $changed = false;
-                        foreach ($topic_updates as $field => $value) {
-                            if (!isset($knowledge_base[$category][$topic_key][$field]) || 
-                                $knowledge_base[$category][$topic_key][$field] !== $value) {
-                                $knowledge_base[$category][$topic_key][$field] = $value;
-                                $changed = true;
-                            }
-                        }
-                        if ($changed) {
-                            $knowledge_base[$category][$topic_key]['lastVerified'] = date('F Y');
-                            $update_log['updates'][] = "{$category}/{$topic_key}: Updated";
-                            $update_log['updated_count']++;
-                        }
-                    } else {
-                        // New topic
-                        if (!isset($knowledge_base[$category])) {
-                            $knowledge_base[$category] = array();
-                        }
-                        $knowledge_base[$category][$topic_key] = $topic_updates;
-                        $knowledge_base[$category][$topic_key]['lastVerified'] = date('F Y');
-                        $update_log['updates'][] = "{$category}/{$topic_key}: Added";
-                        $update_log['added_count']++;
-                    }
-                }
-            }
-            
-            // Save updated knowledge base
-            update_option(self::KNOWLEDGE_BASE_OPTION, $knowledge_base);
-            
-            $update_log['status'] = 'success';
-            $total = $update_log['added_count'] + $update_log['updated_count'];
-            if ($total > 0) {
-                $update_log['message'] = sprintf(
-                    'Knowledge base updated: %d added, %d updated',
-                    $update_log['added_count'],
-                    $update_log['updated_count']
-                );
-            } else {
-                $update_log['message'] = 'Knowledge base is already up to date';
-            }
-            
-        } catch (Exception $e) {
-            $update_log['status'] = 'error';
-            $update_log['message'] = $e->getMessage();
-        }
-        
-        // Save update log
-        update_option(self::LAST_UPDATE_OPTION, $update_log);
-        
-        // Log to WordPress
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('France Relocation Assistant: Weekly update completed - ' . $update_log['status']);
-        }
-        
-        return $update_log;
-    }
     
-    /**
-     * Fetch updates from official sources
-     */
-    private function fetch_official_updates() {
-        $updates = array();
-        
-        // France-Visas.gouv.fr - Visa fees and requirements
-        $visa_data = $this->fetch_visa_updates();
-        if ($visa_data) {
-            $updates['visas'] = $visa_data;
-        }
-        
-        // Service-Public.fr - General administrative info
-        $admin_data = $this->fetch_admin_updates();
-        if ($admin_data) {
-            $updates = array_merge_recursive($updates, $admin_data);
-        }
-        
-        // SMIC (minimum wage) for financial requirements
-        $smic_data = $this->fetch_smic_update();
-        if ($smic_data) {
-            $updates['visas']['visiteur']['financial_requirement'] = $smic_data;
-        }
-
-        // Visa Application Guide data (internal use for guide generator)
-        $visa_guide_data = $this->fetch_visa_application_guide_updates();
-        if ($visa_guide_data) {
-            $updates['visa_application_guide'] = $visa_guide_data;
-        }
-
-        return $updates;
-    }
     
-    /**
-     * Fetch visa updates from France-Visas
-     */
-    private function fetch_visa_updates() {
-        $updates = array();
-        
-        // Note: In production, you would use proper API calls or web scraping
-        // This is a placeholder that checks for cached/updated data
-        
-        $response = wp_remote_get('https://france-visas.gouv.fr/en/long-stay-visa', array(
-            'timeout' => 30,
-            'headers' => array(
-                'User-Agent' => 'France Relocation Assistant WordPress Plugin/' . FRA_VERSION
-            )
-        ));
-        
-        if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200) {
-            $body = wp_remote_retrieve_body($response);
-            
-            // Parse for visa fee (€99 as of 2025)
-            if (preg_match('/visa fee[:\s]*€?(\d+)/i', $body, $matches)) {
-                $updates['visiteur']['visa_fee'] = '€' . $matches[1];
-            }
-            
-            // Mark as verified
-            $updates['visiteur']['lastVerified'] = date('F Y');
-        }
-        
-        return $updates;
-    }
     
-    /**
-     * Fetch administrative updates from Service-Public
-     */
-    private function fetch_admin_updates() {
-        $updates = array();
-        
-        // OFII validation fee check
-        $response = wp_remote_get('https://www.service-public.fr/particuliers/vosdroits/F16162', array(
-            'timeout' => 30,
-            'headers' => array(
-                'User-Agent' => 'France Relocation Assistant WordPress Plugin/' . FRA_VERSION
-            )
-        ));
-        
-        if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200) {
-            $body = wp_remote_retrieve_body($response);
-            
-            // Parse for OFII tax amount
-            if (preg_match('/€?(\d{2,3})\s*(?:euros?|€)?\s*(?:tax|timbre|stamp)/i', $body, $matches)) {
-                $updates['visas']['ofiiValidation']['tax_amount'] = '€' . $matches[1];
-            }
-        }
-        
-        return $updates;
-    }
     
-    /**
-     * Fetch current SMIC (minimum wage)
-     */
-    private function fetch_smic_update() {
-        // SMIC is updated annually on January 1
-        // 2025 SMIC net: approximately €1,450/month
-        
-        $response = wp_remote_get('https://www.service-public.fr/particuliers/vosdroits/F2300', array(
-            'timeout' => 30
-        ));
-        
-        if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200) {
-            $body = wp_remote_retrieve_body($response);
-            
-            // Parse for SMIC mensuel net
-            if (preg_match('/(\d[\d\s,\.]+)\s*€?\s*(?:net|mensuel)/i', $body, $matches)) {
-                $smic = str_replace(array(' ', ','), array('', '.'), $matches[1]);
-                return '€' . number_format((float)$smic, 0);
-            }
-        }
-        
-        return null;
-    }
 
-    /**
-     * Fetch visa application guide updates from official sources
-     * Updates fees, processing times, and requirements for the guide generator
-     */
-    private function fetch_visa_application_guide_updates() {
-        $updates = array();
-
-        // Fetch from France-Visas for current fees
-        $response = wp_remote_get('https://france-visas.gouv.fr/en/web/france-visas/long-stay-visa', array(
-            'timeout' => 30,
-            'headers' => array(
-                'User-Agent' => 'France Relocation Assistant WordPress Plugin/' . FRA_VERSION
-            )
-        ));
-
-        if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200) {
-            $body = wp_remote_retrieve_body($response);
-
-            // Parse visa application fee
-            if (preg_match('/(?:visa|application)\s*fee[:\s]*€?(\d+)/i', $body, $matches)) {
-                $updates['fees_and_costs']['visa_application_fee'] = '€' . $matches[1];
-            }
-
-            // Parse OFII tax
-            if (preg_match('/(?:OFII|validation)\s*(?:tax|fee)[:\s]*€?(\d+)/i', $body, $matches)) {
-                $updates['fees_and_costs']['ofii_validation_tax'] = '€' . $matches[1];
-            }
-        }
-
-        // Fetch from TLScontact for service fees
-        $tls_response = wp_remote_get('https://visas-fr.tlscontact.com/visa/us', array(
-            'timeout' => 30,
-            'headers' => array(
-                'User-Agent' => 'France Relocation Assistant WordPress Plugin/' . FRA_VERSION
-            )
-        ));
-
-        if (!is_wp_error($tls_response) && wp_remote_retrieve_response_code($tls_response) === 200) {
-            $tls_body = wp_remote_retrieve_body($tls_response);
-
-            // Parse TLScontact service fee
-            if (preg_match('/service\s*fee[:\s]*(?:USD|€|\$)?(\d+)/i', $tls_body, $matches)) {
-                $updates['tlscontact_info']['service_fee'] = '€' . $matches[1];
-            }
-        }
-
-        // Fetch SMIC for financial thresholds (already done in fetch_smic_update, but we need it here too)
-        $smic_response = wp_remote_get('https://www.service-public.fr/particuliers/vosdroits/F2300', array(
-            'timeout' => 30
-        ));
-
-        if (!is_wp_error($smic_response) && wp_remote_retrieve_response_code($smic_response) === 200) {
-            $smic_body = wp_remote_retrieve_body($smic_response);
-
-            // Parse for SMIC mensuel net
-            if (preg_match('/(\d[\d\s,\.]+)\s*€?\s*(?:net|mensuel)/i', $smic_body, $matches)) {
-                $smic = str_replace(array(' ', ','), array('', '.'), $matches[1]);
-                $monthly = number_format((float)$smic, 0);
-                $updates['document_requirements']['financial_thresholds']['individual_monthly'] = '€' . $monthly;
-                $updates['document_requirements']['financial_thresholds']['couple_monthly'] = '€' . number_format((float)$smic * 1.5, 0);
-                $updates['document_requirements']['financial_thresholds']['annual_individual'] = '€' . number_format((float)$smic * 12, 0);
-                $updates['document_requirements']['financial_thresholds']['annual_couple'] = '€' . number_format((float)$smic * 18, 0);
-            }
-        }
-
-        // Update lastVerified timestamp
-        if (!empty($updates)) {
-            $updates['lastVerified'] = date('F Y');
-        }
-
-        return !empty($updates) ? $updates : null;
-    }
 
     /*
     |--------------------------------------------------------------------------

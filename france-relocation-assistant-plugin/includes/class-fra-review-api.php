@@ -304,8 +304,22 @@ class FRA_Review_API {
             return rest_ensure_response(array('recorded' => 'started'));
         }
 
+        if ('failed' === $state) {
+            // The worker's run died after starting. Clear "in progress" and say why.
+            $status = array_merge($status, array(
+                'running'        => false,
+                'completed_at'   => current_time('mysql'),
+                'error_messages' => array(sanitize_text_field('The run stopped before finishing: ' . (string) $request->get_param('error'))),
+                'errors'         => max(1, (int) ($status['errors'] ?? 0)),
+                'run_failed'     => true,
+            ));
+            update_option('fra_review_status', $status);
+            $this->notify_run($status);
+            return rest_ensure_response(array('recorded' => 'failed'));
+        }
+
         if ('completed' !== $state) {
-            return new WP_Error('bad_state', 'state must be started or completed', array('status' => 400));
+            return new WP_Error('bad_state', 'state must be started, completed or failed', array('status' => 400));
         }
 
         $failures = (array) $request->get_param('failures');
@@ -332,8 +346,19 @@ class FRA_Review_API {
             'completed_at'   => current_time('mysql'),
             'error_messages' => $messages,
             'instance_id'    => sanitize_text_field((string) $request->get_param('instance_id')),
+            'run_failed'     => false,
+            // What a run can hide: topics asked for that do not exist, how often
+            // search failed, and which In Practice sections were held back.
+            'unmatched_topics'  => array_map('sanitize_text_field', (array) $request->get_param('unmatched_topics')),
+            'search_errors'     => count((array) $request->get_param('web_search_errors')),
+            'web_sources'       => (int) $request->get_param('web_sources'),
+            'practice_withheld' => count((array) $request->get_param('practice_withheld')),
+            'output_tokens'     => (int) $request->get_param('total_output_tokens'),
         ));
         update_option('fra_review_status', $status);
+        if (!$dry_run) {
+            $this->notify_run($status);
+        }
 
         $history = get_option('fra_review_history', array());
         if (!is_array($history)) {
@@ -352,6 +377,43 @@ class FRA_Review_API {
         update_option('fra_review_history', array_slice($history, -20));
 
         return rest_ensure_response(array('recorded' => 'completed', 'pending' => count((array) get_option('fra_pending_reviews', array()))));
+    }
+
+    /**
+     * Email the review address about a worker run, using the same settings
+     * and wording as the old WordPress-run review.
+     *
+     * @param array $status fra_review_status
+     */
+    private function notify_run($status) {
+        if (!class_exists('FRA_Scheduled_Review')) {
+            return;
+        }
+        $settings = FRA_Scheduled_Review::get_instance()->get_settings();
+        if (empty($settings['email_notification'])) {
+            return;
+        }
+        $email = sanitize_email((string) ($settings['email_address'] ?? '')) ?: get_option('admin_email');
+        FRA_Scheduled_Review::get_instance()->send_notification_email($status, $email);
+    }
+
+    /**
+     * Where the review emails go, honouring the schedule settings.
+     *
+     * @return string|null Null when notifications are switched off
+     */
+    private function review_email() {
+        if (class_exists('FRA_Scheduled_Review')) {
+            $settings = FRA_Scheduled_Review::get_instance()->get_settings();
+            if (empty($settings['email_notification'])) {
+                return null;
+            }
+            $email = sanitize_email((string) ($settings['email_address'] ?? ''));
+            if ('' !== $email) {
+                return $email;
+            }
+        }
+        return get_option('admin_email');
     }
 
     /* ---------------------------------------------------------------------
@@ -754,8 +816,7 @@ class FRA_Review_API {
         update_option('fra_gap_run_last', $report, false);
 
         if ($deferred || $failed || $practice) {
-            $settings = get_option('fra_scheduled_review_settings', array());
-            $email    = sanitize_email((string) ($settings['email_address'] ?? '')) ?: get_option('admin_email');
+            $email    = $this->review_email();
             $site     = get_bloginfo('name');
             $n        = count($deferred) + count($failed) + count($practice);
             $subject  = sprintf('[%s] %d knowledge-base draft%s need a hand', $site, $n, 1 === $n ? '' : 's');
@@ -783,7 +844,9 @@ class FRA_Review_API {
                 $lines[] = '';
             }
             $lines[] = 'Gaps: ' . admin_url('admin.php?page=france-relocation-assistant-ai-review');
-            wp_mail($email, $subject, implode("\n", $lines));
+            if ($email) {
+                wp_mail($email, $subject, implode("\n", $lines));
+            }
         }
 
         return rest_ensure_response(array('recorded' => 'report', 'deferred' => count($deferred), 'failed' => count($failed)));
@@ -877,9 +940,20 @@ class FRA_Review_API {
             'timestamp'           => current_time('mysql'),
         );
 
+        // Same lock as suggestions: re-read the queue under it so a draft and
+        // a suggestion, or an approval on the admin screen, cannot overwrite
+        // each other.
+        if (!$this->acquire_lock()) {
+            return new WP_Error('fra_review_busy', __('Another suggestion is being written. Retry shortly.', 'france-relocation-assistant'), array('status' => 409));
+        }
+        $fresh = get_option('fra_pending_reviews', array());
+        $fresh = is_array($fresh) ? $fresh : array();
+        $fresh[$review_id] = $pending[$review_id];
+        $pending = $fresh;
         update_option('fra_pending_reviews', $pending);
+        $this->release_lock();
         update_option(self::LAST_CALL_OPTION, current_time('mysql'), false);
-        FRA_KB_Gaps::mark_drafted($gap_id, $review_id);
+        FRA_KB_Gaps::mark_drafted($gap_id, $review_id, $category, $topic);
 
         return new WP_REST_Response(array(
             'gap_id'       => $gap_id,
@@ -1024,6 +1098,19 @@ class FRA_Review_API {
      *
      * @return bool True if the lock was acquired
      */
+    /**
+     * The same advisory lock, for the approval screen's writes to the queue.
+     *
+     * @return bool
+     */
+    public static function lock_queue() {
+        return self::get_instance()->acquire_lock();
+    }
+
+    public static function unlock_queue() {
+        self::get_instance()->release_lock();
+    }
+
     private function acquire_lock() {
         if (add_option(self::LOCK_OPTION, time(), '', false)) {
             return true;

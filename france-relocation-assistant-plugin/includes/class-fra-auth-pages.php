@@ -669,11 +669,6 @@ class FRA_Auth_Pages {
         /* MemberPress paints every other row white (tr.alt / nth-child);
            on the dark account page that turns a row into an unreadable
            white bar. Rows stay transparent everywhere inside our pages. */
-        body:has(.fra-auth-container) table tr,
-        body:has(.fra-auth-container) table tr.alt,
-        body:has(.fra-auth-container) table tr:nth-child(even),
-        body:has(.fra-auth-container) table tr:nth-child(odd),
-        body:has(.fra-auth-container) table tr:hover,
         .fra-auth-form-wrap table tr,
         .fra-auth-form-wrap table tr.alt,
         .fra-auth-form-wrap table tr:nth-child(even),
@@ -681,11 +676,6 @@ class FRA_Auth_Pages {
             background: transparent !important;
         }
 
-        body:has(.fra-auth-container) table td,
-        body:has(.fra-auth-container) table th {
-            background: transparent !important;
-            color: inherit;
-        }
 
         .fra-auth-form-wrap table th {
             font-size: 0.67rem;
@@ -846,7 +836,7 @@ class FRA_Auth_Pages {
                 </div>
                 
                 <div class="fra-auth-form-wrap">
-                    <?php echo do_shortcode('[mepr-login-form]'); ?>
+                    <?php echo shortcode_exists('mepr-login-form') ? do_shortcode('[mepr-login-form]') : wp_login_form(array('echo' => false, 'redirect' => home_url('/portal/'))); ?>
                 </div>
                 
                 <div class="fra-auth-card-footer">
@@ -903,7 +893,9 @@ class FRA_Auth_Pages {
                 <div class="fra-auth-form-wrap">
                     <?php 
                     if (!empty($atts['membership_id'])) {
-                        echo do_shortcode('[mepr-membership-registration-form id="' . esc_attr($atts['membership_id']) . '"]');
+                        echo shortcode_exists('mepr-membership-registration-form')
+                            ? do_shortcode('[mepr-membership-registration-form id="' . esc_attr($atts['membership_id']) . '"]')
+                            : '<p class="fra-auth-error">' . esc_html__('Sign-up is temporarily unavailable. Please try again shortly.', 'france-relocation-assistant') . '</p>';
                     } else {
                         echo '<p class="fra-auth-error">Add membership_id to shortcode</p>';
                     }
@@ -963,7 +955,7 @@ class FRA_Auth_Pages {
                         <p>Membership, profile and sign-in details live behind your login.</p>
                     </div>
                     <div class="fra-auth-form-wrap">
-                        <?php echo do_shortcode('[mepr-login-form]'); ?>
+                        <?php echo shortcode_exists('mepr-login-form') ? do_shortcode('[mepr-login-form]') : wp_login_form(array('echo' => false, 'redirect' => home_url('/portal/'))); ?>
                     </div>
                     <div class="fra-auth-card-footer">
                         <p>Not a member yet? <a href="<?php echo esc_url(home_url('/pricing/')); ?>"><strong>See what membership is</strong></a></p>
@@ -987,7 +979,7 @@ class FRA_Auth_Pages {
                 </div>
                 
                 <div class="fra-auth-form-wrap">
-                    <?php echo do_shortcode('[mepr-account-form]'); ?>
+                    <?php echo shortcode_exists('mepr-account-form') ? do_shortcode('[mepr-account-form]') : '<p>' . esc_html__('Account details are temporarily unavailable. Your portal still works.', 'france-relocation-assistant') . '</p>'; ?>
                 </div>
                 
                 <div class="fra-auth-card-footer">

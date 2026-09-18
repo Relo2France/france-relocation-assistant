@@ -1059,8 +1059,7 @@ For example, for Visitor Visa:
             if (!empty($review['gap_id']) && class_exists('FRA_KB_Gaps')) {
                 FRA_KB_Gaps::mark_applied($review['gap_id']);
             }
-            unset($pending[$review_id]);
-            update_option(self::PENDING_REVIEWS_OPTION, $pending);
+            $this->remove_pending(array($review_id));
             wp_send_json_success(array('message' => 'Update applied successfully'));
         } else {
             wp_send_json_error('Failed to apply update');
@@ -1076,6 +1075,48 @@ For example, for Visitor Visa:
      * @param string $content Topic text
      * @return string The section, or '' when there is none
      */
+    /**
+     * Keywords for a new topic: the distinct words of its title and of the
+     * questions that raised it, stop words removed.
+     *
+     * @param array $review Pending review
+     * @return string[]
+     */
+    private static function keywords_for($review) {
+        $text  = strtolower((string) ($review['topic_name'] ?? '') . ' ' . implode(' ', (array) ($review['gap_questions'] ?? array())));
+        $stop  = array('the', 'and', 'for', 'with', 'what', 'how', 'can', 'does', 'from', 'that', 'this', 'are', 'you', 'your', 'our', 'who', 'when', 'into', 'about', 'france', 'french', 'have', 'need', 'will', 'there', 'their', 'which', 'should');
+        $words = preg_split('/[^a-z0-9\x{00C0}-\x{017F}]+/u', $text, -1, PREG_SPLIT_NO_EMPTY);
+        $out   = array();
+        foreach ($words as $w) {
+            if (strlen($w) > 3 && !in_array($w, $stop, true) && !in_array($w, $out, true)) {
+                $out[] = $w;
+            }
+        }
+        return array_slice($out, 0, 15);
+    }
+
+    /**
+     * Remove handled items from the queue, re-reading it under the lock so a
+     * suggestion the worker posted meanwhile is never lost.
+     *
+     * @param string[] $ids Review ids to remove
+     */
+    private function remove_pending($ids) {
+        if (empty($ids)) {
+            return;
+        }
+        $locked = class_exists('FRA_Review_API') ? FRA_Review_API::lock_queue() : false;
+        $pending = get_option(self::PENDING_REVIEWS_OPTION, array());
+        $pending = is_array($pending) ? $pending : array();
+        foreach ($ids as $id) {
+            unset($pending[$id]);
+        }
+        update_option(self::PENDING_REVIEWS_OPTION, $pending);
+        if ($locked) {
+            FRA_Review_API::unlock_queue();
+        }
+    }
+
     private static function extract_in_practice($content) {
         if (preg_match('/(\*\*In Practice\*\*[\s\S]*)$/i', (string) $content, $m)) {
             return trim($m[1]);
@@ -1109,7 +1150,9 @@ For example, for Visitor Visa:
             $knowledge_base[$category][$topic] = array(
                 'title'    => isset($review['topic_name']) ? $review['topic_name'] : ucfirst(str_replace('_', ' ', $topic)),
                 'content'  => '',
-                'keywords' => array(),
+                // Keywords from the title and the questions that raised it, so
+                // the chat can find the new topic.
+                'keywords' => self::keywords_for($review),
                 'sources'  => array(),
             );
         }
@@ -1130,6 +1173,11 @@ For example, for Visitor Visa:
             $practice = self::extract_in_practice($old_content);
         }
         $new_content = self::strip_in_practice($new_content);
+        // A suggestion that carries only an In Practice section must not erase
+        // the official text.
+        if ('' === trim($new_content)) {
+            $new_content = self::strip_in_practice($old_content);
+        }
         if ('' !== $practice) {
             if (!preg_match('/^\s*\*\*In Practice\*\*/i', $practice)) {
                 $practice = "**In Practice**\n\n" . $practice;
@@ -1137,7 +1185,20 @@ For example, for Visitor Visa:
             $new_content = rtrim($new_content) . "\n\n" . $practice;
         }
         if (!empty($review['practice_sources']) && is_array($review['practice_sources'])) {
-            $knowledge_base[$category][$topic]['practice_sources'] = array_values(array_map('sanitize_text_field', $review['practice_sources']));
+            // Each source is {name, type, date}; sanitize the fields, keep the shape.
+            $sources = array();
+            foreach ($review['practice_sources'] as $src) {
+                if (is_array($src) && !empty($src['name'])) {
+                    $sources[] = array(
+                        'name' => sanitize_text_field((string) $src['name']),
+                        'type' => sanitize_key((string) ($src['type'] ?? '')),
+                        'date' => sanitize_text_field((string) ($src['date'] ?? '')),
+                    );
+                } elseif (is_string($src) && '' !== trim($src)) {
+                    $sources[] = array('name' => sanitize_text_field($src), 'type' => 'forum', 'date' => '');
+                }
+            }
+            $knowledge_base[$category][$topic]['practice_sources'] = $sources;
         }
         
         // Update content
@@ -1193,8 +1254,7 @@ For example, for Visitor Visa:
             if (!empty($pending[$review_id]['gap_id']) && class_exists('FRA_KB_Gaps')) {
                 FRA_KB_Gaps::reopen($pending[$review_id]['gap_id']);
             }
-            unset($pending[$review_id]);
-            update_option(self::PENDING_REVIEWS_OPTION, $pending);
+            $this->remove_pending(array($review_id));
         }
         
         wp_send_json_success(array('message' => 'Change rejected'));
@@ -1212,21 +1272,29 @@ For example, for Visitor Visa:
         
         $pending = $this->get_pending_reviews();
         $approved = 0;
+        $done     = array();
+        $failed   = array();
         
         foreach ($pending as $review_id => $review) {
             if ($this->apply_topic_update($review)) {
                 $approved++;
+                $done[] = $review_id;
                 if (!empty($review['gap_id']) && class_exists('FRA_KB_Gaps')) {
                     FRA_KB_Gaps::mark_applied($review['gap_id']);
                 }
+            } else {
+                $failed[] = isset($review['topic_name']) ? $review['topic_name'] : $review_id;
             }
         }
         
-        update_option(self::PENDING_REVIEWS_OPTION, array());
+        // Only what was applied leaves the queue: a failed apply stays for a
+        // look, and anything the worker posted meanwhile is kept.
+        $this->remove_pending($done);
         
         wp_send_json_success(array(
-            'message' => "Applied {$approved} updates",
-            'approved' => $approved
+            'message'  => $failed ? "Applied {$approved} updates; " . count($failed) . ' could not be applied and are still pending: ' . implode(', ', $failed) : "Applied {$approved} updates",
+            'approved' => $approved,
+            'failed'   => $failed,
         ));
     }
     
@@ -1249,7 +1317,8 @@ For example, for Visitor Visa:
                 }
             }
         }
-        update_option(self::PENDING_REVIEWS_OPTION, array());
+        // Only the ones the admin saw; anything posted meanwhile stays.
+        $this->remove_pending(array_keys($pending));
         
         wp_send_json_success(array(
             'message' => "Rejected {$count} changes",

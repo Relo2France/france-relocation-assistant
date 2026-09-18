@@ -426,14 +426,19 @@ class FRA_KB_Gaps {
      * @param string $review_id The pending review it produced
      * @return bool
      */
-    public static function mark_drafted($id, $review_id) {
+    public static function mark_drafted($id, $review_id, $category = '', $topic = '') {
         $gaps = get_option(self::GAPS_OPTION, array());
         if (!isset($gaps[$id])) {
             return false;
         }
 
-        $gaps[$id]['status']    = 'drafted';
-        $gaps[$id]['review_id'] = $review_id;
+        $gaps[$id]['status']     = 'drafted';
+        $gaps[$id]['review_id']  = $review_id;
+        $gaps[$id]['drafted_at'] = current_time('mysql');
+        // Where the draft landed, so a later check can tell applied from rejected.
+        if ('' !== $category && '' !== $topic) {
+            $gaps[$id]['draft_target'] = array('category' => $category, 'topic' => $topic);
+        }
         update_option(self::GAPS_OPTION, $gaps, false);
 
         return true;
@@ -454,9 +459,29 @@ class FRA_KB_Gaps {
 
         $gaps[$id]['last_error'] = substr((string) $message, 0, 300);
         $gaps[$id]['last_failed_at'] = current_time('mysql');
+        $gaps[$id]['defer_count'] = (int) ($gaps[$id]['defer_count'] ?? 0) + 1;
+        // A matched topic that no longer exists will never draft.
+        if (false !== stripos((string) $message, 'no longer exists')) {
+            $gaps[$id]['stale'] = true;
+        }
+        self::retire_if_hopeless($gaps, $id);
         update_option(self::GAPS_OPTION, $gaps, false);
 
         return true;
+    }
+
+    /**
+     * After five failed or rejected attempts a gap stops being retried and is
+     * set aside with the reason, so it does not cost a nightly slot forever.
+     *
+     * @param array  $gaps All gaps, by reference
+     * @param string $id   Gap id
+     */
+    private static function retire_if_hopeless(&$gaps, $id) {
+        if ((int) ($gaps[$id]['defer_count'] ?? 0) >= 5) {
+            $gaps[$id]['status']        = 'dismissed';
+            $gaps[$id]['dismissed_why'] = 'Set aside after five attempts: ' . (string) ($gaps[$id]['last_error'] ?? '');
+        }
     }
 
     /**
@@ -511,6 +536,46 @@ class FRA_KB_Gaps {
      *
      * @return int Gaps reopened
      */
+    /**
+     * One-time repair. The first reconcile read keys a gap never had, so it
+     * reopened every drafted gap whose review had left the queue, approved
+     * ones included. A reopened gap whose topic has an approved update dated
+     * after the gap was first seen was in fact applied; close it again.
+     *
+     * @return int Gaps closed
+     */
+    public static function repair_reconcile_v1() {
+        if ('1' === get_option('fra_gaps_reconciled_v2')) {
+            return 0;
+        }
+        $gaps   = get_option(self::GAPS_OPTION, array());
+        $kb     = get_option('fra_knowledge_base', array());
+        $closed = 0;
+        foreach ($gaps as $id => $gap) {
+            if (($gap['status'] ?? '') !== 'open' || ($gap['last_error'] ?? '') !== 'Draft rejected before 3.13.10; reopened for a retry') {
+                continue;
+            }
+            $cat   = (string) ($gap['matched']['category'] ?? '');
+            $topic = (string) ($gap['matched']['topic'] ?? '');
+            if ('' === $cat || '' === $topic || !isset($kb[$cat][$topic])) {
+                continue;
+            }
+            $seen = strtotime((string) ($gap['first_seen'] ?? '')) ?: 0;
+            foreach ((array) ($kb[$cat][$topic]['updateHistory'] ?? array()) as $h) {
+                if ((strtotime((string) ($h['date'] ?? '')) ?: 0) >= $seen) {
+                    $gaps[$id]['status']     = 'applied';
+                    $gaps[$id]['last_error'] = '';
+                    $gaps[$id]['defer_count'] = max(0, (int) ($gaps[$id]['defer_count'] ?? 1) - 1);
+                    $closed++;
+                    break;
+                }
+            }
+        }
+        update_option(self::GAPS_OPTION, $gaps, false);
+        update_option('fra_gaps_reconciled_v2', '1', false);
+        return $closed;
+    }
+
     public static function reconcile_drafted() {
         if ('1' === get_option('fra_gaps_reconciled_v1')) {
             return 0;
@@ -527,9 +592,9 @@ class FRA_KB_Gaps {
             if ('' !== $review_id && isset($pending[$review_id])) {
                 continue; // still waiting for a decision
             }
-            $cat   = (string) ($gap['category'] ?? '');
-            $topic = (string) ($gap['topic'] ?? '');
-            $drafted_at = strtotime((string) ($gap['drafted_at'] ?? '')) ?: 0;
+            $cat   = (string) ($gap['draft_target']['category'] ?? $gap['matched']['category'] ?? '');
+            $topic = (string) ($gap['draft_target']['topic'] ?? $gap['matched']['topic'] ?? '');
+            $drafted_at = strtotime((string) ($gap['drafted_at'] ?? $gap['last_seen'] ?? '')) ?: 0;
             // An approval appends to the topic's updateHistory; the newest entry
             // dates the last applied draft.
             $updated_at = 0;
@@ -572,6 +637,7 @@ class FRA_KB_Gaps {
         $gaps[$id]['last_failed_at'] = current_time('mysql');
         $gaps[$id]['defer_count']    = (int) ($gaps[$id]['defer_count'] ?? 0) + 1;
         unset($gaps[$id]['review_id'], $gaps[$id]['drafted_at']);
+        self::retire_if_hopeless($gaps, $id);
         update_option(self::GAPS_OPTION, $gaps, false);
         return true;
     }
@@ -583,6 +649,7 @@ class FRA_KB_Gaps {
      */
     public static function get_ready() {
         self::reconcile_drafted();
+        self::repair_reconcile_v1();
         $ready = array();
 
         foreach (self::get_all('open') as $id => $gap) {
