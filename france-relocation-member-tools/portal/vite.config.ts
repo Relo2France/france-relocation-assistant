@@ -66,7 +66,7 @@ export default defineConfig({
         manualChunks: {
           // Vendor chunks - rarely change, cached longer
           'vendor-react': ['react', 'react-dom'],
-          'vendor-router': ['react-router-dom'],
+          'vendor-router': [],
           'vendor-query': ['@tanstack/react-query'],
           'vendor-virtual': ['@tanstack/react-virtual'],
           'vendor-utils': ['clsx', 'zustand'],
