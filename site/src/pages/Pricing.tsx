@@ -1,5 +1,5 @@
 import { Button, Label, Requirement, Requirements, SiteNav } from '../components';
-import { external, familyCopy, GUARANTEE, PRICE, PRICE_NOTE, REFUND_DAYS } from '../content/links';
+import { external, FAMILY_ADDON_ON_SALE, familyCopy, GUARANTEE, PRICE, PRICE_NOTE, REFUND_DAYS } from '../content/links';
 import { LEGAL_PAGES } from '../content/legal';
 import { portalFeatures } from '../content/portal';
 import { coverage, totalTopics } from '../content/coverage';
@@ -87,6 +87,12 @@ export function Pricing() {
             )}
             <p className="font-ui text-[0.76rem] text-muted mt-4 mb-0 pt-3 border-t border-rule-soft">
               <span className="font-bold text-ink">{family.cardTitle}</span> · {family.cardNote}
+              {FAMILY_ADDON_ON_SALE ? (
+                <>
+                  {' '}
+                  <a href={external.familyAddon} className="text-vine font-semibold">Add it to your membership</a>
+                </>
+              ) : null}
             </p>
             <p className="font-ui text-[0.74rem] text-muted text-center mt-4 mb-0" data-kind="legal-links">
               {LEGAL_PAGES.map((page, i) => (

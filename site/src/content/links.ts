@@ -12,6 +12,8 @@ export const external = {
   signIn: `${WP_ORIGIN}/portal/`,
   /** MemberPress checkout. One product: lifetime access. */
   join: `${WP_ORIGIN}/register/lifetime-membership/`,
+  /** MemberPress checkout for the Family add-on (product 560, "Family plan"). */
+  familyAddon: `${WP_ORIGIN}/register/family-add-on/`,
   portal: `${WP_ORIGIN}/portal/`,
   account: `${WP_ORIGIN}/account/`,
 } as const;
@@ -41,7 +43,7 @@ export const GUARANTEE = `${REFUND_DAYS}-day money-back guarantee. Email us with
  * launch. Flip this to true only once the product is live and gated, and the
  * $20 copy returns everywhere at once.
  */
-export const FAMILY_ADDON_ON_SALE = false;
+export const FAMILY_ADDON_ON_SALE = true;
 export const FAMILY_ADDON_PRICE = '$20';
 /** No trailing full stop: it is quoted inside parentheses as well as on its own. */
 export const FAMILY_ADDON_NOTE = 'once, on top of membership, for one partner and up to four children';

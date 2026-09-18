@@ -71,6 +71,10 @@ class FRAMT_Portal_API {
      */
     private function __construct() {
         add_action( 'rest_api_init', array( $this, 'register_routes' ) );
+        // Family add-on: find the product and honour launch households. Cheap
+        // once done (two option reads), so it can run on every admin load.
+        add_action( 'admin_init', array( __CLASS__, 'family_addon_setup' ) );
+        add_action( 'rest_api_init', array( __CLASS__, 'family_addon_setup' ), 5 );
 
         // Member files are served through admin-ajax with a per-file nonce.
         // The URLs were built for years; the handlers behind them are these.
@@ -11512,6 +11516,43 @@ SECTIONS;
     }
 
     /**
+     * Wire up the Family add-on once, without anyone having to type IDs:
+     * find the MemberPress product whose checkout slug is family-add-on and
+     * record its ID and checkout URL if Portal Settings has none. The first
+     * time a product ID is in force, every household that already added
+     * family during the free launch keeps it (a per-member override), as the
+     * site promised "included during launch".
+     *
+     * @return void
+     */
+    public static function family_addon_setup() {
+        if ( ! (int) get_option( 'framt_family_addon_product_id', 0 ) ) {
+            $product = get_page_by_path( 'family-add-on', OBJECT, 'memberpressproduct' );
+            if ( $product && 'publish' === $product->post_status ) {
+                update_option( 'framt_family_addon_product_id', (int) $product->ID );
+                if ( '' === (string) get_option( 'framt_family_addon_url', '' ) ) {
+                    update_option( 'framt_family_addon_url', get_permalink( $product ) );
+                }
+            }
+        }
+        if ( (int) get_option( 'framt_family_addon_product_id', 0 ) > 0 && ! get_option( 'framt_family_launch_grandfathered' ) ) {
+            $owners = get_users( array(
+                'meta_key'     => 'framt_family_members',
+                'meta_compare' => 'EXISTS',
+                'fields'       => 'ID',
+                'number'       => -1,
+            ) );
+            foreach ( $owners as $owner_id ) {
+                $members = get_user_meta( (int) $owner_id, 'framt_family_members', true );
+                if ( is_array( $members ) && ! empty( $members ) && '' === (string) get_user_meta( (int) $owner_id, 'framt_family_feature_enabled', true ) ) {
+                    update_user_meta( (int) $owner_id, 'framt_family_feature_enabled', '1' );
+                }
+            }
+            update_option( 'framt_family_launch_grandfathered', current_time( 'mysql' ), false );
+        }
+    }
+
+    /**
      * Check if family feature is enabled for user
      * TOGGLE POINT: Modify this to integrate with MemberPress or other membership plugins
      *
@@ -11519,6 +11560,10 @@ SECTIONS;
      * @return bool
      */
     private function is_family_feature_enabled( $user_id ) {
+        // Administrators run the site and test every feature.
+        if ( user_can( (int) $user_id, 'manage_options' ) ) {
+            return true;
+        }
         // A manual override on the member wins either way.
         $manual_override = get_user_meta( $user_id, 'framt_family_feature_enabled', true );
         if ( '1' === $manual_override ) {

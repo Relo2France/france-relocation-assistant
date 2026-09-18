@@ -24,9 +24,11 @@ describe('legal pages', () => {
 });
 
 describe('family add-on', () => {
-  it('is not sold while the MemberPress product does not exist', () => {
-    // Flip this expectation only in the same change that creates the product.
-    expect(FAMILY_ADDON_ON_SALE).toBe(false);
+  it('is on sale now that the MemberPress product exists (Family plan, product 560)', () => {
+    expect(FAMILY_ADDON_ON_SALE).toBe(true);
+  });
+
+  it('says it is included during launch when switched off', () => {
     const copy = familyCopy(false);
     const text = Object.values(copy).join(' ');
     expect(text).not.toContain(FAMILY_ADDON_PRICE);
