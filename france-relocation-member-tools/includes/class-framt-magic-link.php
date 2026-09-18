@@ -113,6 +113,31 @@ class FRAMT_Magic_Link {
             wp_safe_redirect( is_user_logged_in() ? $tracker : add_query_arg( 'redirect_to', rawurlencode( $tracker ), home_url( '/portal/' ) ) );
             exit;
         }
+        // The Family add-on's checkout is for members only: it adds to a
+        // lifetime membership and gives nothing on its own.
+        if ( is_singular( 'memberpressproduct' ) ) {
+            $product_id = (int) get_queried_object_id();
+            $family_id  = (int) get_option( 'framt_family_addon_product_id', 0 );
+            if ( $product_id && ( $product_id === $family_id || 'family-add-on' === get_post_field( 'post_name', $product_id ) ) ) {
+                $here = get_permalink( $product_id );
+                if ( ! is_user_logged_in() ) {
+                    wp_safe_redirect( add_query_arg( 'redirect_to', rawurlencode( $here ), home_url( '/portal/' ) ) );
+                    exit;
+                }
+                if ( ! current_user_can( 'manage_options' ) && class_exists( 'MeprUser' ) ) {
+                    $mepr   = new MeprUser( get_current_user_id() );
+                    $active = method_exists( $mepr, 'active_product_subscriptions' ) ? array_map( 'intval', (array) $mepr->active_product_subscriptions( 'ids' ) ) : array();
+                    if ( in_array( $product_id, $active, true ) ) {
+                        wp_safe_redirect( add_query_arg( 'view', 'family', home_url( '/portal/' ) ) );
+                        exit;
+                    }
+                    if ( empty( array_diff( $active, array( $product_id ) ) ) ) {
+                        wp_safe_redirect( home_url( '/pricing/' ) );
+                        exit;
+                    }
+                }
+            }
+        }
         if ( ! is_user_logged_in() && is_page( 'account' ) ) {
             wp_safe_redirect( home_url( '/portal/' ) );
             exit;

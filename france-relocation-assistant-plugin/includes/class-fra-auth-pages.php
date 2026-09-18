@@ -913,7 +913,24 @@ class FRA_Auth_Pages {
         $price = $this->get('auth_signup_price');
         $price_note = $this->get('auth_signup_price_note');
         $benefits = array_filter(array_map('trim', explode("\n", $this->get('auth_signup_benefits'))));
-        
+
+        // The Family add-on has its own checkout: describe it, not the
+        // lifetime membership it sits on top of.
+        $family_id = (int) get_option('framt_family_addon_product_id', 0);
+        $product   = (int) $atts['membership_id'];
+        if ($product > 0 && ($product === $family_id || 'family-add-on' === get_post_field('post_name', $product))) {
+            $title      = 'Family add-on';
+            $subtitle   = 'For the people moving with you: one partner and up to four children, added to your membership.';
+            $price      = '$20';
+            $price_note = 'once, on top of your lifetime membership. No renewal.';
+            $benefits   = array(
+                'Your partner gets their own sign-in to the same household file',
+                'A dossier and dated steps for each person moving',
+                'Hand any step to your partner, including the children’s',
+                'Keep doing it all yourself if you prefer; nothing changes for you',
+            );
+        }
+
         ob_start();
         ?>
         <div class="fra-auth-container fra-auth-container-wide">
