@@ -43,6 +43,31 @@ class FRAMT_Magic_Link {
         add_action( 'wp_ajax_nopriv_' . self::AJAX, array( $this, 'ajax_request' ) );
         add_action( 'wp_ajax_' . self::AJAX, array( $this, 'ajax_request' ) );
         add_action( 'template_redirect', array( $this, 'handle_link' ), 0 );
+        // Signing out ends on the logged-out page. MemberPress applies its
+        // own after-logout URL late on this filter; ours runs after it.
+        add_filter( 'logout_redirect', array( $this, 'logout_redirect' ), PHP_INT_MAX, 3 );
+        // A signed-out visitor to the account page gets the real sign-in
+        // page, not MemberPress's bare "unauthorized" form.
+        add_action( 'template_redirect', array( $this, 'account_needs_sign_in' ), 1 );
+    }
+
+    public function account_needs_sign_in() {
+        if ( ! is_user_logged_in() && is_page( 'account' ) ) {
+            wp_safe_redirect( home_url( '/login/' ) );
+            exit;
+        }
+    }
+
+    /**
+     * Honour the /logged-out/ destination every sign-out link carries,
+     * whatever a later setting would put in its place.
+     */
+    public function logout_redirect( $redirect_to, $requested = '', $user = null ) {
+        $logged_out = home_url( '/logged-out/' );
+        if ( is_string( $requested ) && 0 === strpos( $requested, $logged_out ) ) {
+            return $logged_out;
+        }
+        return $redirect_to;
     }
 
     /** The one reply, whatever happened, so nobody can test which emails have accounts. */

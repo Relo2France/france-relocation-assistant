@@ -5,6 +5,13 @@
  * @package Relo2France
  */
 
+// Sign-in, account, logged-out and thank-you draw their own card; the
+// full-screen auth template renders them without a second title and card.
+if (is_page(array('login', 'account', 'logged-out', 'thank-you'))) {
+    include locate_template('template-auth.php');
+    return;
+}
+
 get_header();
 ?>
 
