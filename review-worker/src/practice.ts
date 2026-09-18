@@ -8,6 +8,8 @@
  * (the official text still goes through), and the reason travels with the
  * draft so it shows on the review card and in the run email.
  */
+import { extractJson, sendMessage } from './anthropic';
+import type { Env } from './types';
 
 export interface PracticeSource {
   name: string;
@@ -99,3 +101,56 @@ export const IN_PRACTICE_RULES = `**IN PRACTICE RULES (the site's reputation rid
 - Distinguish "the law says X" from "in practice, Y". Be honest about grey areas without encouraging rule-breaking.
 - No rumours, no speculation, no advice to break rules. If you found nothing that meets this bar, return an empty in_practice_content; that is the right answer.
 - List every community source you relied on in practice_sources, each with a date. A section with fewer than two independent dated sources will be withheld automatically.`;
+
+/**
+ * A dedicated research call for the In Practice section, with its own
+ * search budget. The official review kept spending its searches on
+ * verification and arriving at the community layer with nothing left; this
+ * call starts there and nowhere else.
+ */
+export interface PracticeResearch {
+  content: string;
+  sources: PracticeSource[];
+  webSources: number;
+  webSearchErrors: string[];
+  outputTokens: number;
+}
+
+export function buildInPracticePrompt(input: { title: string; official: string; hints: string[] }): string {
+  const hints = input.hints.filter(Boolean).slice(0, 8);
+  return `You are researching the lived-experience layer of one topic for Relo2France, a site for Americans moving to France. The official text is already written and verified; do not rewrite it. Your only job is the "**In Practice**" section: what people who have actually done this report.
+
+TOPIC: ${input.title}
+
+OFFICIAL TEXT (for context only; do not repeat it):
+${input.official.slice(0, 6000)}
+
+${hints.length ? `WHAT MEMBERS ASK ABOUT THIS TOPIC:\n- ${hints.join('\n- ')}\n` : ''}
+You have exactly 8 web searches and every one of them is for community sources: Reddit (r/expats, r/AmericansInFrance, r/france, r/IWantOut), expat forums (FrenchEntrée, Expat.com, Facebook-group write-ups quoted elsewhere), personal blogs with dates, recent news pieces quoting people's experience. Search for the specific things that go wrong or surprise people: waits, refusals, what a consulate or prefecture actually asked for, workarounds, costs that differed from the official figure.
+
+${IN_PRACTICE_RULES}
+
+Respond with ONLY a JSON object:
+{"in_practice_content": "an **In Practice** section (start with that header) of corroborated, dated, attributed reports, or an empty string if nothing met the bar", "practice_sources": [{"name": "source with enough detail to find it again", "type": "forum|blog|article|social", "date": "month and year"}], "corroboration_notes": "one line on how widely each point is reported"}`;
+}
+
+export async function researchInPractice(
+  env: Env,
+  input: { title: string; official: string; hints: string[] }
+): Promise<PracticeResearch> {
+  const outcome = await sendMessage(env, {
+    tier: env.MODEL_TIER,
+    prompt: buildInPracticePrompt(input),
+    maxTokens: 8000,
+    webSearchUses: 8,
+    continueOnTruncation: false,
+  });
+  const json = extractJson<{ in_practice_content?: string; practice_sources?: unknown }>(outcome.text);
+  return {
+    content: typeof json?.in_practice_content === 'string' ? json.in_practice_content : '',
+    sources: normaliseSources(json?.practice_sources),
+    webSources: outcome.webSources.length,
+    webSearchErrors: outcome.webSearchErrors,
+    outputTokens: outcome.usage.output,
+  };
+}

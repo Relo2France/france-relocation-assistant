@@ -1,4 +1,4 @@
-import { IN_PRACTICE_RULES, vetInPractice } from './practice';
+import { IN_PRACTICE_RULES, researchInPractice, vetInPractice } from './practice';
 /**
  * Knowledge base gap drafting.
  *
@@ -286,7 +286,18 @@ export async function draftGap(env: Env, gap: Gap): Promise<GapOutcome> {
 
   // The In Practice section has its own bar: two independent dated sources
   // or it is withheld, with the reason travelling to the card and the email.
-  const practice = vetInPractice(draft.in_practice_content, draft.practice_sources);
+  // It also gets its own research call, so the official verification can
+  // never starve it of searches.
+  let practice = vetInPractice(draft.in_practice_content, draft.practice_sources);
+  if (!practice.content) {
+    try {
+      const researched = await researchInPractice(env, { title: target.title, official: draft.suggested_content, hints: gap.questions ?? [] });
+      const vetted = vetInPractice(researched.content, researched.sources);
+      if (vetted.content || !practice.withheld) practice = vetted;
+    } catch {
+      // The official draft still goes through; the card says the section was withheld.
+    }
+  }
 
   const posted = await postGapResult(env, gap.id, {
     category: target.category,

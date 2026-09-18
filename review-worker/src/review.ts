@@ -1,7 +1,7 @@
 /**
  * Reviewing one topic, end to end.
  */
-import { vetInPractice } from './practice';
+import { researchInPractice, vetInPractice } from './practice';
 import { extractJson, sendMessage } from './anthropic';
 import { buildReviewPrompt } from './prompt';
 import { findTopic, postSuggestion } from './wordpress';
@@ -75,20 +75,48 @@ export async function reviewTopic(
     duration_ms: Date.now() - started,
   };
 
-  if (!result.needs_update || options.dryRun) {
+  if (options.dryRun) {
     return base;
   }
 
   // An update nothing verified does not go to the queue. The run report
   // names it and WordPress emails it; the topic is checked again next week.
-  if (outcome.webSources.length === 0) {
+  if (result.needs_update && outcome.webSources.length === 0) {
     const codes = Array.from(new Set(outcome.webSearchErrors));
     throw new Error(
       `Update withheld: web search returned no results${codes.length ? ` (${codes.join(', ')})` : ''}, so the suggested change could not be verified`
     );
   }
 
-  const practice = vetInPractice(result.in_practice_content, result.practice_sources);
+  // The In Practice layer gets its own research call and search budget. The
+  // official review's own attempt counts only when it already passes the bar;
+  // otherwise a call that starts at the community sources takes over.
+  let practice = vetInPractice(result.in_practice_content, result.practice_sources);
+  let practiceSearchErrors: string[] = [];
+  if (!practice.content) {
+    try {
+      const researched = await researchInPractice(env, { title: topic.name, official: result.suggested_content || topic.content, hints: topic.practice_hints ?? [] });
+      practiceSearchErrors = researched.webSearchErrors;
+      const vetted = vetInPractice(researched.content, researched.sources);
+      if (vetted.content || !practice.withheld) practice = vetted;
+    } catch (error) {
+      practiceSearchErrors = [error instanceof Error ? error.message : String(error)];
+    }
+  }
+
+  // A verified In Practice section is an update in its own right, even when
+  // the official text needed nothing.
+  const practiceIsNew = !!practice.content && !topic.content.includes(practice.content.slice(0, 80));
+  if (!result.needs_update && !practiceIsNew) {
+    return { ...base, web_search_errors: [...base.web_search_errors, ...practiceSearchErrors], practice_withheld: practice.withheld || undefined };
+  }
+  if (!result.needs_update) {
+    result.needs_update = true;
+    result.update_type = 'minor';
+    result.suggested_content = topic.content;
+    result.changes_summary = 'In Practice section added from community research; official text unchanged.';
+  }
+
   const posted = await postSuggestion(env, {
     topic,
     result: { ...result, in_practice_content: practice.content, practice_sources: practice.sources },
