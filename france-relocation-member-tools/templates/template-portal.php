@@ -563,7 +563,7 @@ $react_settings = array(
                 isAdmin: <?php echo current_user_can( 'manage_options' ) ? 'true' : 'false'; ?>,
                 // Nonced by WordPress; signs out and returns to the home page.
                 // wp_logout_url() returns "&amp;" for HTML; a script needs "&".
-                logoutUrl: <?php echo wp_json_encode( str_replace( '&amp;', '&', wp_logout_url( home_url( '/logged-out/' ) ) ) ); ?>
+                logoutUrl: <?php echo wp_json_encode( str_replace( '&amp;', '&', wp_logout_url( home_url( '/portal/?signed_out=1' ) ) ) ); ?>
             };
         </script>
 
@@ -596,8 +596,12 @@ $react_settings = array(
                 <?php // The wordmark, as in the site header and the portal rail; the old uploaded logo image is retired. ?>
                 <a class="portal-login-wordmark" href="<?php echo esc_url( home_url( '/' ) ); ?>">Relo<span>2</span>France</a>
 
-                <h1 class="portal-login-title"><?php echo esc_html( $settings['portal_title'] ); ?></h1>
-                <p class="portal-login-subtitle">Sign in to access your member portal</p>
+                <?php
+                // One card for signing in and signing out, worded for each.
+                $r2f_signed_out = isset( $_GET['signed_out'] ); // phpcs:ignore WordPress.Security.NonceVerification
+                ?>
+                <h1 class="portal-login-title"><?php echo $r2f_signed_out ? 'You’re signed out' : 'Welcome back'; ?></h1>
+                <p class="portal-login-subtitle"><?php echo $r2f_signed_out ? 'Sign back in any time. Your file is where you left it.' : 'Sign in to your file. It is where you left it.'; ?></p>
 
                 <div id="portal-login-error" class="portal-login-error" style="display: none;"></div>
                 <?php if ( isset( $_GET['link'] ) && 'expired' === $_GET['link'] ) : // phpcs:ignore WordPress.Security.NonceVerification ?>

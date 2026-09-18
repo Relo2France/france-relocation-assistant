@@ -771,7 +771,7 @@ class France_Relocation_Assistant {
             'knowledgeBase' => $this->get_knowledge_base(),
             'aiEnabled' => get_option( 'fra_enable_ai', false ) && ! empty( self::get_api_key() ),
             'isLoggedIn' => is_user_logged_in(),
-            'logoutUrl' => wp_logout_url(home_url('/logged-out/')),
+            'logoutUrl' => wp_logout_url(home_url('/portal/?signed_out=1')),
             'loginError' => $login_error,
         ));
     }

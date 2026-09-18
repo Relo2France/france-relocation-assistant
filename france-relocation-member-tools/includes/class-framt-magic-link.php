@@ -43,11 +43,11 @@ class FRAMT_Magic_Link {
         add_action( 'wp_ajax_nopriv_' . self::AJAX, array( $this, 'ajax_request' ) );
         add_action( 'wp_ajax_' . self::AJAX, array( $this, 'ajax_request' ) );
         add_action( 'template_redirect', array( $this, 'handle_link' ), 0 );
-        // Signing out ends on the logged-out page. MemberPress applies its
-        // own after-logout URL late on this filter; ours runs after it.
+        // Signing out ends on the portal's card, worded for it. MemberPress
+        // applies its own after-logout URL late on this filter; ours runs after.
         add_filter( 'logout_redirect', array( $this, 'logout_redirect' ), PHP_INT_MAX, 3 );
-        // A signed-out visitor to the account page gets the real sign-in
-        // page, not MemberPress's bare "unauthorized" form.
+        // One sign-in screen: /login/, /logged-out/ and a signed-out
+        // /account/ all forward to the portal's card.
         add_action( 'template_redirect', array( $this, 'account_needs_sign_in' ), 1 );
     }
 
@@ -69,6 +69,10 @@ class FRAMT_Magic_Link {
             wp_safe_redirect( $to );
             exit;
         }
+        if ( ! is_user_logged_in() && is_page( 'logged-out' ) ) {
+            wp_safe_redirect( add_query_arg( 'signed_out', '1', home_url( '/portal/' ) ) );
+            exit;
+        }
         if ( ! is_user_logged_in() && is_page( 'account' ) ) {
             wp_safe_redirect( home_url( '/portal/' ) );
             exit;
@@ -76,13 +80,14 @@ class FRAMT_Magic_Link {
     }
 
     /**
-     * Honour the /logged-out/ destination every sign-out link carries,
-     * whatever a later setting would put in its place.
+     * Signing out ends on the portal's sign-in card, worded for it
+     * (?signed_out=1), whatever a later setting such as MemberPress's
+     * after-logout URL would put in its place.
      */
     public function logout_redirect( $redirect_to, $requested = '', $user = null ) {
-        $logged_out = home_url( '/logged-out/' );
-        if ( is_string( $requested ) && 0 === strpos( $requested, $logged_out ) ) {
-            return $logged_out;
+        $signed_out = add_query_arg( 'signed_out', '1', home_url( '/portal/' ) );
+        if ( is_string( $requested ) && ( 0 === strpos( $requested, home_url( '/portal/' ) ) || 0 === strpos( $requested, home_url( '/logged-out/' ) ) ) ) {
+            return $signed_out;
         }
         return $redirect_to;
     }

@@ -997,7 +997,7 @@ class FRA_Auth_Pages {
                 <div class="fra-auth-card-footer">
                     <a href="<?php echo esc_url(home_url('/')); ?>">← Back to Home</a>
                     <span class="fra-auth-sep">|</span>
-                    <a href="<?php echo esc_url(wp_logout_url(home_url('/logged-out/'))); ?>">Log Out</a>
+                    <a href="<?php echo esc_url(wp_logout_url(home_url('/portal/?signed_out=1'))); ?>">Log Out</a>
                 </div>
             </div>
         </div>
