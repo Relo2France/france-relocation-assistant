@@ -5,7 +5,8 @@
  */
 export function signOutUrl(): string {
   const data = window.fraPortalData;
-  if (data?.logoutUrl) return data.logoutUrl;
+  // WordPress escapes the separators for HTML; the link needs plain "&".
+  if (data?.logoutUrl) return data.logoutUrl.replace(/&amp;/g, '&');
   const site = (data?.siteUrl || window.location.origin).replace(/\/$/, '');
   return `${site}/wp-login.php?action=logout`;
 }

@@ -538,7 +538,8 @@ $react_settings = array(
                 pluginUrl: '<?php echo esc_url( FRAMT_PLUGIN_URL ); ?>',
                 isAdmin: <?php echo current_user_can( 'manage_options' ) ? 'true' : 'false'; ?>,
                 // Nonced by WordPress; signs out and returns to the home page.
-                logoutUrl: '<?php echo esc_url_raw( wp_logout_url( home_url( '/' ) ) ); ?>'
+                // wp_logout_url() returns "&amp;" for HTML; a script needs "&".
+                logoutUrl: <?php echo wp_json_encode( str_replace( '&amp;', '&', wp_logout_url( home_url( '/' ) ) ) ); ?>
             };
         </script>
 
