@@ -68,7 +68,8 @@ export default function KnowledgeBaseChat() {
   }, []);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [includePractice, setIncludePractice] = useState(true);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  // On a phone the categories would take the whole width; start closed there.
+  const [sidebarOpen, setSidebarOpen] = useState(() => typeof window === 'undefined' || window.innerWidth >= 1024);
   const [isLoading, setIsLoading] = useState(false);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const latestResponseRef = useRef<HTMLDivElement>(null);
@@ -184,7 +185,7 @@ export default function KnowledgeBaseChat() {
       {/* Main chat area */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header */}
-        <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center gap-3">
+        <div className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4 flex items-center gap-3">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
             className="p-2 hover:bg-gray-100 rounded-lg"
@@ -197,8 +198,8 @@ export default function KnowledgeBaseChat() {
               <ChevronRight className="w-5 h-5 text-gray-600" />
             )}
           </button>
-          <MessageSquare className="w-6 h-6 text-primary-600" />
-          <div>
+          <MessageSquare className="w-6 h-6 text-primary-600 shrink-0" aria-hidden="true" />
+          <div className="min-w-0">
             <p className="font-display text-lg font-semibold text-gray-900 m-0">Your question</p>
             <p className="text-sm text-gray-600">
               {selectedCategory

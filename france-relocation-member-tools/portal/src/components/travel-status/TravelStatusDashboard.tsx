@@ -154,7 +154,7 @@ export default function TravelStatusDashboard() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-6">
       <div className="card p-4 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 border-primary-500">
         <span className="eyebrow text-primary-500 whitespace-nowrap">Coming soon</span>
         <p className="text-sm text-gray-600 m-0">
@@ -162,13 +162,13 @@ export default function TravelStatusDashboard() {
         </p>
       </div>
       {/* Page header */}
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0">
           <p className="text-gray-600">
             Track your 90/180 day Schengen zone compliance
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           {/* Notification Center */}
           <NotificationCenter />
 
@@ -380,8 +380,8 @@ export default function TravelStatusDashboard() {
       )}
 
       {/* Tab navigation */}
-      <div className="border-b border-gray-200">
-        <nav className="flex gap-6" aria-label="Tabs">
+      <div className="border-b border-gray-200 overflow-x-auto">
+        <nav className="flex gap-6 min-w-max" aria-label="Tabs">
           <button
             onClick={() => setActiveTab('trips')}
             className={clsx(

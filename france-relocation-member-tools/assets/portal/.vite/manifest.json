@@ -1,6 +1,6 @@
 {
-  "_Assign-DCGcSMFr.js": {
-    "file": "js/Assign-DCGcSMFr.js",
+  "_Assign-pGgZaONO.js": {
+    "file": "js/Assign-pGgZaONO.js",
     "name": "Assign",
     "imports": [
       "_vendor-query-aXLgDoqj.js",
@@ -61,7 +61,7 @@
     ]
   },
   "index.html": {
-    "file": "js/main-D4JWV-Xv.js",
+    "file": "js/main--pyhWEJN.js",
     "name": "main",
     "src": "index.html",
     "isEntry": true,
@@ -90,11 +90,11 @@
       "src/components/deadlines/DeadlinesView.tsx"
     ],
     "css": [
-      "css/main-BPGa3MA_.css"
+      "css/main-DQncCnI5.css"
     ]
   },
   "src/components/chat/KnowledgeBaseChat.tsx": {
-    "file": "js/KnowledgeBaseChat-CInXGdNb.js",
+    "file": "js/KnowledgeBaseChat-B9Auc6Fv.js",
     "name": "KnowledgeBaseChat",
     "src": "src/components/chat/KnowledgeBaseChat.tsx",
     "isDynamicEntry": true,
@@ -108,7 +108,7 @@
     ]
   },
   "src/components/checklists/ChecklistsView.tsx": {
-    "file": "js/ChecklistsView-xX_JCIBU.js",
+    "file": "js/ChecklistsView-BcZKbRgY.js",
     "name": "ChecklistsView",
     "src": "src/components/checklists/ChecklistsView.tsx",
     "isDynamicEntry": true,
@@ -121,7 +121,7 @@
     ]
   },
   "src/components/deadlines/DeadlinesView.tsx": {
-    "file": "js/DeadlinesView-ORukc6VL.js",
+    "file": "js/DeadlinesView-BS1pdl4-.js",
     "name": "DeadlinesView",
     "src": "src/components/deadlines/DeadlinesView.tsx",
     "isDynamicEntry": true,
@@ -134,7 +134,7 @@
     ]
   },
   "src/components/documents/DocumentsView.tsx": {
-    "file": "js/DocumentsView-BfwdvaDZ.js",
+    "file": "js/DocumentsView-2BiJLXaV.js",
     "name": "DocumentsView",
     "src": "src/components/documents/DocumentsView.tsx",
     "isDynamicEntry": true,
@@ -148,7 +148,7 @@
     ]
   },
   "src/components/family/FamilyView.tsx": {
-    "file": "js/FamilyView-B652pIX8.js",
+    "file": "js/FamilyView-xXm_Vy3t.js",
     "name": "FamilyView",
     "src": "src/components/family/FamilyView.tsx",
     "isDynamicEntry": true,
@@ -156,13 +156,13 @@
       "_vendor-query-aXLgDoqj.js",
       "_vendor-utils-hDeTKz2a.js",
       "index.html",
-      "_Assign-DCGcSMFr.js",
+      "_Assign-pGgZaONO.js",
       "_vendor-icons-Cok5Q4kL.js",
       "_vendor-virtual-Bx84C3U3.js"
     ]
   },
   "src/components/glossary/GlossaryView.tsx": {
-    "file": "js/GlossaryView-ebPDxHeQ.js",
+    "file": "js/GlossaryView-D5FxoYC_.js",
     "name": "GlossaryView",
     "src": "src/components/glossary/GlossaryView.tsx",
     "isDynamicEntry": true,
@@ -175,7 +175,7 @@
     ]
   },
   "src/components/guide/GuideView.tsx": {
-    "file": "js/GuideView-CqZ3W0_i.js",
+    "file": "js/GuideView-DvOAZvlc.js",
     "name": "GuideView",
     "src": "src/components/guide/GuideView.tsx",
     "isDynamicEntry": true,
@@ -188,7 +188,7 @@
     ]
   },
   "src/components/help/HelpView.tsx": {
-    "file": "js/HelpView-ZTv3Nrvi.js",
+    "file": "js/HelpView-lhCZROVs.js",
     "name": "HelpView",
     "src": "src/components/help/HelpView.tsx",
     "isDynamicEntry": true,
@@ -201,7 +201,7 @@
     ]
   },
   "src/components/messages/MessagesView.tsx": {
-    "file": "js/MessagesView-CurFQ5b8.js",
+    "file": "js/MessagesView-T5Wk7fhS.js",
     "name": "MessagesView",
     "src": "src/components/messages/MessagesView.tsx",
     "isDynamicEntry": true,
@@ -215,7 +215,7 @@
     ]
   },
   "src/components/profile/ProfileView.tsx": {
-    "file": "js/ProfileView-uTW0AqDj.js",
+    "file": "js/ProfileView-BSfEBYoa.js",
     "name": "ProfileView",
     "src": "src/components/profile/ProfileView.tsx",
     "isDynamicEntry": true,
@@ -228,7 +228,7 @@
     ]
   },
   "src/components/research/ResearchView.tsx": {
-    "file": "js/ResearchView-huWWDZWp.js",
+    "file": "js/ResearchView-CSGGoJSO.js",
     "name": "ResearchView",
     "src": "src/components/research/ResearchView.tsx",
     "isDynamicEntry": true,
@@ -242,7 +242,7 @@
     ]
   },
   "src/components/settings/SettingsView.tsx": {
-    "file": "js/SettingsView-DMNu6MW8.js",
+    "file": "js/SettingsView-Dn_duzXk.js",
     "name": "SettingsView",
     "src": "src/components/settings/SettingsView.tsx",
     "isDynamicEntry": true,
@@ -255,7 +255,7 @@
     ]
   },
   "src/components/stage/StageView.tsx": {
-    "file": "js/StageView-S7Saoe32.js",
+    "file": "js/StageView-DhCtgawW.js",
     "name": "StageView",
     "src": "src/components/stage/StageView.tsx",
     "isDynamicEntry": true,
@@ -263,13 +263,13 @@
       "_vendor-query-aXLgDoqj.js",
       "index.html",
       "_vendor-utils-hDeTKz2a.js",
-      "_Assign-DCGcSMFr.js",
+      "_Assign-pGgZaONO.js",
       "_vendor-icons-Cok5Q4kL.js",
       "_vendor-virtual-Bx84C3U3.js"
     ]
   },
   "src/components/support/SupportView.tsx": {
-    "file": "js/SupportView-Cbc8HM19.js",
+    "file": "js/SupportView-CGVMkme2.js",
     "name": "SupportView",
     "src": "src/components/support/SupportView.tsx",
     "isDynamicEntry": true,
@@ -282,7 +282,7 @@
     ]
   },
   "src/components/tasks/TasksView.tsx": {
-    "file": "js/TasksView-bukCCZiN.js",
+    "file": "js/TasksView-DkBSm7Wj.js",
     "name": "TasksView",
     "src": "src/components/tasks/TasksView.tsx",
     "isDynamicEntry": true,
@@ -296,7 +296,7 @@
     ]
   },
   "src/components/travel-status/TravelStatusDashboard.tsx": {
-    "file": "js/TravelStatusDashboard-CmMEgaXW.js",
+    "file": "js/TravelStatusDashboard-DMC2Ub3t.js",
     "name": "TravelStatusDashboard",
     "src": "src/components/travel-status/TravelStatusDashboard.tsx",
     "isDynamicEntry": true,
