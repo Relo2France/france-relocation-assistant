@@ -666,6 +666,27 @@ class FRA_Auth_Pages {
             color: var(--ink, #1c2420);
         }
 
+        /* MemberPress paints every other row white (tr.alt / nth-child);
+           on the dark account page that turns a row into an unreadable
+           white bar. Rows stay transparent everywhere inside our pages. */
+        body:has(.fra-auth-container) table tr,
+        body:has(.fra-auth-container) table tr.alt,
+        body:has(.fra-auth-container) table tr:nth-child(even),
+        body:has(.fra-auth-container) table tr:nth-child(odd),
+        body:has(.fra-auth-container) table tr:hover,
+        .fra-auth-form-wrap table tr,
+        .fra-auth-form-wrap table tr.alt,
+        .fra-auth-form-wrap table tr:nth-child(even),
+        .fra-auth-form-wrap table tr:hover {
+            background: transparent !important;
+        }
+
+        body:has(.fra-auth-container) table td,
+        body:has(.fra-auth-container) table th {
+            background: transparent !important;
+            color: inherit;
+        }
+
         .fra-auth-form-wrap table th {
             font-size: 0.67rem;
             font-weight: 700;
