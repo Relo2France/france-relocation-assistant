@@ -186,7 +186,7 @@ class FRA_Site_Header {
 
         // Dynamic login/logout state
         $is_logged_in   = is_user_logged_in();
-        $logout_url     = wp_logout_url(home_url('/?logged_out=1'));
+        $logout_url     = wp_logout_url(home_url('/logged-out/'));
 
         // CTA button
         $cta_text       = $this->get_setting('site_header_cta_text');

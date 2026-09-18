@@ -348,11 +348,19 @@ $react_settings = array(
             max-width: 420px;
         }
 
-        .portal-login-logo {
+        .portal-login-wordmark {
             display: block;
-            max-height: 60px;
-            max-width: 200px;
-            margin: 0 auto 24px;
+            text-align: center;
+            font-family: 'Fraunces', Georgia, 'Times New Roman', serif;
+            font-size: 26px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: #1c2420;
+            text-decoration: none;
+            margin: 0 auto 20px;
+        }
+        .portal-login-wordmark span {
+            color: #2c5346;
         }
 
         .portal-login-title {
@@ -539,7 +547,7 @@ $react_settings = array(
                 isAdmin: <?php echo current_user_can( 'manage_options' ) ? 'true' : 'false'; ?>,
                 // Nonced by WordPress; signs out and returns to the home page.
                 // wp_logout_url() returns "&amp;" for HTML; a script needs "&".
-                logoutUrl: <?php echo wp_json_encode( str_replace( '&amp;', '&', wp_logout_url( home_url( '/' ) ) ) ); ?>
+                logoutUrl: <?php echo wp_json_encode( str_replace( '&amp;', '&', wp_logout_url( home_url( '/logged-out/' ) ) ) ); ?>
             };
         </script>
 
@@ -569,9 +577,8 @@ $react_settings = array(
         <!-- Login Form -->
         <div class="portal-login-container">
             <div class="portal-login-card">
-                <?php if ( ! empty( $settings['logo_url'] ) ) : ?>
-                    <img src="<?php echo esc_url( $settings['logo_url'] ); ?>" alt="<?php echo esc_attr( $settings['portal_title'] ); ?>" class="portal-login-logo">
-                <?php endif; ?>
+                <?php // The wordmark, as in the site header and the portal rail; the old uploaded logo image is retired. ?>
+                <a class="portal-login-wordmark" href="<?php echo esc_url( home_url( '/' ) ); ?>">Relo<span>2</span>France</a>
 
                 <h1 class="portal-login-title"><?php echo esc_html( $settings['portal_title'] ); ?></h1>
                 <p class="portal-login-subtitle">Sign in to access your member portal</p>

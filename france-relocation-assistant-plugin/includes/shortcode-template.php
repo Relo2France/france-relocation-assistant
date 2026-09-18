@@ -313,7 +313,7 @@ $inchat_auth_enabled = $customizer['inchat_auth_enabled'] ?? true;
                                     <a href="#" data-account-section="payments" class="fra-dropdown-item fra-dropdown-child">Payments</a>
                                 </div>
                             </div>
-                            <a href="<?php echo esc_url(wp_logout_url(home_url('/?logged_out=1'))); ?>" class="fra-dropdown-item fra-dropdown-logout">Log Out</a>
+                            <a href="<?php echo esc_url(wp_logout_url(home_url('/logged-out/'))); ?>" class="fra-dropdown-item fra-dropdown-logout">Log Out</a>
                         </div>
                     </div>
                     <?php endif; ?>
