@@ -604,7 +604,9 @@ class FRAMT_Letters {
                 if ( 'yes_remote' === $c['work_fr'] && 'other' !== $v ) {
                     $l[] = sprintf( 'I will continue to work remotely for my employer in the United States, %s. The company has no establishment and no clients in France and nothing I do is delivered on French soil; the enclosed letter from my employer confirms this. I will not work for any French employer or French client.', $need( $c['employer'], 'Employer name (profile)' ) );
                 } elseif ( 'other' !== $v ) {
-                    $l[] = sprintf( '%s not carry out any professional activity in France during %s stay, as stated in the enclosed signed declaration%s.', $joint ? 'Neither of us will' : 'I will', $our, $joint ? 's' : '' );
+                    $l[] = $joint
+                        ? 'Neither of us will carry out any professional activity in France during our stay, as stated in the enclosed signed declarations.'
+                        : 'I will not carry out any professional activity in France during my stay, as stated in the enclosed signed declaration.';
                 }
                 break;
             case 'student':
@@ -648,7 +650,7 @@ class FRAMT_Letters {
         }
 
         $l[] = '';
-        $l[] = 'I enclose the documents listed below and remain available for any further information you may need.';
+        $l[] = sprintf( '%s the documents listed below and remain available for any further information you may need.', $joint ? 'We enclose' : 'I enclose' );
         $l[] = '';
         foreach ( self::enclosures( $c ) as $item ) {
             $l[] = '- ' . $item;
@@ -944,13 +946,35 @@ class FRAMT_Letters {
     }
 
     private static function enclosures( $c ) {
+        // Dossier items are written as a checklist for the member ("your
+        // stay"); in the letter they are the applicant's own documents.
+        $labels = array(
+            'passport-valid'               => 'Passport',
+            'passport-photos'              => 'Passport photos (35 x 45 mm)',
+            'application-form'             => 'France-Visas application form, signed',
+            'proof-accommodation'          => 'Proof of accommodation in France',
+            'proof-funds'                  => 'Bank statements for the last three months',
+            'travel-insurance'             => 'Health insurance certificate covering the full stay',
+            'birth-certificate-apostilled' => 'Birth certificate, apostilled',
+            'declaration-no-work'          => 'Signed declaration not to work (attestation sur l\'honneur)',
+            'proof-funds-studies'          => 'Proof of funds for my studies',
+            'relationship-proof'           => 'Evidence of our life together',
+            'spouse-french-id'             => 'My spouse\'s French identity document',
+            'sponsor-permit'               => 'My sponsor\'s residence permit',
+            'category-proof'               => 'Documents for my passeport talent category',
+        );
         $skip = array( 'cover-letter' );
         $out  = array();
         foreach ( (array) $c['dossier'] as $item ) {
-            if ( in_array( $item['id'] ?? '', $skip, true ) ) {
+            $id = $item['id'] ?? '';
+            if ( in_array( $id, $skip, true ) ) {
                 continue;
             }
-            $out[] = $item['title'] ?? '';
+            $label = $labels[ $id ] ?? preg_replace( '/\byour\b/i', 'my', (string) ( $item['title'] ?? '' ) );
+            if ( 'declaration-no-work' === $id && self::has_partner( $c ) ) {
+                $label = 'Signed declarations not to work, one for each of us (attestations sur l\'honneur)';
+            }
+            $out[] = $label;
         }
         if ( in_array( $c['visa'], array( 'visitor', 'retiree' ), true ) && 'yes_remote' === $c['work_fr'] ) {
             $out[] = 'Letter from my employer confirming the remote-work arrangement';
