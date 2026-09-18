@@ -1248,6 +1248,12 @@ class FRAMT_Portal_API {
             if ( is_array( $members ) ) {
                 foreach ( $members as $index => $member ) {
                     if ( (int) ( $member['invitedUserId'] ?? 0 ) === $current ) {
+                        // A partner works on the household file only while
+                        // the owner has the Family add-on (or kept it from the
+                        // launch); refunded or lapsed, they are on their own.
+                        if ( ! $this->is_family_feature_enabled( $owner ) ) {
+                            break;
+                        }
                         $resolved = $owner;
                         if ( 'joined' !== ( $member['inviteStatus'] ?? '' ) ) {
                             $members[ $index ]['inviteStatus'] = 'joined';

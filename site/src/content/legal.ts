@@ -11,7 +11,7 @@
  * Plain English on purpose. Approved by the owner on 18 September 2026;
  * not reviewed by a lawyer. Change it here when the service changes.
  */
-import { familyCopy, PRICE, REFUND_DAYS, SUPPORT_EMAIL } from './links';
+import { FAMILY_ADDON_PRICE, familyCopy, PRICE, REFUND_DAYS, SUPPORT_EMAIL } from './links';
 
 export const LEGAL_UPDATED = '18 September 2026';
 
@@ -68,7 +68,7 @@ const terms: LegalPage = {
       paragraphs: [
         `Membership costs ${PRICE}, paid once. It gives lifetime access to the member portal: access for as long as Relo2France operates the service, with no subscription and no renewal fee. Payment is taken by Stripe through our MemberPress checkout; we never see or store your full card number.`,
         familyCopy().cardNote,
-        `The ${REFUND_DAYS}-day money-back guarantee is set out in our refund policy.`,
+        `The ${REFUND_DAYS}-day money-back guarantee, on the membership and on the Family add-on, is set out in our refund policy.`,
       ],
     },
     {
@@ -202,24 +202,24 @@ const refund: LegalPage = {
   path: '/refund-policy/',
   title: 'Refund Policy',
   linkText: 'Refund policy',
-  description: `Relo2France's ${REFUND_DAYS}-day money-back guarantee on the ${PRICE} lifetime membership: how to ask, and what happens next.`,
-  intro: `The ${PRICE} lifetime membership comes with a ${REFUND_DAYS}-day money-back guarantee. If it is not for you, you get every cent back.`,
+  description: `Relo2France's ${REFUND_DAYS}-day money-back guarantee on the ${PRICE} lifetime membership and the ${FAMILY_ADDON_PRICE} Family add-on: how to ask, and what happens next.`,
+  intro: `The ${PRICE} lifetime membership and the ${FAMILY_ADDON_PRICE} Family add-on each come with a ${REFUND_DAYS}-day money-back guarantee. If either is not for you, you get every cent back.`,
   sections: [
     {
       heading: 'How it works',
       paragraphs: [],
       list: [
-        `Ask within ${REFUND_DAYS} days of buying your membership.`,
+        `Ask within ${REFUND_DAYS} days of buying. Each purchase has its own ${REFUND_DAYS} days: the membership from the day you bought it, the Family add-on from the day you added it.`,
         'You do not need a reason, and there is no form: an email or a Support message is enough.',
         'The refund is the full amount you paid. There are no partial refunds and no deductions.',
         'It goes back to the card you paid with, through Stripe. Stripe sends it straight away; your card issuer usually shows it within 5 to 10 business days.',
-        'Your membership ends when the refund is made. You can delete your file yourself from Settings in the portal, before or after.',
+        'A refunded membership ends when the refund is made, and the Family add-on with it. A refunded Family add-on ends on its own: your partner loses their sign-in and the family files, and your own file carries on. You can delete your file yourself from Settings in the portal, before or after.',
       ],
     },
     {
       heading: `After ${REFUND_DAYS} days`,
       paragraphs: [
-        `After the ${REFUND_DAYS} days the payment is not refundable, except where the law requires otherwise. Because membership is a single payment for lifetime access, there is never a renewal charge to cancel.`,
+        `After the ${REFUND_DAYS} days a payment is not refundable, except where the law requires otherwise. Because membership and the add-on are single payments, there is never a renewal charge to cancel.`,
       ],
     },
     { heading: 'How to ask', paragraphs: [CONTACT] },
