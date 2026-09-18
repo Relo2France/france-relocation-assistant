@@ -38,6 +38,19 @@ export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
     // Log error to console in development
     console.error('ErrorBoundary caught an error:', error, errorInfo);
 
+    // And to the server, so a crash a member sees once is on record.
+    try {
+      const wp = (window as unknown as { fraPortalData?: { restUrl?: string; nonce?: string } }).fraPortalData;
+      if (wp?.restUrl) {
+        void fetch(`${wp.restUrl}portal/client-error`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': wp.nonce ?? '' },
+          body: JSON.stringify({ message: error.message, stack: (error.stack ?? '').slice(0, 2000), component: (errorInfo.componentStack ?? '').slice(0, 1500), url: window.location.href }),
+        });
+      }
+    } catch { /* reporting must never throw */ }
+
     // Call optional error handler
     if (this.props.onError) {
       this.props.onError(error, errorInfo);
@@ -103,11 +116,11 @@ function ErrorFallback({ error, onRetry, onGoHome }: ErrorFallbackProps) {
           Something went wrong
         </h2>
         <p className="text-gray-600 mb-6">
-          We encountered an unexpected error. Please try again or return to the dashboard.
+          Something on this page broke. It has been reported. Try again, or go back to Where you are; if it happens twice, tell Support what you clicked.
         </p>
 
-        {/* Error details (development only) */}
-        {error && import.meta.env.DEV && (
+        {/* Error details: always shown, so a member can pass them on */}
+        {error && (
           <details className="mb-6 text-left">
             <summary className="text-sm text-gray-500 cursor-pointer hover:text-gray-700">
               Error details

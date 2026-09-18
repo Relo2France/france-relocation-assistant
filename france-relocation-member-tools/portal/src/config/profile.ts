@@ -63,7 +63,7 @@ export const US_STATES = [
 // Visa type options with descriptions
 export const VISA_TYPES = [
   { value: 'undecided', label: 'Undecided', description: 'Still exploring visa options' },
-  { value: 'visitor', label: 'Visitor Visa', description: 'Short-term stay (up to 90 days)' },
+  { value: 'visitor', label: 'Visitor Visa', description: 'Long stay without working (VLS-TS visiteur)' },
   { value: 'talent_passport', label: 'Talent Passport', description: 'For highly skilled professionals' },
   { value: 'employee', label: 'Employee Visa', description: 'Working for a French company' },
   { value: 'entrepreneur', label: 'Entrepreneur Visa', description: 'Starting a business in France' },
@@ -72,6 +72,26 @@ export const VISA_TYPES = [
   { value: 'spouse_french', label: 'Spouse of French Citizen', description: 'Married to a French national' },
   { value: 'retiree', label: 'Retiree Visa', description: 'Retiring in France' },
   { value: 'other', label: 'Another long-stay route', description: 'Intern, temporary worker, ICT, au pair or another category' },
+] as const;
+
+export const TALENT_CATEGORY_OPTIONS = [
+  { value: 'unsure', label: 'Not sure yet' },
+  { value: 'qualified_employee', label: 'Qualified employee (salaried, at the reference salary)' },
+  { value: 'blue_card', label: 'EU Blue Card (1.5 times the reference salary)' },
+  { value: 'founder', label: 'Company founder / innovative project' },
+  { value: 'investor', label: 'Investor' },
+  { value: 'researcher', label: 'Researcher with a hosting agreement' },
+  { value: 'artist', label: 'Artist or cultural professional' },
+] as const;
+
+export const RELATIONSHIP_TYPE_OPTIONS = [
+  { value: 'married', label: 'Married' },
+  { value: 'pacs', label: 'PACS (civil union)' },
+] as const;
+
+export const STUDY_LENGTH_OPTIONS = [
+  { value: 'one_year', label: 'One year or less' },
+  { value: 'multi_year', label: 'More than one year' },
 ] as const;
 
 // Financial resource ranges

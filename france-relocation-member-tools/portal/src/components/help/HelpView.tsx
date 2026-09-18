@@ -45,7 +45,7 @@ const OFFICIAL: { label: string; url: string; note: string }[] = [
   { label: 'ameli.fr', url: 'https://www.ameli.fr/', note: 'Health cover and the carte Vitale.' },
   { label: 'ANTS', url: 'https://permisdeconduire.ants.gouv.fr/', note: 'Exchanging a driving licence.' },
   { label: 'Where to write for vital records (CDC)', url: 'https://www.cdc.gov/nchs/w2w/index.htm', note: 'Certified copies of US birth and marriage records, by state.' },
-  { label: 'Apostille offices by state (NASS)', url: 'https://www.nass.org/can-I-help-you/apostilles-document-authentication', note: 'Who apostilles what, and the fee.' },
+  { label: 'Apostille offices by state (NASS)', url: 'https://www.nass.org/business-services/apostillesdocument-authentication-services', note: 'Who apostilles what, and the fee.' },
 ];
 
 export default function HelpView() {

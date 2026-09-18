@@ -153,13 +153,8 @@ export default function DocumentsView() {
 
   return (
     <div className="p-6">
-      {/* Page header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Documents</h1>
-        <p className="text-gray-600 mt-1">
-          Manage and organize your relocation documents
-        </p>
-      </div>
+      {/* The page title is in the top bar; this is the one line under it. */}
+      <p className="text-gray-600 mb-6 max-w-[60ch]">Upload a document and it is recognised, checked against its requirement and filed to the dossier line it satisfies. Your Explore France reports are kept here too.</p>
 
       {/* Saved Research Reports Section */}
       {savedReports.length > 0 && (

@@ -126,6 +126,10 @@ export function walkthroughFor(stage: JourneyStageId, ctx: WalkContext): Walkthr
   const married = !!profile.has_marriage_cert && profile.has_marriage_cert !== 'na' && profile.has_marriage_cert !== 'no';
   const buying = profile.housing_plan === 'buying';
   const employer = (profile.employer_name ?? '').trim() || 'your employer';
+  const talentCategory: string = profile.talent_category ?? '';
+  const pacs = profile.relationship_type === 'pacs';
+  const multiYear = profile.study_length === 'multi_year';
+  const TALENT_NAMES: Record<string, string> = { qualified_employee: 'qualified employee', blue_card: 'EU Blue Card', founder: 'company founder', investor: 'investor', researcher: 'researcher', artist: 'artist' };
 
   // Tasks that belong to this stage, so a milestone reads only its own stage's file.
   const own = ctx.tasks.filter((t) => stageForTask(t, ctx.project) === stage);
@@ -192,7 +196,7 @@ export function walkthroughFor(stage: JourneyStageId, ctx: WalkContext): Walkthr
             withSpouse ? `${cap(spouseWord)}${children ? ' and the children' : ''} come under Talent - Famille, on the same application, with work rights for the spouse.` : '',
           ].filter(Boolean);
           milestones = [
-            { title: 'Confirm the category and its threshold', why: 'Thresholds are set by ministerial order and revised; confirm the one in force when your contract is signed.', done: firstKnown(T(/talent category/i)) },
+            { title: talentCategory && TALENT_NAMES[talentCategory] ? `Your category: ${TALENT_NAMES[talentCategory]}` : 'Confirm the category and its threshold', why: talentCategory === 'qualified_employee' ? 'A contract at or above €39,582 gross a year and a master’s degree or equivalent experience.' : talentCategory === 'blue_card' ? 'A contract of three months or more at or above €59,373 gross a year, and a three-year degree or five years of experience.' : talentCategory === 'founder' ? 'An innovative project recognised by a public body or incubator, a plan, and funds; €30,000 is the cited benchmark.' : talentCategory === 'investor' ? 'At least €300,000 invested in a French company, and the jobs it carries over four years.' : talentCategory === 'researcher' ? 'The convention d’accueil from your host institution is the proof; ask for it early.' : talentCategory === 'artist' ? 'Contracts, income from your work, and recognition: press, prizes, exhibitions.' : 'Thresholds are set by ministerial order and revised; confirm the one in force when your contract is signed. Set the category in your profile and this step names its proof.', done: firstKnown(T(/talent category|assemble the .*(proof|file)|hosting agreement/i)) },
             { title: 'The category proof', why: 'Contract, hosting agreement, business plan with funding, or investment file. This is what makes it a Talent application.', done: firstKnown(T(/category proof/i), D('category-proof')) },
             fbi, civil, apostille,
             { title: 'Diplomas and proof of qualifications', why: 'A master’s degree or equivalent is the usual qualification. In English is fine for the consulate; apostilled where asked.', done: firstKnown(T(/diplomas/i), D('qualifications')) },
@@ -233,7 +237,9 @@ export function walkthroughFor(stage: JourneyStageId, ctx: WalkContext): Walkthr
             'Joining a French spouse is one of the most protected routes: no visa fee, decisions in about four weeks, and refusal only for fraud, an annulled marriage or public order. What the file has to prove is the marriage and the life behind it: the apostilled certificate, your spouse’s French identity, and evidence of a shared life. A PACS needs twelve months of documented cohabitation before it counts.',
           ];
           milestones = [
-            { title: 'The marriage certificate, apostilled', why: 'A certified copy apostilled by the issuing state; digital apostilles are accepted, and English is fine for the consulate. If you married in France, the French acte de mariage is used.', done: firstKnown(T(/marriage certificate/i), D('marriage-certificate')) },
+            pacs
+              ? { title: 'Twelve months of PACS cohabitation, documented', why: 'The PACS certificate plus a year of shared life on paper: joint lease, accounts, bills, travel. A March 2025 circular asks that it be effective, stable and not fraudulent.', done: firstKnown(T(/pacs cohabitation/i)) }
+              : { title: 'The marriage certificate, apostilled', why: 'A certified copy apostilled by the issuing state; digital apostilles are accepted, and English is fine for the consulate. If you married in France, the French acte de mariage is used.', done: firstKnown(T(/marriage certificate/i), D('marriage-certificate')) },
             { title: 'Your spouse’s French ID', why: 'Passport or identity card, and a certificate of nationality where asked.', done: firstKnown(T(/french id/i), D('spouse-french-id')) },
             { title: 'Proof the relationship is genuine', why: 'Joint accounts, leases, travel, photographs, correspondence. The file shows a shared life, not just a certificate.', done: firstKnown(T(/relationship is genuine/i), D('relationship-proof')) },
             fbi, civil, apostille, insurance, home, money,
@@ -370,6 +376,9 @@ export function walkthroughFor(stage: JourneyStageId, ctx: WalkContext): Walkthr
       const renewal = (() => {
         switch (route) {
           case 'talent_passport': return { title: 'The card, and its long run', why: 'Talent cards run up to four years and renew simply. Five years of continuous residence opens the resident card.', done: null };
+          case 'student': return multiYear
+            ? { title: 'The yearly renewal, then the multi-year card', why: 'Before each academic year: enrolment, funds at the decree minimum, attendance. After the first year, ask for a student card covering the rest of the programme.', done: firstKnown(Tall(/yearly renewals/i), Tall(/renewal/i)) }
+            : { title: 'The renewal, if you stay on', why: 'A one-year programme ends with the permit; staying on means a renewal through ANEF two to four months before it expires, with the new enrolment.', done: firstKnown(Tall(/renewal/i)) };
           case 'entrepreneur': return { title: 'The entrepreneur card, with proof of registration', why: 'At the end of the first year: the entrepreneur / profession libérale card, or the multi-year talent card for a project holder. Start four months before expiry.', done: firstKnown(Tall(/entrepreneur carte de séjour/i)) };
           case 'spouse_french': return { title: 'The multi-year card, and the civic exam', why: 'The renewal is a multi-year vie privée et familiale card, and since 2026 a civic exam applies at this step. Start four months before expiry.', done: firstKnown(Tall(/multi-year card/i)) };
           case 'visitor':

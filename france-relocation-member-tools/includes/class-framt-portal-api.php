@@ -627,15 +627,14 @@ class FRAMT_Portal_API {
             )
         );
 
-        // Administrators only: what the due-date recalculation sees for the
-        // signed-in member, so a member whose tasks stay undated can be read.
+        // A crash the portal's error boundary caught, kept for the admin.
         register_rest_route(
             self::NAMESPACE,
-            '/debug/recalc',
+            '/portal/client-error',
             array(
-                'methods'             => 'GET',
-                'callback'            => array( $this, 'debug_recalc' ),
-                'permission_callback' => function () { return current_user_can( 'manage_options' ); },
+                'methods'             => 'POST',
+                'callback'            => array( $this, 'record_client_error' ),
+                'permission_callback' => array( $this, 'check_member_permission' ),
             )
         );
 
@@ -1515,7 +1514,6 @@ class FRAMT_Portal_API {
 
         $response = array(
             'project'              => $project->to_array(),
-            'stages'               => $project->get_stage_progress(),
             'task_stats'           => $project->get_task_stats(),
             'profile_visa_type'    => $profile_visa_type ?: null,
             'profile_visa_label'   => ! empty( $profile_visa_type ) && isset( $visa_type_labels[ $profile_visa_type ] )
@@ -3383,6 +3381,9 @@ class FRAMT_Portal_API {
 
             // Visa & Employment
             'visa_type'             => get_user_meta( $user_id, 'fra_visa_type', true ),
+            'talent_category'       => get_user_meta( $user_id, 'fra_talent_category', true ),
+            'relationship_type'     => get_user_meta( $user_id, 'fra_relationship_type', true ),
+            'study_length'          => get_user_meta( $user_id, 'fra_study_length', true ),
             'employment_status'     => get_user_meta( $user_id, 'fra_employment_status', true ),
             'work_in_france'        => get_user_meta( $user_id, 'fra_work_in_france', true ),
             'industry'              => get_user_meta( $user_id, 'fra_industry', true ),
@@ -3461,6 +3462,9 @@ class FRAMT_Portal_API {
 
             // Visa & Employment
             'visa_type',
+            'talent_category',
+            'relationship_type',
+            'study_length',
             'employment_status',
             'work_in_france',
             'industry',
@@ -7514,98 +7518,27 @@ Focus on practical advice while being careful not to state incorrect facts. When
     }
 
     /**
-     * Recalculate due dates for all tasks when move date changes
+     * Record a crash the portal's error boundary caught: the last twenty are
+     * kept in an option and each is written to the error log.
      *
-     * @param int    $user_id   User ID
-     * @param string $move_date New move date
-     * @return int Number of tasks updated
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response
      */
-    public function recalculate_task_due_dates( $user_id, $move_date ) {
-        global $wpdb;
-
-        $project = FRAMT_Project::get_or_create( $user_id );
-        if ( ! $project || ! $project->id || empty( $move_date ) ) {
-            return 0;
-        }
-
-        // Get all incomplete tasks for this project
-        $tasks = $wpdb->get_results(
-            $wpdb->prepare(
-                "SELECT id, title, stage, metadata FROM {$this->tbl('tasks')}
-                WHERE project_id = %d AND status != 'done'",
-                $project->id
-            )
+    public function record_client_error( $request ) {
+        $entry = array(
+            'when'      => current_time( 'mysql' ),
+            'user_id'   => $this->acting_user_id(),
+            'message'   => sanitize_text_field( (string) $request->get_param( 'message' ) ),
+            'stack'     => substr( sanitize_textarea_field( (string) $request->get_param( 'stack' ) ), 0, 2000 ),
+            'component' => substr( sanitize_textarea_field( (string) $request->get_param( 'component' ) ), 0, 1500 ),
+            'url'       => esc_url_raw( (string) $request->get_param( 'url' ) ),
         );
-
-        if ( empty( $tasks ) ) {
-            return 0;
-        }
-
-        // Build a map of task titles to their offsets from all templates
-        $offset_map = $this->get_task_offset_map();
-
-        $tasks_updated = 0;
-
-        foreach ( $tasks as $task_row ) {
-            // The offset stored at creation wins; the title map is the
-            // fallback for tasks created before offsets were kept.
-            $offset = null;
-            if ( ! empty( $task_row->metadata ) ) {
-                $meta = json_decode( $task_row->metadata, true );
-                if ( is_array( $meta ) && isset( $meta['days_offset'] ) && is_numeric( $meta['days_offset'] ) ) {
-                    $offset = (int) $meta['days_offset'];
-                }
-            }
-            if ( null === $offset && isset( $offset_map[ $task_row->title ] ) ) {
-                $offset = $offset_map[ $task_row->title ];
-            }
-            if ( null !== $offset ) {
-                $due_date = $this->calculate_due_date( $move_date, $offset );
-
-                $wpdb->update(
-                    FRAMT_Portal_Schema::get_table( 'tasks' ),
-                    array( 'due_date' => $due_date ),
-                    array( 'id' => $task_row->id ),
-                    array( '%s' ),
-                    array( '%d' )
-                );
-                $tasks_updated++;
-            }
-        }
-
-        return $tasks_updated;
-    }
-
-    public function debug_recalc( $request ) {
-        global $wpdb;
-        $user_id = $this->acting_user_id();
-        $project = FRAMT_Project::get_or_create( $user_id );
-        $move    = $project && $project->target_move_date ? $project->target_move_date : get_user_meta( $user_id, 'fra_target_move_date', true );
-        $map     = $this->get_task_offset_map();
-        $rows    = $wpdb->get_results( $wpdb->prepare( "SELECT id, title, status, due_date, metadata FROM {$this->tbl('tasks')} WHERE project_id = %d", $project ? $project->id : 0 ) );
-        $seen    = array();
-        foreach ( (array) $rows as $r ) {
-            $meta = $r->metadata ? json_decode( $r->metadata, true ) : null;
-            $seen[] = array(
-                'id'        => (int) $r->id,
-                'title'     => $r->title,
-                'status'    => $r->status,
-                'due'       => $r->due_date,
-                'meta_off'  => is_array( $meta ) && isset( $meta['days_offset'] ) ? $meta['days_offset'] : null,
-                'map_off'   => $map[ $r->title ] ?? null,
-                'calc'      => isset( $map[ $r->title ] ) ? $this->calculate_due_date( $move, (int) $map[ $r->title ] ) : null,
-            );
-        }
-        $updated = $move ? $this->recalculate_task_due_dates( $user_id, $move ) : -1;
-        return rest_ensure_response( array(
-            'user_id'    => $user_id,
-            'project_id' => $project ? (int) $project->id : null,
-            'move'       => $move,
-            'map_size'   => count( $map ),
-            'tasks'      => $seen,
-            'updated'    => $updated,
-            'db_error'   => $wpdb->last_error,
-        ) );
+        $log = get_option( 'framt_client_errors', array() );
+        $log = is_array( $log ) ? $log : array();
+        array_unshift( $log, $entry );
+        update_option( 'framt_client_errors', array_slice( $log, 0, 20 ), false );
+        error_log( 'FRAMT portal crash: ' . $entry['message'] . ' at ' . $entry['url'] );
+        return rest_ensure_response( array( 'recorded' => true ) );
     }
 
     /**
@@ -7818,6 +7751,14 @@ Focus on practical advice while being careful not to state incorrect facts. When
             'Check how French inheritance rules affect your estate plan',
             'Pass the French driving test before your US licence stops counting',
             'Check whether your state driving licence can be exchanged',
+            'Assemble the qualified-employee proof: contract at the reference salary and your degree',
+            'Assemble the EU Blue Card proof: a contract of three months or more at 1.5 times the reference salary',
+            'Assemble the founder file: the innovative project, its recognition and the funds',
+            'Assemble the investor file: the investment and the jobs it carries',
+            'Get the hosting agreement (convention d\'accueil) from your French institution',
+            'Assemble the artist file: contracts, income and recognition of your work',
+            'Assemble twelve months of PACS cohabitation proof',
+            'Plan the yearly renewals of a multi-year student permit',
         );
         $out = array();
         foreach ( $titles as $t ) { $out[] = array( 'title' => $t ); }
@@ -7956,6 +7897,49 @@ Focus on practical advice while being careful not to state incorrect facts. When
             );
         }
 
+        // The route's sub-case (Talent category, PACS, multi-year studies).
+        $talent = $get( 'talent_category' );
+        if ( 'talent_passport' === $visa && '' !== $talent && 'unsure' !== $talent ) {
+            $by_category = array(
+                'qualified_employee' => array( 'Assemble the qualified-employee proof: contract at the reference salary and your degree', 'A signed contract of at least three months at or above the reference salary (€39,582 gross a year under the August 2025 order; confirm the figure in force when you sign), the employer\'s Kbis, and a master\'s degree or equivalent, or proof of the experience that stands in for it.' ),
+                'blue_card'          => array( 'Assemble the EU Blue Card proof: a contract of three months or more at 1.5 times the reference salary', 'The EU Blue Card variant asks for at least 1.5 times the reference salary (€59,373 gross a year in 2026), a contract of three months or more, and a degree of three years or more or five years of comparable experience.' ),
+                'founder'            => array( 'Assemble the founder file: the innovative project, its recognition and the funds', 'A business plan for an innovative project, recognition by a public body or incubator (BPI, a French Tech programme, an incubator letter), and proof of funds; the €30,000 investment benchmark is commonly cited for the founder track.' ),
+                'investor'           => array( 'Assemble the investor file: the investment and the jobs it carries', 'Proof of a direct investment of at least €300,000 in a French company you own or control, and the jobs it creates or keeps over four years.' ),
+                'researcher'         => array( 'Get the hosting agreement (convention d\'accueil) from your French institution', 'The convention d\'accueil signed by the university or research body is the category proof; ask the institution\'s international office, it takes weeks. A master\'s-level degree is the qualification.' ),
+                'artist'             => array( 'Assemble the artist file: contracts, income and recognition of your work', 'Contracts or engagements in France, proof of income from your work at the level the consulate expects for the stay, and evidence of recognition: press, prizes, past exhibitions or performances.' ),
+            );
+            if ( isset( $by_category[ $talent ] ) ) {
+                $templates[] = array(
+                    'title'       => $by_category[ $talent ][0],
+                    'description' => $by_category[ $talent ][1],
+                    'stage'       => 'prepare',
+                    'priority'    => 'high',
+                    'days_offset' => -130,
+                    'task_type'   => 'document',
+                );
+            }
+        }
+        if ( 'spouse_french' === $visa && 'pacs' === $get( 'relationship_type' ) ) {
+            $templates[] = array(
+                'title'       => 'Assemble twelve months of PACS cohabitation proof',
+                'description' => 'A PACS supports the vie privée et familiale route only after twelve months of documented shared life, and a March 2025 circular asks that it be effective, stable and not fraudulent. Build the file month by month: a joint lease or deed, joint accounts, utility bills at the same address, travel together, insurance naming each other. Expect more scrutiny than a marriage.',
+                'stage'       => 'prepare',
+                'priority'    => 'high',
+                'days_offset' => -400,
+                'task_type'   => 'document',
+            );
+        }
+        if ( 'student' === $visa && 'multi_year' === $get( 'study_length' ) ) {
+            $templates[] = array(
+                'title'       => 'Plan the yearly renewals of a multi-year student permit',
+                'description' => 'The VLS-TS runs a year; a programme longer than that means a renewal through ANEF before each academic year, with fresh proof of enrolment, of funds at the decree minimum, and of attendance. After the first year a multi-year student card covering the rest of the programme can be requested; ask the prefecture at the first renewal.',
+                'stage'       => 'settle',
+                'priority'    => 'medium',
+                'days_offset' => 200,
+                'task_type'   => 'appointment',
+            );
+        }
+
         // Driving: the state decides the process (License Exchange topic, verified September 2026).
         $facts = $this->get_state_facts( $user_id );
         if ( 'yes' === $facts['licence_exchange'] ) {
@@ -8062,6 +8046,9 @@ Focus on practical advice while being careful not to state incorrect facts. When
         $facts  = $this->get_state_facts( $user_id );
         $spouse = trim( (string) get_user_meta( $user_id, 'fra_spouse_legal_first_name', true ) );
         return array(
+            'apostille'        => $facts['apostille'] ?? null,
+            'vital_records'    => $facts['vital_records'] ?? null,
+            'tax_domicile'     => $facts['tax_domicile'] ?? null,
             'state'            => '' !== $facts['name'] ? $facts['name'] : 'your state',
             'state_code'       => $facts['state'],
             'licence_exchange' => $facts['licence_exchange'],
@@ -8102,7 +8089,69 @@ Focus on practical advice while being careful not to state incorrect facts. When
             'licence_exchange' => isset( $exchange[ $code ] ) ? 'yes' : 'no',
             'licence_classes' => $exchange[ $code ] ?? '',
             'verified'        => 'September 2026',
+            // Filled from the knowledge base once its state-by-state topics
+            // are approved; empty until then, never invented.
+            'apostille'       => $this->state_row_from_kb( 'apostille_by_state', $names[ $code ] ),
+            'vital_records'   => $this->state_row_from_kb( 'vital_records_by_state', $names[ $code ] ),
+            'tax_domicile'    => $this->state_row_from_kb( 'state_tax_domicile', $names[ $code ] ),
         );
+    }
+
+    /**
+     * One state's row from a knowledge-base topic written as a markdown
+     * table (first column the state). Column headers become keys, lower-
+     * cased with spaces as underscores, so a table with "State | Office |
+     * Fee | Turnaround | URL" yields office, fee, turnaround, url.
+     *
+     * @param string $topic_key  Topic key anywhere in the knowledge base.
+     * @param string $state_name Full state name.
+     * @return array|null
+     */
+    private function state_row_from_kb( $topic_key, $state_name ) {
+        $kb = get_option( 'fra_knowledge_base', array() );
+        if ( ! is_array( $kb ) ) {
+            return null;
+        }
+        $content = '';
+        foreach ( $kb as $topics ) {
+            if ( is_array( $topics ) && isset( $topics[ $topic_key ]['content'] ) ) {
+                $content = (string) $topics[ $topic_key ]['content'];
+                break;
+            }
+        }
+        if ( '' === $content ) {
+            return null;
+        }
+        $headers = array();
+        foreach ( preg_split( '/\r?\n/', $content ) as $line ) {
+            $line = trim( $line );
+            if ( '' === $line || '|' !== $line[0] ) {
+                continue;
+            }
+            $cells = array_map( 'trim', explode( '|', trim( $line, '|' ) ) );
+            if ( preg_match( '/^\|?\s*:?-{2,}/', $line ) ) {
+                continue; // the header/body separator
+            }
+            if ( empty( $headers ) ) {
+                if ( 0 === strcasecmp( $cells[0] ?? '', 'state' ) ) {
+                    $headers = array_map( function ( $h ) { return strtolower( str_replace( ' ', '_', trim( $h ) ) ); }, $cells );
+                }
+                continue;
+            }
+            if ( 0 === strcasecmp( $cells[0] ?? '', $state_name ) ) {
+                $row = array();
+                foreach ( $headers as $i => $h ) {
+                    $v = $cells[ $i ] ?? '';
+                    // A markdown link becomes its URL for url columns, its text otherwise.
+                    if ( preg_match( '/\[([^\]]*)\]\(([^)]+)\)/', $v, $m ) ) {
+                        $v = 'url' === $h ? $m[2] : $m[1];
+                    }
+                    $row[ $h ] = sanitize_text_field( $v );
+                }
+                return $row;
+            }
+        }
+        return null;
     }
 
     /**

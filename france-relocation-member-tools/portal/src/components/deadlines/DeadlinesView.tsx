@@ -46,7 +46,54 @@ export default function DeadlinesView() {
   const openStage = (id: string) => { setActiveStage(id); setActiveView('stage'); };
   const openTask = (task: Task) => { setTaskFilters({ stage: project ? stageForTask(task, project) : task.stage }); setActiveView('tasks'); };
 
-  const Row = ({ task }: { task: Task }) => {
+  return (
+    <div className="flex flex-col">
+      <header className="px-6 md:px-8 pt-6 pb-5 bg-card border-b border-rule">
+        <span className="eyebrow">Across all six stages</span>
+        <h2 className="font-display text-[1.75rem] font-semibold tracking-[-0.018em] leading-tight">Deadlines</h2>
+        <p className="text-gray-600 max-w-[60ch]">Every dated step, counted back from your move. Overdue first, then month by month.</p>
+      </header>
+
+      <div className="flex flex-col gap-5 px-6 md:px-8 py-5">
+        {dated.length === 0 ? (
+          <div className="card p-6">
+            <p className="font-display font-semibold text-lg">Nothing is dated yet.</p>
+            <p className="text-sm text-gray-600 mt-1">Set your move date and the plan dates itself.</p>
+            <button onClick={() => setActiveView('dashboard')} className="btn btn-primary mt-3">Set your move date</button>
+          </div>
+        ) : null}
+
+        {overdue.length > 0 ? (
+          <div className="card overflow-hidden">
+            <div className="flex justify-between items-baseline px-5 py-3.5 bg-card-2 border-b border-rule">
+              <span className="font-display font-semibold text-accent-500">Overdue</span>
+              <span className="font-mono text-[0.7rem] text-gray-500 uppercase">{overdue.length}</span>
+            </div>
+            <ul className="divide-y divide-rule-soft">{overdue.map((t) => <DeadlineRow key={t.id} task={t} project={project} updateStatus={updateStatus} openStage={openStage} openTask={openTask} />)}</ul>
+          </div>
+        ) : null}
+
+        {[...months.entries()].map(([key, list]) => (
+          <div key={key} className="card overflow-hidden">
+            <div className="flex justify-between items-baseline px-5 py-3.5 bg-card-2 border-b border-rule">
+              <span className="font-display font-semibold">{monthLabel(key)}</span>
+              <span className="font-mono text-[0.7rem] text-gray-500 uppercase">{list.length}</span>
+            </div>
+            <ul className="divide-y divide-rule-soft">{list.map((t) => <DeadlineRow key={t.id} task={t} project={project} updateStatus={updateStatus} openStage={openStage} openTask={openTask} />)}</ul>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function DeadlineRow({ task, project, updateStatus, openStage, openTask }: {
+  task: Task;
+  project: { target_move_date: string | null } | undefined;
+  updateStatus: ReturnType<typeof useUpdateTaskStatus>;
+  openStage: (id: string) => void;
+  openTask: (task: Task) => void;
+}) {
     const done = task.status === 'done';
     const stageId = project ? stageForTask(task, project) : 'decide';
     const stage = JOURNEY.find((s) => s.id === stageId);
@@ -72,45 +119,4 @@ export default function DeadlinesView() {
         <button onClick={() => openTask(task)} className="text-sm font-semibold text-primary-500 hover:text-primary-700">Open</button>
       </li>
     );
-  };
-
-  return (
-    <div className="flex flex-col">
-      <header className="px-6 md:px-8 pt-6 pb-5 bg-card border-b border-rule">
-        <span className="eyebrow">Across all six stages</span>
-        <h2 className="font-display text-[1.75rem] font-semibold tracking-[-0.018em] leading-tight">Deadlines</h2>
-        <p className="text-gray-600 max-w-[60ch]">Every dated step, counted back from your move. Overdue first, then month by month.</p>
-      </header>
-
-      <div className="flex flex-col gap-5 px-6 md:px-8 py-5">
-        {dated.length === 0 ? (
-          <div className="card p-6">
-            <p className="font-display font-semibold text-lg">Nothing is dated yet.</p>
-            <p className="text-sm text-gray-600 mt-1">Set your move date and the plan dates itself.</p>
-            <button onClick={() => setActiveView('dashboard')} className="btn btn-primary mt-3">Set your move date</button>
-          </div>
-        ) : null}
-
-        {overdue.length > 0 ? (
-          <div className="card overflow-hidden">
-            <div className="flex justify-between items-baseline px-5 py-3.5 bg-card-2 border-b border-rule">
-              <span className="font-display font-semibold text-accent-500">Overdue</span>
-              <span className="font-mono text-[0.7rem] text-gray-500 uppercase">{overdue.length}</span>
-            </div>
-            <ul className="divide-y divide-rule-soft">{overdue.map((t) => <Row key={t.id} task={t} />)}</ul>
-          </div>
-        ) : null}
-
-        {[...months.entries()].map(([key, list]) => (
-          <div key={key} className="card overflow-hidden">
-            <div className="flex justify-between items-baseline px-5 py-3.5 bg-card-2 border-b border-rule">
-              <span className="font-display font-semibold">{monthLabel(key)}</span>
-              <span className="font-mono text-[0.7rem] text-gray-500 uppercase">{list.length}</span>
-            </div>
-            <ul className="divide-y divide-rule-soft">{list.map((t) => <Row key={t.id} task={t} />)}</ul>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
 }

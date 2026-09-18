@@ -45,6 +45,11 @@ class FRAMT_Task_Howto {
             return str_replace( array( '{state}', '{spouse}', '{verified}', '{classes}' ), array( $ctx['state'], $ctx['spouse'], $ctx['verified'], $ctx['licence_classes'] ), $s );
         };
         $out = array( 'steps' => array(), 'bring' => array(), 'time' => '', 'cost' => '', 'links' => array() );
+        // State-specific facts, once the knowledge base holds them, lead the how-to.
+        $state_step = self::state_step( $title, $ctx );
+        if ( $state_step ) {
+            $out['steps'][] = $state_step;
+        }
         foreach ( $howto['steps'] ?? array() as $step ) {
             $out['steps'][] = array(
                 'title'  => $fill( $step[0] ),
@@ -61,6 +66,36 @@ class FRAMT_Task_Howto {
             $out['links'][] = array( 'label' => $fill( $l[0] ), 'url' => $l[1] );
         }
         return $out;
+    }
+
+    /**
+     * A first step written from the member's state row in the knowledge base,
+     * for the steps that vary by state. Null until the row exists.
+     *
+     * @param string $title Task title.
+     * @param array  $ctx   Context with apostille / vital_records / tax_domicile rows.
+     * @return array|null
+     */
+    private static function state_step( $title, $ctx ) {
+        $row = null; $lead = '';
+        if ( in_array( $title, array( 'Get the apostilles from the state', 'Get marriage certificate apostilled', 'Get birth certificates apostilled', 'Apostille the marriage certificate' ), true ) ) {
+            $row = $ctx['apostille'] ?? null; $lead = 'Apostilles in ' . $ctx['state'];
+        } elseif ( 'Order certified copies of your civil records' === $title ) {
+            $row = $ctx['vital_records'] ?? null; $lead = 'Certified copies in ' . $ctx['state'];
+        } elseif ( 'Talk to a cross-border tax professional before you move' === $title ) {
+            $row = $ctx['tax_domicile'] ?? null; $lead = 'Leaving ' . $ctx['state'] . ' for tax purposes';
+        }
+        if ( ! is_array( $row ) || empty( $row ) ) {
+            return null;
+        }
+        $parts = array();
+        foreach ( $row as $k => $v ) {
+            if ( in_array( $k, array( 'state', 'url' ), true ) || '' === $v ) {
+                continue;
+            }
+            $parts[] = ucfirst( str_replace( '_', ' ', $k ) ) . ': ' . $v;
+        }
+        return array( 'title' => $lead, 'detail' => implode( '. ', $parts ) . '.', 'url' => $row['url'] ?? '' );
     }
 
     /**
@@ -81,7 +116,7 @@ class FRAMT_Task_Howto {
         $fv   = 'https://france-visas.gouv.fr/';
         $tls  = 'https://visas-fr.tlscontact.com/';
         $anef = 'https://administration-etrangers-en-france.interieur.gouv.fr/';
-        $nass = 'https://www.nass.org/can-I-help-you/apostilles-document-authentication';
+        $nass = 'https://www.nass.org/business-services/apostillesdocument-authentication-services';
         $cdc  = 'https://www.cdc.gov/nchs/w2w/index.htm';
         $fbi  = 'https://www.fbi.gov/how-we-can-help-you/more-fbi-services-and-information/identity-history-summary-checks';
         $chan = 'https://www.fbi.gov/how-we-can-help-you/more-fbi-services-and-information/identity-history-summary-checks/list-of-fbi-approved-channelers';
@@ -915,6 +950,82 @@ class FRAMT_Task_Howto {
                 'time'  => 'An hour to check; weeks for the category document.',
                 'cost'  => 'Nothing.',
                 'links' => array( array( 'France-Visas', $fv ) ),
+            ),
+
+            // ---------------- Route sub-cases ----------------
+            'Assemble the qualified-employee proof: contract at the reference salary and your degree' => array(
+                'steps' => array(
+                    array( 'Confirm the reference salary in force', 'Set by ministerial order (€39,582 gross a year from 31 August 2025); the figure that counts is the one in force when the contract is signed.', 'https://www.service-public.fr/' ),
+                    array( 'Get the contract and the employer documents', 'A contract of three months or more at or above the reference salary, and the employer\'s Kbis extract.' ),
+                    array( 'Prove the qualification', 'A master\'s degree or equivalent, or the professional experience the category accepts instead; in English is fine for the consulate.' ),
+                ),
+                'bring' => array( 'Signed contract', 'Employer Kbis', 'Degree' ),
+                'time'  => 'Weeks, mostly the employer\'s.', 'cost' => 'Nothing.',
+                'links' => array( array( 'France-Visas', 'https://france-visas.gouv.fr/' ) ),
+            ),
+            'Assemble the EU Blue Card proof: a contract of three months or more at 1.5 times the reference salary' => array(
+                'steps' => array(
+                    array( 'Check the salary line', '1.5 times the reference: €59,373 gross a year in 2026. Below it, the qualified-employee category may still fit.' ),
+                    array( 'Contract and qualification', 'A contract of three months or more, and a degree of three years or more of higher education, or five years of comparable professional experience.' ),
+                ),
+                'bring' => array( 'Signed contract', 'Degree or experience letters' ),
+                'time'  => 'Weeks.', 'cost' => 'Nothing.',
+                'links' => array( array( 'France-Visas', 'https://france-visas.gouv.fr/' ) ),
+            ),
+            'Assemble the founder file: the innovative project, its recognition and the funds' => array(
+                'steps' => array(
+                    array( 'Get the project recognised', 'A public body or incubator letter (BPI, a French Tech programme, an accredited incubator) saying the project is innovative is the heart of the file.' ),
+                    array( 'Write the plan and show the funds', 'A business plan the consulate can follow, and proof of funds; €30,000 is the commonly cited benchmark for the founder track.' ),
+                ),
+                'bring' => array( 'Recognition letter', 'Business plan', 'Proof of funds' ),
+                'time'  => 'Weeks to months for the recognition.', 'cost' => 'Nothing beyond the project.',
+                'links' => array( array( 'France-Visas', 'https://france-visas.gouv.fr/' ), array( 'Business France', 'https://www.businessfrance.fr/' ) ),
+            ),
+            'Assemble the investor file: the investment and the jobs it carries' => array(
+                'steps' => array(
+                    array( 'Document the investment', 'At least €300,000 invested directly, or through a company you control, in a French company.' ),
+                    array( 'Document the jobs', 'The jobs created or kept in France over the four years of the card.' ),
+                ),
+                'bring' => array( 'Investment proof', 'Company documents', 'Job commitments' ),
+                'time'  => 'Weeks.', 'cost' => 'The investment itself.',
+                'links' => array( array( 'France-Visas', 'https://france-visas.gouv.fr/' ) ),
+            ),
+            'Get the hosting agreement (convention d\'accueil) from your French institution' => array(
+                'steps' => array(
+                    array( 'Ask the international office', 'The convention d\'accueil is drawn up by the host university or research body and stamped by the prefecture; it names you, the research and the dates.' ),
+                    array( 'Allow weeks', 'It is the category proof, and nothing else in the file substitutes for it.' ),
+                ),
+                'bring' => array( 'Passport details', 'Degree', 'The research project' ),
+                'time'  => 'Weeks.', 'cost' => 'Nothing.',
+                'links' => array( array( 'France-Visas', 'https://france-visas.gouv.fr/' ) ),
+            ),
+            'Assemble the artist file: contracts, income and recognition of your work' => array(
+                'steps' => array(
+                    array( 'Contracts and income', 'Engagements or contracts in France and proof that your work supports the stay.' ),
+                    array( 'Recognition', 'Press, prizes, exhibitions, performances: the record that shows an established practice.' ),
+                ),
+                'bring' => array( 'Contracts', 'Income proof', 'Portfolio and press' ),
+                'time'  => 'Weeks.', 'cost' => 'Nothing.',
+                'links' => array( array( 'France-Visas', 'https://france-visas.gouv.fr/' ) ),
+            ),
+            'Assemble twelve months of PACS cohabitation proof' => array(
+                'steps' => array(
+                    array( 'Register the PACS, then count twelve months', 'Free at the mairie, or through a notaire for a customised agreement. The clock for the family route starts at registration and needs twelve months of shared life.' ),
+                    array( 'Collect the proof month by month', 'Joint lease or deed, joint accounts, utility bills at one address, travel together, insurance naming each other. A folder that shows a continuous shared life, not a single snapshot.' ),
+                    array( 'Expect scrutiny', 'A March 2025 circular asks that the PACS be effective, stable and not fraudulent; the file is read for that.' ),
+                ),
+                'bring' => array( 'PACS certificate', 'Twelve months of joint documents' ),
+                'time'  => 'Twelve months, by definition.', 'cost' => 'Free at the mairie; €250 to €450 through a notaire.',
+                'links' => array( array( 'service-public.fr', 'https://www.service-public.fr/' ) ),
+            ),
+            'Plan the yearly renewals of a multi-year student permit' => array(
+                'steps' => array(
+                    array( 'Renew before each academic year', 'Through ANEF, two to four months before the current permit expires: enrolment for the coming year, funds at the decree minimum, and proof you attended and passed.', 'https://administration-etrangers-en-france.interieur.gouv.fr/' ),
+                    array( 'Ask for the multi-year card', 'After the first year, a student card covering the rest of the programme can be requested at renewal; it saves a renewal a year.' ),
+                ),
+                'bring' => array( 'Enrolment certificate', 'Proof of funds', 'Transcripts' ),
+                'time'  => 'Each summer.', 'cost' => 'Stamp duty on each card.',
+                'links' => array( array( 'ANEF portal', 'https://administration-etrangers-en-france.interieur.gouv.fr/' ) ),
             ),
 
             // ---------------- Household ----------------

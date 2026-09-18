@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { AlertTriangle, Bell, CheckCircle, Info, User, X } from 'lucide-react';
-import { useCurrentUser, useDashboard } from '@/hooks/useApi';
+import { useCurrentUser, useDashboard, useSupportTickets } from '@/hooks/useApi';
 import { usePortalStore } from '@/store';
 
 const viewTitles: Record<string, string> = {
@@ -28,10 +28,22 @@ const viewTitles: Record<string, string> = {
 };
 
 export default function Header() {
-  const { activeView } = usePortalStore();
+  const { activeView, setActiveView } = usePortalStore();
   const { data: user } = useCurrentUser();
   const { data: dashboardData } = useDashboard();
+  const { data: ticketsData } = useSupportTickets();
   const [showNotifications, setShowNotifications] = useState(false);
+  // Dismissals are per day and per browser: a derived alert comes back tomorrow if it still applies.
+  const today = new Date().toISOString().slice(0, 10);
+  const [dismissed, setDismissed] = useState<Record<string, string>>(() => {
+    try { return JSON.parse(window.localStorage.getItem('framt_dismissed_notices') ?? '{}') as Record<string, string>; } catch { return {}; }
+  });
+  const dismiss = (id: string) => {
+    const next = { ...dismissed, [id]: today };
+    setDismissed(next);
+    try { window.localStorage.setItem('framt_dismissed_notices', JSON.stringify(next)); } catch { /* per-viewer convenience only */ }
+  };
+  const go = (view: string) => { setShowNotifications(false); setActiveView(view); };
   const notificationRef = useRef<HTMLDivElement>(null);
 
   const title = viewTitles[activeView] || 'Dashboard';
@@ -48,16 +60,17 @@ export default function Header() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Build notifications from dashboard data
-  const notifications = [];
+  // Build notifications from dashboard data. Each one opens the thing it is about.
+  const notifications: { id: string; type: string; title: string; message: string; time: string; go: () => void }[] = [];
 
   if (dashboardData?.task_stats?.overdue && dashboardData.task_stats.overdue > 0) {
     notifications.push({
       id: 'overdue',
       type: 'warning',
       title: `${dashboardData.task_stats.overdue} Overdue Task${dashboardData.task_stats.overdue > 1 ? 's' : ''}`,
-      message: 'You have tasks that need immediate attention',
+      message: 'Past dates are the order to work in; open Deadlines to see them first.',
       time: 'Now',
+      go: () => go('deadlines'),
     });
   }
 
@@ -66,8 +79,9 @@ export default function Header() {
       id: 'upcoming',
       type: 'info',
       title: 'Upcoming Deadlines',
-      message: `${dashboardData.upcoming_tasks.length} tasks due soon`,
+      message: `${dashboardData.upcoming_tasks.length} step${dashboardData.upcoming_tasks.length === 1 ? '' : 's'} due inside two weeks. Next: “${dashboardData.upcoming_tasks[0].title}”.`,
       time: 'Today',
+      go: () => go('deadlines'),
     });
   }
 
@@ -78,10 +92,24 @@ export default function Header() {
       title: 'Move Date Approaching',
       message: `${dashboardData.project.days_until_move} days until your move`,
       time: 'Reminder',
+      go: () => go('stage'),
     });
   }
 
-  const notificationCount = notifications.length;
+  for (const t of (ticketsData?.tickets ?? []).filter((x) => x.from_site && x.has_unread_user)) {
+    notifications.push({
+      id: `message-${t.id}`,
+      type: 'success',
+      title: t.subject,
+      message: 'A new message from Relo2France.',
+      time: t.relative_time,
+      go: () => go('messages'),
+    });
+  }
+
+  const visible = notifications.filter((n) => dismissed[n.id] !== today);
+
+  const notificationCount = visible.length;
 
   return (
     <header className="h-16 bg-card border-b border-rule flex items-center justify-between px-6">
@@ -119,14 +147,14 @@ export default function Header() {
               </div>
 
               <div className="max-h-96 overflow-y-auto">
-                {notifications.length > 0 ? (
+                {visible.length > 0 ? (
                   <div className="divide-y divide-gray-100">
-                    {notifications.map((notification) => (
+                    {visible.map((notification) => (
                       <div
                         key={notification.id}
-                        className="px-4 py-3 hover:bg-gray-50 transition-colors"
+                        className="px-4 py-3 hover:bg-gray-50 transition-colors flex items-start gap-2"
                       >
-                        <div className="flex gap-3">
+                        <button onClick={notification.go} className="flex gap-3 flex-1 min-w-0 text-left">
                           <div className="flex-shrink-0 mt-0.5">
                             {notification.type === 'warning' ? (
                               <AlertTriangle className="w-5 h-5 text-yellow-500" />
@@ -144,12 +172,23 @@ export default function Header() {
                               {notification.message}
                             </p>
                             <p className="text-xs text-gray-400 mt-1">
-                              {notification.time}
+                              {notification.time} · <span className="text-primary-500 font-semibold">Open</span>
                             </p>
                           </div>
-                        </div>
+                        </button>
+                        <button
+                          onClick={() => dismiss(notification.id)}
+                          className="p-1 rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-100 flex-shrink-0"
+                          aria-label={`Dismiss “${notification.title}”`}
+                          title="Dismiss"
+                        >
+                          <X className="w-4 h-4" aria-hidden="true" />
+                        </button>
                       </div>
                     ))}
+                    <div className="px-4 py-2.5">
+                      <button onClick={() => go('messages')} className="text-sm font-semibold text-primary-500 hover:text-primary-700">All messages →</button>
+                    </div>
                   </div>
                 ) : (
                   <div className="px-4 py-8 text-center">

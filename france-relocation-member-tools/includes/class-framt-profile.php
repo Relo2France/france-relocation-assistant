@@ -217,6 +217,41 @@ class FRAMT_Profile {
                 ),
                 'group' => 'visa',
             ),
+            'talent_category' => array(
+                'label' => __('Talent category', 'fra-member-tools'),
+                'type' => 'select',
+                'options' => array(
+                    'unsure' => __('Not sure yet', 'fra-member-tools'),
+                    'qualified_employee' => __('Qualified employee (salaried, reference salary)', 'fra-member-tools'),
+                    'blue_card' => __('EU Blue Card (highly qualified, 1.5x reference)', 'fra-member-tools'),
+                    'founder' => __('Company founder / innovative project', 'fra-member-tools'),
+                    'investor' => __('Investor', 'fra-member-tools'),
+                    'researcher' => __('Researcher with a hosting agreement', 'fra-member-tools'),
+                    'artist' => __('Artist or cultural professional', 'fra-member-tools'),
+                ),
+                'group' => 'visa',
+                'conditional' => array('visa_type' => array('talent_passport')),
+            ),
+            'relationship_type' => array(
+                'label' => __('Married or PACS', 'fra-member-tools'),
+                'type' => 'select',
+                'options' => array(
+                    'married' => __('Married', 'fra-member-tools'),
+                    'pacs' => __('PACS (civil union)', 'fra-member-tools'),
+                ),
+                'group' => 'visa',
+                'conditional' => array('visa_type' => array('spouse_french')),
+            ),
+            'study_length' => array(
+                'label' => __('Length of studies', 'fra-member-tools'),
+                'type' => 'select',
+                'options' => array(
+                    'one_year' => __('One year or less', 'fra-member-tools'),
+                    'multi_year' => __('More than one year', 'fra-member-tools'),
+                ),
+                'group' => 'visa',
+                'conditional' => array('visa_type' => array('student')),
+            ),
             'employment_status' => array(
                 'label' => __('Your Employment Status', 'fra-member-tools'),
                 'type' => 'select',
@@ -531,6 +566,9 @@ class FRAMT_Profile {
 
             // Visa & Employment
             'visa_type'             => get_user_meta( $user_id, 'fra_visa_type', true ),
+            'talent_category'       => get_user_meta( $user_id, 'fra_talent_category', true ),
+            'relationship_type'     => get_user_meta( $user_id, 'fra_relationship_type', true ),
+            'study_length'          => get_user_meta( $user_id, 'fra_study_length', true ),
             'employment_status'     => get_user_meta( $user_id, 'fra_employment_status', true ),
             'work_in_france'        => get_user_meta( $user_id, 'fra_work_in_france', true ),
             'industry'              => get_user_meta( $user_id, 'fra_industry', true ),

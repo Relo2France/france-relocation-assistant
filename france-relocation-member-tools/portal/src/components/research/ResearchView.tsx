@@ -141,11 +141,7 @@ export default function ResearchView() {
       <div className="mb-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <MapPin className="w-6 h-6 text-primary-600" />
-              Explore France
-            </h1>
-            <p className="mt-1 text-gray-600">
+            <p className="text-gray-600 max-w-[60ch]">
               {targetArea
                 ? `Your area · ${targetArea}. Compare it with the rest of France, then generate a report.`
                 : 'Discover regions, departments, and towns. Generate detailed relocation reports.'}

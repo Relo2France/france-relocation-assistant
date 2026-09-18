@@ -108,7 +108,6 @@ export interface WelcomeBanner {
 
 export interface DashboardData {
   project: Project;
-  stages: StageProgress[];
   task_stats: TaskStats;
   profile_visa_type: string | null;
   profile_visa_label: string | null;
@@ -336,6 +335,9 @@ export interface MemberProfile {
 
   // Visa & Employment
   visa_type: ProfileVisaType;
+  talent_category: TalentCategory;
+  relationship_type: RelationshipType;
+  study_length: StudyLength;
   employment_status: WorkStatus;
   work_in_france: WorkInFranceType;
   industry: string;
@@ -381,6 +383,9 @@ export interface MemberProfile {
 export type ApplicantType = 'alone' | 'spouse' | 'spouse_kids' | 'kids_only';
 export type WorkStatus = 'employed' | 'self_employed' | 'retired' | 'not_working';
 export type PetType = 'no' | 'dogs' | 'cats' | 'both' | 'other';
+export type TalentCategory = '' | 'unsure' | 'qualified_employee' | 'blue_card' | 'founder' | 'investor' | 'researcher' | 'artist';
+export type RelationshipType = '' | 'married' | 'pacs';
+export type StudyLength = '' | 'one_year' | 'multi_year';
 export type ProfileVisaType = 'undecided' | 'visitor' | 'talent_passport' | 'employee' | 'entrepreneur' | 'student' | 'family' | 'spouse_french' | 'retiree' | 'other';
 export type WorkInFranceType = 'no' | 'yes_local' | 'yes_remote' | 'yes_self' | 'undecided';
 export type ApplicationLocation = 'us' | 'france';
@@ -1092,6 +1097,10 @@ export interface StateFacts {
   licence_exchange: 'yes' | 'no' | 'unknown';
   licence_classes: string;
   verified: string;
+  /** Rows from the knowledge base's state tables, once approved; null until then. */
+  apostille?: Record<string, string> | null;
+  vital_records?: Record<string, string> | null;
+  tax_domicile?: Record<string, string> | null;
 }
 
 export interface ProfessionalPrompt {
