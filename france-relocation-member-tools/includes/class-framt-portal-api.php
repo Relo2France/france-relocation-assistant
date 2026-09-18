@@ -4360,6 +4360,7 @@ class FRAMT_Portal_API {
             'letters'   => $letters,
             'fields'    => FRAMT_Letters::fields(),
             'first'     => FRAMT_Letters::first_fields(),
+            'form'      => FRAMT_Letters::form_context( $c ),
             'answers'   => (object) $c['answers'],
         ) );
     }

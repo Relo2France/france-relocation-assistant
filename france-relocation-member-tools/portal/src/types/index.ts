@@ -1862,7 +1862,7 @@ declare global {
 }
 
 // Letters for the visa application (member tools 2.9.25)
-export type LetterFieldType = 'text' | 'textarea' | 'select' | 'date' | 'number';
+export type LetterFieldType = 'text' | 'textarea' | 'select' | 'date' | 'number' | 'income' | 'money';
 
 export interface LetterField {
   label: string;
@@ -1909,4 +1909,17 @@ export interface LettersResponse {
   /** Asked before any letter: the consulate and the mailing address. */
   first: string[];
   answers: Record<string, string>;
+  form: LetterFormContext;
+}
+
+/** What the letter form needs besides the questions. */
+export interface LetterFormContext {
+  /** Shown when the member has not answered: the move date, the stay wording. */
+  defaults: Record<string, string>;
+  /** What consulates measure income against, and for how many adults. */
+  benchmark: { monthly: number; since: string; label: string; adults: number };
+  /** US dollars per euro from the European Central Bank; null if unreachable. */
+  fx: { rate: number; date: string } | null;
+  /** Which group each question sits in: stay, money, words; anything else is details. */
+  groups: Record<string, string>;
 }

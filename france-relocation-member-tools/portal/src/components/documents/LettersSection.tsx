@@ -16,7 +16,8 @@ import { CompactErrorFallback } from '@/components/shared/ErrorBoundary';
 import Modal from '@/components/shared/Modal';
 import { useDeleteFile, useDraftLetter, useEditLetter, useLetters, useSaveLetterAnswers } from '@/hooks/useApi';
 import { usePortalStore } from '@/store';
-import type { Letter, LetterField } from '@/types';
+import type { Letter } from '@/types';
+import { FieldInput, IncomeSummary } from './LetterFields';
 
 const ROUTE_NAMES: Record<string, string> = {
   visitor: 'visitor',
@@ -30,51 +31,19 @@ const ROUTE_NAMES: Record<string, string> = {
   other: 'long-stay',
 };
 
+const GROUPS: { id: string; label: string }[] = [
+  { id: 'stay', label: 'Where and when' },
+  { id: 'money', label: 'Money' },
+  { id: 'words', label: 'In your own words' },
+  { id: 'details', label: 'Details' },
+];
+
 const letterKey = (l: Pick<Letter, 'type' | 'person'>) => (l.person === 'partner' ? `${l.type}|partner` : l.type);
 
 function formatDate(value: string | null | undefined): string {
   if (!value) return '';
   const d = new Date(value.replace(' ', 'T'));
   return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
-}
-
-interface FieldInputProps {
-  id: string;
-  field: LetterField;
-  value: string;
-  onChange: (value: string) => void;
-}
-
-function FieldInput({ id, field, value, onChange }: FieldInputProps) {
-  const hintId = field.hint ? `${id}-hint` : undefined;
-  return (
-    <div>
-      <label htmlFor={id} className="block text-sm font-medium text-gray-700 mb-1">
-        {field.label}
-      </label>
-      {field.type === 'textarea' ? (
-        <textarea id={id} rows={3} value={value} onChange={(e) => onChange(e.target.value)} className="input" aria-describedby={hintId} />
-      ) : field.type === 'select' ? (
-        <select id={id} value={value} onChange={(e) => onChange(e.target.value)} className="select" aria-describedby={hintId}>
-          <option value="">Choose…</option>
-          {(field.options ?? []).map((o) => (
-            <option key={o.value} value={o.value}>{o.label}</option>
-          ))}
-        </select>
-      ) : (
-        <input
-          id={id}
-          type={field.type === 'date' ? 'date' : 'text'}
-          inputMode={field.type === 'number' ? 'decimal' : undefined}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="input"
-          aria-describedby={hintId}
-        />
-      )}
-      {field.hint ? <p id={hintId} className="mt-1 text-xs text-gray-500">{field.hint}</p> : null}
-    </div>
-  );
 }
 
 export default function LettersSection({ projectId }: { projectId: number }) {
@@ -144,6 +113,8 @@ export default function LettersSection({ projectId }: { projectId: number }) {
   }
 
   const setAnswer = (key: string, value: string) => setAnswers((prev) => ({ ...prev, [key]: value }));
+  // An unanswered question shows its default (the move date, the stay wording).
+  const valueFor = (key: string) => answers[key] || data.form?.defaults?.[key] || '';
 
   const onlyChanged = (keys: string[]) => {
     const out: Record<string, string> = {};
@@ -231,6 +202,7 @@ export default function LettersSection({ projectId }: { projectId: number }) {
                 <FieldInput
                   key={key}
                   id={`letters-first-${key}`}
+                  fieldKey={key}
                   field={data.fields[key]}
                   value={answers[key] ?? ''}
                   onChange={(v) => setAnswer(key, v)}
@@ -326,17 +298,17 @@ export default function LettersSection({ projectId }: { projectId: number }) {
                         <Trash2 className="w-4 h-4" aria-hidden="true" />
                       </button>
                     </>
-                  ) : (
+                  ) : !isOpen ? (
                     <button
                       type="button"
                       className="btn btn-primary btn-sm"
-                      onClick={() => setOpen(isOpen ? null : key)}
-                      aria-expanded={isOpen}
+                      onClick={() => setOpen(key)}
+                      aria-expanded={false}
                       aria-controls={`letter-panel-${key}`}
                     >
                       Draft it
                     </button>
-                  )}
+                  ) : null}
                 </div>
               </div>
 
@@ -346,30 +318,45 @@ export default function LettersSection({ projectId }: { projectId: number }) {
                     <p className="text-sm font-medium text-gray-800 mb-3">Add your consulate and mailing address above first; every letter uses them.</p>
                   ) : null}
                   {own.length > 0 ? (
-                    <div className="grid gap-4 md:grid-cols-2">
-                      {own.map((fieldKey) => (
-                        <FieldInput
-                          key={fieldKey}
-                          id={`letter-${key}-${fieldKey}`}
-                          field={data.fields[fieldKey]}
-                          value={answers[fieldKey] ?? ''}
-                          onChange={(v) => setAnswer(fieldKey, v)}
-                        />
-                      ))}
+                    <div className="space-y-6">
+                      {GROUPS.map((group) => {
+                        const keys = own.filter((k) => (data.form?.groups?.[k] ?? 'details') === group.id);
+                        if (keys.length === 0) return null;
+                        return (
+                          <fieldset key={group.id} className="space-y-4 max-w-[42rem]">
+                            <legend className="eyebrow mb-3">{group.label}</legend>
+                            {keys.map((fieldKey) => (
+                              <FieldInput
+                                key={fieldKey}
+                                id={`letter-${key}-${fieldKey}`}
+                                fieldKey={fieldKey}
+                                field={data.fields[fieldKey]}
+                                value={valueFor(fieldKey)}
+                                onChange={(v) => setAnswer(fieldKey, v)}
+                              />
+                            ))}
+                            {group.id === 'money' && keys.includes('income_rows') && data.form ? (
+                              <IncomeSummary value={valueFor('income_rows')} form={data.form} />
+                            ) : null}
+                          </fieldset>
+                        );
+                      })}
                     </div>
                   ) : (
                     <p className="text-sm text-gray-600">Everything this letter needs comes from your profile.</p>
                   )}
-                  <p className="text-xs text-gray-500 mt-3">Anything left blank shows as a bracketed prompt in the letter, for you to fill in before you sign.</p>
                   {letter.guidance.length > 0 ? (
-                    <div className="mt-4">
-                      <p className="eyebrow mb-1.5">Before you file it</p>
-                      <ul className="list-disc pl-5 space-y-1 text-sm text-gray-700">
+                    <details className="mt-6 max-w-[42rem] group">
+                      <summary className="cursor-pointer text-sm font-semibold text-primary-600 hover:text-primary-700">
+                        Before you file it ({letter.guidance.length} {letter.guidance.length === 1 ? 'note' : 'notes'})
+                      </summary>
+                      <ul className="list-disc pl-5 mt-2 space-y-1 text-sm text-gray-700">
                         {letter.guidance.map((g) => <li key={g}>{g}</li>)}
                       </ul>
-                    </div>
+                    </details>
                   ) : null}
-                  <div className="flex flex-wrap items-center gap-3 mt-4">
+                  <p className="text-xs text-gray-500 mt-4 max-w-[42rem]">Anything you leave blank appears in the letter as a [bracketed prompt] to fill in before you sign.</p>
+                  <div className="flex flex-wrap items-center gap-3 mt-5 pt-4 border-t border-rule">
                     <button type="button" className="btn btn-primary btn-sm" onClick={() => runDraft(letter)} disabled={busy}>
                       {busy ? 'Drafting…' : file ? 'Redraft with these answers' : 'Draft the letter'}
                     </button>

@@ -74,6 +74,11 @@ class FRAMT_Letters {
         foreach ( self::PROFILE_KEYS as $key ) {
             $answers[ $key ] = $m( $key );
         }
+        // A stay length typed before the menu existed ("renewable") would read
+        // badly in the letter; only the menu's wordings are used.
+        if ( isset( $answers['stay_length'] ) && ! in_array( $answers['stay_length'], wp_list_pluck( self::stay_options(), 'value' ), true ) ) {
+            unset( $answers['stay_length'] );
+        }
         $visa    = $m( 'visa_type' );
         $aliases = array( 'talent' => 'talent_passport', 'work' => 'employee' );
         $visa    = $aliases[ $visa ] ?? $visa;
@@ -140,14 +145,13 @@ class FRAMT_Letters {
             'consulate'          => array( 'label' => 'The French consulate nearest you', 'type' => 'select', 'options' => $consulates, 'hint' => 'Each consulate serves a set of states. France-Visas confirms which one is yours when you start your application.' ),
             'mailing_address'    => array( 'label' => 'Your current mailing address', 'type' => 'textarea', 'hint' => 'Street, city, state and ZIP, as you want it at the top of your letters.' ),
             'address_in_france'  => array( 'label' => 'Where you will live in France', 'type' => 'textarea', 'hint' => 'The address on your lease, deed, booking or host attestation. It must match the accommodation proof in your file.' ),
-            'arrival_date'       => array( 'label' => 'Planned arrival date', 'type' => 'date', 'hint' => 'From your profile unless you change it here.' ),
-            'stay_length'        => array( 'label' => 'How long you plan to stay', 'type' => 'text', 'hint' => 'For example: one year, renewable.' ),
+            'arrival_date'       => array( 'label' => 'Planned arrival date', 'type' => 'date', 'hint' => 'Your move date from your profile; change it here if the letter needs another.' ),
+            'stay_length'        => array( 'label' => 'How long you plan to stay', 'type' => 'select', 'options' => self::stay_options(), 'hint' => 'How the letter words it.' ),
             'birth_place'        => array( 'label' => 'Place of birth (city, state)', 'type' => 'text', 'hint' => 'As it appears on your passport.' ),
             'partner_birth_place' => array( 'label' => 'Your partner\'s place of birth (city, state)', 'type' => 'text', 'hint' => 'As it appears on their passport.' ),
             'partner_passport'   => array( 'label' => 'Your partner\'s passport number', 'type' => 'text', 'hint' => '' ),
-            'income_lines'       => array( 'label' => 'Monthly income, one source per line', 'type' => 'textarea', 'hint' => 'Source, a colon, then the monthly amount in euros. For example "Social Security: 1850" and "Rental income: 900".' ),
-            'savings_eur'        => array( 'label' => 'Savings and investments you can draw on, in euros', 'type' => 'number', 'hint' => 'The total the statements in your file show.' ),
-            'fx_note'            => array( 'label' => 'Exchange rate you used', 'type' => 'text', 'hint' => 'For example: 1 USD = 0.92 EUR on 12 September 2026. Use one rate for the whole file.' ),
+            'income_rows'        => array( 'label' => 'Your income', 'type' => 'income', 'hint' => 'One row for each source, in dollars or euros, a month or a year. Dollars are converted at the European Central Bank\'s rate.' ),
+            'savings'            => array( 'label' => 'Savings and investments you can draw on', 'type' => 'money', 'hint' => 'The total your statements show. Leave it at 0 if you rely on income alone.' ),
             'plans'              => array( 'label' => 'What you will do with your time in France', 'type' => 'textarea', 'hint' => 'A sentence or two in your own words: language classes, family, travel, volunteering.' ),
             'school_name'        => array( 'label' => 'School or university', 'type' => 'text', 'hint' => 'As written on your attestation d\'inscription.' ),
             'programme'          => array( 'label' => 'Programme', 'type' => 'text', 'hint' => 'For example: Master in International Relations.' ),
@@ -177,6 +181,70 @@ class FRAMT_Letters {
             'signer_name'        => array( 'label' => 'Who signs for the employer', 'type' => 'text', 'hint' => 'HR or your manager.' ),
             'signer_title'       => array( 'label' => 'Their job title', 'type' => 'text', 'hint' => '' ),
         );
+    }
+
+    /**
+     * What the form needs besides the questions: the defaults it shows, the
+     * benchmark it measures the income against, and the exchange rate.
+     */
+    public static function form_context( $c ) {
+        $stay = array( 'student' => 'the length of my programme', 'employee' => 'the length of my contract', 'talent_passport' => 'the length of my contract or project' );
+        $joint = self::has_partner( $c ) && in_array( $c['visa'], array( 'visitor', 'retiree', 'other' ), true );
+        return array(
+            'defaults'  => array(
+                'arrival_date' => $c['move_date'],
+                'stay_length'  => $stay[ $c['visa'] ] ?? 'one year, renewable',
+            ),
+            'benchmark' => 'student' === $c['visa']
+                ? array( 'monthly' => self::STUDENT_MONTHLY, 'since' => self::STUDENT_SINCE, 'label' => 'the student minimum', 'adults' => 1 )
+                : array( 'monthly' => self::SMIC_NET_MONTHLY, 'since' => self::SMIC_SINCE, 'label' => 'the French net minimum wage', 'adults' => $joint ? 2 : 1 ),
+            'fx'        => self::usd_rate(),
+            'groups'    => self::field_groups(),
+        );
+    }
+
+    /** Where each question sits in the form: the stay, the money, your words, other details. */
+    public static function field_groups() {
+        return array(
+            'address_in_france' => 'stay', 'arrival_date' => 'stay', 'stay_length' => 'stay',
+            'income_rows' => 'money', 'savings' => 'money',
+            'plans' => 'words', 'how_met' => 'words', 'talent_detail' => 'words', 'business_activity' => 'words',
+        );
+    }
+
+    /** Stay lengths that read correctly in "to live in France from [date], for …". */
+    public static function stay_options() {
+        $out = array();
+        foreach ( array( 'one year, renewable', 'one year', 'several years, renewing each year', 'the length of my programme', 'the length of my contract', 'the length of my contract or project' ) as $v ) {
+            $out[] = array( 'value' => $v, 'label' => ucfirst( $v ) );
+        }
+        return $out;
+    }
+
+    /**
+     * US dollars per euro, from the European Central Bank's daily reference
+     * rates, cached for twelve hours; the last good rate if the ECB cannot be
+     * reached.
+     *
+     * @return array|null rate (USD per EUR), date (Y-m-d)
+     */
+    public static function usd_rate() {
+        $cached = get_transient( 'framt_ecb_usd' );
+        if ( is_array( $cached ) && ! empty( $cached['rate'] ) ) {
+            return $cached;
+        }
+        $res = wp_remote_get( 'https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml', array( 'timeout' => 8 ) );
+        if ( ! is_wp_error( $res ) && 200 === (int) wp_remote_retrieve_response_code( $res ) ) {
+            $xml = (string) wp_remote_retrieve_body( $res );
+            if ( preg_match( "/time=['\"](\d{4}-\d{2}-\d{2})['\"]/", $xml, $d ) && preg_match( "/currency=['\"]USD['\"]\s+rate=['\"]([\d.]+)['\"]/", $xml, $r ) && (float) $r[1] > 0 ) {
+                $value = array( 'rate' => (float) $r[1], 'date' => $d[1] );
+                set_transient( 'framt_ecb_usd', $value, 12 * HOUR_IN_SECONDS );
+                update_option( 'framt_ecb_usd_last', $value, false );
+                return $value;
+            }
+        }
+        $last = get_option( 'framt_ecb_usd_last' );
+        return is_array( $last ) && ! empty( $last['rate'] ) ? $last : null;
     }
 
     /**
@@ -238,6 +306,34 @@ class FRAMT_Letters {
             } elseif ( 'select' === $type ) {
                 $allowed     = wp_list_pluck( $fields[ $key ]['options'], 'value' );
                 $out[ $key ] = in_array( $value, $allowed, true ) ? $value : '';
+            } elseif ( 'income' === $type ) {
+                $rows = json_decode( (string) $value, true );
+                $keep = array();
+                foreach ( is_array( $rows ) ? array_slice( $rows, 0, 10 ) : array() as $row ) {
+                    if ( ! is_array( $row ) ) {
+                        continue;
+                    }
+                    $amount = round( (float) preg_replace( '/[^0-9.]/', '', str_replace( ',', '', (string) ( $row['amount'] ?? '' ) ) ), 2 );
+                    $source = mb_substr( sanitize_text_field( (string) ( $row['source'] ?? '' ) ), 0, 60 );
+                    if ( $amount <= 0 && '' === $source ) {
+                        continue;
+                    }
+                    $keep[] = array(
+                        'source'   => $source,
+                        'amount'   => $amount,
+                        'currency' => 'EUR' === ( $row['currency'] ?? '' ) ? 'EUR' : 'USD',
+                        'per'      => 'year' === ( $row['per'] ?? '' ) ? 'year' : 'month',
+                    );
+                }
+                $out[ $key ] = empty( $keep ) ? '' : wp_json_encode( $keep );
+                continue;
+            } elseif ( 'money' === $type ) {
+                $m      = json_decode( (string) $value, true );
+                $amount = is_array( $m ) ? round( (float) preg_replace( '/[^0-9.]/', '', str_replace( ',', '', (string) ( $m['amount'] ?? '' ) ) ), 2 ) : 0;
+                $out[ $key ] = is_array( $m ) && '' !== (string) ( $m['amount'] ?? '' )
+                    ? wp_json_encode( array( 'amount' => $amount, 'currency' => 'EUR' === ( $m['currency'] ?? '' ) ? 'EUR' : 'USD' ) )
+                    : '';
+                continue;
             } else {
                 $out[ $key ] = sanitize_text_field( (string) $value );
             }
@@ -328,15 +424,15 @@ class FRAMT_Letters {
             case 'cover-letter':
                 $fields = array( 'consulate', 'mailing_address', 'address_in_france', 'arrival_date', 'stay_length' );
                 if ( in_array( $v, array( 'visitor', 'retiree', 'other' ), true ) ) {
-                    $fields = array_merge( $fields, array( 'income_lines', 'savings_eur', 'plans' ) );
+                    $fields = array_merge( $fields, array( 'income_rows', 'savings', 'plans' ) );
                 } elseif ( $student ) {
-                    $fields = array_merge( $fields, array( 'school_name', 'programme', 'programme_start', 'programme_end', 'income_lines', 'savings_eur' ) );
+                    $fields = array_merge( $fields, array( 'school_name', 'programme', 'programme_start', 'programme_end', 'income_rows', 'savings' ) );
                 } elseif ( 'employee' === $v ) {
                     $fields[] = 'contract_start';
                 } elseif ( 'talent_passport' === $v ) {
                     $fields[] = 'talent_detail';
                 } elseif ( 'entrepreneur' === $v ) {
-                    $fields = array_merge( $fields, array( 'business_name', 'business_activity', 'income_lines', 'savings_eur' ) );
+                    $fields = array_merge( $fields, array( 'business_name', 'business_activity', 'income_rows', 'savings' ) );
                 } elseif ( 'spouse_french' === $v ) {
                     $fields = array_merge( $fields, array( 'marriage_date', 'marriage_place' ) );
                 }
@@ -377,7 +473,7 @@ class FRAMT_Letters {
                     'why'      => $student
                         ? 'A one-page summary of how your studies are funded, matching the statements, scholarship or sponsor letter in your file.'
                         : 'A one-page table of your monthly income and savings, matching the statements in your file. Officers read hundreds of files; a summary that matches gets read.',
-                    'fields'   => array( 'income_lines', 'savings_eur', 'fx_note' ),
+                    'fields'   => array( 'income_rows', 'savings' ),
                     'item_id'  => $student ? 'proof-funds-studies' : 'proof-funds',
                     'guidance' => $student
                         ? array(
@@ -707,28 +803,36 @@ class FRAMT_Letters {
     private static function letter_resources_statement( $c, $a, $need, $person ) {
         $name    = $need( self::full_name( $c ), 'Your legal name (profile)' );
         $lines   = self::income_lines( $c );
-        $savings = (float) ( $c['answers']['savings_eur'] ?? 0 );
-        $total   = array_sum( wp_list_pluck( $lines, 'amount' ) );
+        $savings = self::savings_amount( $c );
+        $total   = array_sum( array_map( function ( $r ) { return (float) $r['eur']; }, $lines ) );
+        $any_usd = ( $savings && $savings['usd'] && ! $savings['zero'] ) || in_array( true, wp_list_pluck( $lines, 'usd' ), true );
+        $joint   = self::has_partner( $c ) && in_array( $c['visa'], array( 'visitor', 'retiree', 'other' ), true );
 
         $l   = array();
         $l[] = '# Statement of financial resources';
-        $l[] = $name . ( self::has_partner( $c ) && in_array( $c['visa'], array( 'visitor', 'retiree', 'other' ), true ) ? ' and ' . $c['spouse'] : '' );
+        $l[] = $name . ( $joint ? ' and ' . $c['spouse'] : '' );
         $l[] = 'Prepared ' . self::date_en( current_time( 'Y-m-d' ) );
         $l[] = '';
         $l[] = '## Monthly income';
         if ( empty( $lines ) ) {
-            $a( 'income_lines' );
-            $l[] = '- [Source]: [amount] per month';
+            $a( 'income_rows' );
+            $l[] = '- [Source]: [amount] a month';
         }
         foreach ( $lines as $row ) {
-            $l[] = sprintf( '- %s: %s per month', $row['source'], self::money( $row['amount'] ) );
+            $l[] = sprintf( '- %s: %s a month', $row['source'], self::both( $row['shown'], $row['eur'], $row['usd'] ) );
         }
         if ( ! empty( $lines ) ) {
-            $l[] = sprintf( 'Total: %s per month, %s per year.', self::money( $total ), self::money( $total * 12 ) );
+            $l[] = sprintf( 'Total: about %s a month, %s a year.', self::money( round( $total ) ), self::money( round( $total * 12 ) ) );
         }
         $l[] = '';
         $l[] = '## Savings and investments';
-        $l[] = $savings > 0 ? sprintf( '%s available, as shown on the enclosed statements.', self::money( $savings ) ) : ( '' === (string) ( $c['answers']['savings_eur'] ?? '' ) ? $a( 'savings_eur' ) : 'None relied on.' );
+        if ( null === $savings ) {
+            $l[] = $a( 'savings' );
+        } elseif ( $savings['zero'] ) {
+            $l[] = 'None relied on.';
+        } else {
+            $l[] = sprintf( '%s available, as shown on the enclosed statements.', self::both( $savings['shown'], $savings['eur'], $savings['usd'] ) );
+        }
         $l[] = '';
         $l[] = '## Proof enclosed';
         $l[] = '- The last three months of statements for every account listed';
@@ -736,10 +840,12 @@ class FRAMT_Letters {
         if ( 'student' === $c['visa'] ) {
             $l[] = '- Where a sponsor contributes, their signed attestation de prise en charge, ID and bank statements';
         }
-        $l[] = '';
-        $l[] = '> Amounts converted to euros. ' . $a( 'fx_note' );
+        if ( $any_usd ) {
+            $l[] = '';
+            $l[] = '> ' . self::fx_line();
+        }
         $l[] = '[signature] ' . $name;
-        if ( self::has_partner( $c ) && in_array( $c['visa'], array( 'visitor', 'retiree', 'other' ), true ) ) {
+        if ( $joint ) {
             $l[] = '[signature] ' . $c['spouse'];
         }
         return implode( "\n", $l );
@@ -906,43 +1012,118 @@ class FRAMT_Letters {
 
     private static function resources_sentence( $c, $a ) {
         $lines   = self::income_lines( $c );
-        $total   = array_sum( wp_list_pluck( $lines, 'amount' ) );
-        $savings = (float) ( $c['answers']['savings_eur'] ?? 0 );
+        $total   = array_sum( array_map( function ( $r ) { return (float) $r['eur']; }, $lines ) );
+        $savings = self::savings_amount( $c );
+        $has_sav = $savings && ! $savings['zero'];
         $who     = self::has_partner( $c ) && in_array( $c['visa'], array( 'visitor', 'retiree', 'other' ), true ) ? 'We support ourselves' : 'I support myself';
-        if ( empty( $lines ) && $savings <= 0 ) {
-            return $who . ' from ' . $a( 'income_lines', $c['income'] ) . '. The enclosed statement of resources and bank statements show the details.';
+        if ( empty( $lines ) && ! $has_sav ) {
+            return $who . ' from ' . $a( 'income_rows', $c['income'] ) . '. The enclosed statement of resources and bank statements show the details.';
         }
         $parts = array();
         foreach ( $lines as $row ) {
-            $parts[] = strtolower( $row['source'] );
+            $parts[] = self::lower_first( $row['source'] );
         }
         $out = $who;
         if ( $total > 0 ) {
-            $out .= sprintf( ' from %s, a total of %s a month', self::list_words( $parts ), self::money( $total ) );
+            $out .= sprintf( ' from %s, a total of about %s a month', self::list_words( array_unique( $parts ) ), self::money( round( $total ) ) );
         }
-        if ( $savings > 0 ) {
-            $out .= ( $total > 0 ? ', and hold ' : ' from savings of ' ) . sprintf( '%s in savings and investments', self::money( $savings ) );
+        if ( $has_sav ) {
+            $out .= ( $total > 0 ? ', and hold ' : ' from savings of ' ) . sprintf( '%s in savings and investments', self::both( $savings['shown'], $savings['eur'], $savings['usd'] ) );
         }
         return $out . '. The enclosed statement of resources and bank statements show the details.';
     }
 
+    /** "Social Security" stays capitalised; "Rental income" becomes "rental income". */
+    private static function lower_first( $text ) {
+        $keep = array( 'Social Security', 'IRA', '401(k)', 'US' );
+        foreach ( $keep as $k ) {
+            if ( 0 === strpos( $text, $k ) ) {
+                return $text;
+            }
+        }
+        return mb_strtolower( mb_substr( $text, 0, 1 ) ) . mb_substr( $text, 1 );
+    }
+
     /**
-     * Parse "Source: amount" lines.
+     * The member's income, one row per source, each as a monthly amount in
+     * euros alongside what they typed. Dollars convert at the ECB rate; a
+     * row that cannot be converted keeps eur = null.
      *
-     * @return array[] source, amount
+     * @return array[] source, eur (monthly), shown (the original, monthly)
      */
     private static function income_lines( $c ) {
         $rows = array();
-        foreach ( preg_split( '/\r?\n/', (string) ( $c['answers']['income_lines'] ?? '' ) ) as $line ) {
-            if ( ! preg_match( '/^\s*(.+?)\s*[:\-–]\s*€?\s*([\d.,\s]+)\s*(€|eur|euros)?\s*$/iu', $line, $m ) ) {
-                continue;
+        $raw  = json_decode( (string) ( $c['answers']['income_rows'] ?? '' ), true );
+        if ( is_array( $raw ) ) {
+            $fx = self::usd_rate();
+            foreach ( $raw as $row ) {
+                $amount = (float) ( $row['amount'] ?? 0 );
+                if ( $amount <= 0 ) {
+                    continue;
+                }
+                $monthly = 'year' === ( $row['per'] ?? 'month' ) ? $amount / 12 : $amount;
+                $usd     = 'USD' === ( $row['currency'] ?? 'USD' );
+                $rows[]  = array(
+                    'source' => '' !== trim( (string) ( $row['source'] ?? '' ) ) ? trim( $row['source'] ) : 'Income',
+                    'eur'    => $usd ? ( $fx ? $monthly / $fx['rate'] : null ) : $monthly,
+                    'shown'  => $usd ? '$' . number_format( $monthly, 0, '.', ',' ) : self::money( $monthly ),
+                    'usd'    => $usd,
+                );
             }
-            $amount = (float) str_replace( array( ',', ' ', "\xC2\xA0" ), '', $m[2] );
-            if ( $amount > 0 ) {
-                $rows[] = array( 'source' => sanitize_text_field( $m[1] ), 'amount' => $amount );
+            return $rows;
+        }
+        // Answers saved before 2.9.28: "Source: amount" lines in euros.
+        foreach ( preg_split( '/\r?\n/', (string) ( $c['answers']['income_lines'] ?? '' ) ) as $line ) {
+            if ( preg_match( '/^\s*(.+?)\s*[:\-–]\s*€?\s*([\d.,\s]+)\s*(€|eur|euros)?\s*$/iu', $line, $m ) ) {
+                $amount = (float) str_replace( array( ',', ' ', "\xC2\xA0" ), '', $m[2] );
+                if ( $amount > 0 ) {
+                    $rows[] = array( 'source' => sanitize_text_field( $m[1] ), 'eur' => $amount, 'shown' => self::money( $amount ), 'usd' => false );
+                }
             }
         }
         return $rows;
+    }
+
+    /**
+     * Savings as typed and in euros.
+     *
+     * @return array|null eur, shown, usd
+     */
+    private static function savings_amount( $c ) {
+        $m = json_decode( (string) ( $c['answers']['savings'] ?? '' ), true );
+        if ( is_array( $m ) ) {
+            $amount = (float) ( $m['amount'] ?? 0 );
+            $usd    = 'USD' === ( $m['currency'] ?? 'USD' );
+            $fx     = self::usd_rate();
+            return array(
+                'eur'   => $usd ? ( $fx ? $amount / $fx['rate'] : null ) : $amount,
+                'shown' => $usd ? '$' . number_format( $amount, 0, '.', ',' ) : self::money( $amount ),
+                'usd'   => $usd,
+                'zero'  => $amount <= 0,
+            );
+        }
+        if ( '' !== (string) ( $c['answers']['savings_eur'] ?? '' ) ) {
+            $amount = (float) $c['answers']['savings_eur'];
+            return array( 'eur' => $amount, 'shown' => self::money( $amount ), 'usd' => false, 'zero' => $amount <= 0 );
+        }
+        return null;
+    }
+
+    /** "$2,400 (about €2,208)" or "€900". */
+    private static function both( $shown, $eur, $usd ) {
+        if ( ! $usd ) {
+            return $shown;
+        }
+        return null === $eur ? $shown : $shown . ' (about ' . self::money( round( $eur ) ) . ')';
+    }
+
+    /** The exchange-rate line, when any amount was in dollars. */
+    private static function fx_line() {
+        $fx = self::usd_rate();
+        if ( ! $fx ) {
+            return 'Dollar amounts are shown as entered; the euro conversion could not be fetched.';
+        }
+        return sprintf( 'Dollar amounts converted at the European Central Bank reference rate of 1 EUR = %s USD, published %s.', rtrim( rtrim( number_format( $fx['rate'], 4, '.', '' ), '0' ), '.' ), self::date_en( $fx['date'] ) );
     }
 
     private static function enclosures( $c ) {
