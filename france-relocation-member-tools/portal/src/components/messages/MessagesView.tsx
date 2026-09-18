@@ -10,24 +10,13 @@
  */
 import { useState } from 'react';
 import { clsx } from 'clsx';
-import { AlertTriangle, ArrowLeft, Bell, CalendarClock, Mail, MailOpen, Scale, Trash2 } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Bell, CalendarClock, Mail, MailOpen, RotateCcw, Scale, Trash2, X } from 'lucide-react';
 import MarkdownMessage from '@/components/shared/MarkdownMessage';
 import Jargon from '@/components/shared/Jargon';
 import { useDashboard, useDeleteSupportTicket, useMarkSupportTicketUnread, useReplyToSupportTicket, useSupportTicket, useSupportTickets, useTasks } from '@/hooks/useApi';
-import { currentStage } from '@/journey/journey';
+import { buildFileAlerts, useDismissedAlerts } from '@/alerts/alerts';
 import { usePortalStore } from '@/store';
 import type { SupportTicket, Task } from '@/types';
-
-type Alert = {
-  id: string;
-  icon: typeof Bell;
-  tone: 'accent' | 'primary' | 'ink';
-  title: string;
-  body: string;
-  /** Why this alert is on your file, when it is not obvious from the body. */
-  because?: string;
-  action: { label: string; go: () => void };
-};
 
 export default function MessagesView() {
   const [openId, setOpenId] = useState<number | null>(null);
@@ -46,7 +35,11 @@ export default function MessagesView() {
     setOpenTaskId(task.id);
     setActiveView('tasks');
   };
-  const alerts = buildAlerts(dashboard, tasks ?? [], { setActiveView, setActiveStage, openTask });
+  const { isDismissed, dismiss, restore } = useDismissedAlerts();
+  const [showDismissed, setShowDismissed] = useState(false);
+  const allAlerts = buildFileAlerts(dashboard, tasks ?? [], ticketsData?.tickets ?? [], { setActiveView, setActiveStage, openTask }).filter((a) => a.tone !== 'message');
+  const alerts = allAlerts.filter((a) => showDismissed || !isDismissed(a.id));
+  const hidden = allAlerts.length - allAlerts.filter((a) => !isDismissed(a.id)).length;
 
   if (openId !== null) return <Thread ticketId={openId} onBack={() => setOpenId(null)} />;
 
@@ -59,25 +52,45 @@ export default function MessagesView() {
       </header>
 
       <div className="px-6 md:px-8 py-5 flex flex-col gap-5">
-        {alerts.length > 0 ? (
+        {allAlerts.length > 0 ? (
           <div className="card overflow-hidden">
-            <div className="px-5 py-3.5 bg-card-2 border-b border-rule"><span className="font-display font-semibold">Your file is saying</span></div>
-            <ul className="divide-y divide-rule-soft">
-              {alerts.map((a) => {
-                const Icon = a.icon;
-                return (
-                  <li key={a.id} className="flex items-start gap-3.5 px-5 py-3.5">
-                    <Icon className={clsx('w-5 h-5 flex-shrink-0 mt-0.5', a.tone === 'accent' ? 'text-accent-500' : a.tone === 'primary' ? 'text-primary-500' : 'text-gray-500')} aria-hidden="true" />
-                    <div className="flex flex-col min-w-0 flex-1 gap-0.5">
-                      <span className="font-semibold text-[0.95rem]"><Jargon text={a.title} /></span>
-                      <span className="text-[0.85rem] text-gray-600"><Jargon text={a.body} /></span>
-                      {a.because ? <span className="text-[0.78rem] text-gray-500 italic">Because: {a.because}</span> : null}
-                    </div>
-                    <button onClick={a.action.go} className="btn btn-secondary text-sm whitespace-nowrap">{a.action.label}</button>
-                  </li>
-                );
-              })}
-            </ul>
+            <div className="px-5 py-3.5 bg-card-2 border-b border-rule flex justify-between items-baseline">
+              <span className="font-display font-semibold">Your file is saying</span>
+              {hidden > 0 ? (
+                <button onClick={() => setShowDismissed((v) => !v)} className="font-mono text-[0.7rem] text-gray-500 uppercase hover:text-ink">
+                  {showDismissed ? 'Hide dismissed' : `${hidden} dismissed today`}
+                </button>
+              ) : null}
+            </div>
+            {alerts.length === 0 ? (
+              <p className="px-5 py-5 text-sm text-gray-500 m-0">Everything your file raised today is dismissed. It comes back tomorrow if it still applies.</p>
+            ) : (
+              <ul className="divide-y divide-rule-soft">
+                {alerts.map((a) => {
+                  const Icon = a.tone === 'accent' ? AlertTriangle : a.tone === 'ink' ? Scale : a.id === 'move' ? Bell : CalendarClock;
+                  const gone = isDismissed(a.id);
+                  return (
+                    <li key={a.id} className={clsx('flex items-start gap-3.5 px-5 py-3.5', gone && 'opacity-60')}>
+                      <Icon className={clsx('w-5 h-5 flex-shrink-0 mt-0.5', a.tone === 'accent' ? 'text-accent-500' : a.tone === 'primary' ? 'text-primary-500' : 'text-gray-500')} aria-hidden="true" />
+                      <div className="flex flex-col min-w-0 flex-1 gap-0.5">
+                        <span className="font-semibold text-[0.95rem]"><Jargon text={a.title} /></span>
+                        <span className="text-[0.85rem] text-gray-600"><Jargon text={a.body} /></span>
+                        {a.because ? <span className="text-[0.78rem] text-gray-500 italic">Because: {a.because}</span> : null}
+                      </div>
+                      <button onClick={a.action.go} className="btn btn-secondary text-sm whitespace-nowrap">{a.action.label}</button>
+                      <button
+                        onClick={() => (gone ? restore(a.id) : dismiss(a.id))}
+                        className="p-2 rounded-full text-gray-400 hover:text-gray-700 hover:bg-card-2 flex-shrink-0"
+                        aria-label={gone ? `Bring back “${a.title}”` : `Dismiss “${a.title}” for today`}
+                        title={gone ? 'Bring back' : 'Dismiss for today'}
+                      >
+                        {gone ? <RotateCcw className="w-4 h-4" aria-hidden="true" /> : <X className="w-4 h-4" aria-hidden="true" />}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </div>
         ) : null}
 
@@ -141,72 +154,6 @@ export default function MessagesView() {
       </div>
     </div>
   );
-}
-
-function buildAlerts(
-  dashboard: ReturnType<typeof useDashboard>['data'],
-  tasks: Task[],
-  nav: { setActiveView: (v: string) => void; setActiveStage: (s: string) => void; openTask: (t: Task) => void }
-): Alert[] {
-  if (!dashboard) return [];
-  const { setActiveView, setActiveStage, openTask } = nav;
-  const alerts: Alert[] = [];
-  const overdue = dashboard.task_stats?.overdue ?? 0;
-  if (overdue > 0) {
-    const first = dashboard.overdue_tasks[0];
-    alerts.push({
-      id: 'overdue',
-      icon: AlertTriangle,
-      tone: 'accent',
-      title: overdue === 1 ? 'One step is past its date' : `${overdue} steps are past their date`,
-      body: first ? `Starting with “${first.title}”. Past dates are not failures; they are the order to work in.` : 'Past dates are not failures; they are the order to work in.',
-      action: first ? { label: 'Open the step', go: () => openTask(first) } : { label: 'See deadlines', go: () => setActiveView('deadlines') },
-    });
-  }
-  const soon = dashboard.upcoming_tasks.filter((t) => t.days_until_due !== null && t.days_until_due !== undefined && t.days_until_due <= 14 && t.status !== 'done');
-  if (soon.length > 0) {
-    alerts.push({
-      id: 'soon',
-      icon: CalendarClock,
-      tone: 'primary',
-      title: soon.length === 1 ? 'One step is due inside two weeks' : `${soon.length} steps are due inside two weeks`,
-      body: `Next up: “${soon[0].title}”.`,
-      action: { label: 'See deadlines', go: () => setActiveView('deadlines') },
-    });
-  }
-  const project = dashboard.project;
-  if (project?.target_move_date) {
-    const days = Math.ceil((new Date(`${project.target_move_date.slice(0, 10)}T00:00:00Z`).getTime() - Date.now()) / 86400000);
-    if (days >= 0 && days <= 30) {
-      alerts.push({
-        id: 'move',
-        icon: Bell,
-        tone: 'primary',
-        title: days === 0 ? 'You move today' : `You move in ${days} day${days === 1 ? '' : 's'}`,
-        body: 'The Move stage has the last-week list: what to carry, what to ship, what to cancel.',
-        action: { label: 'Open Move', go: () => { setActiveStage('move'); setActiveView('stage'); } },
-      });
-    }
-  }
-  const stage = project ? currentStage(project, dashboard.profile_visa_type) : 'decide';
-  const pro = (dashboard.professionals ?? []).find((p) => p.stage === stage);
-  if (pro) {
-    // The step that carries this prompt, so the action lands on it rather than on a page.
-    const step = tasks.find((t) => t.status !== 'done' && (t.metadata as { professional?: string } | null)?.professional === pro.kind)
-      ?? tasks.find((t) => (t.metadata as { professional?: string } | null)?.professional === pro.kind);
-    alerts.push({
-      id: `pro-${pro.id}`,
-      icon: Scale,
-      tone: 'ink',
-      title: `${pro.who}: ${pro.when.toLowerCase()}`,
-      body: pro.why,
-      because: pro.trigger,
-      action: step
-        ? { label: 'Open the step', go: () => openTask(step) }
-        : { label: `Open ${stage.charAt(0).toUpperCase() + stage.slice(1)}`, go: () => { setActiveStage(stage); setActiveView('stage'); } },
-    });
-  }
-  return alerts;
 }
 
 function Thread({ ticketId, onBack }: { ticketId: number; onBack: () => void }) {

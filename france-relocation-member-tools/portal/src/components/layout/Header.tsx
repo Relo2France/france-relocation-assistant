@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { AlertTriangle, Bell, CheckCircle, Info, User, X } from 'lucide-react';
-import { useCurrentUser, useDashboard, useSupportTickets } from '@/hooks/useApi';
+import { AlertTriangle, Bell, CheckCircle, Info, Mail, Scale, User, X } from 'lucide-react';
+import { buildFileAlerts, useDismissedAlerts } from '@/alerts/alerts';
+import { useCurrentUser, useDashboard, useSupportTickets, useTasks } from '@/hooks/useApi';
+import type { Task } from '@/types';
 import { usePortalStore } from '@/store';
 
 const viewTitles: Record<string, string> = {
@@ -28,87 +30,39 @@ const viewTitles: Record<string, string> = {
 };
 
 export default function Header() {
-  const { activeView, setActiveView } = usePortalStore();
+  const { activeView, setActiveView, setActiveStage, setTaskFilters, setOpenTaskId } = usePortalStore();
   const { data: user } = useCurrentUser();
   const { data: dashboardData } = useDashboard();
   const { data: ticketsData } = useSupportTickets();
+  const { data: tasks } = useTasks(dashboardData?.project?.id ?? 0);
   const [showNotifications, setShowNotifications] = useState(false);
-  // Dismissals are per day and per browser: a derived alert comes back tomorrow if it still applies.
-  const today = new Date().toISOString().slice(0, 10);
-  const [dismissed, setDismissed] = useState<Record<string, string>>(() => {
-    try { return JSON.parse(window.localStorage.getItem('framt_dismissed_notices') ?? '{}') as Record<string, string>; } catch { return {}; }
-  });
-  const dismiss = (id: string) => {
-    const next = { ...dismissed, [id]: today };
-    setDismissed(next);
-    try { window.localStorage.setItem('framt_dismissed_notices', JSON.stringify(next)); } catch { /* per-viewer convenience only */ }
-  };
-  const go = (view: string) => { setShowNotifications(false); setActiveView(view); };
+  const { isDismissed, dismiss, refresh } = useDismissedAlerts();
   const notificationRef = useRef<HTMLDivElement>(null);
 
   const title = viewTitles[activeView] || 'Dashboard';
 
-  // Close dropdown when clicking outside
+  // Close dropdown when clicking outside; follow dismissals made on Messages.
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
         setShowNotifications(false);
       }
     };
-
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    window.addEventListener('framt:alerts-changed', refresh);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('framt:alerts-changed', refresh);
+    };
+  }, [refresh]);
 
-  // Build notifications from dashboard data. Each one opens the thing it is about.
-  const notifications: { id: string; type: string; title: string; message: string; time: string; go: () => void }[] = [];
-
-  if (dashboardData?.task_stats?.overdue && dashboardData.task_stats.overdue > 0) {
-    notifications.push({
-      id: 'overdue',
-      type: 'warning',
-      title: `${dashboardData.task_stats.overdue} Overdue Task${dashboardData.task_stats.overdue > 1 ? 's' : ''}`,
-      message: 'Past dates are the order to work in; open Deadlines to see them first.',
-      time: 'Now',
-      go: () => go('deadlines'),
-    });
-  }
-
-  if (dashboardData?.upcoming_tasks && dashboardData.upcoming_tasks.length > 0) {
-    notifications.push({
-      id: 'upcoming',
-      type: 'info',
-      title: 'Upcoming Deadlines',
-      message: `${dashboardData.upcoming_tasks.length} step${dashboardData.upcoming_tasks.length === 1 ? '' : 's'} due inside two weeks. Next: “${dashboardData.upcoming_tasks[0].title}”.`,
-      time: 'Today',
-      go: () => go('deadlines'),
-    });
-  }
-
-  if (dashboardData?.project?.days_until_move && dashboardData.project.days_until_move <= 30) {
-    notifications.push({
-      id: 'move-date',
-      type: 'info',
-      title: 'Move Date Approaching',
-      message: `${dashboardData.project.days_until_move} days until your move`,
-      time: 'Reminder',
-      go: () => go('stage'),
-    });
-  }
-
-  for (const t of (ticketsData?.tickets ?? []).filter((x) => x.from_site && x.has_unread_user)) {
-    notifications.push({
-      id: `message-${t.id}`,
-      type: 'success',
-      title: t.subject,
-      message: 'A new message from Relo2France.',
-      time: t.relative_time,
-      go: () => go('messages'),
-    });
-  }
-
-  const visible = notifications.filter((n) => dismissed[n.id] !== today);
-
+  // The same alerts as "Your file is saying" on Messages, with the same words.
+  const nav = {
+    setActiveView: (v: string) => { setShowNotifications(false); setActiveView(v); },
+    setActiveStage,
+    openTask: (t: Task) => { setShowNotifications(false); setTaskFilters({ stage: null, status: null, taskType: null }); setOpenTaskId(t.id); setActiveView('tasks'); },
+  };
+  const visible = buildFileAlerts(dashboardData, tasks ?? [], ticketsData?.tickets ?? [], nav).filter((n) => !isDismissed(n.id));
   const notificationCount = visible.length;
 
   return (
@@ -154,14 +108,16 @@ export default function Header() {
                         key={notification.id}
                         className="px-4 py-3 hover:bg-gray-50 transition-colors flex items-start gap-2"
                       >
-                        <button onClick={notification.go} className="flex gap-3 flex-1 min-w-0 text-left">
+                        <button onClick={notification.action.go} className="flex gap-3 flex-1 min-w-0 text-left">
                           <div className="flex-shrink-0 mt-0.5">
-                            {notification.type === 'warning' ? (
-                              <AlertTriangle className="w-5 h-5 text-yellow-500" />
-                            ) : notification.type === 'success' ? (
-                              <CheckCircle className="w-5 h-5 text-green-500" />
+                            {notification.tone === 'accent' ? (
+                              <AlertTriangle className="w-5 h-5 text-accent-500" aria-hidden="true" />
+                            ) : notification.tone === 'message' ? (
+                              <Mail className="w-5 h-5 text-primary-500" aria-hidden="true" />
+                            ) : notification.tone === 'ink' ? (
+                              <Scale className="w-5 h-5 text-gray-500" aria-hidden="true" />
                             ) : (
-                              <Info className="w-5 h-5 text-blue-500" />
+                              <Info className="w-5 h-5 text-primary-500" aria-hidden="true" />
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
@@ -169,10 +125,10 @@ export default function Header() {
                               {notification.title}
                             </p>
                             <p className="text-sm text-gray-500 mt-0.5">
-                              {notification.message}
+                              {notification.body}
                             </p>
                             <p className="text-xs text-gray-400 mt-1">
-                              {notification.time} · <span className="text-primary-500 font-semibold">Open</span>
+                              {notification.when} · <span className="text-primary-500 font-semibold">{notification.action.label}</span>
                             </p>
                           </div>
                         </button>
@@ -187,7 +143,7 @@ export default function Header() {
                       </div>
                     ))}
                     <div className="px-4 py-2.5">
-                      <button onClick={() => go('messages')} className="text-sm font-semibold text-primary-500 hover:text-primary-700">All messages →</button>
+                      <button onClick={() => nav.setActiveView('messages')} className="text-sm font-semibold text-primary-500 hover:text-primary-700">All messages →</button>
                     </div>
                   </div>
                 ) : (
