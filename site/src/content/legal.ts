@@ -8,8 +8,8 @@
  * that changes, this file changes with it - a policy that describes a
  * different service is worse than none.
  *
- * Plain English on purpose. Drafted for the owner's review; it has not been
- * reviewed by a lawyer.
+ * Plain English on purpose. Approved by the owner on 18 September 2026;
+ * not reviewed by a lawyer. Change it here when the service changes.
  */
 import { familyCopy, PRICE, REFUND_DAYS, SUPPORT_EMAIL } from './links';
 
