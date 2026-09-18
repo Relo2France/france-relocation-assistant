@@ -519,12 +519,12 @@ function NotificationsSection() {
     {
       key: 'task_reminders' as keyof UserSettings,
       label: 'Step reminders',
-      description: 'One email on days a step is a week away, due tomorrow, or has just passed its date. It goes to whoever the step is assigned to.',
+      description: 'Once you start a stage, a short email about your next steps there: a week before one is due, the day before, and once if the date passes. Stages you have not started stay quiet. It goes to whoever the step is assigned to.',
     },
     {
       key: 'weekly_digest' as keyof UserSettings,
       label: 'Weekly digest',
-      description: 'Monday morning: what you finished last week and what is dated for the next two weeks.',
+      description: 'Monday morning: what you finished last week and your next steps.',
     },
   ];
 

@@ -2,10 +2,12 @@
 /**
  * The emails the notification switches in Settings promise.
  *
- * Task reminders: a step's date seven days out, the day before, and once
- * when it has passed, gathered into one email a day per person, sent to
- * whoever the step is assigned to (the owner when nobody is). Weekly
- * digest: Monday morning, the week behind and the fortnight ahead.
+ * Step reminders: only for stages the member has started (a step in it is
+ * in progress, waiting or done), and only about the next two dated steps
+ * there: a week before, the day before, and once when the date passes.
+ * One email a day at most, to whoever the step is assigned to (the owner
+ * when nobody is). Weekly digest: Monday morning, the week behind and the
+ * next steps ahead.
  * "Email updates" is the master switch: off, and none of these, nor the
  * message and report-ready emails, are sent. Invitations and password
  * emails are not updates and are always sent.
@@ -35,6 +37,9 @@ class FRAMT_Member_Emails {
     );
 
     private static $instance = null;
+
+    /** @var array|null Next steps, worked out once per run. */
+    private $next_cache = null;
 
     public static function get_instance() {
         if ( null === self::$instance ) {
@@ -95,6 +100,7 @@ class FRAMT_Member_Emails {
     }
 
     public function run_daily() {
+        $this->next_cache = null;
         $this->send_task_reminders();
         // Monday, in the site's timezone.
         if ( '1' === wp_date( 'N' ) ) {
@@ -106,58 +112,110 @@ class FRAMT_Member_Emails {
     // Task reminders
     // ------------------------------------------------------------------
 
+    /** How many of the next steps a reminder looks at. */
+    const NEXT_STEPS = 2;
+
     /**
-     * One email per person per day, listing each step that is seven days
-     * out, due tomorrow, or newly past its date. Each (step, due date,
-     * kind) is sent once; moving the date re-arms it.
+     * Stages a household has started: any stage where at least one step
+     * is in progress, waiting or done. Until then the stage stays quiet.
+     *
+     * @return array project id => stage keys
+     */
+    private function started_stages() {
+        global $wpdb;
+        $tasks = FRAMT_Portal_Schema::get_table( 'tasks' );
+        $rows  = $wpdb->get_results(
+            "SELECT project_id, stage FROM $tasks
+             WHERE parent_task_id IS NULL AND stage IS NOT NULL AND stage <> ''
+               AND status IN ('in_progress','waiting','done')
+             GROUP BY project_id, stage"
+        );
+        $out = array();
+        foreach ( (array) $rows as $row ) {
+            $out[ (int) $row->project_id ][ (string) $row->stage ] = true;
+        }
+        return $out;
+    }
+
+    /**
+     * The next dated steps for each household, in started stages only,
+     * earliest first.
+     *
+     * @return array project id => task rows (at most NEXT_STEPS)
+     */
+    public function next_steps() {
+        global $wpdb;
+        if ( null !== $this->next_cache ) {
+            return $this->next_cache;
+        }
+        $tasks    = FRAMT_Portal_Schema::get_table( 'tasks' );
+        $projects = FRAMT_Portal_Schema::get_table( 'projects' );
+        $started  = $this->started_stages();
+        if ( empty( $started ) ) {
+            return array();
+        }
+        $rows = $wpdb->get_results(
+            "SELECT t.id, t.project_id, t.user_id, t.title, t.due_date, t.assignee_id, t.stage
+             FROM $tasks t INNER JOIN $projects p ON p.id = t.project_id
+             WHERE t.status <> 'done' AND t.due_date IS NOT NULL AND t.parent_task_id IS NULL
+               AND t.portal_visible = 1 AND p.status = 'active'
+             ORDER BY t.project_id, t.due_date ASC, t.sort_order ASC, t.id ASC"
+        );
+        $out = array();
+        foreach ( (array) $rows as $row ) {
+            $pid = (int) $row->project_id;
+            if ( empty( $started[ $pid ][ (string) $row->stage ] ) ) {
+                continue;
+            }
+            if ( count( $out[ $pid ] ?? array() ) < self::NEXT_STEPS ) {
+                $out[ $pid ][] = $row;
+            }
+        }
+        $this->next_cache = $out;
+        return $out;
+    }
+
+    /**
+     * Reminders about the next steps only. A stage the member has not
+     * started sends nothing. For each of the next two dated steps: once a
+     * week before, once the day before, once when the date passes. At most
+     * one email per person per day; moving a date re-arms its reminders.
      *
      * @return int Emails sent.
      */
     public function send_task_reminders() {
-        global $wpdb;
         if ( ! class_exists( 'FRAMT_Portal_Schema' ) ) {
             return 0;
         }
-        $tasks    = FRAMT_Portal_Schema::get_table( 'tasks' );
-        $projects = FRAMT_Portal_Schema::get_table( 'projects' );
-        $today    = wp_date( 'Y-m-d' );
-        $in_seven = wp_date( 'Y-m-d', strtotime( '+7 days', current_time( 'timestamp' ) ) );
-
-        $rows = $wpdb->get_results( $wpdb->prepare(
-            "SELECT t.id, t.user_id, t.title, t.due_date, t.assignee_id
-             FROM $tasks t INNER JOIN $projects p ON p.id = t.project_id
-             WHERE t.status <> 'done' AND t.due_date IS NOT NULL AND t.parent_task_id IS NULL
-               AND t.portal_visible = 1 AND p.status = 'active'
-               AND t.due_date >= %s AND t.due_date <= %s",
-            wp_date( 'Y-m-d', strtotime( '-30 days', current_time( 'timestamp' ) ) ),
-            $in_seven
-        ) );
-
+        $today  = wp_date( 'Y-m-d' );
         $outbox = array(); // recipient id => items
         $marks  = array(); // owner id => keys to record
-        foreach ( (array) $rows as $row ) {
-            $days = (int) round( ( strtotime( $row->due_date ) - strtotime( $today ) ) / DAY_IN_SECONDS );
-            if ( 7 === $days ) {
-                $kind = 'week';
-            } elseif ( 1 === $days ) {
-                $kind = 'tomorrow';
-            } elseif ( $days < 0 ) {
-                $kind = 'overdue';
-            } else {
-                continue;
+
+        foreach ( $this->next_steps() as $steps ) {
+            foreach ( $steps as $row ) {
+                $days = (int) round( ( strtotime( $row->due_date ) - strtotime( $today ) ) / DAY_IN_SECONDS );
+                if ( 7 === $days ) {
+                    $kind = 'week';
+                } elseif ( 1 === $days ) {
+                    $kind = 'tomorrow';
+                } elseif ( $days < 0 ) {
+                    $kind = 'overdue';
+                } else {
+                    continue;
+                }
+                $owner = (int) $row->user_id;
+                if ( ! self::wants( $owner, 'task_reminders' ) ) {
+                    continue;
+                }
+                $key  = $row->id . ':' . $kind . ':' . $row->due_date;
+                $sent = get_user_meta( $owner, self::SENT_META, true );
+                if ( is_array( $sent ) && isset( $sent[ $key ] ) ) {
+                    continue;
+                }
+                $to = $row->assignee_id && $this->in_household( (int) $row->assignee_id, $owner ) ? (int) $row->assignee_id : $owner;
+                $outbox[ $to ][]   = array( 'task' => $row, 'kind' => $kind, 'days' => $days );
+                $marks[ $owner ][] = $key;
             }
-            $owner = (int) $row->user_id;
-            if ( ! self::wants( $owner, 'task_reminders' ) ) {
-                continue;
-            }
-            $key  = $row->id . ':' . $kind . ':' . $row->due_date;
-            $sent = get_user_meta( $owner, self::SENT_META, true );
-            if ( is_array( $sent ) && isset( $sent[ $key ] ) ) {
-                continue;
-            }
-            $to = $row->assignee_id && $this->in_household( (int) $row->assignee_id, $owner ) ? (int) $row->assignee_id : $owner;
-            $outbox[ $to ][]  = array( 'task' => $row, 'kind' => $kind, 'days' => $days );
-            $marks[ $owner ][] = $key;
         }
 
         $count = 0;
@@ -218,11 +276,11 @@ class FRAMT_Member_Emails {
         $overdue = count( array_filter( $items, function ( $i ) {
             return 'overdue' === $i['kind'];
         } ) );
-        $title   = 1 === $n ? 'One step needs you' : $n . ' steps need you';
-        $lead    = 'Hello ' . ( $first ?: 'there' ) . ', ' . ( $overdue ? 'a date has passed. Past dates are not failures; they are the order to work in.' : 'here is what is coming up in your plan.' );
+        $title   = 1 === $n ? 'Your next step' : 'Your next steps';
+        $lead    = 'Hello ' . ( $first ?: 'there' ) . ', ' . ( $overdue ? 'a date has passed. Past dates are not failures; they are the order to work in.' : 'here is what comes next in the part of the plan you are working on.' );
         $body    = '<table role="presentation" width="100%" cellpadding="0" cellspacing="0">' . $rows . '</table>';
-        $html    = FRAMT_Messages::render_email( $title, $lead, $body, 'Open your deadlines', self::portal_url( 'deadlines' ), true );
-        $subject = 1 === $n ? 'Reminder: ' . $items[0]['task']->title : sprintf( 'Reminder: %d steps in your plan', $n );
+        $html    = FRAMT_Messages::render_email( $title, $lead, $body, 'Open the step', self::portal_url( 'tasks', array( 'task' => (int) $items[0]['task']->id ) ), true );
+        $subject = 'Next step: ' . $items[0]['task']->title;
         return FRAMT_Messages::send_html( $user->user_email, $subject, $html );
     }
 
@@ -275,18 +333,8 @@ class FRAMT_Member_Emails {
             $project->id,
             wp_date( 'Y-m-d 00:00:00', strtotime( '-7 days', current_time( 'timestamp' ) ) )
         ) );
-        $ahead = $wpdb->get_results( $wpdb->prepare(
-            "SELECT id, title, due_date FROM $tasks WHERE project_id = %d AND status <> 'done' AND parent_task_id IS NULL AND portal_visible = 1 AND due_date BETWEEN %s AND %s ORDER BY due_date ASC LIMIT 8",
-            $project->id,
-            $today,
-            wp_date( 'Y-m-d', strtotime( '+14 days', current_time( 'timestamp' ) ) )
-        ) );
-        $overdue = (int) $wpdb->get_var( $wpdb->prepare(
-            "SELECT COUNT(*) FROM $tasks WHERE project_id = %d AND status <> 'done' AND parent_task_id IS NULL AND portal_visible = 1 AND due_date < %s",
-            $project->id,
-            $today
-        ) );
-
+        $next  = $this->next_steps();
+        $ahead = $next[ (int) $project->id ] ?? array();
         $move = $project->target_move_date ?: (string) get_user_meta( $owner, 'fra_target_move_date', true );
         $lead = 'Your week in the plan.';
         if ( $move ) {
@@ -310,16 +358,12 @@ class FRAMT_Member_Emails {
             }, $done ) ) );
         }
         if ( $ahead ) {
-            $body .= $section( 'The next two weeks', $list( array_map( function ( $t ) {
+            $body .= $section( 'Your next steps', $list( array_map( function ( $t ) {
                 return '<li style="margin:0 0 4px;"><a href="' . esc_url( self::portal_url( 'tasks', array( 'task' => (int) $t->id ) ) ) . '" style="color:#1c2420;">' . esc_html( $t->title ) . '</a> <span style="color:#5f6e66;">· ' . esc_html( wp_date( 'D j M', strtotime( $t->due_date ) ) ) . '</span></li>';
             }, $ahead ) ) );
         } else {
-            $body .= $section( 'The next two weeks', '<p style="margin:0;">Nothing dated. A good week to get ahead on the next stage.</p>' );
+            $body .= $section( 'Your next steps', '<p style="margin:0;">Nothing dated in the part of the plan you are working on. When you start the next stage, its steps show here.</p>' );
         }
-        if ( $overdue ) {
-            $body .= '<p style="margin:16px 0 0;">' . ( 1 === $overdue ? 'One step is past its date.' : $overdue . ' steps are past their date.' ) . ' Past dates are not failures; they are the order to work in.</p>';
-        }
-
         $first = $user->first_name ?: strtok( $user->display_name, ' ' );
         $html  = FRAMT_Messages::render_email( 'Your week, ' . ( $first ?: 'there' ), $lead, $body, 'Open your plan', self::portal_url( 'dashboard' ), true );
         return FRAMT_Messages::send_html( $user->user_email, 'Your week in the move to France', $html );
