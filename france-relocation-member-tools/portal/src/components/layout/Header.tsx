@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { AlertTriangle, Bell, CheckCircle, Info, Mail, Scale, User, X } from 'lucide-react';
 import { buildFileAlerts, useDismissedAlerts } from '@/alerts/alerts';
 import { useCurrentUser, useDashboard, useSupportTickets, useTasks } from '@/hooks/useApi';
-import type { Task } from '@/types';
 import { usePortalStore } from '@/store';
+import type { Task } from '@/types';
 
 const viewTitles: Record<string, string> = {
   dashboard: 'Where you are',

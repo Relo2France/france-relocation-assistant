@@ -10,8 +10,8 @@
  */
 import { type GuideDoc, guideBySlug, guides } from '@site-guides';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
-import Jargon from '@/components/shared/Jargon';
 import VisaFinder from '@/components/decide/VisaFinder';
+import Jargon from '@/components/shared/Jargon';
 import { useCurrentUser, useDashboard, useMemberProfile } from '@/hooks/useApi';
 import { JOURNEY, timeToGo } from '@/journey/journey';
 import { usePortalStore } from '@/store';
@@ -115,7 +115,7 @@ export default function GuideView() {
                 section.requirements.every((r) => TERM_ITEM.test(r)) ? (
                   <dl className="mt-2 mb-5 grid gap-[14px]">
                     {section.requirements.map((r) => {
-                      const m = TERM_ITEM.exec(r)!;
+                      const m = TERM_ITEM.exec(r) ?? [r, r, ''];
                       return (
                         <div key={r} className="grid sm:grid-cols-[11rem_minmax(0,1fr)] gap-x-[18px] gap-y-1 items-baseline">
                           <dt className="font-sans text-[0.95rem] font-bold leading-[1.35] text-primary-500 m-0">

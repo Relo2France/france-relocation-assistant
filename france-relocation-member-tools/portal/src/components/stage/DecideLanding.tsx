@@ -76,7 +76,7 @@ export default function DecideLanding({ project, visaType }: { project: Project;
       title: 'When, roughly?',
       body: 'A target date, even a rough one, turns the stages ahead into dated steps.',
       done: dateSet,
-      doneNote: dateSet ? new Date(`${project.target_move_date!.slice(0, 10)}T00:00:00Z`).toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' }) : undefined,
+      doneNote: dateSet ? new Date(`${(project.target_move_date ?? '').slice(0, 10)}T00:00:00Z`).toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' }) : undefined,
       primary: { label: dateSet ? 'Change the date' : 'Set a move date', onClick: () => setActiveView('dashboard') },
     },
   ];

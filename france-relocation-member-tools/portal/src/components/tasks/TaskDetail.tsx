@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { Drawer } from '@/components/shared/Modal';
 import { useDeleteTask, useUpdateTask, useUpdateTaskStatus } from '@/hooks/useApi';
-import type { Task, TaskPriority, TaskStatus, TaskHowto } from '@/types';
+import type { Task, TaskHowto, TaskPriority, TaskStatus } from '@/types';
 import TaskChecklist from './TaskChecklist';
 
 interface TaskDetailProps {

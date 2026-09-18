@@ -1071,7 +1071,7 @@ export const guides: GuideDoc[] = [
     when: '6 months out',
     summary: 'The FBI check sets the pace',
     description:
-      'A working timeline for a French long-stay visa from the US: lead times for the FBI check, certified copies and apostilles, when to book the consulate, and what the official processing times really say.',
+      'A working timeline for a French long-stay visa from the US: lead times for the FBI check, copies and apostilles, when to book the consulate, and what the official processing times really say.',
     verified: '2026-09',
     sourceCount: 1,
     sources: [{ label: 'france-visas.gouv.fr', kind: 'official' }],

@@ -7,8 +7,8 @@
  * assignee. Shared by the stage view, the task board and the family plan so
  * the vocabulary is the same everywhere.
  */
-import type { FamilyMember, Household, Task } from '@/types';
 import { useUpdateTask } from '@/hooks/useApi';
+import type { FamilyMember, Household, Task } from '@/types';
 
 export function personOf(task: Task): string {
   const person = task.metadata?.person;

@@ -25,7 +25,6 @@
     "lucide-react": "^0.303.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-router-dom": "^6.21.1",
     "react-simple-maps": "^3.0.0",
     "recharts": "^3.6.0",
     "zustand": "^4.4.7"

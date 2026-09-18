@@ -13,11 +13,11 @@ import { usePortalStore } from '@/store';
 import type {
   MemberProfile,
   ProfileVisaType,
-  WorkInFranceType,
-  WorkStatus,
   RelationshipType,
   StudyLength,
   TalentCategory,
+  WorkInFranceType,
+  WorkStatus,
 } from '@/types';
 
 interface VisaSectionProps {

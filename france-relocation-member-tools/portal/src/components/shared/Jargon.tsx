@@ -112,10 +112,10 @@ function Term({ term, children }: { term: GlossaryTerm; children: string }) {
           {term.guide || term.ask ? (
             <span className="flex gap-3 mt-2">
               {term.guide ? (
-                <button type="button" onClick={(e) => { e.stopPropagation(); setActiveGuide(term.guide!); setActiveView('guide'); }} className="text-xs font-semibold text-primary-500 hover:text-primary-700">Read the guide →</button>
+                <button type="button" onClick={(e) => { e.stopPropagation(); setActiveGuide(term.guide ?? ''); setActiveView('guide'); }} className="text-xs font-semibold text-primary-500 hover:text-primary-700">Read the guide →</button>
               ) : null}
               {term.ask ? (
-                <button type="button" onClick={(e) => { e.stopPropagation(); setChatDraft(term.ask!); setActiveView('chat'); }} className="text-xs font-semibold text-primary-500 hover:text-primary-700">Ask about my case →</button>
+                <button type="button" onClick={(e) => { e.stopPropagation(); setChatDraft(term.ask ?? ''); setActiveView('chat'); }} className="text-xs font-semibold text-primary-500 hover:text-primary-700">Ask about my case →</button>
               ) : null}
             </span>
           ) : null}

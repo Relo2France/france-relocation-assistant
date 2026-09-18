@@ -406,7 +406,7 @@ export default function VisaFinder({ currentRoute, currentLabel }: { currentRout
               <button onClick={() => setRoute(result)} disabled={update.isPending} className="btn btn-primary">{update.isPending ? 'Saving…' : currentRoute === result.route ? 'This is already your route' : 'Set as my route'}</button>
             )}
             {result.guide ? (
-              <button onClick={() => { setActiveGuide(result.guide!); setActiveView('guide'); }} className="btn btn-secondary">Read the full guide</button>
+              <button onClick={() => { setActiveGuide(result.guide ?? ''); setActiveView('guide'); }} className="btn btn-secondary">Read the full guide</button>
             ) : null}
             <button
               onClick={() => { setChatDraft(`The visa finder suggests the ${result.name} route (${result.official}). Does that fit my situation, and what would the consulate want to see from me?`); setActiveView('chat'); }}

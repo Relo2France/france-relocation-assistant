@@ -39,7 +39,7 @@ export default function DeadlinesView() {
   const rest = dated.filter((t) => !(t.is_overdue && t.status !== 'done')).sort((a, b) => a.due_date.localeCompare(b.due_date));
   const months = new Map<string, Task[]>();
   for (const t of rest) {
-    const k = monthKey(t.due_date!);
+    const k = monthKey(t.due_date);
     months.set(k, [...(months.get(k) ?? []), t]);
   }
 
@@ -116,7 +116,7 @@ function DeadlineRow({ task, project, updateStatus, openStage, openTask }: {
             {stage.number} · {stage.name}
           </button>
         ) : null}
-        <span className={clsx('font-mono text-[0.7rem]', late ? 'text-accent-500' : 'text-gray-500')}>{done ? 'DONE' : dueLabel(task.due_date!)}</span>
+        <span className={clsx('font-mono text-[0.7rem]', late ? 'text-accent-500' : 'text-gray-500')}>{done ? 'DONE' : dueLabel(task.due_date ?? '')}</span>
         <button onClick={() => openTask(task)} className="text-sm font-semibold text-primary-500 hover:text-primary-700">Open</button>
       </li>
     );

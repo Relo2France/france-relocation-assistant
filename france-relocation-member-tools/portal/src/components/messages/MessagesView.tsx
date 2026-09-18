@@ -11,10 +11,10 @@
 import { useState } from 'react';
 import { clsx } from 'clsx';
 import { AlertTriangle, ArrowLeft, Bell, CalendarClock, Mail, MailOpen, RotateCcw, Scale, Trash2, X } from 'lucide-react';
-import MarkdownMessage from '@/components/shared/MarkdownMessage';
-import Jargon from '@/components/shared/Jargon';
-import { useDashboard, useDeleteSupportTicket, useMarkSupportTicketUnread, useReplyToSupportTicket, useSupportTicket, useSupportTickets, useTasks } from '@/hooks/useApi';
 import { buildFileAlerts, useDismissedAlerts } from '@/alerts/alerts';
+import Jargon from '@/components/shared/Jargon';
+import MarkdownMessage from '@/components/shared/MarkdownMessage';
+import { useDashboard, useDeleteSupportTicket, useMarkSupportTicketUnread, useReplyToSupportTicket, useSupportTicket, useSupportTickets, useTasks } from '@/hooks/useApi';
 import { usePortalStore } from '@/store';
 import type { SupportTicket, Task } from '@/types';
 
