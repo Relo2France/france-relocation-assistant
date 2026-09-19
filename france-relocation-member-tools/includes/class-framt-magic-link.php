@@ -55,6 +55,9 @@ class FRAMT_Magic_Link {
         // One sign-in screen: /login/, /logged-out/ and a signed-out
         // /account/ all forward to the portal's card.
         add_action( 'template_redirect', array( $this, 'account_needs_sign_in' ), 1 );
+        // Checkout, portal and sign-in pages carry one-time tokens and
+        // per-person content: never serve them from the page cache.
+        add_action( 'template_redirect', array( $this, 'no_page_cache' ), 0 );
     }
 
     /**
@@ -75,6 +78,16 @@ class FRAMT_Magic_Link {
         if ( '' !== $target ) {
             wp_safe_redirect( $target );
             exit;
+        }
+    }
+
+    public function no_page_cache() {
+        if ( is_singular( 'memberpressproduct' ) || is_page( array( 'portal', 'login', 'account', 'thank-you', 'logged-out', 'register' ) ) ) {
+            if ( ! defined( 'DONOTCACHEPAGE' ) ) {
+                define( 'DONOTCACHEPAGE', true ); // batcache and most page caches
+            }
+            nocache_headers();
+            header( 'Cache-Control: private, no-cache, no-store, must-revalidate, max-age=0' );
         }
     }
 
