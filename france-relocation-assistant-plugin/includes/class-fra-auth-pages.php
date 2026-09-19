@@ -570,10 +570,23 @@ class FRA_Auth_Pages {
             margin: 0 !important;
         }
 
-        /* Hide the "show password" toggle and stray dashicons */
-        .fra-auth-form-wrap .mp-hide-pw,
+        /* Hide the "show password" toggle and stray dashicons. MemberPress
+           gives the field's wrapper and the toggle button the same class
+           (mp-hide-pw): hide the button only, never the wrapper, or the
+           password boxes disappear. */
+        .fra-auth-form-wrap button.mp-hide-pw,
+        .fra-auth-form-wrap .mp-hide-pw > button,
         .fra-auth-form-wrap .dashicons {
             display: none !important;
+        }
+        .fra-auth-form-wrap div.mp-hide-pw {
+            display: block !important;
+            position: relative;
+        }
+        .fra-auth-form-wrap div.mp-hide-pw input[type="password"],
+        .fra-auth-form-wrap div.mp-hide-pw input[type="text"] {
+            display: block !important;
+            width: 100% !important;
         }
 
         /* Password strength meter */
