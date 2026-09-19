@@ -378,6 +378,31 @@ class FRA_Auth_Pages {
             color: var(--ink, #1c2420);
             margin: 0 0 18px;
         }
+        .fra-auth-signup-owned {
+            border: 1px solid var(--rule, #dde3de);
+            border-radius: var(--radius-sm, 10px);
+            padding: 20px 22px;
+            background: var(--card-2, #f4f6f4);
+        }
+        .fra-auth-signup-owned p {
+            margin: 0 0 8px;
+            color: var(--muted, #5f6e66);
+            line-height: 1.5;
+        }
+        .fra-auth-signup-owned strong {
+            color: var(--ink, #1c2420);
+            font-size: 1.05rem;
+        }
+        .fra-auth-signup-cta {
+            display: inline-block;
+            margin-top: 10px;
+            background: var(--vine, #2c5346);
+            color: var(--on-brand, #fff) !important;
+            text-decoration: none;
+            font-weight: 600;
+            padding: 11px 22px;
+            border-radius: var(--radius-pill, 100px);
+        }
         .fra-auth-signup-signin {
             font-size: 0.9rem;
             color: var(--muted, #5f6e66);
@@ -1149,6 +1174,23 @@ class FRA_Auth_Pages {
 
                     <section class="fra-auth-signup-form" aria-label="<?php echo esc_attr($is_family ? 'Add the Family plan' : 'Create your account'); ?>">
                         <h2><?php echo $is_family ? 'Add it to your membership' : 'Create your account'; ?></h2>
+                        <?php
+                        // Someone who already has this product gets a way in,
+                        // not MemberPress's red "you already have a subscription".
+                        $already = false;
+                        if (is_user_logged_in() && !empty($atts['membership_id']) && class_exists('MeprUser')) {
+                            $mepr_user = new MeprUser(get_current_user_id());
+                            $owned     = method_exists($mepr_user, 'active_product_subscriptions') ? array_map('intval', (array) $mepr_user->active_product_subscriptions('ids')) : array();
+                            $already   = in_array((int) $atts['membership_id'], $owned, true);
+                        }
+                        ?>
+                        <?php if ($already) : ?>
+                        <div class="fra-auth-signup-owned">
+                            <p><strong><?php echo $is_family ? 'Your household already has the Family plan.' : 'You’re already a member.'; ?></strong></p>
+                            <p><?php echo $is_family ? 'Your partner and children’s files are in Family plans.' : 'Your file is where you left it. There is nothing more to pay.'; ?></p>
+                            <a class="fra-auth-signup-cta" href="<?php echo esc_url(add_query_arg('view', $is_family ? 'family' : 'dashboard', home_url('/portal/'))); ?>"><?php echo $is_family ? 'Open Family plans' : 'Open my portal'; ?></a>
+                        </div>
+                        <?php else : ?>
                         <div class="fra-auth-form-wrap">
                             <?php
                             if (!empty($atts['membership_id'])) {
@@ -1160,7 +1202,8 @@ class FRA_Auth_Pages {
                             }
                             ?>
                         </div>
-                        <?php if (!$is_family) : ?>
+                        <?php endif; ?>
+                        <?php if (!$is_family && !$already) : ?>
                         <p class="fra-auth-signup-signin">Already a member? <a href="<?php echo esc_url(home_url('/portal/')); ?>"><strong>Sign in</strong></a></p>
                         <?php endif; ?>
                     </section>
