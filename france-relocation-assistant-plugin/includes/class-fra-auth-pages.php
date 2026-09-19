@@ -187,7 +187,11 @@ class FRA_Auth_Pages {
            our card and once bare in the content. Hide the bare copy. */
         body:has(.fra-auth-container) .entry-content > .mp_wrapper,
         body:has(.fra-auth-container) .entry-content > .mepr-account-form,
-        body:has(.fra-auth-container) .entry-content > #mepr-account-nav {
+        body:has(.fra-auth-container) .entry-content > #mepr-account-nav,
+        .r2f-auth-page > .mp_wrapper,
+        .r2f-auth-page > .mepr-account-form,
+        .r2f-auth-page > #mepr-account-nav,
+        .r2f-auth-page > form.mepr-account-form {
             display: none !important;
         }
 
@@ -255,6 +259,14 @@ class FRA_Auth_Pages {
 
         .fra-auth-container-wide {
             max-width: 560px;
+        }
+
+        /* The account page holds tables: give it room. */
+        .fra-auth-account {
+            max-width: 860px;
+        }
+        .fra-auth-account .fra-auth-form-wrap {
+            overflow-x: auto;
         }
 
         /* === SIGN-UP: two columns, what you buy beside the form === */
@@ -589,12 +601,51 @@ class FRA_Auth_Pages {
             width: 100% !important;
         }
 
-        /* Password strength meter */
-        .fra-auth-form-wrap .mp-password-strength-display,
-        .fra-auth-form-wrap .mp-pass-strength {
-            font-size: 0.78rem !important;
+        /* Password strength meter: MemberPress paints it in bright boxes;
+           here it is a calm pill in the site's colours, the word coloured by
+           strength (brick, honey, vine). */
+        .fra-auth-form-wrap .mp-password-strength-area {
+            display: flex !important;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 6px 12px;
+            margin: 4px 0 12px !important;
+        }
+        .fra-auth-form-wrap .mp-password-strength-display {
+            display: inline-flex !important;
+            align-items: center;
+            justify-content: center;
+            min-width: 120px;
+            width: auto !important;
+            height: auto !important;
+            padding: 5px 14px !important;
+            border: 1px solid var(--rule, #dde3de) !important;
+            border-radius: var(--radius-pill, 100px) !important;
+            background: var(--card-2, #f4f6f4) !important;
             color: var(--muted, #5f6e66) !important;
-            margin-top: 6px !important;
+            font-size: 0.78rem !important;
+            font-weight: 700 !important;
+            letter-spacing: 0.02em;
+            box-shadow: none !important;
+        }
+        .fra-auth-form-wrap .mp-password-strength-display[class*="weak"] {
+            color: #d4574b !important;
+            border-color: rgba(212, 87, 75, 0.45) !important;
+        }
+        .fra-auth-form-wrap .mp-password-strength-display[class*="medium"] {
+            color: var(--honey, #b87a21) !important;
+            border-color: rgba(184, 122, 33, 0.5) !important;
+        }
+        .fra-auth-form-wrap .mp-password-strength-display[class*="strong"] {
+            color: var(--vine, #2c5346) !important;
+            border-color: var(--vine, #2c5346) !important;
+        }
+        .fra-auth-form-wrap .mp-password-strength-area small,
+        .fra-auth-form-wrap .mp-password-strength-area em,
+        .fra-auth-form-wrap .mp-password-strength-area .mp-password-strength-hint {
+            font-size: 0.8rem !important;
+            font-style: normal !important;
+            color: var(--muted, #5f6e66) !important;
         }
 
         /* === BUTTONS === */
@@ -920,6 +971,30 @@ class FRA_Auth_Pages {
         .fra-auth-form-wrap table tr:nth-child(even),
         .fra-auth-form-wrap table tr:hover {
             background: transparent !important;
+            border: 0 !important; /* MemberPress draws a light grey box round every row */
+        }
+        .fra-auth-form-wrap table th,
+        .fra-auth-form-wrap .mp_invoice table th {
+            font-family: var(--font-ui, Karla, "Helvetica Neue", Arial, sans-serif) !important;
+            font-size: 0.67rem !important;
+            font-weight: 700 !important;
+            letter-spacing: 0.12em !important;
+            text-transform: uppercase !important;
+            color: var(--muted, #5f6e66) !important;
+            padding-bottom: 10px !important;
+        }
+        .fra-auth-form-wrap table td {
+            font-size: 0.9rem !important;
+            line-height: 1.45 !important;
+            padding: 10px 8px !important;
+        }
+        .fra-auth-form-wrap table td small,
+        .fra-auth-form-wrap table td .mepr-account-subscr-id,
+        .fra-auth-form-wrap table td .mepr-account-auto-rebill {
+            display: block;
+            font-size: 0.72rem !important;
+            color: var(--muted, #5f6e66) !important;
+            word-break: break-all;
         }
 
 
@@ -1193,8 +1268,14 @@ class FRA_Auth_Pages {
                         $already = false;
                         if (is_user_logged_in() && !empty($atts['membership_id']) && class_exists('MeprUser')) {
                             $mepr_user = new MeprUser(get_current_user_id());
-                            $owned     = method_exists($mepr_user, 'active_product_subscriptions') ? array_map('intval', (array) $mepr_user->active_product_subscriptions('ids')) : array();
-                            $already   = in_array((int) $atts['membership_id'], $owned, true);
+                            // The same test MemberPress uses before it shows its
+                            // "you already have a subscription" error.
+                            if (method_exists($mepr_user, 'is_already_subscribed_to')) {
+                                $already = (bool) $mepr_user->is_already_subscribed_to((int) $atts['membership_id']);
+                            }
+                            if (!$already && method_exists($mepr_user, 'active_product_subscriptions')) {
+                                $already = in_array((int) $atts['membership_id'], array_map('intval', (array) $mepr_user->active_product_subscriptions('ids')), true);
+                            }
                         }
                         ?>
                         <?php if ($already) : ?>
@@ -1285,7 +1366,7 @@ class FRA_Auth_Pages {
         
         ob_start();
         ?>
-        <div class="fra-auth-container fra-auth-container-wide">
+        <div class="fra-auth-container fra-auth-container-wide fra-auth-account">
             <div class="fra-auth-card">
                 <div class="fra-auth-card-header">
                     <h1><?php echo esc_html($title); ?></h1>
