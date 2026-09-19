@@ -1634,7 +1634,7 @@ class FRAMT_Portal_API {
             'student'         => 'Student Visa',
             'family'          => 'Family Reunification',
             'spouse_french'   => 'Spouse of French National',
-            'retiree'         => 'Retiree Visa',
+            'retiree'         => 'Visitor Visa, retiring',
             'other'           => 'Another long-stay route',
         );
 

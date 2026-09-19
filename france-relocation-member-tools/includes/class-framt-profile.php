@@ -212,7 +212,7 @@ class FRAMT_Profile {
                     'student' => __('Student Visa', 'fra-member-tools'),
                     'family' => __('Family Reunification', 'fra-member-tools'),
                     'spouse_french' => __('Spouse of French National', 'fra-member-tools'),
-                    'retiree' => __('Retiree Visa', 'fra-member-tools'),
+                    'retiree' => __('Visitor Visa, retiring', 'fra-member-tools'),
                     'other' => __('Another long-stay route (intern, temporary worker, ICT, au pair)', 'fra-member-tools'),
                 ),
                 'group' => 'visa',
