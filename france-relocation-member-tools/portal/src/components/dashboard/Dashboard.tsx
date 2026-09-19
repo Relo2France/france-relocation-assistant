@@ -325,7 +325,7 @@ export default function Dashboard() {
             {members.map((m) => (
               <div key={m.id} className="flex items-center gap-3 py-2 border-b border-rule-soft">
                 <div className="w-9 h-9 rounded-full bg-card-2 text-ink font-bold flex items-center justify-center">{m.name.slice(0, 1).toUpperCase()}</div>
-                <div className="flex flex-col min-w-0"><span className="font-semibold text-[0.95rem]">{m.name}</span><span className="text-[0.8rem] text-gray-500 capitalize">{m.relationship} · own visa file</span></div>
+                <div className="flex flex-col min-w-0"><span className="font-semibold text-[0.95rem]">{m.name}</span><span className="text-[0.8rem] text-gray-500">{`${m.relationship.charAt(0).toUpperCase()}${m.relationship.slice(1)}`} · own visa file</span></div>
               </div>
             ))}
             <p className="text-[0.82rem] text-gray-500 leading-snug">

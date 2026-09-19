@@ -213,10 +213,10 @@ export default function DocumentsView() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-gray-900 truncate">{report.location_name}</p>
-                      <p className="text-xs text-gray-500 capitalize">
+                      <p className="text-xs text-gray-500">
                         {(report as { status?: string }).status === 'generating'
                           ? 'Still writing · usually three to five minutes'
-                          : `${report.location_type} report · ${formatDate(report.updated_at)}`}
+                          : `${report.location_type.charAt(0).toUpperCase()}${report.location_type.slice(1)} report · ${formatDate(report.updated_at)}`}
                       </p>
                     </div>
                     <a
