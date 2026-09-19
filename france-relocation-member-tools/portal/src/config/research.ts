@@ -5,32 +5,7 @@
  * Data covers Metropolitan France only (13 regions, 96 departments).
  */
 
-import type { ClimateType, FranceDepartment, FranceRegion } from '@/types';
-
-// Climate type labels for display
-export const CLIMATE_LABELS: Record<ClimateType, string> = {
-  oceanic: 'Oceanic',
-  continental: 'Continental',
-  mediterranean: 'Mediterranean',
-  mountain: 'Mountain',
-  'semi-oceanic': 'Semi-Oceanic',
-};
-
-// Population formatter
-export const formatPopulation = (pop: number): string => {
-  if (pop >= 1000000) {
-    return `${(pop / 1000000).toFixed(1)}M`;
-  }
-  if (pop >= 1000) {
-    return `${(pop / 1000).toFixed(0)}K`;
-  }
-  return pop.toString();
-};
-
-// Area formatter
-export const formatArea = (area: number): string => {
-  return `${area.toLocaleString()} km²`;
-};
+import type { FranceDepartment, FranceRegion } from '@/types';
 
 /**
  * Metropolitan France Regions (13 regions)
@@ -296,16 +271,6 @@ export const FRANCE_DEPARTMENTS: FranceDepartment[] = [
   { code: '83', name: 'Var', region_code: '93', region_name: "Provence-Alpes-Côte d'Azur", prefecture: 'Toulon', population: 1076711, area_km2: 5973, major_cities: ['Toulon', 'Fréjus', 'Hyères'] },
   { code: '84', name: 'Vaucluse', region_code: '93', region_name: "Provence-Alpes-Côte d'Azur", prefecture: 'Avignon', population: 559479, area_km2: 3567, major_cities: ['Avignon', 'Orange', 'Carpentras'] },
 ];
-
-// Helper to get region by code
-export const getRegionByCode = (code: string): FranceRegion | undefined => {
-  return FRANCE_REGIONS.find(r => r.code === code);
-};
-
-// Helper to get department by code
-export const getDepartmentByCode = (code: string): FranceDepartment | undefined => {
-  return FRANCE_DEPARTMENTS.find(d => d.code === code);
-};
 
 // Helper to get departments by region code
 export const getDepartmentsByRegion = (regionCode: string): FranceDepartment[] => {

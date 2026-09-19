@@ -7,7 +7,6 @@ import {
   Search,
   X,
 } from 'lucide-react';
-import type { TaskStatus } from '@/types';
 
 interface FilterBarProps {
   view: 'list' | 'board';
@@ -173,82 +172,4 @@ export default function FilterBar({
 }
 
 // Status tabs variant
-interface StatusTabsProps {
-  activeStatus: TaskStatus | 'all';
-  onStatusChange: (status: TaskStatus | 'all') => void;
-  counts: Record<string, number>;
-}
-
-export function StatusTabs({ activeStatus, onStatusChange, counts }: StatusTabsProps) {
-  const tabs: { id: TaskStatus | 'all'; label: string }[] = [
-    { id: 'all', label: 'All' },
-    { id: 'todo', label: 'To Do' },
-    { id: 'in_progress', label: 'In Progress' },
-    { id: 'waiting', label: 'Waiting' },
-    { id: 'done', label: 'Done' },
-  ];
-
-  return (
-    <div className="flex border-b border-gray-200">
-      {tabs.map((tab) => (
-        <button
-          key={tab.id}
-          onClick={() => onStatusChange(tab.id)}
-          className={clsx(
-            'px-4 py-3 text-sm font-medium border-b-2 transition-colors',
-            activeStatus === tab.id
-              ? 'text-primary-600 border-primary-600'
-              : 'text-gray-500 border-transparent hover:text-gray-700 hover:border-gray-300'
-          )}
-        >
-          {tab.label}
-          {counts[tab.id] !== undefined && (
-            <span
-              className={clsx(
-                'ml-2 px-2 py-0.5 rounded-full text-xs',
-                activeStatus === tab.id
-                  ? 'bg-primary-100 text-primary-700'
-                  : 'bg-gray-100 text-gray-600'
-              )}
-            >
-              {counts[tab.id]}
-            </span>
-          )}
-        </button>
-      ))}
-    </div>
-  );
-}
-
 // Type toggle (All / Team / Client)
-interface TypeToggleProps {
-  activeType: 'all' | 'client' | 'team';
-  onTypeChange: (type: 'all' | 'client' | 'team') => void;
-}
-
-export function TypeToggle({ activeType, onTypeChange }: TypeToggleProps) {
-  const types: { id: 'all' | 'client' | 'team'; label: string }[] = [
-    { id: 'all', label: 'All' },
-    { id: 'team', label: 'Team' },
-    { id: 'client', label: 'Client' },
-  ];
-
-  return (
-    <div className="flex rounded-lg bg-gray-100 p-1">
-      {types.map((type) => (
-        <button
-          key={type.id}
-          onClick={() => onTypeChange(type.id)}
-          className={clsx(
-            'px-3 py-1.5 rounded-md text-sm font-medium transition-colors',
-            activeType === type.id
-              ? 'bg-white text-gray-900 shadow-sm'
-              : 'text-gray-600 hover:text-gray-900'
-          )}
-        >
-          {type.label}
-        </button>
-      ))}
-    </div>
-  );
-}

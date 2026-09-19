@@ -27,7 +27,7 @@ interface ErrorBoundaryState {
 }
 
 /** Send a crash to the server. Resolves true when it was recorded. */
-export async function reportCrash(error: Error, componentStack = ''): Promise<boolean> {
+async function reportCrash(error: Error, componentStack = ''): Promise<boolean> {
   try {
     const wp = window.fraPortalData;
     if (!wp?.apiUrl) return false;

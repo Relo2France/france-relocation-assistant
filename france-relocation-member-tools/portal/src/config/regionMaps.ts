@@ -19,18 +19,6 @@ export interface RegionMapData {
   backgroundColor?: string;
 }
 
-// Color palette for departments (will cycle through)
-export const DEPARTMENT_MAP_COLORS = [
-  { fill: '#93C5FD', hover: '#60A5FA', border: '#3B82F6' },  // Blue
-  { fill: '#86EFAC', hover: '#4ADE80', border: '#22C55E' },  // Green
-  { fill: '#FCA5A5', hover: '#F87171', border: '#EF4444' },  // Red
-  { fill: '#FCD34D', hover: '#FBBF24', border: '#F59E0B' },  // Yellow
-  { fill: '#C4B5FD', hover: '#A78BFA', border: '#8B5CF6' },  // Purple
-  { fill: '#67E8F9', hover: '#22D3EE', border: '#06B6D4' },  // Cyan
-  { fill: '#FDBA74', hover: '#FB923C', border: '#F97316' },  // Orange
-  { fill: '#F9A8D4', hover: '#F472B6', border: '#EC4899' },  // Pink
-];
-
 // Île-de-France (8 departments)
 const ILE_DE_FRANCE: RegionMapData = {
   viewBox: '0 0 400 350',
@@ -842,7 +830,7 @@ const CORSE: RegionMapData = {
 };
 
 // Map of region codes to their map data
-export const REGION_MAPS: Record<string, RegionMapData> = {
+const REGION_MAPS: Record<string, RegionMapData> = {
   '11': ILE_DE_FRANCE,
   '24': CENTRE_VAL_DE_LOIRE,
   '27': BOURGOGNE_FRANCHE_COMTE,
@@ -863,7 +851,3 @@ export function hasRegionMap(regionCode: string): boolean {
   return regionCode in REGION_MAPS;
 }
 
-// Get map data for a region
-export function getRegionMap(regionCode: string): RegionMapData | null {
-  return REGION_MAPS[regionCode] || null;
-}

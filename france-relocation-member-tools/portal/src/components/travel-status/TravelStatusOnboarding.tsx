@@ -47,15 +47,8 @@ export function hasCompletedOnboarding(): boolean {
 /**
  * Mark onboarding as complete
  */
-export function markOnboardingComplete(): void {
+function markOnboardingComplete(): void {
   localStorage.setItem(STORAGE_KEY, 'true');
-}
-
-/**
- * Reset onboarding (for testing)
- */
-export function resetOnboarding(): void {
-  localStorage.removeItem(STORAGE_KEY);
 }
 
 export default function TravelStatusOnboarding({

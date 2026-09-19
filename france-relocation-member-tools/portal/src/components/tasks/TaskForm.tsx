@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { clsx } from 'clsx';
 import Modal from '@/components/shared/Modal';
 import { useCreateTask } from '@/hooks/useApi';
 import type { TaskPriority, TaskStatus } from '@/types';
@@ -247,78 +246,3 @@ export default function TaskForm({
 }
 
 // Quick add form (inline)
-interface QuickAddFormProps {
-  projectId: number;
-  stage?: string;
-  status?: TaskStatus;
-  onCancel?: () => void;
-  className?: string;
-}
-
-export function QuickAddForm({
-  projectId,
-  stage,
-  status = 'todo',
-  onCancel,
-  className,
-}: QuickAddFormProps) {
-  const [title, setTitle] = useState('');
-  const inputRef = useRef<HTMLInputElement>(null);
-  const createTask = useCreateTask(projectId);
-
-  // Focus input on mount
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!title.trim()) return;
-
-    createTask.mutate(
-      {
-        title: title.trim(),
-        status,
-        stage,
-      },
-      {
-        onSuccess: () => {
-          setTitle('');
-        },
-      }
-    );
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') {
-      setTitle('');
-      onCancel?.();
-    }
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className={clsx('flex gap-2', className)}>
-      <input
-        ref={inputRef}
-        type="text"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        onKeyDown={handleKeyDown}
-        className="input flex-1"
-        placeholder="Add a task..."
-      />
-      <button
-        type="submit"
-        disabled={!title.trim() || createTask.isPending}
-        className="btn btn-primary"
-      >
-        {createTask.isPending ? 'Adding...' : 'Add'}
-      </button>
-      {onCancel && (
-        <button type="button" onClick={onCancel} className="btn btn-secondary">
-          Cancel
-        </button>
-      )}
-    </form>
-  );
-}

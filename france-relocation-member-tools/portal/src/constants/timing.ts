@@ -8,8 +8,6 @@
 export const ONE_SECOND_MS = 1000;
 export const ONE_MINUTE_MS = 60 * ONE_SECOND_MS;
 export const ONE_HOUR_MS = 60 * ONE_MINUTE_MS;
-export const ONE_DAY_MS = 24 * ONE_HOUR_MS;
-
 /**
  * React Query staleTime values
  * Used to prevent unnecessary refetches of cached data
@@ -35,14 +33,3 @@ export const REFETCH_INTERVAL = {
   SUPPORT_UNREAD: ONE_MINUTE_MS,
 } as const;
 
-/**
- * Animation and transition durations
- */
-export const TRANSITION_DURATION = {
-  /** Sidebar expand/collapse animation */
-  SIDEBAR: 300,
-  /** Profile completion bar animation */
-  PROFILE_BAR: 500,
-  /** Scroll to element delay */
-  SCROLL_DELAY: 100,
-} as const;

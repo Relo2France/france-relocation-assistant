@@ -17,7 +17,7 @@ export interface PortalLocation {
 }
 
 /** Links from emails that open one thing, once. */
-export const ONE_SHOT_PARAMS = ['task', 'message'] as const;
+const ONE_SHOT_PARAMS = ['task', 'message'] as const;
 
 /** Where the URL says the portal is. No ?view= means the dashboard. */
 export function readLocation(search: string): PortalLocation {

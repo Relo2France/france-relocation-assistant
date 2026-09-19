@@ -15,7 +15,7 @@ export function personOf(task: Task): string {
   return typeof person === 'string' ? person : 'you';
 }
 
-export function personLabel(task: Task, members: FamilyMember[]): string {
+function personLabel(task: Task, members: FamilyMember[]): string {
   const person = personOf(task);
   if (person === 'partner') {
     const partner = members.find((m) => m.relationship === 'spouse');
