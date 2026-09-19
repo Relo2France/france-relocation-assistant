@@ -290,7 +290,8 @@ class FRA_Auth_Pages {
         .fra-auth-signup {
             max-width: 1040px;
         }
-        .fra-auth-signup-card {
+        /* Two classes, so the card's own padding (declared later) loses. */
+        .fra-auth-card.fra-auth-signup-card {
             padding: 0;
             overflow: hidden;
         }
@@ -924,6 +925,11 @@ class FRA_Auth_Pages {
         }
 
         /* === MEMBERPRESS CHECKOUT === */
+        /* The two-column sign-up already shows the price beside the form
+           and the total above the card box: a third mention is noise. */
+        .fra-auth-signup .fra-auth-form-wrap .mp-form-row.mepr_price {
+            display: none !important;
+        }
         /* Price line at the top of the signup form */
         .fra-auth-form-wrap .mp-form-row.mepr_price {
             display: flex;
