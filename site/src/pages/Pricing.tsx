@@ -43,7 +43,7 @@ export function Pricing() {
   const member = useMember();
   return (
     <>
-      <SiteNav cta={`Join — ${PRICE}`} />
+      <SiteNav cta={`Join — ${PRICE}`} ctaHref={external.join} />
 
       <header className="px-7 pt-9 pb-7 border-b border-rule-soft">
         <span className="block mb-3">

@@ -89,9 +89,11 @@ describe('the pricing page', () => {
 
   it('sends a stranger to checkout, labelled with the price', () => {
     render(<Pricing />);
-    // The nav's "Join" pill points at this page; the page's own two go to checkout.
-    const joins = screen.getAllByRole('link', { name: /join — \$35/i }).filter((j) => j.getAttribute('href') !== '/pricing/');
-    expect(joins.length).toBe(2);
+    // Every "Join — $35" on this page goes to checkout, the nav's included:
+    // a nav pill pointing back at this page did nothing when clicked.
+    const joins = screen.getAllByRole('link', { name: /join — \$35/i });
+    expect(joins.length).toBeGreaterThanOrEqual(3);
+    expect(joins.filter((j) => j.getAttribute('href') === '/pricing/')).toHaveLength(0);
     for (const j of joins) expect(j).toHaveAttribute('href', expect.stringContaining('/register/'));
     // The nav has one and the page's foot has one: both go to sign-in.
     expect(screen.getAllByRole('link', { name: /^sign in$/i }).length).toBeGreaterThanOrEqual(2);

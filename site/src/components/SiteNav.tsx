@@ -17,7 +17,7 @@ const LINKS: [string, string][] = [
  * `sm` breakpoint the links fold behind a Menu button; the markup is plain
  * anchors either way, so the prerender and a no-JS visitor still get links.
  */
-export function SiteNav({ cta = 'Get started' }: { cta?: string }) {
+export function SiteNav({ cta = 'Get started', ctaHref = '/pricing/' }: { cta?: string; ctaHref?: string }) {
   const member = useMember();
   const [open, setOpen] = useState(false);
 
@@ -30,7 +30,7 @@ export function SiteNav({ cta = 'Get started' }: { cta?: string }) {
     <>
       {/* Sign-in still lives on WordPress until the portal is ported. */}
       <Button href={external.signIn} variant="ghost">Sign in</Button>
-      <Button href="/pricing/">{cta}</Button>
+      <Button href={ctaHref}>{cta}</Button>
     </>
   );
 
