@@ -6,7 +6,7 @@
 
 ## 1. What we want
 
-A Relo2France member opens **Schengen days** in the member portal and sees the tracker immediately:
+A Relo2France member opens **Schengen days** in the member portal and sees the tracker immediately. The two things this document exists to get right: **the app reads who the member is and whether their membership is active from Relo2France**, and **it displays inside our portal as if it were part of it**. Every member starts fresh; there is no existing trip data to move.
 
 - already signed in, with no login screen, no password and no second account to create;
 - showing their own trips and their household;
@@ -171,16 +171,13 @@ Both sides check `event.origin` exactly and ignore anything else. The portal acc
 - `/embed/*` must never be framable by any other site.
 - HTTPS only. No third-party analytics or trackers inside the embed.
 
-## 6. Data we share, and the one-time move
+## 6. Data we share
 
 - **Relo2France to the tracker:** only what is in the token and webhooks above. We send no passport numbers, documents or addresses.
 - **The tracker to Relo2France:** only day-count summaries, for the portal's alerts ("You have 12 Schengen days left").
   - **Server to server:** we call `GET https://APP/api/r2f/summary?sub=r2f:1234`, authenticated with a signed JWT from Relo2France (`aud` = the tracker, scope `summary:read`).
   - **Response:** `people:[{id, days_used, days_left, window_end, status}]`.
-- **Existing trips:** members already logged trips in the portal's current tracker. Those live in WordPress table `fra_schengen_trips`, with columns `user_id`, `start_date`, `end_date`, `country`, `category`, `notes`, `created_at`, `updated_at`.
-  - **Import:** the tracker exposes `POST /api/r2f/import`, which accepts trips for a `sub` and de-duplicates by dates plus country.
-  - **Handover:** Relo2France pushes each member's trips once, at launch.
-  - **Retirement:** our old tracker then becomes read-only, and then retires.
+- **No migration.** No member has trips in the portal's current tracker, so every member starts fresh in the new app. There is no import to build. The portal's old tracker is retired when the embed goes live.
 - **Privacy:** the tracker is a data processor for Relo2France members. Needed before launch:
   - a data processing agreement
   - EU or US hosting stated in the tracker's privacy policy
@@ -202,7 +199,7 @@ Both sides check `event.origin` exactly and ignore anything else. The portal acc
 - [ ] Silent account creation and one-time linking (3.4)
 - [ ] Household and per-person counting, including the French-residence rule (3.2)
 - [ ] Webhook endpoint (section 4)
-- [ ] Summary API and import API (section 6)
+- [ ] Summary API (section 6)
 - [ ] `frame-ancestors` header, and origin checks on every message
 
 **Relo2France (we build this once the tracker's embed URL exists):**
@@ -212,7 +209,7 @@ Both sides check `event.origin` exactly and ignore anything else. The portal acc
 - [ ] The portal's Schengen days view hosts the iframe and runs the message protocol (5.3)
 - [ ] Webhooks fired on refund, cancellation, deletion and household changes
 - [ ] The portal's alerts read the summary API
-- [ ] A one-time trip export to `/api/r2f/import`, then the old tracker retires
+- [ ] Retire the portal's old tracker when the embed goes live (no trips to move)
 - [ ] The Schengen app's URL and shared secrets stored in Portal Settings, never in code
 
 ## 9. Test plan before launch
