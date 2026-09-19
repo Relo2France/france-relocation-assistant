@@ -84,6 +84,7 @@ export default function FilterBar({
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder="Search steps…"
+              aria-label="Search steps"
               className="pl-9 pr-4 py-2 bg-gray-100 border-0 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 w-64"
             />
             {searchQuery && (
@@ -112,6 +113,7 @@ export default function FilterBar({
         <select
           value={filters.stage || ''}
           onChange={(e) => onFilterChange({ stage: e.target.value || null })}
+          aria-label="Filter by stage"
           className="select w-auto text-sm py-1.5"
         >
           <option value="">All Stages</option>
@@ -126,6 +128,7 @@ export default function FilterBar({
         <select
           value={filters.status || ''}
           onChange={(e) => onFilterChange({ status: e.target.value || null })}
+          aria-label="Filter by status"
           className="select w-auto text-sm py-1.5"
         >
           <option value="">All Statuses</option>
@@ -139,6 +142,7 @@ export default function FilterBar({
         <select
           value={filters.taskType || ''}
           onChange={(e) => onFilterChange({ taskType: e.target.value || null })}
+          aria-label="Filter by type"
           className="select w-auto text-sm py-1.5"
         >
           <option value="">All Types</option>

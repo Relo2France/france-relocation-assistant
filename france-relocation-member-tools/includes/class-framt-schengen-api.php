@@ -951,7 +951,7 @@ class FRAMT_Schengen_API {
         }
 
         // Fallback to site membership page
-        $membership_url = get_option( 'fra_membership_url', '/membership/' );
+        $membership_url = get_option( 'fra_membership_url', '/pricing/' );
         return home_url( $membership_url );
     }
 
@@ -1373,6 +1373,21 @@ class FRAMT_Schengen_API {
      */
     public function test_alert( WP_REST_Request $request ) {
         $user_id = get_current_user_id();
+
+        // The portal's "send test alert" button uses this; it only ever
+        // emails the signed-in member, but it sends mail, so it is capped.
+        if ( ! current_user_can( 'manage_options' ) ) {
+            $key  = 'framt_schengen_test_alert_' . $user_id;
+            $sent = (int) get_transient( $key );
+            if ( $sent >= 3 ) {
+                return new WP_Error(
+                    'rate_limit_exceeded',
+                    'You have sent a few test alerts already. Please try again in an hour.',
+                    array( 'status' => 429 )
+                );
+            }
+            set_transient( $key, $sent + 1, HOUR_IN_SECONDS );
+        }
 
         if ( ! class_exists( 'FRAMT_Schengen_Alerts' ) ) {
             return new WP_Error(

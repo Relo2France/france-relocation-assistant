@@ -62,8 +62,9 @@ class FRA_API_Proxy {
         add_action('rest_api_init', array($this, 'register_rest_routes'));
 
         // Register AJAX handlers
+        // Signed-in only: nothing on the public site calls this proxy, and
+        // the visitor chat goes through fra_ai_query with its own limits.
         add_action('wp_ajax_fra_proxy_query', array($this, 'ajax_proxy_query'));
-        add_action('wp_ajax_nopriv_fra_proxy_query', array($this, 'ajax_proxy_query'));
     }
 
     /**
@@ -103,30 +104,22 @@ class FRA_API_Proxy {
     /**
      * Permission callback for chat endpoint
      *
-     * Allows access for logged-in users or rate-limited anonymous users.
+     * Signed-in users only.
      *
      * @return bool|WP_Error True if permitted, WP_Error otherwise
      */
     public function check_chat_permission() {
-        // Logged-in users always have access (rate limiting still applies in handler)
+        // Signed-in users only (rate limiting still applies in the handler).
+        // No page calls this route anonymously.
         if ( is_user_logged_in() ) {
             return true;
         }
 
-        // Anonymous users: check if rate limiting allows access
-        $rate_check = fra_check_rate_limit();
-        if ( ! $rate_check['allowed'] ) {
-            return new WP_Error(
-                'rate_limited',
-                $rate_check['message'],
-                array(
-                    'status' => 429,
-                    'retry_after' => $rate_check['retry_after']
-                )
-            );
-        }
-
-        return true;
+        return new WP_Error(
+            'rest_not_logged_in',
+            'Please sign in to use the assistant here.',
+            array( 'status' => 401 )
+        );
     }
 
     /**
@@ -361,7 +354,7 @@ class FRA_API_Proxy {
 This user is a paid member. You can help them create personalized documents, checklists, timelines, and action plans tailored to their specific situation.";
         } else {
             $base_prompt .= "\n\n**IMPORTANT RESTRICTION:**
-You can answer questions and provide information, but you CANNOT create custom documents, checklists, timelines, action plans, or personalized templates for this user. If they request these, politely explain it's a premium member feature and suggest they become a member at /membership/.";
+You can answer questions and provide information, but you CANNOT create custom documents, checklists, timelines, action plans, or personalized templates for this user. If they request these, politely explain it's a premium member feature and suggest they become a member at /pricing/.";
         }
 
         // Allow filtering by plugins

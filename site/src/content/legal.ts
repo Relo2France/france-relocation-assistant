@@ -11,7 +11,7 @@
  * Plain English on purpose. Approved by the owner on 18 September 2026;
  * not reviewed by a lawyer. Change it here when the service changes.
  */
-import { FAMILY_ADDON_PRICE, familyCopy, PRICE, REFUND_DAYS, SUPPORT_EMAIL } from './links';
+import { FAMILY_ADDON_NOTE, FAMILY_ADDON_ON_SALE, FAMILY_ADDON_PRICE, FAMILY_INCLUDED_NOTE, PRICE, REFUND_DAYS, SUPPORT_EMAIL } from './links';
 
 export const LEGAL_UPDATED = '18 September 2026';
 
@@ -66,8 +66,10 @@ const terms: LegalPage = {
     {
       heading: 'Your membership',
       paragraphs: [
-        `Membership costs ${PRICE}, paid once. It gives lifetime access to the member portal: access for as long as Relo2France operates the service, with no subscription and no renewal fee. Payment is taken by Stripe through our MemberPress checkout; we never see or store your full card number.`,
-        familyCopy().cardNote,
+        `Membership costs ${PRICE}, paid once. It gives lifetime access to the member portal: access for as long as Relo2France operates the service, with no subscription and no renewal fee. Payment is taken by Stripe through our checkout; we never see or store your full card number.`,
+        FAMILY_ADDON_ON_SALE
+          ? `The Family add-on costs ${FAMILY_ADDON_PRICE}, paid ${FAMILY_ADDON_NOTE}. It gives each of them a file of their own and your partner their own sign-in.`
+          : FAMILY_INCLUDED_NOTE,
         `The ${REFUND_DAYS}-day money-back guarantee, on the membership and on the Family add-on, is set out in our refund policy.`,
       ],
     },
@@ -155,7 +157,7 @@ const privacy: LegalPage = {
       list: [
         'WordPress.com (Automattic), which hosts the site and your file',
         'Cloudflare, which serves the public site and carries traffic to it',
-        'Stripe, which takes payment through our MemberPress checkout',
+        'Stripe, which takes payment through our checkout',
         'Anthropic, which runs the AI features',
         'Google Fonts, which serves the typefaces on the public site and so sees your IP address when a page loads',
       ],

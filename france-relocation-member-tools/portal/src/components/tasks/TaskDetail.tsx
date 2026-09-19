@@ -117,10 +117,10 @@ export default function TaskDetail({ task, isOpen, onClose }: TaskDetailProps) {
         <div className="flex items-center justify-between w-full">
           <button
             onClick={() => setShowDeleteConfirm(true)}
-            className="btn btn-ghost text-red-600 hover:bg-red-50"
+            className="btn btn-ghost text-sm text-gray-500 hover:text-red-600 hover:bg-red-50"
           >
             <Trash2 className="w-4 h-4" aria-hidden="true" />
-            Delete
+            Remove step
           </button>
           <div className="flex gap-2">
             <button onClick={onClose} className="btn btn-secondary">

@@ -783,7 +783,6 @@ class FRAMT_Portal_Settings {
     private function render_members_tab( $settings ) {
         $membership = class_exists( 'FRAMT_Membership' ) ? FRAMT_Membership::get_instance() : null;
         $plugin     = $membership ? $membership->get_plugin() : false;
-        $require    = get_option( 'framt_portal_require_membership', false );
         $demo       = get_option( 'framt_enable_demo_mode', false );
         ?>
         <div class="framt-settings-card">
@@ -791,8 +790,7 @@ class FRAMT_Portal_Settings {
             <p class="lead"><?php echo $plugin ? esc_html( ucfirst( $plugin ) ) . ' is detected and active.' : 'No membership plugin detected; every signed-in user can open the portal.'; ?></p>
             <ul class="framt-switch-list">
                 <li>
-                    <input type="checkbox" id="framt_portal_require_membership" name="framt_portal_require_membership" value="1" <?php checked( $require ); ?>>
-                    <label for="framt_portal_require_membership"><strong>Require an active membership</strong><span>Signed-in people without one are sent to the membership page. A partner invited from the Family plan passes on the account holder\'s membership.</span></label>
+                    <label><strong>An active membership is always required</strong><span>Signed-in people without one are sent to the pricing page, and the portal's data answers only members. A partner invited from the Family plan passes on the account holder's membership. Admins always get in.</span></label>
                 </li>
                 <li>
                     <input type="checkbox" id="framt_enable_demo_mode" name="framt_enable_demo_mode" value="1" <?php checked( $demo ); ?>>

@@ -14,7 +14,7 @@
  * Plugin Name: France Relocation Member Tools
  * Plugin URI:  https://relo2france.com
  * Description: Premium member features including the Members Portal with project management, task tracking, document generation, checklists, guides, and personalized relocation planning.
- * Version:     2.9.39
+ * Version:     2.9.40
  * Author:      Relo2France
  * Author URI:  https://relo2france.com
  * License:     GPL v2 or later
@@ -31,7 +31,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Plugin constants.
-define( 'FRAMT_VERSION', '2.9.39' );
+define( 'FRAMT_VERSION', '2.9.40' );
 define('FRAMT_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('FRAMT_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('FRAMT_PLUGIN_BASENAME', plugin_basename(__FILE__));
@@ -478,6 +478,7 @@ final class FRA_Member_Tools {
         // Document actions
         add_action('wp_ajax_framt_generate_document', array($this->components['doc_generator'], 'ajax_generate_document'));
         add_action('wp_ajax_framt_download_document', array($this->components['doc_generator'], 'ajax_download_document'));
+        add_action('wp_ajax_framt_fetch_document', array($this->components['doc_generator'], 'ajax_fetch_document'));
         add_action('wp_ajax_framt_save_document', array($this->components['documents'], 'ajax_save_document'));
         add_action('wp_ajax_framt_get_documents', array($this->components['documents'], 'ajax_get_documents'));
         add_action('wp_ajax_framt_delete_document', array($this->components['documents'], 'ajax_delete_document'));
@@ -930,8 +931,7 @@ final class FRA_Member_Tools {
                 $guide_data = $generator->generate_guide($guide_type, $answers, $profile);
                 
                 if ($guide_data) {
-                    $guide_id = 'guide_' . get_current_user_id() . '_' . time();
-                    set_transient($guide_id, $guide_data, HOUR_IN_SECONDS);
+                    $guide_id = $this->store_owned_transient('guide_', $guide_data, HOUR_IN_SECONDS);
                     
                     wp_send_json_success(array(
                         'guide_id' => $guide_id,
@@ -954,8 +954,7 @@ final class FRA_Member_Tools {
             }
             
             // Store the generated guide for download
-            $guide_id = 'guide_' . get_current_user_id() . '_' . time();
-            set_transient($guide_id, $guide_data, HOUR_IN_SECONDS);
+            $guide_id = $this->store_owned_transient('guide_', $guide_data, HOUR_IN_SECONDS);
             
             wp_send_json_success(array(
                 'guide_id' => $guide_id,
@@ -992,8 +991,9 @@ final class FRA_Member_Tools {
             return;
         }
         
-        // Get the stored guide data
-        $guide_data = get_transient($guide_id);
+        // Get the stored guide data; only the member it was made for may
+        // download it.
+        $guide_data = $this->get_owned_transient($guide_id);
         
         if (!$guide_data) {
             wp_send_json_error(array('message' => __('Guide not found or expired. Please regenerate.', 'fra-member-tools')));
@@ -1004,13 +1004,10 @@ final class FRA_Member_Tools {
         
         // Create user-specific document directory
         $upload_dir = wp_upload_dir();
-        $user_doc_dir = $upload_dir['basedir'] . '/framt-documents/user-' . $user_id;
+        $user_doc_dir = $this->ensure_private_doc_dir($upload_dir['basedir'] . '/framt-documents/user-' . $user_id);
         
-        if (!file_exists($user_doc_dir)) {
-            wp_mkdir_p($user_doc_dir);
-        }
-        
-        $filename = sanitize_file_name($guide_data['title'] . '-' . date('Y-m-d'));
+        // Random prefix: the folder is public, so the name must not be guessable.
+        $filename = strtolower(wp_generate_password(20, false, false)) . '-' . sanitize_file_name($guide_data['title'] . '-' . date('Y-m-d'));
         
         // Check if this is an AI-generated guide
         $is_ai_guide = isset($guide_data['ai_content']);
@@ -1121,6 +1118,60 @@ window.onload = function() {
         wp_send_json_success(array('url' => $url));
     }
     
+    /**
+     * Store data for a later download under an unguessable key, tagged with
+     * the member it belongs to.
+     *
+     * @param string $prefix Key prefix (guide_, gendoc_).
+     * @param array  $data   Data to keep.
+     * @param int    $ttl    Lifetime in seconds.
+     * @return string Transient key (lowercase, survives sanitize_key()).
+     */
+    private function store_owned_transient($prefix, $data, $ttl) {
+        $key = $prefix . strtolower(wp_generate_password(24, false, false));
+        if (!is_array($data)) {
+            $data = array('value' => $data);
+        }
+        $data['_owner'] = get_current_user_id();
+        set_transient($key, $data, $ttl);
+        return $key;
+    }
+
+    /**
+     * Read a transient written by store_owned_transient(), but only for the
+     * signed-in member it was written for.
+     *
+     * @param string $key Transient key.
+     * @return array|false
+     */
+    private function get_owned_transient($key) {
+        if ('' === $key || !is_user_logged_in()) {
+            return false;
+        }
+        $data = get_transient($key);
+        if (!is_array($data) || !isset($data['_owner']) || (int) $data['_owner'] !== get_current_user_id()) {
+            return false;
+        }
+        return $data;
+    }
+
+    /**
+     * Create a member's document folder with the files that stop directory
+     * listing and direct access where the server honours them.
+     *
+     * @param string $dir Absolute path.
+     * @return string The same path.
+     */
+    private function ensure_private_doc_dir($dir) {
+        if (!file_exists($dir)) {
+            wp_mkdir_p($dir);
+        }
+        if (!file_exists($dir . '/index.php')) {
+            file_put_contents($dir . '/index.php', '<?php // Silence is golden');
+        }
+        return $dir;
+    }
+
     /**
      * AJAX: Guide chat - AI-powered guide creation via conversational interface
      */
@@ -1630,8 +1681,7 @@ window.onload = function() {
             }
             
             // Store the guide for download
-            $guide_id = 'guide_' . get_current_user_id() . '_' . time();
-            set_transient($guide_id, $guide_data, HOUR_IN_SECONDS);
+            $guide_id = $this->store_owned_transient('guide_', $guide_data, HOUR_IN_SECONDS);
             
             return array(
                 'message' => __('✅ Your personalized guide is ready!', 'fra-member-tools'),
@@ -2711,9 +2761,7 @@ STYLE:
      * Save generated document
      */
     private function save_generated_document($user_id, $document_type, $document_content, $answers) {
-        $doc_id = 'gendoc_' . $user_id . '_' . time();
-        
-        set_transient($doc_id, array(
+        $doc_id = $this->store_owned_transient('gendoc_', array(
             'content' => $document_content,
             'answers' => $answers,
             'type' => $document_type,
@@ -2732,9 +2780,7 @@ STYLE:
         
         $content = "Document generated based on your answers.\n\nPlease note: AI generation is not configured. This is a basic template.";
         
-        $doc_id = 'gendoc_' . $user->ID . '_' . time();
-        
-        set_transient($doc_id, array(
+        $doc_id = $this->store_owned_transient('gendoc_', array(
             'content' => array('title' => $full_name . ' - Document', 'content' => $content),
             'answers' => $answers,
             'type' => $document_type,
@@ -2762,7 +2808,7 @@ STYLE:
         $doc_id = sanitize_key($_POST['document_id'] ?? '');
         $format = sanitize_key($_POST['format'] ?? 'word');
         
-        $doc_data = get_transient($doc_id);
+        $doc_data = $this->get_owned_transient($doc_id);
         
         if (!$doc_data) {
             wp_send_json_error(array('message' => __('Document not found or expired', 'fra-member-tools')));
@@ -2774,13 +2820,10 @@ STYLE:
         
         // Create file
         $upload_dir = wp_upload_dir();
-        $user_doc_dir = $upload_dir['basedir'] . '/framt-documents/user-' . $user_id;
+        $user_doc_dir = $this->ensure_private_doc_dir($upload_dir['basedir'] . '/framt-documents/user-' . $user_id);
         
-        if (!file_exists($user_doc_dir)) {
-            wp_mkdir_p($user_doc_dir);
-        }
-        
-        $filename = sanitize_file_name($content['title'] . '-' . date('Y-m-d'));
+        // Random prefix: the folder is public, so the name must not be guessable.
+        $filename = strtolower(wp_generate_password(20, false, false)) . '-' . sanitize_file_name($content['title'] . '-' . date('Y-m-d'));
         
         // Generate HTML content
         $html = $this->generate_document_html($content);
@@ -3507,7 +3550,7 @@ Please provide a helpful, accurate answer about their health insurance coverage 
 
         // Add metadata for the section
         $membership_settings = get_option('fra_membership', array());
-        $upgrade_url = !empty($membership_settings['upgrade_url']) ? $membership_settings['upgrade_url'] : '/membership/';
+        $upgrade_url = !empty($membership_settings['upgrade_url']) ? $membership_settings['upgrade_url'] : '/pricing/';
         
         $items['_member_tools_meta'] = array(
             'is_member' => $is_member,
@@ -4240,6 +4283,25 @@ Please provide a helpful, accurate answer about their health insurance coverage 
     }
 
     /**
+     * The visitor's IP for login throttling. Public traffic comes through
+     * Cloudflare; other forwarding headers are set by the caller and are
+     * not trusted.
+     *
+     * @return string
+     */
+    private function login_client_ip() {
+        foreach ( array( 'HTTP_CF_CONNECTING_IP', 'REMOTE_ADDR' ) as $key ) {
+            if ( ! empty( $_SERVER[ $key ] ) ) {
+                $ip = trim( sanitize_text_field( wp_unslash( $_SERVER[ $key ] ) ) );
+                if ( filter_var( $ip, FILTER_VALIDATE_IP ) ) {
+                    return $ip;
+                }
+            }
+        }
+        return 'unknown';
+    }
+
+    /**
      * AJAX: Handle portal login
      *
      * @return void
@@ -4260,6 +4322,15 @@ Please provide a helpful, accurate answer about their health insurance coverage 
             return;
         }
 
+        // Throttle guessing: five failures in fifteen minutes, per address
+        // and per account name, and the form stops trying for a while.
+        $ip_key   = 'framt_login_fail_ip_' . md5( $this->login_client_ip() );
+        $user_key = 'framt_login_fail_u_' . md5( strtolower( $username ) );
+        if ( (int) get_transient( $ip_key ) >= 5 || (int) get_transient( $user_key ) >= 5 ) {
+            wp_send_json_error( __( 'Too many sign-in attempts. Please wait 15 minutes and try again, or use "Forgot password" to get a reset link.', 'fra-member-tools' ) );
+            return;
+        }
+
         // Attempt login
         $creds = array(
             'user_login'    => $username,
@@ -4270,10 +4341,15 @@ Please provide a helpful, accurate answer about their health insurance coverage 
         $user = wp_signon( $creds, is_ssl() );
 
         if ( is_wp_error( $user ) ) {
-            // Generic error message for security
-            wp_send_json_error( __( 'Invalid username or password. Please try again.', 'fra-member-tools' ) );
+            set_transient( $ip_key, (int) get_transient( $ip_key ) + 1, 15 * MINUTE_IN_SECONDS );
+            set_transient( $user_key, (int) get_transient( $user_key ) + 1, 15 * MINUTE_IN_SECONDS );
+            // One message whether the account exists or not.
+            wp_send_json_error( __( "That email or password isn't right.", 'fra-member-tools' ) );
             return;
         }
+
+        delete_transient( $ip_key );
+        delete_transient( $user_key );
 
         // A same-site page the member was headed to before signing in.
         $redirect = '';
@@ -4296,6 +4372,8 @@ Please provide a helpful, accurate answer about their health insurance coverage 
         // Clear scheduled events if any
         wp_clear_scheduled_hook('framt_daily_cleanup');
         wp_clear_scheduled_hook('framt_member_emails_daily');
+        wp_clear_scheduled_hook('framt_member_notice_digest');
+        wp_clear_scheduled_hook('framt_schengen_daily_alerts');
 
         // Flush rewrite rules
         flush_rewrite_rules();
@@ -4386,3 +4464,57 @@ try {
         error_log('FRAMT: Plugin startup fatal error - ' . $e->getMessage());
     }
 }
+
+/**
+ * Hide the WordPress users listing from visitors who are not signed in.
+ * Core serves /wp/v2/users to anyone, which lists author names and slugs
+ * (login names on many sites). Signed-in requests are left alone so the
+ * block editor and admin screens keep working.
+ *
+ * @param array $endpoints Registered REST endpoints.
+ * @return array
+ */
+function framt_hide_user_endpoints_from_guests( $endpoints ) {
+    if ( is_user_logged_in() ) {
+        return $endpoints;
+    }
+    foreach ( array_keys( $endpoints ) as $route ) {
+        if ( '/wp/v2/users' === $route || 0 === strpos( $route, '/wp/v2/users/(?P<id>' ) ) {
+            unset( $endpoints[ $route ] );
+        }
+    }
+    return $endpoints;
+}
+add_filter( 'rest_endpoints', 'framt_hide_user_endpoints_from_guests' );
+
+/**
+ * Credentialed CORS for this site only.
+ *
+ * Core's rest_send_cors_headers() (priority 10) echoes back any Origin with
+ * Access-Control-Allow-Credentials: true. Nothing on another origin needs
+ * to call this API with the member's cookies, so for any other origin
+ * those two headers are taken back off.
+ *
+ * @param bool $served Whether the request has already been served.
+ * @return bool Unchanged.
+ */
+function framt_restrict_rest_cors( $served ) {
+    $origin = get_http_origin();
+    if ( ! $origin || headers_sent() ) {
+        return $served;
+    }
+    $allowed = array();
+    foreach ( array( home_url(), site_url() ) as $url ) {
+        $parts = wp_parse_url( $url );
+        if ( empty( $parts['scheme'] ) || empty( $parts['host'] ) ) {
+            continue;
+        }
+        $allowed[] = strtolower( $parts['scheme'] . '://' . $parts['host'] . ( ! empty( $parts['port'] ) ? ':' . $parts['port'] : '' ) );
+    }
+    if ( ! in_array( strtolower( untrailingslashit( $origin ) ), $allowed, true ) ) {
+        header_remove( 'Access-Control-Allow-Origin' );
+        header_remove( 'Access-Control-Allow-Credentials' );
+    }
+    return $served;
+}
+add_filter( 'rest_pre_serve_request', 'framt_restrict_rest_cors', 15 );

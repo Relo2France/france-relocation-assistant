@@ -25,7 +25,7 @@ $review_secret_set = strlen( (string) get_option( FRA_Review_API::SECRET_OPTION,
 $new_review_secret = '';
 $github_repo    = get_option( 'fra_github_repo', '' );
 $update_url     = get_option( 'fra_update_url', '' );
-$membership_url = get_option( 'fra_membership_url', '/membership/' );
+$membership_url = get_option( 'fra_membership_url', '/pricing/' );
 
 // Which form was submitted. This page renders two forms that share one nonce
 // and one submit name, so without this marker saving the GitHub form ran the
@@ -68,7 +68,7 @@ if ( isset( $_POST['fra_save_settings'] ) && check_admin_referer( 'fra_settings_
         $new_api_key    = isset( $_POST['fra_api_key'] ) ? sanitize_text_field( wp_unslash( $_POST['fra_api_key'] ) ) : '';
         $api_model      = isset( $_POST['fra_api_model'] ) ? sanitize_text_field( wp_unslash( $_POST['fra_api_model'] ) ) : 'auto';
         $enable_ai      = isset( $_POST['fra_enable_ai'] );
-        $membership_url = isset( $_POST['fra_membership_url'] ) ? esc_url_raw( wp_unslash( $_POST['fra_membership_url'] ) ) : '/membership/';
+        $membership_url = isset( $_POST['fra_membership_url'] ) ? esc_url_raw( wp_unslash( $_POST['fra_membership_url'] ) ) : '/pricing/';
 
         // Only update API key if a new one is provided (not the placeholder).
         if ( ! empty( $new_api_key ) && '••••••••••••••••' !== $new_api_key ) {
@@ -361,7 +361,7 @@ if (isset($_POST['fra_test_api']) && check_admin_referer('fra_settings_nonce')) 
                             <label for="fra_membership_url"><?php _e('Membership Signup URL', 'france-relocation-assistant'); ?></label>
                         </th>
                         <td>
-                            <input type="text" name="fra_membership_url" id="fra_membership_url" value="<?php echo esc_attr($membership_url); ?>" class="regular-text" placeholder="/membership/">
+                            <input type="text" name="fra_membership_url" id="fra_membership_url" value="<?php echo esc_attr($membership_url); ?>" class="regular-text" placeholder="/pricing/">
                             <p class="description">
                                 <?php _e('URL where users can sign up for membership. Used in upsell messages when non-members request premium features like custom document creation.', 'france-relocation-assistant'); ?>
                             </p>

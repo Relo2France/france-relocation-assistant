@@ -41,7 +41,7 @@ class FRA_Site_Header {
         'site_header_contact_text'     => 'Contact',
         'site_header_contact_url'      => '/contact/',
         'site_header_cta_text'         => 'Get Lifetime Access',
-        'site_header_cta_url'          => '/membership/',
+        'site_header_cta_url'          => '/pricing/',
         'site_header_nav_items'        => '',
         'site_header_nav_urls'         => '',
         'site_header_site_name_size'   => 32,
@@ -190,7 +190,7 @@ class FRA_Site_Header {
 
         // CTA button
         $cta_text       = $this->get_setting('site_header_cta_text');
-        $cta_url        = $this->get_setting('site_header_cta_url');
+        $cta_url        = FRA_Auth_Pages::retire_membership_url($this->get_setting('site_header_cta_url'));
         
         // Maintenance banner
         $maintenance_enabled = $this->get_setting('maintenance_banner_enabled');

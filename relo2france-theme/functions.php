@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Theme version.
-define( 'R2F_VERSION', '2.0.6' );
+define( 'R2F_VERSION', '2.0.7' );
 
 /**
  * Sets up theme defaults and registers support for various WordPress features.

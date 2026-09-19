@@ -250,7 +250,7 @@ $inchat_auth_enabled = $customizer['inchat_auth_enabled'] ?? true;
                 
                 // Only show if: has items AND (user is member OR preview is enabled)
                 if (!empty($member_nav_items) && ($is_member || $show_members_preview)) :
-                    $upgrade_url = $member_meta ? $member_meta['upgrade_url'] : get_option('fra_membership_url', '/membership/');
+                    $upgrade_url = $member_meta ? $member_meta['upgrade_url'] : get_option('fra_membership_url', '/pricing/');
                     $teaser_message = $member_meta ? $member_meta['teaser_message'] : __('Get access to exclusive member tools!', 'france-relocation-assistant');
                 ?>
                 <div class="fra-member-tools-section">

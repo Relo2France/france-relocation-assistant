@@ -4,7 +4,6 @@ import Dashboard from '@/components/dashboard/Dashboard';
 import Header from '@/components/layout/Header';
 import Sidebar from '@/components/layout/Sidebar';
 import ErrorBoundary from '@/components/shared/ErrorBoundary';
-import PWAPrompt from '@/components/shared/PWAPrompt';
 import Toaster from '@/components/shared/Toaster';
 import { useCurrentUser } from '@/hooks/useApi';
 import { startUrlSync, usePortalStore } from '@/store';
@@ -184,7 +183,6 @@ export default function App() {
       </div>
 
       {/* PWA Install Prompt & Update Banner */}
-      <PWAPrompt />
       <Toaster />
     </div>
   );

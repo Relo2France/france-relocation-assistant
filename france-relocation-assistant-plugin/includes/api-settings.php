@@ -88,6 +88,19 @@ function fra_check_rate_limit($user_id = null) {
     $limits = fra_get_user_rate_limit($user_id);
     $usage = fra_get_usage_stats($identifier);
 
+    // All guests together, whatever IP they claim: a hard ceiling on what
+    // the public chat can spend in a day. Filterable.
+    if (!$user_id) {
+        $guest_cap = (int) apply_filters('fra_guest_daily_cap', 300);
+        if ((int) get_transient('fra_guest_total_' . gmdate('Ymd')) >= $guest_cap) {
+            return array(
+                'allowed' => false,
+                'message' => 'The free assistant is busy today. Members have their own allowance, or try again tomorrow.',
+                'retry_after' => fra_seconds_until_midnight()
+            );
+        }
+    }
+
     // Check per-minute limit
     if ($usage['minute_count'] >= $limits['per_minute']) {
         return array(
@@ -153,6 +166,11 @@ function fra_increment_usage($identifier = null) {
     // Increment day counter (expires at midnight)
     $day_count = (int) get_transient($day_key);
     set_transient($day_key, $day_count + 1, fra_seconds_until_midnight());
+
+    if (0 === strpos((string) $identifier, 'guest_')) {
+        $total_key = 'fra_guest_total_' . gmdate('Ymd');
+        set_transient($total_key, (int) get_transient($total_key) + 1, DAY_IN_SECONDS);
+    }
 
     // Track overall usage for admin stats
     fra_track_api_usage();
@@ -245,18 +263,30 @@ function fra_get_admin_usage_stats() {
  * @return string Hashed IP address
  */
 function fra_get_client_ip_hash() {
-    $ip = '';
-
-    if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
-        $ip = $_SERVER['HTTP_CLIENT_IP'];
-    } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-        $ip = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'])[0];
-    } elseif (!empty($_SERVER['REMOTE_ADDR'])) {
-        $ip = $_SERVER['REMOTE_ADDR'];
-    }
-
     // Hash the IP for privacy
-    return substr(md5($ip . AUTH_SALT), 0, 12);
+    return substr(md5(fra_get_client_ip() . AUTH_SALT), 0, 12);
+}
+
+/**
+ * The visitor's IP address.
+ *
+ * All public traffic arrives through Cloudflare, which sets
+ * CF-Connecting-IP. Client-IP and X-Forwarded-For are set by the caller and
+ * would let anyone reset their own rate limit, so they are not read.
+ *
+ * @return string Validated IP, or '' when none is available
+ */
+function fra_get_client_ip() {
+    $candidates = array('HTTP_CF_CONNECTING_IP', 'REMOTE_ADDR');
+    foreach ($candidates as $key) {
+        if (!empty($_SERVER[$key])) {
+            $ip = trim(sanitize_text_field(wp_unslash($_SERVER[$key])));
+            if (filter_var($ip, FILTER_VALIDATE_IP)) {
+                return $ip;
+            }
+        }
+    }
+    return '';
 }
 
 /**

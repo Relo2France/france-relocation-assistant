@@ -15,7 +15,7 @@
  * Plugin Name: France Relocation Assistant
  * Plugin URI:  https://relo2france.com
  * Description: AI-powered US to France relocation guidance with visa info, property guides, healthcare, taxes, and practical insights. Features weekly auto-updates, "In Practice" real-world advice, and comprehensive knowledge base.
- * Version:     3.13.26
+ * Version:     3.13.27
  * Author:      Relo2France
  * Author URI:  https://relo2france.com
  * License:     GPL v2 or later
@@ -36,7 +36,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 | Plugin Constants
 |--------------------------------------------------------------------------
 */
-define( 'FRA_VERSION', '3.13.26' );
+define( 'FRA_VERSION', '3.13.27' );
 define( 'FRA_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FRA_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'FRA_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
@@ -404,9 +404,11 @@ class France_Relocation_Assistant {
      */
     private function get_login_error_message($error_code) {
         $messages = array(
-            'invalid_username' => 'We couldn\'t find an account with that email or username.',
-            'invalid_email' => 'We couldn\'t find an account with that email address.',
-            'incorrect_password' => 'The password you entered is incorrect. Please try again.',
+            // One message for all three, so the form does not reveal which
+            // email addresses have accounts here.
+            'invalid_username' => 'That email or password isn\'t right.',
+            'invalid_email' => 'That email or password isn\'t right.',
+            'incorrect_password' => 'That email or password isn\'t right.',
             'empty_username' => 'Please enter your email or username.',
             'empty_password' => 'Please enter your password.',
             'authentication_failed' => 'Login failed. Please check your credentials.',
@@ -689,6 +691,11 @@ class France_Relocation_Assistant {
             wp_unschedule_event($timestamp, self::CRON_HOOK);
         }
         wp_clear_scheduled_hook(self::CRON_HOOK);
+        // These reschedule themselves on load. The KB review schedule is left
+        // alone: it is set only when an admin saves it.
+        foreach (array('fra_refresh_model_catalog', 'fra_process_review_queue', 'fra_promote_kb_gaps') as $hook) {
+            wp_clear_scheduled_hook($hook);
+        }
     }
     
     
@@ -1341,11 +1348,19 @@ class France_Relocation_Assistant {
         check_ajax_referer('fra_nonce', 'nonce');
         
         // Accept both 'query' and 'message' for API compatibility
-        $query = sanitize_text_field($_POST['message'] ?? $_POST['query'] ?? '');
-        $context = sanitize_textarea_field($_POST['context'] ?? '');
+        $query = sanitize_text_field(wp_unslash($_POST['message'] ?? $_POST['query'] ?? ''));
+        $context = sanitize_textarea_field(wp_unslash($_POST['context'] ?? ''));
+        $is_guest = !is_user_logged_in();
         
         if (empty($query)) {
             wp_send_json_error('Query is required');
+        }
+        
+        // Visitors who are not signed in reach this handler too. Keep what
+        // they can send (and what they can make the model write) small.
+        if ($is_guest) {
+            $query = mb_substr($query, 0, 1000);
+            $context = mb_substr($context, 0, 2500);
         }
         
         // Verify AI is enabled and configured
@@ -1356,6 +1371,14 @@ class France_Relocation_Assistant {
         $api_key = self::get_api_key();
         if ( empty( $api_key ) ) {
             wp_send_json_error( 'API key not configured' );
+        }
+        
+        // Per-minute and per-day limits (by account, or by IP for visitors).
+        if (function_exists('fra_check_rate_limit')) {
+            $rate = fra_check_rate_limit();
+            if (empty($rate['allowed'])) {
+                wp_send_json_error($rate['message'] ?? 'Too many questions just now. Please wait a moment and try again.');
+            }
         }
         
         // Check if user is requesting document/checklist creation
@@ -1370,7 +1393,7 @@ class France_Relocation_Assistant {
         
         // If requesting document creation but not a member, return upsell
         if ($is_document_request && !$is_member) {
-            $membership_url = esc_url(get_option('fra_membership_url', '/membership/'));
+            $membership_url = esc_url(get_option('fra_membership_url', '/pricing/'));
             $doc_type = $this->get_document_type($query) ?: 'document';
             $upsell_response = $this->build_upsell_response($doc_type, $membership_url);
             
@@ -1400,7 +1423,7 @@ This site helps Americans relocate to France. It offers:
   • AI Document Verification: Upload health insurance to verify it meets French visa requirements
   • French Glossary: Administrative terms explained in plain English
 
-If someone asks about the site, member tools, what you can do, or what's available here, explain these features. Direct non-members to /membership/ if they want premium features.
+If someone asks about the site, member tools, what you can do, or what's available here, explain these features. Direct non-members to /pricing/ if they want premium features.
 
 **Your response structure for France relocation questions:**
 1. **Official Info First**: State what the law/rules say with current numbers, fees, and requirements
@@ -1432,7 +1455,7 @@ If someone asks about the site, member tools, what you can do, or what's availab
             $system_prompt .= "\n\n**IMPORTANT RESTRICTION:**
 You can answer questions and provide information, but you CANNOT create custom documents, checklists, timelines, action plans, or personalized templates for this user.
 
-If the user asks you to create, generate, make, or produce any kind of document, checklist, timeline, plan, template, or personalized content, politely explain that custom document creation is a premium member feature, briefly mention what members can get, and suggest they become a member at /membership/. Then offer to answer questions instead.";
+If the user asks you to create, generate, make, or produce any kind of document, checklist, timeline, plan, template, or personalized content, politely explain that custom document creation is a premium member feature, briefly mention what members can get, and suggest they become a member at /pricing/. Then offer to answer questions instead.";
         }
         
         $user_message = $query;
@@ -1455,12 +1478,18 @@ If the user asks you to create, generate, make, or produce any kind of document,
             }
         }
         
+        // Count the request before the call, so failures count too.
+        if (function_exists('fra_increment_usage')) {
+            fra_increment_usage();
+        }
+        
         // Call Anthropic API (model resolved live from the Anthropic catalog)
         $body = FRA_Model_Resolver::message(array(
             'purpose'    => 'chat',
-            'max_tokens' => 4096,
+            'max_tokens' => $is_guest ? 1500 : 4096,
             'timeout'    => 120,
-            'continue_on_truncation' => true,
+            // Continuations would multiply the visitor cap, so members only.
+            'continue_on_truncation' => !$is_guest,
             'system'     => $system_prompt,
             'messages'   => array(
                 array('role' => 'user', 'content' => $user_message)

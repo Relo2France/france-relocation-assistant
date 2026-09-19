@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { isWordPressPath, legacyRedirect } from './worker';
+import worker, { isPrivateBuildPath, isWordPressPath, legacyRedirect, withSecurityHeaders } from './worker';
 import { routes } from './content/guides';
 
 /**
@@ -75,5 +75,46 @@ describe('wrangler config', () => {
     // file URL. The root is the working directory, which is the site folder.
     const config = readFileSync(resolve(process.cwd(), 'wrangler.jsonc'), 'utf8');
     expect(config).toMatch(/"run_worker_first":\s*true/);
+  });
+});
+
+
+describe('security', () => {
+  const env = {
+    ASSETS: { fetch: async () => new Response('<html>ok</html>', { headers: { 'content-type': 'text/html' } }) },
+    WP_ORIGIN: 'https://origin.example',
+  };
+
+  it('redirects plain HTTP to HTTPS, keeping the path and query', async () => {
+    const res = await worker.fetch(new Request('http://relo2france.com/portal/?view=deadlines'), env);
+    expect(res.status).toBe(301);
+    expect(res.headers.get('location')).toBe('https://relo2france.com/portal/?view=deadlines');
+  });
+
+  it('puts the security headers on every page', async () => {
+    const res = await worker.fetch(new Request('https://relo2france.com/pricing/'), env);
+    expect(res.headers.get('strict-transport-security')).toContain('max-age=');
+    expect(res.headers.get('x-content-type-options')).toBe('nosniff');
+    expect(res.headers.get('x-frame-options')).toBe('SAMEORIGIN');
+    expect(res.headers.get('content-security-policy')).toContain("frame-ancestors 'self'");
+    expect(res.headers.get('referrer-policy')).toBe('strict-origin-when-cross-origin');
+  });
+
+  it('keeps a header the origin already set', () => {
+    const res = withSecurityHeaders(new Response('x', { headers: { 'X-Frame-Options': 'DENY' } }));
+    expect(res.headers.get('x-frame-options')).toBe('DENY');
+  });
+
+  it('never serves the portal source, demo or package files', async () => {
+    for (const p of [
+      '/wp-content/plugins/france-relocation-member-tools/portal/src/App.tsx',
+      '/wp-content/plugins/france-relocation-member-tools/portal/demo/demo.html',
+      '/wp-content/plugins/france-relocation-member-tools/portal/package-lock.json',
+    ]) {
+      expect(isPrivateBuildPath(p)).toBe(true);
+      const res = await worker.fetch(new Request(`https://relo2france.com${p}`), env);
+      expect(res.status).toBe(404);
+    }
+    expect(isPrivateBuildPath('/wp-content/plugins/france-relocation-member-tools/assets/portal/js/main.js')).toBe(false);
   });
 });

@@ -166,7 +166,13 @@ export default function DocumentsView() {
   return (
     <div className="p-6">
       {/* The page title is in the top bar; this is the one line under it. */}
-      <p className="text-gray-600 mb-6 max-w-[60ch]">Upload a document and it is recognised, checked against its requirement and filed to the dossier line it satisfies. The letters your visa route needs are drafted here, and your Explore France reports are kept here too.</p>
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
+        <p className="text-gray-600 m-0 max-w-[60ch]">Upload a document and it is recognised, checked against its requirement and filed to the dossier line it satisfies. The letters your visa route needs are drafted here, and your Explore France reports are kept here too.</p>
+        <button type="button" onClick={() => setShowUpload(true)} className="btn btn-primary w-full sm:w-auto flex-shrink-0">
+          <Plus className="w-4 h-4" aria-hidden="true" />
+          Upload a document
+        </button>
+      </div>
 
       <LettersSection projectId={projectId} />
 
@@ -309,6 +315,7 @@ export default function DocumentsView() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search files..."
+                  aria-label="Search files"
                   className="pl-9 pr-4 py-2 bg-gray-100 border-0 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 w-full sm:w-64"
                 />
                 {searchQuery && (
@@ -340,6 +347,7 @@ export default function DocumentsView() {
             <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value as FileCategory | '')}
+              aria-label="Filter by category"
               className="select w-auto text-sm py-1.5"
             >
               {categoryOptions.map((opt) => (
@@ -353,6 +361,7 @@ export default function DocumentsView() {
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value as FileType | '')}
+              aria-label="Filter by file type"
               className="select w-auto text-sm py-1.5"
             >
               {fileTypeOptions.map((opt) => (

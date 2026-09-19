@@ -180,9 +180,14 @@ class FRAMT_Schengen_Alerts {
      * @return array Settings.
      */
     private function get_user_settings( int $user_id ): array {
-        $settings = get_user_meta( $user_id, 'framt_schengen_settings', true );
+        // The portal saves under fra_schengen_settings (see the Schengen API);
+        // framt_ is the key older builds read and is only a fallback.
+        $settings = get_user_meta( $user_id, 'fra_schengen_settings', true );
+        if ( ! is_array( $settings ) ) {
+            $settings = get_user_meta( $user_id, 'framt_schengen_settings', true );
+        }
 
-        return wp_parse_args( $settings, array(
+        return wp_parse_args( is_array( $settings ) ? $settings : array(), array(
             'yellow_threshold' => 60,
             'red_threshold'    => 80,
             'email_alerts'     => false,

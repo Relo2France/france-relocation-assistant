@@ -637,6 +637,10 @@
             if (title) html += '<h3>' + this.escapeHtml(title) + '</h3>';
             html += this.formatContent(content, updateHistory);
             
+            // Knowledge-base fields are escaped before they go into innerHTML.
+            var esc = this.escapeHtml;
+            var escStr = function(v) { return esc(v === null || v === undefined ? "" : String(v)); };
+            
             // Add update history section if there are updates
             if (updateHistory && updateHistory.length > 0) {
                 // Filter out updates with undefined/null values
@@ -652,8 +656,8 @@
                     recentUpdates.forEach(function(update) {
                         var dateStr = update.date ? new Date(update.date).toLocaleDateString() : 'Recently';
                         html += '<div class="fra-update-history-item">';
-                        html += '<span class="fra-old-value">' + update.from + '</span> → <strong>' + update.to + '</strong>';
-                        html += ' <span class="fra-update-date">(' + dateStr + ')</span>';
+                        html += '<span class="fra-old-value">' + escStr(update.from) + '</span> → <strong>' + escStr(update.to) + '</strong>';
+                        html += ' <span class="fra-update-date">(' + escStr(dateStr) + ')</span>';
                         html += '</div>';
                     });
                     html += '</div>';
@@ -662,7 +666,11 @@
             
             if (sources && sources.length > 0) {
                 html += '<div class="fra-sources"><span class="fra-sources-label">Sources</span>';
-                sources.forEach(function(src) { html += '<a href="' + src.url + '" target="_blank">' + src.name + '</a>'; });
+                sources.forEach(function(src) {
+                    var url = src && src.url ? String(src.url) : "";
+                    if (!/^https?:\/\//i.test(url)) url = "#";
+                    html += '<a href="' + escStr(url) + '" target="_blank" rel="noopener noreferrer">' + escStr(src && src.name) + '</a>';
+                });
                 html += '</div>';
             }
             html += '</div>';

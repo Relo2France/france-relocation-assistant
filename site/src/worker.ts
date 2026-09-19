@@ -22,7 +22,9 @@ const WORDPRESS_PATHS = [
   '/register',
   '/thank-you',
   '/my-travel-status',
-  '/travel-status-test',
+  // MemberPress payment gateways post their webhooks here
+  // (/mepr/notify/<gateway>/whk). Miss it and Stripe events never arrive.
+  '/mepr',
   '/wp-admin',
   // WordPress.com concatenates CSS and JS into /_static/??... bundles. Miss
   // this and every proxied page loads with no styles: the theme, MemberPress
@@ -33,6 +35,10 @@ const WORDPRESS_PATHS = [
   '/wp-includes',
   '/wp-json',
   '/wp-login.php',
+  '/wp-signup.php',
+  '/wp-activate.php',
+  '/wp-comments-post.php',
+  '/index.php',
   '/wp-cron.php',
   '/xmlrpc.php',
   '/feed',
@@ -40,7 +46,7 @@ const WORDPRESS_PATHS = [
 
 export function isWordPressPath(pathname: string): boolean {
   return WORDPRESS_PATHS.some(
-    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`) || pathname.startsWith(`${prefix}?`)
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
   );
 }
 
@@ -99,7 +105,16 @@ async function proxy(request: Request, origin: string, resolveOverride?: string)
   };
   if (resolveOverride) init.cf = { resolveOverride };
 
-  const upstream = await fetch(target.toString(), init);
+  let upstream: Response;
+  try {
+    upstream = await fetch(target.toString(), init);
+  } catch {
+    // Origin down or unreachable: a plain 502 rather than Cloudflare's 1101.
+    return new Response('The member area is briefly unavailable. Please try again in a minute.', {
+      status: 502,
+      headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store' },
+    });
+  }
 
   // Rewrite redirects that point back at the origin so the browser stays on
   // this host - otherwise signing in bounces the user off the new domain.
@@ -111,9 +126,57 @@ async function proxy(request: Request, origin: string, resolveOverride?: string)
   return response;
 }
 
+/**
+ * Headers every response carries, static or proxied, unless the origin
+ * already set its own. No full Content-Security-Policy yet: WordPress and
+ * MemberPress load scripts from several hosts, so only frame-ancestors is
+ * enforced (no other site may frame our pages; clickjacking).
+ */
+const SECURITY_HEADERS: [string, string][] = [
+  ['Strict-Transport-Security', 'max-age=31536000'],
+  ['X-Content-Type-Options', 'nosniff'],
+  ['X-Frame-Options', 'SAMEORIGIN'],
+  ['Content-Security-Policy', "frame-ancestors 'self'"],
+  ['Referrer-Policy', 'strict-origin-when-cross-origin'],
+  ['Permissions-Policy', 'camera=(), microphone=(), usb=(), interest-cohort=()'],
+];
+
+export function withSecurityHeaders(response: Response): Response {
+  const secured = new Response(response.body, response);
+  for (const [name, value] of SECURITY_HEADERS) {
+    if (!secured.headers.has(name)) secured.headers.set(name, value);
+  }
+  return secured;
+}
+
+/**
+ * Files in the plugin folder that are for building the portal, not for
+ * serving: its source, the demo with invented data, package manifests.
+ */
+export function isPrivateBuildPath(pathname: string): boolean {
+  return /^\/wp-content\/plugins\/[^/]+\/portal\/(src|demo|node_modules)(\/|$)/.test(pathname)
+    || /^\/wp-content\/plugins\/[^/]+\/portal\/(package(-lock)?\.json|tsconfig[^/]*\.json|vite[^/]*\.ts|\.eslintrc\.cjs)$/.test(pathname);
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
+    return withSecurityHeaders(await route(request, env));
+  },
+};
+
+async function route(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
+
+    // Never serve anything over plain HTTP: the sign-in and checkout pages
+    // would travel in cleartext. Localhost is left alone for development.
+    if (url.protocol === 'http:' && url.hostname !== 'localhost' && url.hostname !== '127.0.0.1') {
+      url.protocol = 'https:';
+      return Response.redirect(url.toString(), 301);
+    }
+
+    if (isPrivateBuildPath(url.pathname)) {
+      return new Response('Not found', { status: 404 });
+    }
 
     const redirect = legacyRedirect(url.pathname);
     if (redirect) {
@@ -129,5 +192,4 @@ export default {
     }
 
     return env.ASSETS.fetch(request);
-  },
-};
+}

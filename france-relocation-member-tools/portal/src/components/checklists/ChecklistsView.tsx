@@ -204,6 +204,7 @@ export default function ChecklistsView() {
               <select
                 value={sortType}
                 onChange={(e) => setSortType(e.target.value as SortType)}
+                aria-label="Sort items"
                 className="select text-sm py-1.5"
               >
                 <option value="default">Default Order</option>

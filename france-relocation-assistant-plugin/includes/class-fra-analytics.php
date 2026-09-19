@@ -103,7 +103,8 @@ class FRA_Analytics {
      */
     private function save_data($data) {
         $data['last_updated'] = current_time('mysql');
-        update_option($this->option_name, $data);
+        // Not autoloaded: nothing on a normal page load needs these counts.
+        update_option($this->option_name, $data, false);
     }
     
     /**
@@ -165,10 +166,23 @@ class FRA_Analytics {
      * @param string $topic
      */
     public function track_topic_click($category, $topic) {
+        // Only topics that exist in the knowledge base are counted; anything
+        // else would let a visitor grow this option without limit.
+        $kb = get_option('fra_knowledge_base');
+        if (!is_array($kb) || !isset($kb[$category]) || !is_array($kb[$category]) || !isset($kb[$category][$topic])) {
+            return;
+        }
+
         $data = $this->get_data();
         $key = $category . ':' . $topic;
+        if (!is_array($data['topic_clicks'])) {
+            $data['topic_clicks'] = array();
+        }
         
         if (!isset($data['topic_clicks'][$key])) {
+            if (count($data['topic_clicks']) >= 1000) {
+                return;
+            }
             $data['topic_clicks'][$key] = 0;
         }
         $data['topic_clicks'][$key]++;
@@ -210,8 +224,8 @@ class FRA_Analytics {
                 break;
                 
             case 'topic_click':
-                $category = isset($_POST['category']) ? sanitize_text_field($_POST['category']) : '';
-                $topic = isset($_POST['topic']) ? sanitize_text_field($_POST['topic']) : '';
+                $category = isset($_POST['category']) ? sanitize_text_field(wp_unslash($_POST['category'])) : '';
+                $topic = isset($_POST['topic']) ? sanitize_text_field(wp_unslash($_POST['topic'])) : '';
                 if ($category && $topic) {
                     $this->track_topic_click($category, $topic);
                 }

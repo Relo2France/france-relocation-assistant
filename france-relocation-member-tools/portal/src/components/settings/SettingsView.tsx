@@ -293,13 +293,13 @@ function PortalAccountSection() {
           <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
             <div>
               <h3 className="font-medium text-gray-900">Password</h3>
-              <p className="text-sm text-gray-500">Last changed: Unknown</p>
+              <p className="text-sm text-gray-500">You can also sign in with a link sent to your email.</p>
             </div>
             <a
-              href={`${window.fraPortalData?.siteUrl || ''}/wp-admin/profile.php`}
+              href={`${window.fraPortalData?.siteUrl || ''}/account/?action=newpassword`}
               className="btn btn-secondary text-sm"
             >
-              Change Password
+              Change password
             </a>
           </div>
         </div>
@@ -307,7 +307,7 @@ function PortalAccountSection() {
 
       {/* Danger zone */}
       <div className="card p-6 border-red-200">
-        <h2 className="text-lg font-semibold text-red-600 mb-4">Danger Zone</h2>
+        <h2 className="text-lg font-semibold text-red-600 mb-4">Start over or close your account</h2>
 
         {/* Reset Profile Section */}
         <div className="p-4 bg-amber-50 rounded-lg mb-4">
@@ -416,6 +416,9 @@ function PortalAccountSection() {
               <h3 className="font-medium text-gray-900">Delete Account</h3>
               <p className="text-sm text-gray-600 mt-1">
                 Once you delete your account, there is no going back. All your data, documents, tasks, and profile information will be permanently removed.
+              </p>
+              <p className="text-sm text-gray-600 mt-2">
+                Want your money back? Deleting does not refund you. Within 30 days of buying, ask from Support and we refund the full amount. Download any files you want to keep from Documents first.
               </p>
 
               {!showDeleteConfirm ? (

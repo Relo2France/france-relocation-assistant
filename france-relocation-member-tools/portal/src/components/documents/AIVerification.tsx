@@ -234,8 +234,9 @@ export default function AIVerification({
             <button
               onClick={handleReset}
               className="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+              aria-label="Close verification"
             >
-              <X className="w-4 h-4" />
+              <X className="w-4 h-4" aria-hidden="true" />
             </button>
           </div>
         </div>

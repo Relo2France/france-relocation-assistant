@@ -365,6 +365,7 @@ function ChatSidebar({
             <input
               type="text"
               placeholder="Search topics..."
+              aria-label="Search topics"
               value={topicSearch}
               onChange={(e) => setTopicSearch(e.target.value)}
               className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"

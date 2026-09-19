@@ -821,15 +821,26 @@ export function useTravelStatusSettings() {
   });
 }
 
+/** Everything computed from the trip list, refreshed whenever a trip changes. */
+function invalidateTripViews(queryClient: ReturnType<typeof useQueryClient>) {
+  for (const queryKey of [
+    queryKeys.travelStatusTrips,
+    queryKeys.travelStatusSummary,
+    ['multiJurisdictionSummary'],
+    ['complianceOverview'],
+    ['travelStatusAnalytics'],
+    ['travelStatusFamilySummary'],
+  ]) {
+    queryClient.invalidateQueries({ queryKey });
+  }
+}
+
 export function useCreateTravelStatusTrip() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: travelStatusApi.createTrip,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.travelStatusTrips });
-      queryClient.invalidateQueries({ queryKey: queryKeys.travelStatusSummary });
-    },
+    onSuccess: () => invalidateTripViews(queryClient),
   });
 }
 
@@ -839,10 +850,7 @@ export function useUpdateTravelStatusTrip() {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<TravelStatusTrip> }) =>
       travelStatusApi.updateTrip(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.travelStatusTrips });
-      queryClient.invalidateQueries({ queryKey: queryKeys.travelStatusSummary });
-    },
+    onSuccess: () => invalidateTripViews(queryClient),
   });
 }
 
@@ -851,10 +859,7 @@ export function useDeleteTravelStatusTrip() {
 
   return useMutation({
     mutationFn: travelStatusApi.deleteTrip,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.travelStatusTrips });
-      queryClient.invalidateQueries({ queryKey: queryKeys.travelStatusSummary });
-    },
+    onSuccess: () => invalidateTripViews(queryClient),
   });
 }
 

@@ -48,6 +48,9 @@
                     <ul>
                         <li><a href="<?php echo esc_url(home_url('/about/')); ?>"><?php esc_html_e('About', 'relo2france'); ?></a></li>
                         <li><a href="<?php echo esc_url(home_url('/portal/')); ?>"><?php esc_html_e('Member portal', 'relo2france'); ?></a></li>
+                        <li><a href="<?php echo esc_url(home_url('/terms/')); ?>"><?php esc_html_e('Terms', 'relo2france'); ?></a></li>
+                        <li><a href="<?php echo esc_url(home_url('/privacy/')); ?>"><?php esc_html_e('Privacy', 'relo2france'); ?></a></li>
+                        <li><a href="<?php echo esc_url(home_url('/refund-policy/')); ?>"><?php esc_html_e('Refund policy', 'relo2france'); ?></a></li>
                     </ul>
                 </div>
             </div>

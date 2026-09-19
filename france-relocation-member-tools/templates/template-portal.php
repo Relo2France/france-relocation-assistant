@@ -32,9 +32,10 @@ if ( $is_logged_in && ! empty( $_GET['accept_household'] ) ) {
     exit;
 }
 
-// Check for membership (optional - can be configured) - only if logged in
-$require_membership = get_option( 'framt_portal_require_membership', false );
-if ( $is_logged_in && $require_membership && class_exists( 'MeprUser' ) ) {
+// A signed-in visitor without a membership goes to pricing: the portal's
+// API answers only members (check_member_permission), so the portal would
+// otherwise open onto a page of errors. Admins always get in.
+if ( $is_logged_in && class_exists( 'MeprUser' ) && ! current_user_can( 'manage_options' ) && ! get_option( 'framt_enable_demo_mode', false ) ) {
     // A partner invited from the Family plan is covered by the owner's membership.
     $household_owner = (int) get_user_meta( $current_user->ID, 'framt_household_owner', true );
     $mepr_user       = new MeprUser( $household_owner > 0 ? $household_owner : $current_user->ID );
@@ -45,7 +46,7 @@ if ( $is_logged_in && $require_membership && class_exists( 'MeprUser' ) ) {
     $active   = array_diff( $active, array( $addon_id ) );
     if ( empty( $active ) ) {
         // Redirect to membership page
-        $membership_url = get_option( 'fra_membership_url', '/membership/' );
+        $membership_url = get_option( 'fra_membership_url', '/pricing/' );
         wp_redirect( home_url( $membership_url ) );
         exit;
     }
@@ -642,7 +643,7 @@ $react_settings = array(
                             <input type="checkbox" name="remember" value="1">
                             <span>Remember me</span>
                         </label>
-                        <a href="<?php echo esc_url( wp_lostpassword_url( get_permalink() ) ); ?>" class="portal-forgot-password">Forgot password?</a>
+                        <a href="<?php echo esc_url( class_exists( 'FRAMT_Magic_Link' ) ? '#r2f-magic-email' : wp_lostpassword_url( get_permalink() ) ); ?>" class="portal-forgot-password" <?php echo class_exists( 'FRAMT_Magic_Link' ) ? 'onclick="var f=document.getElementById(\'r2f-magic-email\');if(f){f.focus();}"' : ''; ?>>Forgot password? Email me a link</a>
                     </div>
 
                     <button type="submit" class="portal-login-button" id="portal-login-submit">
@@ -664,15 +665,17 @@ $react_settings = array(
                 <?php endif; ?>
 
                 <?php
-                // Check if registration is enabled
-                $registration_enabled = get_option( 'users_can_register' );
-                $registration_url = wp_registration_url();
+                // Anyone sent here from the Family add-on checkout needs a
+                // membership first; say so rather than just asking them to sign in.
+                $from_family = isset( $_GET['redirect_to'] ) && false !== strpos( (string) wp_unslash( $_GET['redirect_to'] ), 'family-add-on' ); // phpcs:ignore WordPress.Security.NonceVerification
                 ?>
-                <?php if ( $registration_enabled ) : ?>
-                    <p class="portal-register-link">
-                        Don't have an account? <a href="<?php echo esc_url( $registration_url ); ?>">Create one</a>
-                    </p>
-                <?php endif; ?>
+                <p class="portal-register-link">
+                    <?php if ( $from_family ) : ?>
+                        The Family add-on is added to a membership. New here? <a href="<?php echo esc_url( home_url( '/register/lifetime-membership/' ) ); ?>">Join first</a>, then add family from your portal.
+                    <?php else : ?>
+                        New here? <a href="<?php echo esc_url( home_url( '/pricing/' ) ); ?>">See membership</a>
+                    <?php endif; ?>
+                </p>
             </div>
         </div>
 

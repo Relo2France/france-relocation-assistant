@@ -70,7 +70,7 @@ export const VISA_TYPES = [
   { value: 'student', label: 'Student Visa', description: 'Studying at a French institution' },
   { value: 'family', label: 'Family Reunification', description: 'Joining family members in France' },
   { value: 'spouse_french', label: 'Spouse of French Citizen', description: 'Married to a French national' },
-  { value: 'retiree', label: 'Retiree Visa', description: 'Retiring in France' },
+  { value: 'retiree', label: 'Visitor Visa, retiring', description: 'France has no separate retiree visa: retirees use the visitor visa' },
   { value: 'other', label: 'Another long-stay route', description: 'Intern, temporary worker, ICT, au pair or another category' },
 ] as const;
 

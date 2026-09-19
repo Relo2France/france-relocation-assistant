@@ -321,6 +321,10 @@ class FRAMT_Documents {
 
         $body = is_array($content) ? wp_json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) : (string) $content;
         $is_html = !is_array($content) && false !== strpos($body, '<');
+        if ($is_html) {
+            // Letters are ordinary markup; scripts, handlers and frames are not.
+            $body = wp_kses_post($body);
+        }
         $ext = is_array($content) ? 'json' : ($is_html ? 'html' : 'txt');
         $mime = is_array($content) ? 'application/json' : ($is_html ? 'text/html' : 'text/plain');
 
@@ -328,11 +332,17 @@ class FRAMT_Documents {
         $portal_dir = $upload_dir['basedir'] . '/fra-portal/' . (int) $user_id;
         if (!file_exists($portal_dir)) {
             wp_mkdir_p($portal_dir);
+        }
+        if (!file_exists($portal_dir . '/.htaccess')) {
             file_put_contents($portal_dir . '/.htaccess', "deny from all\n");
+        }
+        if (!file_exists($portal_dir . '/index.php')) {
             file_put_contents($portal_dir . '/index.php', '<?php // Silence is golden');
         }
 
-        $filename = 'generated-' . sanitize_key($type) . '-' . gmdate('Ymd-His') . '.' . $ext;
+        // Random stored name: on hosts that ignore .htaccess a guessable,
+        // date-stamped name would serve the letter to anyone.
+        $filename = wp_generate_password(24, false, false) . '.' . $ext;
         $filepath = $portal_dir . '/' . $filename;
         if (false === file_put_contents($filepath, $body)) {
             return 0;
@@ -781,7 +791,17 @@ class FRAMT_Documents {
         if (!is_user_logged_in()) {
             wp_send_json_error('Login required');
         }
-        $data = $_POST['document'] ?? array();
+        $data = isset($_POST['document']) && is_array($_POST['document']) ? wp_unslash($_POST['document']) : array();
+        if (empty($data['type']) || !isset($data['title'])) {
+            wp_send_json_error('Save failed');
+        }
+        // Whatever the browser sent is stored and later written to the file
+        // vault, so strip anything beyond ordinary post markup first.
+        $data['title'] = sanitize_text_field((string) $data['title']);
+        $data['content'] = isset($data['content'])
+            ? (is_array($data['content']) ? map_deep($data['content'], 'wp_kses_post') : wp_kses_post((string) $data['content']))
+            : '';
+        $data['meta'] = isset($data['meta']) && is_array($data['meta']) ? map_deep($data['meta'], 'sanitize_text_field') : array();
         $id = $this->save_document($data, get_current_user_id());
         $id ? wp_send_json_success(array('id' => $id)) : wp_send_json_error('Save failed');
     }

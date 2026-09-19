@@ -14,6 +14,7 @@ import { AlertTriangle, Calendar, Check, CheckCircle2, Circle } from 'lucide-rea
 import Jargon from '@/components/shared/Jargon';
 import Modal from '@/components/shared/Modal';
 import ProfessionalsCard from '@/components/shared/ProfessionalsCard';
+import TaskDetail from '@/components/tasks/TaskDetail';
 import { useChecklist, useDashboard, useFamilyMembers, useMemberProfile, useTasks, useUpdateProject } from '@/hooks/useApi';
 import { JOURNEY, currentStage, progressFor, stageById, stageForTask, stageWhen, timeToGo } from '@/journey/journey';
 import { walkthroughFor } from '@/journey/walkthrough';
@@ -32,7 +33,9 @@ function dueLabel(task: Task): string {
 
 export default function Dashboard() {
   const { data, isLoading, error } = useDashboard();
-  const { setActiveView, setActiveStage, setTaskFilters, setOpenTaskId } = usePortalStore();
+  const { setActiveView, setActiveStage } = usePortalStore();
+  // The step opens over the home page, so closing it leaves you where you were.
+  const [openStepId, setOpenStepId] = useState<number | null>(null);
   const [showMoveDateModal, setShowMoveDateModal] = useState(false);
   const [newMoveDate, setNewMoveDate] = useState('');
   const updateProject = useUpdateProject();
@@ -108,7 +111,8 @@ export default function Dashboard() {
 
   const openStage = (id: string) => { setActiveStage(id); setActiveView('stage'); };
   // Opens the step itself in the drawer, not just the list it lives in.
-  const openTask = (task: Task) => { setTaskFilters({ stage: stageForTask(task, project), status: null, taskType: null }); setOpenTaskId(task.id); setActiveView('tasks'); };
+  const openTask = (task: Task) => setOpenStepId(task.id);
+  const openStep = openStepId === null ? null : all.find((t) => t.id === openStepId) ?? null;
 
   return (
     <div className="flex flex-col">
@@ -335,6 +339,8 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      <TaskDetail task={openStep} isOpen={openStep !== null} onClose={() => setOpenStepId(null)} />
 
       {(data.professionals ?? []).some((p) => p.stage === nowId) ? (
         <div className="px-6 md:px-8 pb-6">

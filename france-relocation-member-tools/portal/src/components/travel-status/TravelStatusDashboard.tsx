@@ -60,6 +60,14 @@ import { useTravelStatusStore } from './useTravelStatusStore';
 /** Turn on when the Schengen tracker launches as its own app. */
 const CHECK_IN_PROMPTS = false;
 
+/**
+ * The family, analytics, jurisdiction, calendar-sync, location, notification,
+ * suggestion and CSV features call routes served by the standalone tracker
+ * plugin, which is not active while the tracker is "coming soon". Showing
+ * them would show errors. Turn on together with that plugin.
+ */
+const FULL_TRACKER = false;
+
 type ViewTab = 'trips' | 'family' | 'analytics' | 'jurisdictions' | 'calendar' | 'sync' | 'planning' | 'location' | 'settings';
 
 export default function TravelStatusDashboard() {
@@ -170,7 +178,7 @@ export default function TravelStatusDashboard() {
         </div>
         <div className="flex flex-wrap items-center gap-3">
           {/* Notification Center */}
-          <NotificationCenter />
+          {FULL_TRACKER && <NotificationCenter />}
 
           {/* Help button to reopen onboarding */}
           <button
@@ -402,50 +410,56 @@ export default function TravelStatusDashboard() {
               Trip List
             </span>
           </button>
-          <button
-            onClick={() => setActiveTab('family')}
-            className={clsx(
-              'pb-3 px-1 border-b-2 font-medium text-sm transition-colors',
-              activeTab === 'family'
-                ? 'border-primary-600 text-primary-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            )}
-          >
-            <span className="flex items-center gap-2">
-              <Users className="w-4 h-4" aria-hidden="true" />
-              Family
-              {!isPremium && <Lock className="w-3 h-3 text-gray-400" aria-hidden="true" />}
-            </span>
-          </button>
-          <button
-            onClick={() => setActiveTab('analytics')}
-            className={clsx(
-              'pb-3 px-1 border-b-2 font-medium text-sm transition-colors',
-              activeTab === 'analytics'
-                ? 'border-primary-600 text-primary-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            )}
-          >
-            <span className="flex items-center gap-2">
-              <BarChart3 className="w-4 h-4" aria-hidden="true" />
-              Analytics
-              {!isPremium && <Lock className="w-3 h-3 text-gray-400" aria-hidden="true" />}
-            </span>
-          </button>
-          <button
-            onClick={() => setActiveTab('jurisdictions')}
-            className={clsx(
-              'pb-3 px-1 border-b-2 font-medium text-sm transition-colors',
-              activeTab === 'jurisdictions'
-                ? 'border-primary-600 text-primary-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            )}
-          >
-            <span className="flex items-center gap-2">
-              <Globe className="w-4 h-4" aria-hidden="true" />
-              Jurisdictions
-            </span>
-          </button>
+          {FULL_TRACKER && (
+            <button
+              onClick={() => setActiveTab('family')}
+              className={clsx(
+                'pb-3 px-1 border-b-2 font-medium text-sm transition-colors',
+                activeTab === 'family'
+                  ? 'border-primary-600 text-primary-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              )}
+            >
+              <span className="flex items-center gap-2">
+                <Users className="w-4 h-4" aria-hidden="true" />
+                Family
+                {!isPremium && <Lock className="w-3 h-3 text-gray-400" aria-hidden="true" />}
+              </span>
+            </button>
+          )}
+          {FULL_TRACKER && (
+            <button
+              onClick={() => setActiveTab('analytics')}
+              className={clsx(
+                'pb-3 px-1 border-b-2 font-medium text-sm transition-colors',
+                activeTab === 'analytics'
+                  ? 'border-primary-600 text-primary-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              )}
+            >
+              <span className="flex items-center gap-2">
+                <BarChart3 className="w-4 h-4" aria-hidden="true" />
+                Analytics
+                {!isPremium && <Lock className="w-3 h-3 text-gray-400" aria-hidden="true" />}
+              </span>
+            </button>
+          )}
+          {FULL_TRACKER && (
+            <button
+              onClick={() => setActiveTab('jurisdictions')}
+              className={clsx(
+                'pb-3 px-1 border-b-2 font-medium text-sm transition-colors',
+                activeTab === 'jurisdictions'
+                  ? 'border-primary-600 text-primary-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              )}
+            >
+              <span className="flex items-center gap-2">
+                <Globe className="w-4 h-4" aria-hidden="true" />
+                Jurisdictions
+              </span>
+            </button>
+          )}
           <button
             onClick={() => setActiveTab('calendar')}
             className={clsx(
@@ -461,20 +475,22 @@ export default function TravelStatusDashboard() {
               {!isPremium && <Lock className="w-3 h-3 text-gray-400" aria-hidden="true" />}
             </span>
           </button>
-          <button
-            onClick={() => setActiveTab('sync')}
-            className={clsx(
-              'pb-3 px-1 border-b-2 font-medium text-sm transition-colors',
-              activeTab === 'sync'
-                ? 'border-primary-600 text-primary-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            )}
-          >
-            <span className="flex items-center gap-2">
-              <CalendarPlus className="w-4 h-4" aria-hidden="true" />
-              Calendar Sync
-            </span>
-          </button>
+          {FULL_TRACKER && (
+            <button
+              onClick={() => setActiveTab('sync')}
+              className={clsx(
+                'pb-3 px-1 border-b-2 font-medium text-sm transition-colors',
+                activeTab === 'sync'
+                  ? 'border-primary-600 text-primary-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              )}
+            >
+              <span className="flex items-center gap-2">
+                <CalendarPlus className="w-4 h-4" aria-hidden="true" />
+                Calendar Sync
+              </span>
+            </button>
+          )}
           <button
             onClick={() => setActiveTab('planning')}
             className={clsx(
@@ -490,20 +506,22 @@ export default function TravelStatusDashboard() {
               {!isPremium && <Lock className="w-3 h-3 text-gray-400" aria-hidden="true" />}
             </span>
           </button>
-          <button
-            onClick={() => setActiveTab('location')}
-            className={clsx(
-              'pb-3 px-1 border-b-2 font-medium text-sm transition-colors',
-              activeTab === 'location'
-                ? 'border-primary-600 text-primary-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            )}
-          >
-            <span className="flex items-center gap-2">
-              <MapPin className="w-4 h-4" aria-hidden="true" />
-              Location
-            </span>
-          </button>
+          {FULL_TRACKER && (
+            <button
+              onClick={() => setActiveTab('location')}
+              className={clsx(
+                'pb-3 px-1 border-b-2 font-medium text-sm transition-colors',
+                activeTab === 'location'
+                  ? 'border-primary-600 text-primary-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              )}
+            >
+              <span className="flex items-center gap-2">
+                <MapPin className="w-4 h-4" aria-hidden="true" />
+                Location
+              </span>
+            </button>
+          )}
           <button
             onClick={() => setActiveTab('settings')}
             className={clsx(
@@ -537,7 +555,7 @@ export default function TravelStatusDashboard() {
         </div>
       )}
 
-      {activeTab === 'family' && (
+      {FULL_TRACKER && activeTab === 'family' && (
         isPremium ? (
           <ErrorBoundary>
             <FamilyManager />
@@ -551,7 +569,7 @@ export default function TravelStatusDashboard() {
         )
       )}
 
-      {activeTab === 'analytics' && (
+      {FULL_TRACKER && activeTab === 'analytics' && (
         isPremium ? (
           <ErrorBoundary>
             <AnalyticsDashboard />
@@ -565,7 +583,7 @@ export default function TravelStatusDashboard() {
         )
       )}
 
-      {activeTab === 'jurisdictions' && (
+      {FULL_TRACKER && activeTab === 'jurisdictions' && (
         <div className="card p-6">
           <JurisdictionOverview />
         </div>
@@ -587,7 +605,7 @@ export default function TravelStatusDashboard() {
         )
       )}
 
-      {activeTab === 'sync' && (
+      {FULL_TRACKER && activeTab === 'sync' && (
         <ErrorBoundary>
           <CalendarSync />
         </ErrorBoundary>
@@ -597,7 +615,7 @@ export default function TravelStatusDashboard() {
         isPremium ? (
           <div className="space-y-6">
             {/* AI Suggestions Panel */}
-            <AISuggestions />
+            {FULL_TRACKER && <AISuggestions />}
 
             {/* Planning Tool */}
             <div className="card p-6">
@@ -613,7 +631,7 @@ export default function TravelStatusDashboard() {
         )
       )}
 
-      {activeTab === 'location' && (
+      {FULL_TRACKER && activeTab === 'location' && (
         <LocationTracker />
       )}
 
@@ -755,7 +773,7 @@ export default function TravelStatusDashboard() {
           </div>
 
           {/* CSV Import/Export Section */}
-          {featureStatus?.isPremium && (
+          {FULL_TRACKER && featureStatus?.isPremium && (
             <div className="border-t border-gray-200 pt-6">
               <h4 className="font-medium text-gray-900 mb-4">Data Import/Export</h4>
               <CSVImportExport />

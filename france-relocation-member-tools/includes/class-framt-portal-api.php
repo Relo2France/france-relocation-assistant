@@ -165,21 +165,16 @@ class FRAMT_Portal_API {
      * @return string Client IP address.
      */
     private function get_client_ip(): string {
+        // Public traffic comes through Cloudflare. X-Forwarded-For and
+        // X-Real-IP are whatever the caller chose to send, so not trusted.
         $ip_keys = array(
             'HTTP_CF_CONNECTING_IP', // Cloudflare
-            'HTTP_X_FORWARDED_FOR',
-            'HTTP_X_REAL_IP',
             'REMOTE_ADDR',
         );
 
         foreach ( $ip_keys as $key ) {
             if ( ! empty( $_SERVER[ $key ] ) ) {
-                $ip = sanitize_text_field( wp_unslash( $_SERVER[ $key ] ) );
-                // Handle comma-separated IPs (X-Forwarded-For)
-                if ( strpos( $ip, ',' ) !== false ) {
-                    $ips = explode( ',', $ip );
-                    $ip  = trim( $ips[0] );
-                }
+                $ip = trim( sanitize_text_field( wp_unslash( $_SERVER[ $key ] ) ) );
                 if ( filter_var( $ip, FILTER_VALIDATE_IP ) ) {
                     return $ip;
                 }
@@ -392,12 +387,12 @@ class FRAMT_Portal_API {
                 array(
                     'methods'             => 'GET',
                     'callback'            => array( $this, 'get_current_user' ),
-                    'permission_callback' => array( $this, 'check_member_permission' ),
+                    'permission_callback' => array( $this, 'check_signed_in_permission' ),
                 ),
                 array(
                     'methods'             => 'PUT',
                     'callback'            => array( $this, 'update_current_user' ),
-                    'permission_callback' => array( $this, 'check_member_permission' ),
+                    'permission_callback' => array( $this, 'check_billing_owner_permission' ),
                 ),
             )
         );
@@ -473,7 +468,7 @@ class FRAMT_Portal_API {
             array(
                 'methods'             => 'POST',
                 'callback'            => array( $this, 'recognise_file' ),
-                'permission_callback' => array( $this, 'check_file_permission' ),
+                'permission_callback' => array( $this, 'check_file_ai_permission' ),
             )
         );
 
@@ -766,7 +761,7 @@ class FRAMT_Portal_API {
             array(
                 'methods'             => 'POST',
                 'callback'            => array( $this, 'draft_letter' ),
-                'permission_callback' => array( $this, 'check_member_permission' ),
+                'permission_callback' => array( $this, 'check_ai_permission' ),
             )
         );
 
@@ -885,7 +880,7 @@ class FRAMT_Portal_API {
             array(
                 'methods'             => 'POST',
                 'callback'            => array( $this, 'generate_ai_guide' ),
-                'permission_callback' => array( $this, 'check_member_permission' ),
+                'permission_callback' => array( $this, 'check_ai_permission' ),
             )
         );
 
@@ -949,7 +944,7 @@ class FRAMT_Portal_API {
             array(
                 'methods'             => 'GET',
                 'callback'            => array( $this, 'get_membership_info' ),
-                'permission_callback' => array( $this, 'check_member_permission' ),
+                'permission_callback' => array( $this, 'check_signed_in_permission' ),
             )
         );
 
@@ -959,7 +954,7 @@ class FRAMT_Portal_API {
             array(
                 'methods'             => 'GET',
                 'callback'            => array( $this, 'get_subscriptions' ),
-                'permission_callback' => array( $this, 'check_member_permission' ),
+                'permission_callback' => array( $this, 'check_signed_in_permission' ),
             )
         );
 
@@ -969,7 +964,7 @@ class FRAMT_Portal_API {
             array(
                 'methods'             => 'GET',
                 'callback'            => array( $this, 'get_payments' ),
-                'permission_callback' => array( $this, 'check_member_permission' ),
+                'permission_callback' => array( $this, 'check_billing_owner_permission' ),
             )
         );
 
@@ -979,7 +974,7 @@ class FRAMT_Portal_API {
             array(
                 'methods'             => 'POST',
                 'callback'            => array( $this, 'cancel_subscription' ),
-                'permission_callback' => array( $this, 'check_member_permission' ),
+                'permission_callback' => array( $this, 'check_billing_owner_permission' ),
             )
         );
 
@@ -989,7 +984,7 @@ class FRAMT_Portal_API {
             array(
                 'methods'             => 'POST',
                 'callback'            => array( $this, 'suspend_subscription' ),
-                'permission_callback' => array( $this, 'check_member_permission' ),
+                'permission_callback' => array( $this, 'check_billing_owner_permission' ),
             )
         );
 
@@ -999,7 +994,7 @@ class FRAMT_Portal_API {
             array(
                 'methods'             => 'POST',
                 'callback'            => array( $this, 'resume_subscription' ),
-                'permission_callback' => array( $this, 'check_member_permission' ),
+                'permission_callback' => array( $this, 'check_billing_owner_permission' ),
             )
         );
 
@@ -1009,7 +1004,7 @@ class FRAMT_Portal_API {
             array(
                 'methods'             => 'GET',
                 'callback'            => array( $this, 'get_upgrade_options' ),
-                'permission_callback' => array( $this, 'check_member_permission' ),
+                'permission_callback' => array( $this, 'check_signed_in_permission' ),
             )
         );
 
@@ -1072,7 +1067,7 @@ class FRAMT_Portal_API {
             array(
                 'methods'             => 'POST',
                 'callback'            => array( $this, 'generate_research_report' ),
-                'permission_callback' => array( $this, 'check_member_permission' ),
+                'permission_callback' => array( $this, 'check_ai_permission' ),
             )
         );
 
@@ -1327,6 +1322,35 @@ class FRAMT_Portal_API {
     }
 
     public function check_member_permission() {
+        $signed_in = $this->check_signed_in_permission();
+        if ( is_wp_error( $signed_in ) ) {
+            return $signed_in;
+        }
+
+        if ( current_user_can( 'manage_options' ) ) {
+            return true;
+        }
+
+        // The household owner's membership covers the owner and an invited
+        // partner (acting_user_id() resolves the partner to the owner).
+        if ( ! $this->household_has_membership() ) {
+            return new WP_Error(
+                'rest_membership_required',
+                'This part of the portal is for members. Choose a membership to carry on, or check your membership in Account.',
+                array( 'status' => 403 )
+            );
+        }
+
+        return true;
+    }
+
+    /**
+     * Signed in, member or not. For the few routes a signed-in person needs
+     * to see their own account state or buy a membership.
+     *
+     * @return true|WP_Error
+     */
+    public function check_signed_in_permission() {
         if ( ! is_user_logged_in() ) {
             return new WP_Error(
                 'rest_not_logged_in',
@@ -1334,13 +1358,116 @@ class FRAMT_Portal_API {
                 array( 'status' => 401 )
             );
         }
-
-        // Check if user has active membership (optional - can be customized)
-        $user_id = $this->acting_user_id();
-
-        // For now, any logged-in user can access the portal
-        // Add MemberPress checks here if needed
         return true;
+    }
+
+    /**
+     * The account holder (or an administrator), whether or not the membership
+     * is active: billing and account changes must work for a lapsed member.
+     *
+     * @return true|WP_Error
+     */
+    public function check_billing_owner_permission() {
+        $signed_in = $this->check_signed_in_permission();
+        if ( is_wp_error( $signed_in ) ) {
+            return $signed_in;
+        }
+        if ( get_current_user_id() !== $this->acting_user_id() && ! current_user_can( 'manage_options' ) ) {
+            return new WP_Error(
+                'rest_forbidden',
+                'Only the account holder can manage the membership, billing and account details. Ask them to make this change.',
+                array( 'status' => 403 )
+            );
+        }
+        return true;
+    }
+
+    /**
+     * Whether the household owner holds an active MemberPress membership.
+     * Mirrors the portal template: the Family add-on alone is not a
+     * membership. Without MemberPress there is nothing to check.
+     *
+     * @return bool
+     */
+    private function household_has_membership() {
+        if ( ! class_exists( 'MeprUser' ) || get_option( 'framt_enable_demo_mode', false ) ) {
+            return true;
+        }
+        $owner = (int) $this->acting_user_id();
+        if ( ! $owner ) {
+            return false;
+        }
+        static $cache = array();
+        if ( isset( $cache[ $owner ] ) ) {
+            return $cache[ $owner ];
+        }
+        $mepr_user = new MeprUser( $owner );
+        $active    = array_map( 'intval', (array) $mepr_user->active_product_subscriptions( 'ids' ) );
+        $addon_id  = (int) get_option( 'framt_family_addon_product_id', 0 );
+        if ( $addon_id ) {
+            $active = array_diff( $active, array( $addon_id ) );
+        }
+        $cache[ $owner ] = ! empty( $active );
+        return $cache[ $owner ];
+    }
+
+    /**
+     * Permission for routes that call the AI: membership plus a per-user
+     * request limit.
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return true|WP_Error
+     */
+    public function check_ai_permission( $request ) {
+        $base = $this->check_member_permission();
+        if ( is_wp_error( $base ) ) {
+            return $base;
+        }
+        if ( current_user_can( 'manage_options' ) ) {
+            return true;
+        }
+        return $this->check_rate_limit( get_current_user_id(), $this->ai_bucket( $request ), 30, HOUR_IN_SECONDS );
+    }
+
+    /**
+     * One rate-limit bucket per AI route, so a busy afternoon on one tool
+     * does not lock the member out of another.
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return string
+     */
+    private function ai_bucket( $request ) {
+        $route = (string) $request->get_route();
+        if ( false !== strpos( $route, '/recognise' ) ) {
+            return 'ai_recognise';
+        }
+        if ( false !== strpos( $route, '/research/' ) ) {
+            return 'ai_report';
+        }
+        if ( false !== strpos( $route, '/letters/' ) ) {
+            return 'ai_letter';
+        }
+        if ( false !== strpos( $route, '/guides/' ) ) {
+            return 'ai_guide';
+        }
+        return 'ai_route';
+    }
+
+    /**
+     * File permission plus the AI request limit, for recognising a file.
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return true|WP_Error
+     */
+    public function check_file_ai_permission( $request ) {
+        $base = $this->check_file_permission( $request );
+        if ( is_wp_error( $base ) ) {
+            return $base;
+        }
+        if ( current_user_can( 'manage_options' ) ) {
+            return true;
+        }
+        return $this->check_rate_limit( get_current_user_id(), 'ai_recognise', 30, HOUR_IN_SECONDS );
     }
 
     /**
@@ -2408,27 +2535,37 @@ class FRAMT_Portal_API {
 
         $uploaded_file = $files['file'];
 
-        // Validate file type
+        // Validate file type. The stored extension comes from the detected
+        // MIME type, never from the client's filename: a name like
+        // "passport.php" with PDF bytes must not land on disk as .php.
         $allowed_types = array(
-            'application/pdf',
-            'image/jpeg',
-            'image/png',
-            'image/gif',
-            'image/webp',
-            'image/heic',
-            'image/heif',
-            'application/msword',
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            'application/vnd.ms-excel',
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'text/plain',
+            'application/pdf' => 'pdf',
+            'image/jpeg'      => 'jpg',
+            'image/png'       => 'png',
+            'image/gif'       => 'gif',
+            'image/webp'      => 'webp',
+            'image/heic'      => 'heic',
+            'image/heif'      => 'heic',
+            'application/msword' => 'doc',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => 'docx',
+            'application/vnd.ms-excel' => 'xls',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' => 'xlsx',
+            'text/plain'      => 'txt',
         );
+
+        if ( empty( $uploaded_file['tmp_name'] ) || ! is_uploaded_file( $uploaded_file['tmp_name'] ) ) {
+            return new WP_Error(
+                'rest_no_file',
+                'No file was uploaded.',
+                array( 'status' => 400 )
+            );
+        }
 
         $finfo     = finfo_open( FILEINFO_MIME_TYPE );
         $mime_type = finfo_file( $finfo, $uploaded_file['tmp_name'] );
         finfo_close( $finfo );
 
-        if ( ! in_array( $mime_type, $allowed_types, true ) ) {
+        if ( ! is_string( $mime_type ) || ! isset( $allowed_types[ $mime_type ] ) ) {
             return new WP_Error(
                 'rest_invalid_file_type',
                 'This file type is not allowed.',
@@ -2455,12 +2592,12 @@ class FRAMT_Portal_API {
             file_put_contents( $portal_dir . '/.htaccess', 'deny from all' );
         }
 
-        // Generate unique filename
-        $ext      = pathinfo( $uploaded_file['name'], PATHINFO_EXTENSION );
+        // Generate unique filename. Extension fixed by the detected type.
+        $ext      = $allowed_types[ $mime_type ];
         // Stored under a random name: the uploads folder is public on hosts
         // that ignore .htaccess, and a guessable name would serve the file
         // to anyone. The member never sees this name; original_name does.
-        $filename = wp_generate_password( 24, false, false ) . '.' . strtolower( $ext );
+        $filename = wp_generate_password( 24, false, false ) . '.' . $ext;
         $filepath = $portal_dir . '/' . $filename;
 
         // Move file
@@ -2649,11 +2786,22 @@ class FRAMT_Portal_API {
             exit( 'File not found on the server.' );
         }
         $mime = $file->mime_type ?: ( function_exists( 'mime_content_type' ) ? mime_content_type( $file->file_path ) : 'application/octet-stream' );
+        $mime = strtolower( trim( (string) $mime ) );
+        // Markup and SVG run script when a browser renders them on this
+        // origin, so they are only ever handed over as a download.
+        $active_types = array( 'text/html', 'application/xhtml+xml', 'image/svg+xml', 'text/xml', 'application/xml' );
+        $is_active    = in_array( strtok( $mime, ';' ), $active_types, true );
+        $disposition  = ( 'download' === $mode || $is_active ) ? 'attachment' : 'inline';
         nocache_headers();
         header( 'Content-Type: ' . $mime );
         header( 'Content-Length: ' . filesize( $file->file_path ) );
         header( 'X-Content-Type-Options: nosniff' );
-        header( 'Content-Disposition: ' . ( 'download' === $mode ? 'attachment' : 'inline' ) . '; filename="' . rawurlencode( $file->original_name ) . '"' );
+        if ( $is_active ) {
+            // Only on markup: Chrome will not render a PDF preview under a
+            // sandbox policy, and PDFs and images cannot run script anyway.
+            header( 'Content-Security-Policy: sandbox' );
+        }
+        header( 'Content-Disposition: ' . $disposition . '; filename="' . rawurlencode( $file->original_name ) . '"' );
         readfile( $file->file_path );
         exit;
     }
@@ -2942,7 +3090,9 @@ class FRAMT_Portal_API {
             'project_id'    => (int) $file->project_id,
             'user_id'       => (int) $file->user_id,
             'task_id'       => $file->task_id ? (int) $file->task_id : null,
-            'filename'      => $file->filename,
+            // The random stored name is internal; the portal only shows the
+            // member's own name for the file.
+            'filename'      => $file->original_name,
             'original_name' => $file->original_name,
             'file_type'     => $file->file_type,
             'file_size'     => (int) $file->file_size,
@@ -4761,8 +4911,8 @@ class FRAMT_Portal_API {
 
         $project_id = $request->get_param( 'project_id' );
         $params     = $request->get_json_params();
-        $file_id    = $params['file_id'] ?? 0;
-        $type       = $params['document_type'] ?? '';
+        $file_id    = absint( $params['file_id'] ?? 0 );
+        $type       = sanitize_text_field( (string) ( $params['document_type'] ?? '' ) );
 
         // Get file info
         $table = FRAMT_Portal_Schema::get_table( 'files' );
@@ -4770,6 +4920,12 @@ class FRAMT_Portal_API {
 
         if ( ! $file ) {
             return new WP_Error( 'file_not_found', 'File not found.', array( 'status' => 404 ) );
+        }
+
+        // Same rule as check_file_permission(): the file must belong to the
+        // household, whatever project id is in the URL.
+        if ( (int) $file->user_id !== (int) $this->acting_user_id() && ! current_user_can( 'manage_options' ) ) {
+            return new WP_Error( 'rest_forbidden', 'You do not have permission to access this file.', array( 'status' => 403 ) );
         }
 
         // Perform verification
@@ -7119,6 +7275,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
             )
         );
         delete_user_meta( $user_id, 'framt_schengen_settings' );
+        delete_user_meta( $user_id, 'fra_schengen_settings' );
 
         // Delete activity log
         $wpdb->query(
@@ -9048,9 +9205,12 @@ Focus on practical advice while being careful not to state incorrect facts. When
     public function generate_research_report( $request ) {
         $location_type = sanitize_text_field( $request->get_param( 'location_type' ) );
         $location_code = sanitize_text_field( $request->get_param( 'location_code' ) );
-        $provided_name = sanitize_text_field( $request->get_param( 'location_name' ) );
         $save_to_docs  = (bool) $request->get_param( 'save_to_documents' );
-        $force_regenerate = (bool) $request->get_param( 'force_regenerate' ) || (bool) $request->get_param( 'force_refresh' );
+        // A report is shared by everyone who asks for the same place, so only
+        // an administrator may throw the current copy away. A member's
+        // refresh gets the cached report (or starts one if there is none).
+        $force_regenerate = current_user_can( 'manage_options' )
+            && ( (bool) $request->get_param( 'force_regenerate' ) || (bool) $request->get_param( 'force_refresh' ) );
 
         if ( ! in_array( $location_type, array( 'region', 'department', 'commune' ), true ) ) {
             return new WP_Error(
@@ -9060,15 +9220,25 @@ Focus on practical advice while being careful not to state incorrect facts. When
             );
         }
 
-        // Use provided name if available (for communes loaded from GeoJSON), otherwise look it up
-        $location_name = ! empty( $provided_name ) ? $provided_name : $this->get_location_name( $location_type, $location_code );
-        if ( ! $location_name ) {
+        // The name always comes from the code. The member-supplied
+        // location_name is ignored: it went into the prompt and into a
+        // report every other member would be served.
+        if ( '' === $location_code || ! preg_match( '/^[0-9A-Za-z-]{1,10}$/', $location_code ) ) {
             return new WP_Error(
                 'location_not_found',
-                'Location not found. Please provide a location name.',
+                'We could not find that place. Please choose it from the map or the list.',
                 array( 'status' => 404 )
             );
         }
+        $location_name = $this->get_location_name( $location_type, $location_code );
+        if ( ! $location_name ) {
+            return new WP_Error(
+                'location_not_found',
+                'We could not confirm that place just now. Please try again in a moment.',
+                array( 'status' => 404 )
+            );
+        }
+        $location_name = sanitize_text_field( $location_name );
 
         global $wpdb;
         $table_name = $wpdb->prefix . 'framt_research_reports';
@@ -9139,6 +9309,22 @@ Focus on practical advice while being careful not to state incorrect facts. When
             }
         }
 
+        // Each new report costs a long web-search run. Cached reports above
+        // are free; starting a new one is limited per member per day.
+        $quota_key = '';
+        if ( ! current_user_can( 'manage_options' ) ) {
+            $quota_key = 'framt_report_gen_' . get_current_user_id() . '_' . gmdate( 'Ymd' );
+            $used      = (int) get_transient( $quota_key );
+            if ( $used >= 5 ) {
+                return new WP_Error(
+                    'report_daily_limit',
+                    'You have started five new research reports today, which is the daily limit. Reports you have already opened are still available, and you can start more tomorrow.',
+                    array( 'status' => 429 )
+                );
+            }
+            set_transient( $quota_key, $used + 1, DAY_IN_SECONDS );
+        }
+
         // Generating takes minutes with web search, longer than any request
         // between the browser and this server may stay open. A new row is
         // created now (the previous good copy, if any, is left untouched for
@@ -9161,6 +9347,10 @@ Focus on practical advice while being careful not to state incorrect facts. When
             // The worker could not be reached: say so on the row and to the member.
             $failed = array( 'status' => 'failed', 'error' => $started->get_error_message(), 'failed_at' => current_time( 'mysql' ) );
             $wpdb->update( $table_name, array( 'content' => wp_json_encode( $failed ) ), array( 'id' => $report_id ) );
+            if ( $quota_key ) {
+                // A run that never started does not count against the member.
+                set_transient( $quota_key, max( 0, (int) get_transient( $quota_key ) - 1 ), DAY_IN_SECONDS );
+            }
             return new WP_Error( 'report_worker_unavailable', $started->get_error_message(), array( 'status' => 502 ) );
         }
 
@@ -12052,7 +12242,8 @@ SECTIONS;
      * @return true|WP_Error
      */
     public function check_account_delete_permission() {
-        $base = $this->check_member_permission();
+        // Signed in is enough: a lapsed member can still delete their file.
+        $base = $this->check_signed_in_permission();
         if ( is_wp_error( $base ) ) {
             return $base;
         }

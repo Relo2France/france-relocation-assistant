@@ -34,6 +34,23 @@ class FRA_Auth_Pages {
         if (!empty($this->settings['auth_pages_enabled'])) {
             add_action('wp_head', array($this, 'output_css'), 999);
         }
+
+        // /membership/ no longer exists; a saved setting still pointing
+        // there would send every "become a member" button to a 404.
+        add_filter('option_fra_membership_url', array(__CLASS__, 'retire_membership_url'));
+    }
+
+    /**
+     * Map the retired /membership/ page to /pricing/.
+     *
+     * @param mixed $url Saved URL.
+     * @return mixed
+     */
+    public static function retire_membership_url($url) {
+        if (is_string($url) && preg_match('#^(https?://[^/]+)?/membership/?$#', trim($url))) {
+            return '/pricing/';
+        }
+        return $url;
     }
     
     private function load_settings() {
@@ -516,11 +533,6 @@ class FRA_Auth_Pages {
             margin: 0 0 6px 0 !important;
         }
 
-        .fra-auth-form-wrap .mepr-field-required label::after {
-            content: " *";
-            color: var(--muted, #5f6e66);
-            font-weight: 400;
-        }
 
         .fra-auth-form-wrap input[type="text"],
         .fra-auth-form-wrap input[type="email"],
@@ -1044,12 +1056,24 @@ class FRA_Auth_Pages {
             margin: 0 0 10px 0;
         }
 
-        .fra-auth-form-wrap .mepr-stripe-card-element,
+        /* MemberPress nests the Stripe form in three frames: keep one. */
+        .fra-auth-form-wrap .mepr-payment-method,
+        .fra-auth-form-wrap .mepr-payment-method-desc-text,
+        .fra-auth-form-wrap .mepr-stripe-card-element {
+            border: 0 !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            background: transparent !important;
+            box-shadow: none !important;
+        }
+        /* Stripe draws a light form whatever the page theme, so its frame
+           stays light too; on a dark page its grey labels would vanish. */
         .fra-auth-form-wrap .mepr-stripe-elements {
-            padding: 10px 14px;
-            border: 1px solid var(--rule, #dde3de);
+            padding: 14px;
+            border: 1px solid #dde3de;
             border-radius: var(--radius-sm, 10px);
-            background: var(--card, #ffffff);
+            background: #ffffff;
+            color-scheme: light;
         }
 
         /* Coupon row: quieter than the rest */
@@ -1134,6 +1158,23 @@ class FRA_Auth_Pages {
 
             .fra-auth-form-wrap #mepr-account-nav {
                 gap: 4px 14px;
+            }
+
+            .fra-auth-container.fra-auth-signup {
+                padding: 0 8px;
+            }
+
+            .fra-auth-card.fra-auth-signup-card {
+                padding: 0;
+            }
+
+            .fra-auth-signup-pitch,
+            .fra-auth-signup-form {
+                padding: 24px 16px;
+            }
+
+            .fra-auth-form-wrap .mepr-stripe-elements {
+                padding: 10px;
             }
         }
         </style>
@@ -1296,6 +1337,18 @@ class FRA_Auth_Pages {
                             }
                             ?>
                         </div>
+                        <?php endif; ?>
+                        <?php if (!$already && !empty($atts['membership_id'])) : ?>
+                        <p class="fra-auth-signup-signin">By paying you agree to the <a href="<?php echo esc_url(home_url('/terms/')); ?>">Terms</a> and the <a href="<?php echo esc_url(home_url('/privacy/')); ?>">Privacy notice</a>.</p>
+                        <script>
+                        (function () {
+                            var label = <?php echo wp_json_encode($price_amount ? 'Pay ' . $price_amount . ($is_family ? ' and add family' : ' and create my account') : ''); ?>;
+                            if (!label) return;
+                            document.querySelectorAll('.fra-auth-signup .mepr-submit').forEach(function (b) {
+                                if (b.value === 'Sign Up') b.value = label;
+                            });
+                        })();
+                        </script>
                         <?php endif; ?>
                         <?php if (!$is_family && !$already) : ?>
                         <p class="fra-auth-signup-signin">Already a member? <a href="<?php echo esc_url(home_url('/portal/')); ?>"><strong>Sign in</strong></a></p>

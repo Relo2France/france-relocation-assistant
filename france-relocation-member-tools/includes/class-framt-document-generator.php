@@ -460,6 +460,10 @@ class FRAMT_Document_Generator {
     
     /**
      * AJAX: Download document
+     *
+     * Answers with a link back to admin-ajax that streams the file. Nothing
+     * is written to the public uploads folder, so there is no copy anyone
+     * else could fetch.
      */
     public function ajax_download_document() {
         check_ajax_referer('framt_nonce', 'nonce');
@@ -469,7 +473,7 @@ class FRAMT_Document_Generator {
         }
         
         $document_id = intval($_POST['document_id'] ?? 0);
-        $format = sanitize_key($_POST['format'] ?? 'word');
+        $format = 'pdf' === sanitize_key($_POST['format'] ?? 'word') ? 'pdf' : 'word';
         $user_id = get_current_user_id();
         
         // Get the document
@@ -479,48 +483,60 @@ class FRAMT_Document_Generator {
             wp_send_json_error(__('Document not found.', 'fra-member-tools'));
         }
         
-        // Generate the file
-        $file_url = $this->create_download_file($document, $format);
+        $file_url = add_query_arg(
+            array(
+                'action'      => 'framt_fetch_document',
+                'document_id' => $document_id,
+                'format'      => $format,
+                '_wpnonce'    => wp_create_nonce('framt_fetch_document_' . $document_id),
+            ),
+            admin_url('admin-ajax.php')
+        );
         
-        if ($file_url) {
-            wp_send_json_success(array('url' => $file_url));
+        wp_send_json_success(array('url' => $file_url));
+    }
+
+    /**
+     * AJAX (GET): Stream a generated document to the member who owns it.
+     *
+     * @return void
+     */
+    public function ajax_fetch_document() {
+        $document_id = isset($_GET['document_id']) ? absint($_GET['document_id']) : 0;
+        $nonce = isset($_GET['_wpnonce']) ? sanitize_text_field(wp_unslash($_GET['_wpnonce'])) : '';
+        if (!is_user_logged_in() || !$document_id || !wp_verify_nonce($nonce, 'framt_fetch_document_' . $document_id)) {
+            status_header(403);
+            exit(esc_html__('This link has expired. Open the document from your account again.', 'fra-member-tools'));
         }
-        
-        wp_send_json_error(__('Failed to generate download.', 'fra-member-tools'));
+        $format = 'pdf' === sanitize_key(wp_unslash($_GET['format'] ?? 'word')) ? 'pdf' : 'word';
+        $document = FRAMT_Documents::get_instance()->get_document($document_id, get_current_user_id());
+        if (!$document) {
+            status_header(404);
+            exit(esc_html__('Document not found.', 'fra-member-tools'));
+        }
+
+        $bytes = 'word' === $format
+            ? $this->build_word_bytes($document['content'], $document)
+            : $this->build_pdf_bytes($document['content'], $document);
+        $filename = sanitize_file_name($document['title'] . '-' . gmdate('Y-m-d')) . ('word' === $format ? '.doc' : '.pdf');
+
+        nocache_headers();
+        header('Content-Type: ' . ('word' === $format ? 'application/msword' : 'application/pdf'));
+        header('Content-Length: ' . strlen($bytes));
+        header('X-Content-Type-Options: nosniff');
+        header('Content-Security-Policy: sandbox');
+        header('Content-Disposition: attachment; filename="' . rawurlencode($filename) . '"');
+        echo $bytes; // phpcs:ignore WordPress.Security.EscapeOutput -- file bytes.
+        exit;
     }
     
     /**
-     * Create downloadable file
+     * Build a Word document (HTML that Word can open)
+     *
+     * @return string
      */
-    private function create_download_file($document, $format) {
-        $content = $document['content'];
-        $upload_dir = wp_upload_dir();
-        $doc_dir = $upload_dir['basedir'] . '/framt-documents';
-        
-        // Create directory if needed
-        if (!file_exists($doc_dir)) {
-            wp_mkdir_p($doc_dir);
-            // Add .htaccess to prevent direct access
-            file_put_contents($doc_dir . '/.htaccess', 'deny from all');
-        }
-        
-        $filename = sanitize_file_name($document['title'] . '-' . time());
-        
-        if ($format === 'word') {
-            return $this->create_word_file($content, $document, $doc_dir, $filename);
-        } else {
-            return $this->create_pdf_file($content, $document, $doc_dir, $filename);
-        }
-    }
-    
-    /**
-     * Create Word document (HTML format that Word can open)
-     */
-    private function create_word_file($content, $document, $doc_dir, $filename) {
+    private function build_word_bytes($content, $document) {
         $html = $this->content_to_html($content, $document);
-        
-        // Create HTML file that Word can open
-        $file_path = $doc_dir . '/' . $filename . '.doc';
         
         $word_html = '<!DOCTYPE html>
 <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word">
@@ -537,28 +553,15 @@ p { margin-bottom: 1em; text-align: justify; }
 </head>
 <body>' . $html . '</body></html>';
         
-        file_put_contents($file_path, $word_html);
-        
-        // Create a temporary accessible file
-        $public_dir = $doc_dir . '/temp';
-        if (!file_exists($public_dir)) {
-            wp_mkdir_p($public_dir);
-        }
-        
-        $public_path = $public_dir . '/' . $filename . '.doc';
-        copy($file_path, $public_path);
-        
-        // Schedule cleanup (delete after 1 hour)
-        wp_schedule_single_event(time() + 3600, 'framt_cleanup_temp_file', array($public_path));
-        
-        $upload_dir = wp_upload_dir();
-        return $upload_dir['baseurl'] . '/framt-documents/temp/' . $filename . '.doc';
+        return $word_html;
     }
     
     /**
-     * Create PDF file
+     * Build the PDF bytes
+     *
+     * @return string
      */
-    private function create_pdf_file($content, $document, $doc_dir, $filename) {
+    private function build_pdf_bytes($content, $document) {
         // The multi-page writer; it keeps the old one-page writer's calls.
         if (!class_exists('FRAMT_PDF')) {
             require_once FRAMT_PLUGIN_DIR . 'includes/class-framt-pdf.php';
@@ -643,20 +646,7 @@ p { margin-bottom: 1em; text-align: justify; }
             $pdf->write($content['signature']['date_line']);
         }
         
-        // Save PDF
-        $public_dir = $doc_dir . '/temp';
-        if (!file_exists($public_dir)) {
-            wp_mkdir_p($public_dir);
-        }
-        
-        $file_path = $public_dir . '/' . $filename . '.pdf';
-        $pdf->save($file_path);
-        
-        // Schedule cleanup
-        wp_schedule_single_event(time() + 3600, 'framt_cleanup_temp_file', array($file_path));
-        
-        $upload_dir = wp_upload_dir();
-        return $upload_dir['baseurl'] . '/framt-documents/temp/' . $filename . '.pdf';
+        return $pdf->output();
     }
     
     /**

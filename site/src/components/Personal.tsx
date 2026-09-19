@@ -101,7 +101,7 @@ export function PersonalNext() {
       </div>
 
       <div className="mt-4">
-        <Button href="/portal" full>Open my dossier</Button>
+        <Button href="/portal/" full>Open my dossier</Button>
       </div>
     </div>
   );
