@@ -8,6 +8,8 @@
 
 A Relo2France member opens **Schengen days** in the member portal and sees the tracker immediately. The two things this document exists to get right: **the app reads who the member is and whether their membership is active from Relo2France**, and **it displays inside our portal as if it were part of it**. Every member starts fresh; there is no existing trip data to move.
 
+When a member opens it, the tracker is:
+
 - already signed in, with no login screen, no password and no second account to create;
 - showing their own trips and their household;
 - looking like part of the portal, not a website inside a website;
