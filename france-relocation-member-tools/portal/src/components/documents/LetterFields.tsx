@@ -9,6 +9,7 @@
  */
 import { Plus, Trash2 } from 'lucide-react';
 import type { LetterField, LetterFormContext } from '@/types';
+import { formatDate } from '@/utils/dates';
 
 export interface IncomeRow {
   source: string;
@@ -252,7 +253,7 @@ export function IncomeSummary({ value, form }: { value: string; form: LetterForm
       </p>
       {form.fx ? (
         <p className="text-xs text-gray-500 mt-1">
-          Dollars converted at 1 EUR = {form.fx.rate} USD, the European Central Bank rate of {new Date(`${form.fx.date}T00:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })}.
+          Dollars converted at 1 EUR = {form.fx.rate} USD, the European Central Bank rate of {formatDate(form.fx.date)}.
         </p>
       ) : null}
     </div>

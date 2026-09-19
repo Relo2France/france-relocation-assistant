@@ -111,7 +111,7 @@ class FRAMT_Portal_Settings {
         'label_research'      => 'Explore France',
         'label_files'         => 'Files',
         'label_profile'       => 'Profile',
-        'label_family'        => 'Family plans',
+        'label_family'        => 'Family',
         'label_schengen'      => 'Schengen days',
         'label_membership'    => 'Membership',
         'label_settings'      => 'Settings',
@@ -673,7 +673,7 @@ class FRAMT_Portal_Settings {
         return array(
             'chat'      => array( 'Ask about my case', 'The assistant, answering against the member\'s file and the knowledge base.' ),
             'documents' => array( 'Documents & files', 'The dossier per person, uploads, generated documents and saved reports.' ),
-            'family'    => array( 'Family plans', 'One file per person, the partner sign-in and the $35 add-on offer.' ),
+            'family'    => array( 'Family', 'One file per person, the partner sign-in and the $35 add-on offer.' ),
             'timeline'  => array( 'Deadlines', 'Every dated step counted back from the move.' ),
             'schengen'  => array( 'Schengen days', 'The 90/180 tracker, carrying the coming-soon note.' ),
             'research'  => array( 'Explore France', 'Regions, departments and communes, with generated location reports.' ),
@@ -790,7 +790,7 @@ class FRAMT_Portal_Settings {
             <p class="lead"><?php echo $plugin ? esc_html( ucfirst( $plugin ) ) . ' is detected and active.' : 'No membership plugin detected; every signed-in user can open the portal.'; ?></p>
             <ul class="framt-switch-list">
                 <li>
-                    <label><strong>An active membership is always required</strong><span>Signed-in people without one are sent to the pricing page, and the portal's data answers only members. A partner invited from the Family plan passes on the account holder's membership. Admins always get in.</span></label>
+                    <label><strong>An active membership is always required</strong><span>Signed-in people without one are sent to the pricing page, and the portal's data answers only members. A partner invited through the Family add-on passes on the account holder's membership. Admins always get in.</span></label>
                 </li>
                 <li>
                     <input type="checkbox" id="framt_enable_demo_mode" name="framt_enable_demo_mode" value="1" <?php checked( $demo ); ?>>
@@ -811,7 +811,7 @@ class FRAMT_Portal_Settings {
                 <tr>
                     <th scope="row"><label for="framt_family_addon_url">Checkout URL</label></th>
                     <td><input type="url" id="framt_family_addon_url" name="framt_family_addon_url" class="regular-text" value="<?php echo esc_attr( get_option( 'framt_family_addon_url', '' ) ); ?>" placeholder="<?php echo esc_attr( home_url( '/register/family-add-on/' ) ); ?>">
-                        <p class="description">Where "Add the Family plan" sends members. Empty means the placeholder.</p></td>
+                        <p class="description">Where "Get the Family add-on" sends members. Empty means the placeholder.</p></td>
                 </tr>
             </table>
         </div>

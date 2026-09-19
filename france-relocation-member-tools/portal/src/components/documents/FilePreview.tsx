@@ -20,6 +20,7 @@ import {
 import Modal from '@/components/shared/Modal';
 import { useDeleteFile, useDownloadFile, useFiles, useRecogniseFile, useUpdateFile } from '@/hooks/useApi';
 import type { FileCategory, FileType, PortalFile } from '@/types';
+import { formatDateTime } from '@/utils/dates';
 
 interface FilePreviewProps {
   file: PortalFile | null;
@@ -77,15 +78,7 @@ export default function FilePreview({ file: openedFile, isOpen, onClose, project
   const Icon = fileTypeIcons[file.file_type] || File;
   const colorClass = fileTypeColors[file.file_type] || fileTypeColors.other;
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
+  const formatDate = (dateString: string) => formatDateTime(dateString);
 
   const handleDownload = () => {
     download(file.id);

@@ -12,7 +12,7 @@ export const external = {
   signIn: `${WP_ORIGIN}/portal/`,
   /** MemberPress checkout. One product: lifetime access. */
   join: `${WP_ORIGIN}/register/lifetime-membership/`,
-  /** MemberPress checkout for the Family add-on (product 560, "Family plan"). */
+  /** MemberPress checkout for the Family add-on (product 560). */
   familyAddon: `${WP_ORIGIN}/register/family-add-on/`,
   portal: `${WP_ORIGIN}/portal/`,
   account: `${WP_ORIGIN}/account/`,

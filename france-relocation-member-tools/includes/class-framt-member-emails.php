@@ -333,8 +333,8 @@ class FRAMT_Member_Emails {
         foreach ( $items as $item ) {
             $t    = $item['task'];
             $when = 'overdue' === $item['kind']
-                ? sprintf( 'Was due %s', wp_date( 'j F', strtotime( $t->due_date ) ) )
-                : ( 'tomorrow' === $item['kind'] ? 'Due tomorrow' : sprintf( 'Due in a week, %s', wp_date( 'l j F', strtotime( $t->due_date ) ) ) );
+                ? sprintf( 'Was due %s', wp_date( 'M j', strtotime( $t->due_date ) ) )
+                : ( 'tomorrow' === $item['kind'] ? 'Due tomorrow' : sprintf( 'Due in a week, %s', wp_date( 'l, M j', strtotime( $t->due_date ) ) ) );
             $rows .= '<tr><td style="padding:10px 0;border-top:1px solid #ebefeb;">'
                 . '<a href="' . esc_url( self::portal_url( 'tasks', array( 'task' => (int) $t->id ) ) ) . '" style="color:#1c2420;font-weight:600;text-decoration:none;">' . esc_html( $t->title ) . '</a>'
                 . '<div style="font-size:14px;color:' . ( 'overdue' === $item['kind'] ? '#8a5a14' : '#5f6e66' ) . ';">' . esc_html( $when ) . '</div></td></tr>';
@@ -409,7 +409,7 @@ class FRAMT_Member_Emails {
         if ( $move ) {
             $days = (int) round( ( strtotime( substr( $move, 0, 10 ) ) - strtotime( $today ) ) / DAY_IN_SECONDS );
             if ( $days > 0 ) {
-                $lead = sprintf( '%d days to your move on %s.', $days, wp_date( 'j F Y', strtotime( $move ) ) );
+                $lead = sprintf( '%d days to your move on %s.', $days, wp_date( 'M j, Y', strtotime( $move ) ) );
             }
         }
 
@@ -428,7 +428,7 @@ class FRAMT_Member_Emails {
         }
         if ( $ahead ) {
             $body .= $section( 'Your next steps', $list( array_map( function ( $t ) {
-                return '<li style="margin:0 0 4px;"><a href="' . esc_url( self::portal_url( 'tasks', array( 'task' => (int) $t->id ) ) ) . '" style="color:#1c2420;">' . esc_html( $t->title ) . '</a> <span style="color:#5f6e66;">· ' . esc_html( wp_date( 'D j M', strtotime( $t->due_date ) ) ) . '</span></li>';
+                return '<li style="margin:0 0 4px;"><a href="' . esc_url( self::portal_url( 'tasks', array( 'task' => (int) $t->id ) ) ) . '" style="color:#1c2420;">' . esc_html( $t->title ) . '</a> <span style="color:#5f6e66;">· ' . esc_html( wp_date( 'D, M j', strtotime( $t->due_date ) ) ) . '</span></li>';
             }, $ahead ) ) );
         } else {
             $body .= $section( 'Your next steps', '<p style="margin:0;">Nothing dated in the part of the plan you are working on. When you start the next stage, its steps show here.</p>' );

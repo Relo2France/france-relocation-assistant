@@ -408,7 +408,7 @@ class FRAMT_Activity {
         } elseif ( $timestamp > strtotime( '-7 days' ) ) {
             return gmdate( 'l', $timestamp ); // Day name
         } else {
-            return gmdate( 'F j, Y', $timestamp ); // Full date
+            return gmdate( 'M j, Y', $timestamp ); // Full date
         }
     }
 

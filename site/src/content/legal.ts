@@ -8,12 +8,12 @@
  * that changes, this file changes with it - a policy that describes a
  * different service is worse than none.
  *
- * Plain English on purpose. Approved by the owner on 18 September 2026;
+ * Plain English on purpose. Approved by the owner on September 18, 2026;
  * not reviewed by a lawyer. Change it here when the service changes.
  */
 import { FAMILY_ADDON_NOTE, FAMILY_ADDON_ON_SALE, FAMILY_ADDON_PRICE, FAMILY_INCLUDED_NOTE, PRICE, REFUND_DAYS, SUPPORT_EMAIL } from './links';
 
-export const LEGAL_UPDATED = '18 September 2026';
+export const LEGAL_UPDATED = 'September 18, 2026';
 
 export interface LegalSection {
   heading: string;
@@ -46,7 +46,7 @@ const terms: LegalPage = {
     {
       heading: 'What Relo2France is',
       paragraphs: [
-        'Relo2France organises the official requirements for Americans moving to France, in the order you will meet them. The guides are free to read. Membership adds a member portal: a plan dated from your move, a dossier per person, documents drafted from your details, an assistant that answers about your situation, research reports, and a Schengen day tracker.',
+        'Relo2France organises the official requirements for Americans moving to France, in the order you will meet them. The guides are free to read. Membership adds a member portal: a plan dated from your move, a dossier per person, documents drafted from your details, an assistant that answers about your situation, location reports from Explore France, and a Schengen day tracker.',
       ],
     },
     {
@@ -60,7 +60,7 @@ const terms: LegalPage = {
     {
       heading: 'AI features',
       paragraphs: [
-        'The assistant, document checks, drafted letters and research reports are produced with AI (Anthropic’s Claude). AI can be wrong or out of date. Read everything it produces before you use it, and check facts that matter against the official source. You are responsible for any document you sign or submit.',
+        'The assistant, document checks, drafted letters and location reports are produced with AI (Anthropic’s Claude). AI can be wrong or out of date. Read everything it produces before you use it, and check facts that matter against the official source. You are responsible for any document you sign or submit.',
       ],
     },
     {
@@ -148,7 +148,7 @@ const privacy: LegalPage = {
     {
       heading: 'AI processing',
       paragraphs: [
-        'When you use the assistant, a document check, a drafted letter or a research report, the relevant question, profile details and document content are sent to Anthropic’s Claude API to produce the answer. Anthropic processes that content to provide the service under its commercial terms, which do not allow it to train its models on this data by default. If you would rather a document were not processed this way, do not submit it for checking.',
+        'When you use the assistant, a document check, a drafted letter or a location report, the relevant question, profile details and document content are sent to Anthropic’s Claude API to produce the answer. Anthropic processes that content to provide the service under its commercial terms, which do not allow it to train its models on this data by default. If you would rather a document were not processed this way, do not submit it for checking.',
       ],
     },
     {

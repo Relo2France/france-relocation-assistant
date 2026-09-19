@@ -17,6 +17,7 @@
  */
 import { US_STATES } from '@/config/profile';
 import type { ChecklistItem, FamilyMember, MemberProfile, Project, StateFacts, Task } from '@/types';
+import { formatDate, formatMonth } from '@/utils/dates';
 import { ARRIVAL_WINDOW_DAYS, parseDate, stageForTask } from './journey';
 import type { JourneyStageId } from './journey';
 
@@ -58,11 +59,11 @@ export interface Walkthrough {
 const DAY = 86_400_000;
 
 function monthOf(d: Date): string {
-  return d.toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+  return formatMonth(d);
 }
 
 function dayOf(d: Date): string {
-  return d.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+  return formatDate(d);
 }
 
 function stateName(code: string | undefined): string | null {

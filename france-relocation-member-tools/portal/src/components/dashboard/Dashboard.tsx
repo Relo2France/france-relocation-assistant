@@ -20,12 +20,12 @@ import { JOURNEY, currentStage, progressFor, stageById, stageForTask, stageWhen,
 import { walkthroughFor } from '@/journey/walkthrough';
 import { usePortalStore } from '@/store';
 import type { Task } from '@/types';
+import { formatDate, formatDue } from '@/utils/dates';
 import WelcomeBanner from './WelcomeBanner';
 
 function dueLabel(task: Task): string {
   if (!task.due_date) return '';
-  const d = new Date(`${task.due_date.slice(0, 10)}T00:00:00Z`);
-  const when = d.toLocaleDateString('en-US', { day: 'numeric', month: 'short', timeZone: 'UTC' }).toUpperCase();
+  const when = formatDue(task.due_date);
   if (task.is_overdue) return `${when} · OVERDUE`;
   if (task.days_until_due !== null && task.days_until_due >= 0) return `${when} · ${task.days_until_due} DAYS`;
   return when;
@@ -106,7 +106,7 @@ export default function Dashboard() {
   });
 
   const moveDateLabel = project.target_move_date
-    ? new Date(`${project.target_move_date.slice(0, 10)}T00:00:00Z`).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
+    ? formatDate(project.target_move_date)
     : null;
 
   const openStage = (id: string) => { setActiveStage(id); setActiveView('stage'); };
@@ -330,11 +330,11 @@ export default function Dashboard() {
             ))}
             <p className="text-[0.82rem] text-gray-500 leading-snug">
               {data.household?.partner && data.household.partner.userId > 0
-                ? `${data.household.partner.name.split(' ')[0]} has their own sign-in. Hand steps over from Family plans.`
+                ? `${data.household.partner.name.split(' ')[0]} has their own sign-in. Hand steps over from the Family page.`
                 : 'Each person applies separately. Their steps are dated from the same move.'}
             </p>
             <button onClick={() => setActiveView('family')} className="text-sm font-semibold text-primary-500 hover:text-primary-700 self-start">
-              {members.length ? 'Family plans' : 'Add a family member'}
+              {members.length ? 'Open Family' : 'Add a family member'}
             </button>
           </div>
         </div>

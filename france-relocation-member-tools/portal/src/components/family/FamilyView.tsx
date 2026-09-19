@@ -1,5 +1,5 @@
 /**
- * Family plans
+ * Family
  *
  * One file per person. The account holder can work the whole household's
  * file alone, or give their partner a sign-in and hand over the partner's
@@ -26,6 +26,7 @@ import {
 } from '@/hooks/useApi';
 import { usePortalStore } from '@/store';
 import type { FamilyMember, Household, Task } from '@/types';
+import { formatDate, formatDue } from '@/utils/dates';
 import { AssignSelect, PersonChip, personOf } from './Assign';
 
 const DOCS: { key: keyof FamilyMember['documents']; label: string; partnerOnly?: boolean }[] = [
@@ -43,8 +44,7 @@ function tasksFor(member: FamilyMember, tasks: Task[]): Task[] {
 function dueLabel(task: Task): string {
   if (task.status === 'done') return 'DONE';
   if (!task.due_date) return '';
-  const d = new Date(`${task.due_date.slice(0, 10)}T00:00:00Z`);
-  return d.toLocaleDateString('en-US', { day: 'numeric', month: 'short', timeZone: 'UTC' }).toUpperCase();
+  return formatDue(task.due_date);
 }
 
 export default function FamilyView() {
@@ -59,7 +59,7 @@ export default function FamilyView() {
     return (
       <div className="p-6 md:p-8">
         <div className="card p-6">
-          <p className="font-display font-semibold text-lg">Family plans could not load.</p>
+          <p className="font-display font-semibold text-lg">The Family page could not load.</p>
           <p className="text-sm text-gray-600 mt-1">Try again. If it keeps happening, tell us from Support.</p>
           <button type="button" onClick={() => void refetch()} disabled={isFetching} className="btn btn-secondary mt-3">
             {isFetching ? 'Trying…' : 'Try again'}
@@ -78,7 +78,7 @@ export default function FamilyView() {
     <div className="flex flex-col">
       <header className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 px-6 md:px-8 pt-6 pb-5 bg-card border-b border-rule">
         <div className="flex flex-col gap-1.5">
-          <span className="eyebrow">Family plans</span>
+          <span className="eyebrow">Family</span>
           <h2 className="font-display text-[1.75rem] font-semibold tracking-[-0.018em] leading-tight">One file per person.</h2>
           <p className="text-ink/80 max-w-[64ch]">
             {isPartner
@@ -155,7 +155,7 @@ function LockedHousehold({ profile, addonUrl, price, priceNote }: { profile: Fam
           <li className="flex gap-2"><CheckCircle2 className="w-4 h-4 text-primary-500 flex-shrink-0 mt-0.5" /> A file for each child, up to four</li>
           <li className="flex gap-2"><CheckCircle2 className="w-4 h-4 text-primary-500 flex-shrink-0 mt-0.5" /> Hand any step to either of you</li>
         </ul>
-        <a href={addonUrl} className="btn btn-primary mt-2 justify-center">Add the Family plan <ArrowRight className="w-4 h-4" /></a>
+        <a href={addonUrl} className="btn btn-primary mt-2 justify-center">Get the Family add-on <ArrowRight className="w-4 h-4" /></a>
         <p className="text-[0.74rem] text-gray-500 text-center m-0">One payment. Covers this move.</p>
       </div>
     </div>
@@ -232,7 +232,7 @@ function PersonCard({ member, tasks, household, canEdit }: { member: FamilyMembe
               <span className="font-display font-semibold text-[1.05rem] truncate">{member.name}</span>
               <span className="text-[0.8rem] text-gray-500">
                 {isPartner ? 'Partner' : 'Child'}
-                {isPartner && member.birthDate ? ` · born ${new Date(`${member.birthDate.slice(0, 10)}T00:00:00Z`).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' })}` : ''}
+                {isPartner && member.birthDate ? ` · born ${formatDate(member.birthDate)}` : ''}
                 {!isPartner && member.age ? ` · age ${member.age}` : ''}
                 {' · own visa file'}
               </span>

@@ -1108,7 +1108,7 @@ Your account is open. Everything in it is dated from your move, so the first thi
 - **The six stages**, Decide to Settle & renew, hold every step, dated back from your move.
 - **Documents & files** is your dossier: what the consulate will want, per person, and where it stands.
 - **Ask about my case** answers against your own file and shows its sources.
-- **Family plans** gives your partner and children files of their own.
+- **Family** gives your partner and children files of their own.
 
 **Two things to know**
 
@@ -1213,7 +1213,7 @@ Relo2France";
     }
 
     /**
-     * The Family plan gets its own message: what just switched on and how to
+     * The Family add-on gets its own message: what just switched on and how to
      * use it, not a second welcome.
      *
      * @param MeprTransaction $txn Completed transaction.
@@ -1238,24 +1238,24 @@ Relo2France";
 
         $admins   = get_users(array('role' => 'administrator', 'number' => 1, 'fields' => 'ID'));
         $admin_id = !empty($admins) ? (int) $admins[0] : 1;
-        if ($this->create_admin_message($user_id, 'Your Family plan is on', $message, $admin_id)) {
+        if ($this->create_admin_message($user_id, 'Your Family add-on is on', $message, $admin_id)) {
             update_user_meta($user_id, '_framt_family_plan_sent', time());
         }
     }
 
     /**
-     * The Family plan message.
+     * The Family add-on message.
      *
      * @return string
      */
     public function get_family_plan_message() {
         return "Hello {first_name},
 
-The Family plan is on your account. Here is what changed.
+The Family add-on is on your account. Here is what changed.
 
 **A file for each person**
 
-Family plans now shows a card for your partner and for each child, up to four. Each has its own document list and its own steps, dated from the same move. Names and ages come from your profile; edit them on the card.
+The Family page now shows a card for your partner and for each child, up to four. Each has its own document list and its own steps, dated from the same move. Names and ages come from your profile; edit them on the card.
 
 **Your partner's own sign-in**
 
@@ -1263,11 +1263,11 @@ On your partner's card, enter their email and press Invite. They get their own p
 
 **Hand over the children's steps**
 
-Once your partner has signed in, every step for the children gets a small choice: you, or them. Change it on the step, or from the list at the bottom of Family plans.
+Once your partner has signed in, every step for the children gets a small choice: you, or them. Change it on the step, or from the list at the bottom of the Family page.
 
 **Nothing else moves**
 
-Your dossier, your dates and your stages are unchanged. The plan adds people; it does not reset anything.
+Your dossier, your dates and your stages are unchanged. The add-on adds people; it does not reset anything.
 
 If something does not look right, write to us from Support.
 

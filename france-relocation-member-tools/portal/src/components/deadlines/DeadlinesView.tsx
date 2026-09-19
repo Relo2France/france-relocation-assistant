@@ -13,19 +13,18 @@ import { useDashboard, useTasks, useUpdateTaskStatus } from '@/hooks/useApi';
 import { JOURNEY, stageForTask } from '@/journey/journey';
 import { usePortalStore } from '@/store';
 import type { Task } from '@/types';
+import { formatDue, formatMonth } from '@/utils/dates';
 
 function monthKey(iso: string): string {
   return iso.slice(0, 7);
 }
 
 function monthLabel(key: string): string {
-  const d = new Date(`${key}-01T00:00:00Z`);
-  return d.toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+  return formatMonth(`${key}-01`);
 }
 
 function dueLabel(iso: string): string {
-  const d = new Date(`${iso.slice(0, 10)}T00:00:00Z`);
-  return d.toLocaleDateString('en-US', { day: 'numeric', month: 'short', timeZone: 'UTC' }).toUpperCase();
+  return formatDue(iso);
 }
 
 export default function DeadlinesView() {

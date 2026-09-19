@@ -16,6 +16,7 @@ import {
 import Modal from '@/components/shared/Modal';
 import { useDashboard, useDownloadFile, useFiles, useRemoveSavedReport, useSavedReports } from '@/hooks/useApi';
 import type { FileCategory, FileType, PortalFile } from '@/types';
+import { formatDate } from '@/utils/dates';
 import { AIVerificationModal } from './AIVerification';
 import FileGrid from './FileGrid';
 import FilePreview from './FilePreview';
@@ -167,7 +168,7 @@ export default function DocumentsView() {
     <div className="p-6">
       {/* The page title is in the top bar; this is the one line under it. */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
-        <p className="text-gray-600 m-0 max-w-[60ch]">Upload a document and it is recognised, checked against its requirement and filed to the dossier line it satisfies. The letters your visa route needs are drafted here, and your Explore France reports are kept here too.</p>
+        <p className="text-gray-600 m-0 max-w-[60ch]">Upload a document and it is recognised, checked against its requirement and filed to the dossier line it satisfies. The letters your visa route needs are drafted here, and your location reports from Explore France are kept here too.</p>
         <button type="button" onClick={() => setShowUpload(true)} className="btn btn-primary w-full sm:w-auto flex-shrink-0">
           <Plus className="w-4 h-4" aria-hidden="true" />
           Upload a document
@@ -176,7 +177,7 @@ export default function DocumentsView() {
 
       <LettersSection projectId={projectId} />
 
-      {/* Saved Research Reports Section */}
+      {/* Saved location reports */}
       {savedReports.length > 0 && (
         <div className="card mb-6">
           <button
@@ -188,7 +189,7 @@ export default function DocumentsView() {
                 <MapPin className="w-5 h-5 text-primary-600" />
               </div>
               <div>
-                <h2 className="font-semibold text-gray-900">Saved Relocation Reports</h2>
+                <h2 className="font-semibold text-gray-900">Location reports</h2>
                 <p className="text-sm text-gray-500">{savedReports.length} report{savedReports.length !== 1 ? 's' : ''} saved</p>
               </div>
             </div>
@@ -215,7 +216,7 @@ export default function DocumentsView() {
                       <p className="text-xs text-gray-500 capitalize">
                         {(report as { status?: string }).status === 'generating'
                           ? 'Still writing · usually three to five minutes'
-                          : `${report.location_type} Report • ${new Date(report.updated_at).toLocaleDateString()}`}
+                          : `${report.location_type} report · ${formatDate(report.updated_at)}`}
                       </p>
                     </div>
                     <a

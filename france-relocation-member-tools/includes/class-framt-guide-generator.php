@@ -326,7 +326,7 @@ class FRAMT_Guide_Generator {
         $content = array(
             'title' => 'French Mortgage Evaluation Guide',
             'subtitle' => 'Personalized for ' . esc_html($name),
-            'date' => date('F j, Y'),
+            'date' => date('M j, Y'),
             'summary' => array(
                 'loan_amount' => '€' . number_format($loan_amount),
                 'purchase_price' => '€' . number_format($purchase_price),
@@ -565,7 +565,7 @@ class FRAMT_Guide_Generator {
         $content = array(
             'title' => 'Pet Relocation Guide to France',
             'subtitle' => 'Personalized for Your ' . $pet_label,
-            'date' => date('F j, Y'),
+            'date' => date('M j, Y'),
             'sections' => array(),
         );
         
@@ -839,7 +839,7 @@ class FRAMT_Guide_Generator {
         $content = array(
             'title' => 'Apostille Guide',
             'subtitle' => 'Personalized for Your Documents',
-            'date' => date('F j, Y'),
+            'date' => date('M j, Y'),
             'sections' => array(),
         );
         
@@ -970,7 +970,7 @@ class FRAMT_Guide_Generator {
         $content = array(
             'title' => 'French Bank Ratings Guide',
             'subtitle' => 'Personalized Recommendations',
-            'date' => date('F j, Y'),
+            'date' => date('M j, Y'),
             'sections' => array(
                 array(
                     'title' => '1. Your Top Recommended Banks',

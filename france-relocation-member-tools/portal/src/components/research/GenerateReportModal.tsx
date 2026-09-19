@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from 'react';
 import { AlertCircle, CheckCircle, Clock, FileText, Hourglass, Loader2, MapPin, RefreshCw, Save, X } from 'lucide-react';
 import { researchApi } from '@/api/client';
 import type { ResearchLevel } from '@/types';
+import { formatDate } from '@/utils/dates';
 
 interface ResearchReportData {
   id: number;
@@ -204,7 +205,7 @@ export default function GenerateReportModal({
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
           <h2 id="modal-title" className="text-lg font-semibold text-gray-900">
-            Generate Relocation Report
+            Create location report
           </h2>
           <button
             onClick={onClose}
@@ -328,7 +329,7 @@ export default function GenerateReportModal({
                   {locationType.charAt(0).toUpperCase() + locationType.slice(1)} Report
                 </p>
                 <p className="text-xs text-gray-500">
-                  Last updated: {new Date(report.updated_at).toLocaleDateString()}
+                  Last updated {formatDate(report.updated_at)}
                 </p>
               </div>
 

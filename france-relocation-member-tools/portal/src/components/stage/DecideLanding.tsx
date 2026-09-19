@@ -13,6 +13,7 @@ import { ArrowRight, Check } from 'lucide-react';
 import { useFamilyMembers, useMemberProfile } from '@/hooks/useApi';
 import { usePortalStore } from '@/store';
 import type { Project } from '@/types';
+import { formatMonth } from '@/utils/dates';
 
 interface Block {
   id: string;
@@ -69,14 +70,14 @@ export default function DecideLanding({ project, visaType }: { project: Project;
       body: 'Each person applies separately. A spouse or a child gets their own file, on the same calendar as yours.',
       done: whoAnswered,
       doneNote: familyCount > 0 ? `You and ${familyCount} other${familyCount === 1 ? '' : 's'}` : whoAnswered ? 'Answered in your profile' : undefined,
-      primary: { label: 'Family plans', onClick: () => setActiveView('family') },
+      primary: { label: 'Open Family', onClick: () => setActiveView('family') },
     },
     {
       id: 'when',
       title: 'When, roughly?',
       body: 'A target date, even a rough one, turns the stages ahead into dated steps.',
       done: dateSet,
-      doneNote: dateSet ? new Date(`${(project.target_move_date ?? '').slice(0, 10)}T00:00:00Z`).toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' }) : undefined,
+      doneNote: dateSet ? formatMonth(project.target_move_date) : undefined,
       primary: { label: dateSet ? 'Change the date' : 'Set a move date', onClick: () => setActiveView('dashboard') },
     },
   ];

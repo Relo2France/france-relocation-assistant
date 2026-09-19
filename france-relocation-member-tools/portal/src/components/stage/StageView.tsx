@@ -18,13 +18,13 @@ import { JOURNEY, currentStage, groupByLeadTime, progressFor, stageById, stageFo
 import type { JourneyStageId } from '@/journey/journey';
 import { usePortalStore } from '@/store';
 import type { Task } from '@/types';
+import { formatDue } from '@/utils/dates';
 import DecideLanding from './DecideLanding';
 
 function dueLabel(task: Task): string {
   if (task.status === 'done') return 'DONE';
   if (!task.due_date) return '';
-  const d = new Date(`${task.due_date.slice(0, 10)}T00:00:00Z`);
-  return d.toLocaleDateString('en-US', { day: 'numeric', month: 'short', timeZone: 'UTC' }).toUpperCase();
+  return formatDue(task.due_date);
 }
 
 export default function StageView() {
@@ -104,8 +104,8 @@ export default function StageView() {
           {stage.id !== 'decide' && person !== 'me' ? (
             <div className="card p-5">
               <span className="eyebrow">Their file</span>
-              <p className="mt-2 text-sm text-gray-600">Only the steps that are theirs are shown below, dated from the same move. Their documents and who is doing what live under Family plans.</p>
-              <button onClick={() => setActiveView('family')} className="btn btn-secondary mt-3">Open family plans</button>
+              <p className="mt-2 text-sm text-gray-600">Only the steps that are theirs are shown below, dated from the same move. Their documents and who is doing what live on the Family page.</p>
+              <button onClick={() => setActiveView('family')} className="btn btn-secondary mt-3">Open Family</button>
             </div>
           ) : null}
 

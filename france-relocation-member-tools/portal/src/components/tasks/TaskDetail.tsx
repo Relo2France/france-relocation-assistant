@@ -19,6 +19,7 @@ import { useDashboard, useDeleteTask, useLetters, useUpdateTask, useUpdateTaskSt
 import { stageById, stageForTask } from '@/journey/journey';
 import { usePortalStore } from '@/store';
 import type { Task, TaskHowto, TaskPriority, TaskStatus } from '@/types';
+import { formatDate } from '@/utils/dates';
 import TaskChecklist from './TaskChecklist';
 
 interface TaskDetailProps {
@@ -324,9 +325,9 @@ export default function TaskDetail({ task, isOpen, onClose }: TaskDetailProps) {
       {/* Timestamps */}
       <div className="mt-6 pt-4 border-t border-gray-200">
         <p className="text-xs text-gray-400">
-          Created {new Date(task.created_at).toLocaleDateString()}
+          Created {formatDate(task.created_at)}
           {task.completed_at && (
-            <> • Completed {new Date(task.completed_at).toLocaleDateString()}</>
+            <> • Completed {formatDate(task.completed_at)}</>
           )}
         </p>
       </div>

@@ -30,6 +30,7 @@ import {
 } from '@/hooks/useApi';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import type { TravelStatusLocation } from '@/types';
+import { formatDateTime } from '@/utils/dates';
 
 interface LocationTrackerProps {
   /** Compact mode for dashboard widget */
@@ -451,7 +452,7 @@ function LocationHistoryItem({
             )}
           </p>
           <p className="text-xs text-gray-500">
-            {date.toLocaleDateString()} at {date.toLocaleTimeString()}
+            {formatDateTime(date)}
             {location.accuracy && (
               <span className="ml-2">
                 (±{Math.round(location.accuracy)}m)

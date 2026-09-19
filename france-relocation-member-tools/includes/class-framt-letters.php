@@ -40,10 +40,10 @@ class FRAMT_Letters {
      * Benchmarks quoted in the guidance, from the knowledge base. Dated so a
      * stale figure is visible, never silently wrong.
      */
-    const SMIC_NET_MONTHLY    = 1477.93; // Net SMIC since 1 June 2026 (visas/overview).
-    const SMIC_SINCE          = '1 June 2026';
-    const STUDENT_MONTHLY     = 877.50;  // Student minimum from 1 August 2026 (visa_application_guide).
-    const STUDENT_SINCE       = '1 August 2026';
+    const SMIC_NET_MONTHLY    = 1477.93; // Net SMIC since June 1, 2026 (visas/overview).
+    const SMIC_SINCE          = 'June 1, 2026';
+    const STUDENT_MONTHLY     = 877.50;  // Student minimum from August 1, 2026 (visa_application_guide).
+    const STUDENT_SINCE       = 'August 1, 2026';
 
     /** Answers kept as profile fields (fra_<key>), shown on the Profile page. */
     const PROFILE_KEYS = array( 'consulate', 'mailing_address' );
@@ -475,7 +475,7 @@ class FRAMT_Letters {
                     'guidance' => array_values( array_filter( array(
                         'Each adult signs their own. Sign and date it by hand after printing.',
                         'Working for a French employer or French clients is not allowed on this visa.',
-                        $remote ? 'You said you will work remotely. In a written answer on 23 June 2026 the Interior Ministry indicated remote work for a foreign employer with no link to the French market may be compatible with visitor status. The guidance is new and consulates apply it unevenly, so this version says exactly that, and your employer letter backs it up. Read the visitor guide before you sign.' : '',
+                        $remote ? 'You said you will work remotely. In a written answer on June 23, 2026 the Interior Ministry indicated remote work for a foreign employer with no link to the French market may be compatible with visitor status. The guidance is new and consulates apply it unevenly, so this version says exactly that, and your employer letter backs it up. Read the visitor guide before you sign.' : '',
                     ) ) ),
                 );
 
@@ -1241,7 +1241,7 @@ class FRAMT_Letters {
 
     private static function date_en( $ymd ) {
         $t = strtotime( (string) $ymd );
-        return $t ? gmdate( 'j F Y', $t ) : (string) $ymd;
+        return $t ? gmdate( 'F j, Y', $t ) : (string) $ymd;
     }
 
     private static function date_fr( $ymd ) {

@@ -27,6 +27,7 @@ import {
   useNotifications,
 } from '@/hooks/useApi';
 import type { NotificationItem, NotificationType } from '@/types';
+import { formatDate } from '@/utils/dates';
 
 interface NotificationCenterProps {
   className?: string;
@@ -105,7 +106,7 @@ export default function NotificationCenter({ className }: NotificationCenterProp
     if (diffMins < 60) return `${diffMins}m ago`;
     if (diffHours < 24) return `${diffHours}h ago`;
     if (diffDays < 7) return `${diffDays}d ago`;
-    return date.toLocaleDateString();
+    return formatDate(date);
   };
 
   return (

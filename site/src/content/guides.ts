@@ -127,7 +127,7 @@ export const guides: GuideDoc[] = [
         requirements: [
           'The Études en France application, reviewed by Campus France USA — with an application fee shown on the Campus France USA site',
           'The visa application on France-Visas, reviewed by the consulate — its appointment booked only after Campus France’s confirmation',
-          'Proof of resources of at least {{€877.50}} a month from {{1 August 2026}}, up from {{€615}}',
+          'Proof of resources of at least {{€877.50}} a month from {{August 1, 2026}}, up from {{€615}}',
         ],
         caveat:
           'Fees, the document checklist and the resources figure are revised periodically. Confirm them on usa.campusfrance.org and france-visas.gouv.fr close to your application date.',
@@ -136,7 +136,7 @@ export const guides: GuideDoc[] = [
         heading: 'Validation is what makes it a residence permit',
         paragraphs: [
           'Most VLS-TS holders must validate online within {{3 months}} of arrival, through the ANEF portal. This is the step that turns the visa into a residence permit for its first year.',
-          'Under Article 128 of the loi de finances pour 2026, the validation tax for standard VLS-TS categories rose from {{€200}} to {{€300}}, effective {{1 May 2026}}. Some exemptions still apply — spouses of French nationals, certain scholarship holders — so confirm your category on the portal.',
+          'Under Article 128 of the loi de finances pour 2026, the validation tax for standard VLS-TS categories rose from {{€200}} to {{€300}}, effective {{May 1, 2026}}. Some exemptions still apply — spouses of French nationals, certain scholarship holders — so confirm your category on the portal.',
         ],
         caveat:
           'Miss the deadline and you are in irregular status even though the sticker in your passport still looks valid. It surfaces at renewal, not at the border.',
@@ -168,7 +168,7 @@ export const guides: GuideDoc[] = [
           'Proof of financial means — typically {{3 months}} of bank statements, at a level set by the category',
           'Insurance meeting the Schengen minimum of {{€30,000}} for medical costs, repatriation and emergency care',
           'Proof of accommodation — a lease, a booking, or a signed {{attestation d’hébergement}}',
-          'A biometric appointment at a TLScontact centre — TLScontact replaced VFS Global as the US visa application centre on {{18 April 2025}}',
+          'A biometric appointment at a TLScontact centre — TLScontact replaced VFS Global as the US visa application centre on {{April 18, 2025}}',
         ],
         caveat:
           'Submit no earlier than {{3 months}} and no later than {{15 days}} before travel. US consulates take English-language documents as they are for the first application; sworn translations ({{traducteur assermenté}}) come after arrival, for the prefecture and CPAM, and for renewals.',
@@ -289,7 +289,7 @@ export const guides: GuideDoc[] = [
         heading: 'What happens after you land',
         paragraphs: [
           'Validate online through the ANEF portal within {{3 months}} of entry — counted from your entry stamp or EES record, not from the date the visa was issued.',
-          'The validation tax rose from {{€200}} to {{€300}} on {{1 May 2026}} under the 2026 finance law.',
+          'The validation tax rose from {{€200}} to {{€300}} on {{May 1, 2026}} under the 2026 finance law.',
         ],
         requirements: [
           'Visitor-visa holders are typically also called for a mandatory OFII medical visit — a chest X-ray and a brief screening',
@@ -391,7 +391,7 @@ export const guides: GuideDoc[] = [
           'Deposit at the compromis: {{5–10%}} of the price, held in escrow by the notaire',
         ],
         caveat:
-          'Most of what is called “notaire fees” is transfer tax collected for the state, not the notaire’s own fee. Registration taxes run {{5.09–6.31%}} depending on département. Since 1 April 2025 départements may set the rate up to {{5.0%}}, previously capped at {{4.5%}}: on the mid-2026 official table, {{88}} of 100 charge the new rate, {{11}} remain at 4.5%, and only Indre and Mayotte still charge {{3.80%}}. Confirm yours with the notaire before budgeting.',
+          'Most of what is called “notaire fees” is transfer tax collected for the state, not the notaire’s own fee. Registration taxes run {{5.09–6.31%}} depending on département. Since April 1, 2025 départements may set the rate up to {{5.0%}}, previously capped at {{4.5%}}: on the mid-2026 official table, {{88}} of 100 charge the new rate, {{11}} remain at 4.5%, and only Indre and Mayotte still charge {{3.80%}}. Confirm yours with the notaire before budgeting.',
       },
       {
         heading: 'Two things that reduce the bill',
@@ -652,7 +652,7 @@ export const guides: GuideDoc[] = [
           'US citizens file regardless of where they live. Becoming French tax resident adds obligations rather than replacing them.',
         ],
         requirements: [
-          'Federal return by {{15 April}}, with an automatic extension to {{15 June}} from abroad and a further extension to {{15 October}} on request',
+          'Federal return by {{April 15}}, with an automatic extension to {{June 15}} from abroad and a further extension to {{October 15}} on request',
           'The Foreign Earned Income Exclusion, or the Foreign Tax Credit — the credit is often better in a high-tax country like France',
           '{{FBAR}} (FinCEN 114) once foreign accounts total more than {{$10,000}} at any point in the year — a statutory threshold, never inflation-adjusted',
           'FATCA {{Form 8938}} living abroad: {{$200,000}}/{{$300,000}} single or married filing separately, {{$400,000}}/{{$600,000}} filing jointly',
@@ -667,7 +667,7 @@ export const guides: GuideDoc[] = [
         ],
         requirements: [
           'Any part of a day in France generally counts as a whole day',
-          'Calendar year basis, {{1 January – 31 December}}',
+          'Calendar year basis, {{January 1 – December 31}}',
           'Days need not be consecutive, and both arrival and departure days count',
           'Short airport transits generally do not count',
           'Days lost to hospitalisation or genuine force majeure may be excluded',
@@ -726,7 +726,7 @@ export const guides: GuideDoc[] = [
         ],
         requirements: [
           '{{FBAR}} (FinCEN 114) once your foreign accounts total more than {{$10,000}} at any point in the calendar year — filed electronically at fincen.gov',
-          'FBAR is due {{15 April}} with an automatic extension to {{15 October}}, granted without any request',
+          'FBAR is due {{April 15}} with an automatic extension to {{October 15}}, granted without any request',
           'FATCA {{Form 8938}} with your 1040, above {{$200,000}}/{{$300,000}} single or {{$400,000}}/{{$600,000}} jointly when living abroad',
         ],
         caveat:
@@ -817,7 +817,7 @@ export const guides: GuideDoc[] = [
         heading: 'Consider the Talent Passport instead',
         paragraphs: [
           'If you have advanced qualifications and a sufficiently high salary, or specialised in-demand skills, the Talent Passport is generally faster to process, carries a card valid for up to {{4 years}}, and automatically covers accompanying family members.',
-          'Its salary thresholds are set by ministerial order rather than indexed to the minimum wage. Since the Arrêté of {{21 August 2025}} the qualified-employee reference is {{€39,582}} a year gross and the EU Blue Card {{€59,373}}. The order is revised periodically, so confirm the amount in force when your contract is signed.',
+          'Its salary thresholds are set by ministerial order rather than indexed to the minimum wage. Since the Arrêté of {{August 21, 2025}} the qualified-employee reference is {{€39,582}} a year gross and the EU Blue Card {{€59,373}}. The order is revised periodically, so confirm the amount in force when your contract is signed.',
         ],
       },
     ],
@@ -860,7 +860,7 @@ export const guides: GuideDoc[] = [
       {
         heading: 'The thresholds are set by ministerial order',
         paragraphs: [
-          'The salary thresholds are fixed reference amounts set by ministerial order, not formulas indexed to the SMIC. The Arrêté of {{21 August 2025}}, in force for applications and renewals filed since {{31 August 2025}}, sets a single annual gross reference salary used for both cards (CESEDA articles R. 421-16 A and R. 421-21 A). The two 2026 SMIC increases did not change it.',
+          'The salary thresholds are fixed reference amounts set by ministerial order, not formulas indexed to the SMIC. The Arrêté of {{August 21, 2025}}, in force for applications and renewals filed since {{August 31, 2025}}, sets a single annual gross reference salary used for both cards (CESEDA articles R. 421-16 A and R. 421-21 A). The two 2026 SMIC increases did not change it.',
           'On that basis the qualified employee needs at least {{€39,582}} a year gross, and the EU Blue Card at least 1.5 times that, {{€59,373}}.',
         ],
         caveat:
@@ -995,7 +995,7 @@ export const guides: GuideDoc[] = [
       {
         heading: 'The tax went up in 2026',
         paragraphs: [
-          'Under Article 128 of the {{loi de finances pour 2026}}, the validation tax for standard VLS-TS categories rose from {{€200}} to {{€300}}, effective {{1 May 2026}}. Reduced-rate categories, students among them, sit lower. Some exemptions remain — spouses of French nationals, certain scholarship holders — so confirm your category on the portal.',
+          'Under Article 128 of the {{loi de finances pour 2026}}, the validation tax for standard VLS-TS categories rose from {{€200}} to {{€300}}, effective {{May 1, 2026}}. Reduced-rate categories, students among them, sit lower. Some exemptions remain — spouses of French nationals, certain scholarship holders — so confirm your category on the portal.',
           'The amount is set annually by the finance law and revised, so check the ANEF portal or timbres.impots.gouv.fr on the day you pay rather than trusting any figure written earlier, including this one.',
         ],
       },
@@ -1039,7 +1039,7 @@ export const guides: GuideDoc[] = [
         ],
         requirements: [
           'Mandatory online validation within {{3 months}} of arrival through the ANEF portal — track the calendar date, not a day count',
-          'A validation tax, set by the annual finance law and raised again on {{1 May 2026}} — confirm the current amount on ANEF before paying',
+          'A validation tax, set by the annual finance law and raised again on {{May 1, 2026}} — confirm the current amount on ANEF before paying',
           'No prefecture appointment in the first year',
           'Renewal at the prefecture {{2–4 months}} before expiry',
         ],
@@ -1092,13 +1092,13 @@ export const guides: GuideDoc[] = [
         ],
         requirements: [
           'A valid passport with {{6+ months}} validity beyond the intended stay',
-          'Stable monthly resources at or around net SMIC — {{€1,477.93}} a month since {{1 June 2026}} — or savings of about {{€17,700–€18,000}} to cover a year',
+          'Stable monthly resources at or around net SMIC — {{€1,477.93}} a month since {{June 1, 2026}} — or savings of about {{€17,700–€18,000}} to cover a year',
           'Comprehensive health insurance covering the full stay, including repatriation and emergency care',
           'Proof of accommodation in France',
           'A signed declaration ({{attestation sur l’honneur}}) not to work in France',
         ],
         caveat:
-          'Figures you see quoted vary with whether a consulate is referencing gross SMIC, {{€1,867.02}} a month since 1 June 2026, or net. The requirement is “sufficient means”, assessed case by case.',
+          'Figures you see quoted vary with whether a consulate is referencing gross SMIC, {{€1,867.02}} a month since June 1, 2026, or net. The requirement is “sufficient means”, assessed case by case.',
       },
       {
         heading: 'Consulates now ask about the arrangement',

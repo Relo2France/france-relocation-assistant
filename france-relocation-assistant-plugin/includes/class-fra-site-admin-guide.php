@@ -147,8 +147,8 @@ class FRA_Site_Admin_Guide {
                 'title' => 'Family add-on: check it is set up, or help a buyer',
                 'when'  => 'A member bought the Family add-on but the portal does not show it, or you change the product.',
                 'steps' => array(
-                    'Go to FR Assistant → Portal Settings → Members tab, section Family add-on. Product ID should be 560 (MemberPress "Family plan") and the checkout URL /register/family-add-on/. The portal fills these in by itself if they are empty.',
-                    'For a buyer who does not see it: in MemberPress → Transactions, find their Family plan purchase and check its status is Complete. A pending or failed payment does not unlock it.',
+                    'Go to FR Assistant → Portal Settings → Members tab, section Family add-on. Product ID should be 560 (MemberPress "Family add-on") and the checkout URL /register/family-add-on/. The portal fills these in by itself if they are empty.',
+                    'For a buyer who does not see it: in MemberPress → Transactions, find their Family add-on purchase and check its status is Complete. A pending or failed payment does not unlock it.',
                     'The checkout only admits signed-in lifetime members; anyone else is sent to sign in or to Pricing.',
                 ),
                 'notes' => array('Households that added family during the free launch keep it. Administrators always have it.'),

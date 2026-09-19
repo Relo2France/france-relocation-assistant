@@ -14,7 +14,7 @@ const viewTitles: Record<string, string> = {
   deadlines: 'Deadlines',
   support: 'Support',
   files: 'Files',
-  family: 'Family plans',
+  family: 'Family',
   settings: 'Settings',
   help: 'Help',
   profile: 'My Profile',

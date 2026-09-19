@@ -15,7 +15,7 @@ describe('legal pages', () => {
   });
 
   it('carry a date and describe the service as it runs', () => {
-    expect(LEGAL_UPDATED).toBe('18 September 2026');
+    expect(LEGAL_UPDATED).toBe('September 18, 2026');
     const all = JSON.stringify(LEGAL_PAGES);
     for (const fact of ['WordPress.com', 'Cloudflare', 'Stripe', 'Anthropic', 'passport numbers', 'Settings', 'not affiliated with the French government', '30-day money-back guarantee']) {
       expect(all, fact).toContain(fact);

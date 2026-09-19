@@ -158,7 +158,7 @@ class FRAMT_AI_Guide_Generator {
             $user_name = $user->first_name ?: $user->display_name;
         }
 
-        $current_date = date('F j, Y');
+        $current_date = date('M j, Y');
         
         $prompts = array(
             'pet-relocation' => $this->build_pet_prompt($answers, $profile, $user_name, $current_date),
@@ -992,7 +992,7 @@ VISA-SPECIFIC REQUIREMENTS FOR RETIREE VISA:
             'type' => $guide_type,
             'title' => $titles[$guide_type] ?? 'Guide',
             'subtitle' => $subtitles[$guide_type] ?? '',
-            'date' => date('F j, Y'),
+            'date' => date('M j, Y'),
             'ai_content' => $ai_content,
             'meta' => array(
                 'generated' => date('Y-m-d H:i:s'),

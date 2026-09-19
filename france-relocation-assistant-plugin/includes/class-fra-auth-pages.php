@@ -1307,7 +1307,7 @@ class FRA_Auth_Pages {
                         </div>
                     </section>
 
-                    <section class="fra-auth-signup-form" aria-label="<?php echo esc_attr($is_family ? 'Add the Family plan' : 'Create your account'); ?>">
+                    <section class="fra-auth-signup-form" aria-label="<?php echo esc_attr($is_family ? 'Add the Family add-on' : 'Create your account'); ?>">
                         <h2><?php echo $is_family ? 'Add it to your membership' : 'Create your account'; ?></h2>
                         <?php
                         // Someone who already has this product gets a way in,
@@ -1327,9 +1327,9 @@ class FRA_Auth_Pages {
                         ?>
                         <?php if ($already) : ?>
                         <div class="fra-auth-signup-owned">
-                            <p><strong><?php echo $is_family ? 'Your household already has the Family plan.' : 'You’re already a member.'; ?></strong></p>
-                            <p><?php echo $is_family ? 'Your partner and children’s files are in Family plans.' : 'Your file is where you left it. There is nothing more to pay.'; ?></p>
-                            <a class="fra-auth-signup-cta" href="<?php echo esc_url(add_query_arg('view', $is_family ? 'family' : 'dashboard', home_url('/portal/'))); ?>"><?php echo $is_family ? 'Open Family plans' : 'Open my portal'; ?></a>
+                            <p><strong><?php echo $is_family ? 'Your household already has the Family add-on.' : 'You’re already a member.'; ?></strong></p>
+                            <p><?php echo $is_family ? 'Your partner and children’s files are on the Family page.' : 'Your file is where you left it. There is nothing more to pay.'; ?></p>
+                            <a class="fra-auth-signup-cta" href="<?php echo esc_url(add_query_arg('view', $is_family ? 'family' : 'dashboard', home_url('/portal/'))); ?>"><?php echo $is_family ? 'Open Family' : 'Open my portal'; ?></a>
                         </div>
                         <?php else : ?>
                         <div class="fra-auth-form-wrap">
@@ -1479,10 +1479,10 @@ class FRA_Auth_Pages {
                 <div class="fra-auth-benefits">
                     <div class="fra-auth-benefits-title">Moving with family?</div>
                     <ul>
-                        <li>The Family plan gives your partner and each child (up to four) a file of their own, for <?php echo esc_html( $this->family_price() ); ?> once</li>
+                        <li>The Family add-on gives your partner and each child (up to four) a file of their own, for <?php echo esc_html( $this->family_price() ); ?> once</li>
                         <li>Your partner gets their own sign-in, so you can split the work or do it all yourself</li>
                     </ul>
-                    <p style="margin:12px 0 0"><a href="<?php echo esc_url($this->family_addon_url()); ?>">Add the Family plan</a> · or later, from Family plans in the portal</p>
+                    <p style="margin:12px 0 0"><a href="<?php echo esc_url($this->family_addon_url()); ?>">Get the Family add-on</a> · or later, from the Family page in the portal</p>
                 </div>
                 <?php endif; ?>
 
@@ -1514,7 +1514,7 @@ class FRA_Auth_Pages {
     }
 
     /**
-     * Where "Add the Family plan" goes: the member tools setting, or the
+     * Where "Add the Family add-on" goes: the member tools setting, or the
      * product's default registration slug.
      *
      * @return string

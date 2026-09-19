@@ -17,6 +17,7 @@ import Modal from '@/components/shared/Modal';
 import { useDeleteFile, useDraftLetter, useEditLetter, useLetters, useSaveLetterAnswers } from '@/hooks/useApi';
 import { usePortalStore } from '@/store';
 import type { Letter } from '@/types';
+import { formatDate } from '@/utils/dates';
 import { FieldInput, IncomeSummary } from './LetterFields';
 
 const ROUTE_NAMES: Record<string, string> = {
@@ -39,12 +40,6 @@ const GROUPS: { id: string; label: string }[] = [
 ];
 
 const letterKey = (l: Pick<Letter, 'type' | 'person'>) => (l.person === 'partner' ? `${l.type}|partner` : l.type);
-
-function formatDate(value: string | null | undefined): string {
-  if (!value) return '';
-  const d = new Date(value.replace(' ', 'T'));
-  return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
-}
 
 export default function LettersSection({ projectId }: { projectId: number }) {
   const { data, isLoading, isError, refetch } = useLetters();

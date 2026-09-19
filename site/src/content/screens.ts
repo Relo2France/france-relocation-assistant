@@ -53,7 +53,7 @@ export const SCREENS = {
     ...desktop('family'),
     title: 'One file per person',
     caption: 'Your partner gets their own sign-in to the same household file, and you can hand them their steps.',
-    alt: 'The Family plans page showing the account holder and their partner, the partner’s documents and the steps assigned to them.',
+    alt: 'The Family page showing the account holder and their partner, the partner’s documents and the steps assigned to them.',
   },
   deadlines: {
     ...desktop('deadlines'),

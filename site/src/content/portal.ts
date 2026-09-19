@@ -45,8 +45,8 @@ export const portalFeatures: PortalFeature[] = [
     publicVersion: 'The guides explain the rule.',
   },
   {
-    name: 'Research on demand',
-    what: 'Reports on a commune or a region, written against current official sources and saved to your file.',
+    name: 'Explore France',
+    what: 'Location reports on a commune or a region, written against current official sources and saved to your file.',
     publicVersion: 'The guides cover the common cases.',
   },
 ];

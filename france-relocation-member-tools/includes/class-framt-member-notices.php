@@ -73,7 +73,7 @@ class FRAMT_Member_Notices {
         $summary = trim((string) ($review['changes_summary'] ?? ''));
         $sources = array_filter(array_map('strval', (array) ($review['sources_checked'] ?? array())));
 
-        $body  = 'The topic **' . $title . '** was re-checked against official sources and updated on ' . date_i18n('j F Y') . ".\n\n";
+        $body  = 'The topic **' . $title . '** was re-checked against official sources and updated on ' . date_i18n('M j, Y') . ".\n\n";
         $body .= "**What changed**\n\n" . ('' !== $summary ? $summary : 'The wording was brought in line with the current official text.') . "\n\n";
         $body .= '**Why you are getting this**' . "\n\n" . $audience['reason'] . "\n\n";
         if (!empty($sources)) {
@@ -324,7 +324,7 @@ class FRAMT_Member_Notices {
         echo '<h2 style="margin:0 0 4px;">Notices waiting for your approval</h2>';
         echo '<p style="margin:0 0 12px;color:#5f6e66;">A knowledge-base topic changed. Each draft below goes to the members it applies to when you approve it. Nothing is sent until you do.</p>';
         foreach ($pending as $d) {
-            echo '<details style="border-top:1px solid #ebefeb;padding:10px 0;"><summary style="cursor:pointer;font-weight:600;">' . esc_html($d['subject']) . ' <span style="font-weight:400;color:#5f6e66;">· ' . count($d['audience']) . ' member' . (1 === count($d['audience']) ? '' : 's') . ' · drafted ' . esc_html(mysql2date('j M', $d['created'])) . '</span></summary>';
+            echo '<details style="border-top:1px solid #ebefeb;padding:10px 0;"><summary style="cursor:pointer;font-weight:600;">' . esc_html($d['subject']) . ' <span style="font-weight:400;color:#5f6e66;">· ' . count($d['audience']) . ' member' . (1 === count($d['audience']) ? '' : 's') . ' · drafted ' . esc_html(mysql2date('M j', $d['created'])) . '</span></summary>';
             echo '<div style="max-width:640px;padding:8px 0 4px;">' . wp_kses_post(FRAMT_Messages::markdown_to_html($d['body'])) . '</div>';
             echo '<p style="margin:8px 0 0;"><a class="button button-primary" href="' . esc_url($this->action_url($d['id'], 'approve')) . '">Approve and send</a> ';
             echo '<a class="button" href="' . esc_url($this->action_url($d['id'], 'discard')) . '" style="margin-left:6px;">Discard</a></p>';

@@ -6,6 +6,7 @@
  */
 
 import type { TravelStatusPlanningResult, TravelStatusStatus, TravelStatusSummary, TravelStatusTrip } from '@/types';
+import { formatDate as formatDisplayDate } from '@/utils/dates';
 
 const SCHENGEN_MAX_DAYS = 90;
 const SCHENGEN_WINDOW_DAYS = 180;
@@ -328,12 +329,7 @@ export function generateTripId(): string {
  * Format a date for display
  */
 export function formatDate(dateString: string): string {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
+  return formatDisplayDate(dateString);
 }
 
 /**

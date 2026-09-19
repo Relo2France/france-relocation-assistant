@@ -1208,7 +1208,7 @@ class FRAMT_Portal_API {
     /**
      * Whose file a request works on.
      *
-     * A partner invited from the Family plan signs in with their own account
+     * A partner invited from the Family add-on signs in with their own account
      * but works on the household's single file, so every handler resolves the
      * owner here instead of the raw current user. The link is honoured only
      * while the owner still lists that partner, so revoking an invite is
@@ -2012,7 +2012,7 @@ class FRAMT_Portal_API {
             $task->sort_order = (int) $params['sort_order'];
         }
 
-        // Who does it: the owner, or the partner invited from the Family plan.
+        // Who does it: the owner, or the partner invited from the Family add-on.
         if ( array_key_exists( 'assignee_id', $params ) ) {
             $assignee = (int) $params['assignee_id'];
             if ( 0 === $assignee ) {
@@ -3007,7 +3007,7 @@ class FRAMT_Portal_API {
                     return array( 'status' => 'none', 'note' => 'Could not read the expiry date. Check it yourself: it must run six months past your move.' );
                 }
                 $expiry = $f['expiry_date'];
-                $pretty = date_i18n( 'j F Y', strtotime( $expiry ) );
+                $pretty = date_i18n( 'M j, Y', strtotime( $expiry ) );
                 if ( $move ) {
                     $m = $months( $move, $expiry );
                     if ( $m >= 6 ) {
@@ -3031,9 +3031,9 @@ class FRAMT_Portal_API {
                 }
                 $age = $months( $f['document_date'], $today );
                 if ( $age <= 3 ) {
-                    return array( 'status' => 'ok', 'note' => sprintf( 'Dated %s. Under three months old today; it must still be under three months old on the day you submit.', date_i18n( 'j F Y', strtotime( $f['document_date'] ) ) ) );
+                    return array( 'status' => 'ok', 'note' => sprintf( 'Dated %s. Under three months old today; it must still be under three months old on the day you submit.', date_i18n( 'M j, Y', strtotime( $f['document_date'] ) ) ) );
                 }
-                return array( 'status' => 'flag', 'note' => sprintf( 'Dated %s, more than three months ago. Consulates want statements under three months old at submission: get a fresh one.', date_i18n( 'j F Y', strtotime( $f['document_date'] ) ) ) );
+                return array( 'status' => 'flag', 'note' => sprintf( 'Dated %s, more than three months ago. Consulates want statements under three months old at submission: get a fresh one.', date_i18n( 'M j, Y', strtotime( $f['document_date'] ) ) ) );
 
             case 'birth_certificate':
             case 'marriage_certificate':
@@ -3058,13 +3058,13 @@ class FRAMT_Portal_API {
                     $problems[] = sprintf( 'medical cover reads €%s, below the €30,000 minimum', number_format( $amount ) );
                 }
                 if ( $end && $move && strtotime( $end ) < strtotime( $move . ' +12 months' ) ) {
-                    $problems[] = sprintf( 'cover ends %s, before the first year of your stay is over', date_i18n( 'j F Y', strtotime( $end ) ) );
+                    $problems[] = sprintf( 'cover ends %s, before the first year of your stay is over', date_i18n( 'M j, Y', strtotime( $end ) ) );
                 }
                 if ( $problems ) {
                     return array( 'status' => 'flag', 'note' => ucfirst( implode( '; ', $problems ) ) . '.' );
                 }
                 if ( null !== $amount || $end ) {
-                    return array( 'status' => 'ok', 'note' => trim( ( null !== $amount ? sprintf( 'Cover €%s. ', number_format( $amount ) ) : '' ) . ( $end ? sprintf( 'Runs to %s. ', date_i18n( 'j F Y', strtotime( $end ) ) ) : '' ) . 'Check it also excludes nothing pre-existing and includes repatriation.' ) );
+                    return array( 'status' => 'ok', 'note' => trim( ( null !== $amount ? sprintf( 'Cover €%s. ', number_format( $amount ) ) : '' ) . ( $end ? sprintf( 'Runs to %s. ', date_i18n( 'M j, Y', strtotime( $end ) ) ) : '' ) . 'Check it also excludes nothing pre-existing and includes repatriation.' ) );
                 }
                 return array( 'status' => 'none', 'note' => 'Could not read the cover amount or dates. It must cover €30,000 of medical costs, the whole stay, with repatriation.' );
 
@@ -3749,7 +3749,7 @@ class FRAMT_Portal_API {
         // And tasks whose reason has gone go with it.
         $this->reconcile_conditional_tasks( $user_id );
 
-        // Who is moving becomes a file per person on the Family plan.
+        // Who is moving becomes a file per person on the Family add-on.
         $this->sync_family_from_profile( $user_id );
 
         // Recalculate task due dates if move date changed
@@ -7824,7 +7824,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
     }
 
     /**
-     * Tag tasks created before the Family plan knew who they were for.
+     * Tag tasks created before the Family add-on knew who they were for.
      *
      * Template tasks carry a person from now on; the ones already in a
      * member's file do not. Match them once by title against the spouse and
@@ -9318,7 +9318,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
             if ( $used >= 5 ) {
                 return new WP_Error(
                     'report_daily_limit',
-                    'You have started five new research reports today, which is the daily limit. Reports you have already opened are still available, and you can start more tomorrow.',
+                    'You have started five new location reports today, which is the daily limit. Reports you have already opened are still available, and you can start more tomorrow.',
                     array( 'status' => 429 )
                 );
             }
@@ -9501,7 +9501,7 @@ SYSTEM;
         );
 
         if ( ! $report ) {
-            return new WP_Error( 'report_not_found', 'Research report not found.', array( 'status' => 404 ) );
+            return new WP_Error( 'report_not_found', 'Location report not found.', array( 'status' => 404 ) );
         }
 
         return rest_ensure_response( array(
@@ -9528,7 +9528,7 @@ SYSTEM;
         );
 
         if ( ! $report ) {
-            return new WP_Error( 'report_not_found', 'Research report not found.', array( 'status' => 404 ) );
+            return new WP_Error( 'report_not_found', 'Location report not found.', array( 'status' => 404 ) );
         }
 
         // Parse the report content
@@ -9648,7 +9648,7 @@ SYSTEM;
 
         // Footer
         $pdf->addSpace( 2 );
-        $pdf->write( 'Generated: ' . gmdate( 'F j, Y' ) );
+        $pdf->write( 'Generated: ' . gmdate( 'M j, Y' ) );
         if ( ! empty( $content['footer']['data_sources'] ) ) {
             $pdf->write( 'Data sources: ' . implode( ', ', $content['footer']['data_sources'] ) );
         }
@@ -9687,7 +9687,7 @@ SYSTEM;
             );
 
             if ( ! $report ) {
-                wp_die( 'Research report not found.', 'Report Not Found', array( 'response' => 404 ) );
+                wp_die( 'Location report not found.', 'Report Not Found', array( 'response' => 404 ) );
             }
 
             // Parse the report content
@@ -9968,7 +9968,7 @@ SYSTEM;
         if ( ! is_array( $data_sources ) ) {
             $data_sources = is_string( $data_sources ) ? array( $data_sources ) : array( 'INSEE', 'Eurostat', 'French government sources' );
         }
-        $generated_date = $footer['generated_date'] ?? gmdate( 'F j, Y' );
+        $generated_date = $footer['generated_date'] ?? gmdate( 'M j, Y' );
         $version = $footer['version'] ?? $report['version'] ?? 1;
 
         // Logo URL - use the uploaded logo from plugin assets
@@ -9979,7 +9979,7 @@ SYSTEM;
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>' . esc_attr( $title ) . ' - Relocation Report | relo2france</title>
+    <title>' . esc_attr( $title ) . ' - Location report | Relo2France</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Karla:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
     <style>
@@ -10187,7 +10187,7 @@ SYSTEM;
         );
 
         if ( ! $report ) {
-            return new WP_Error( 'report_not_found', 'Research report not found.', array( 'status' => 404 ) );
+            return new WP_Error( 'report_not_found', 'Location report not found.', array( 'status' => 404 ) );
         }
 
         $document_id = $this->save_report_link_to_documents( $report_id, $user_id );
@@ -10594,7 +10594,7 @@ SYSTEM;
      */
     private function build_report_prompt( $type, $code, $name ) {
         $type_label = ucfirst( $type );
-        $current_date = gmdate( 'F j, Y' );
+        $current_date = gmdate( 'M j, Y' );
 
         // Key stats to include based on level - formatted as array of objects
         $key_stats_format = array(
@@ -11811,7 +11811,7 @@ SECTIONS;
     }
 
     /**
-     * Who the profile says is moving, so the Family plan can mirror it even
+     * Who the profile says is moving, so the Family add-on can mirror it even
      * before the add-on is bought.
      *
      * @param int $user_id Member.
@@ -11832,9 +11832,9 @@ SECTIONS;
     }
 
     /**
-     * Keep the Family plan in step with the profile.
+     * Keep the Family add-on in step with the profile.
      *
-     * The profile asks who is moving and names the partner; the Family plan
+     * The profile asks who is moving and names the partner; the Family add-on
      * holds a file per person. Creating the records here means a member never
      * types the same names twice, and the two views can't disagree. Records
      * are only ever added or filled in, never removed: a member who removes a
@@ -11935,7 +11935,7 @@ SECTIONS;
             $relationship = 'spouse';
         }
         if ( ! in_array( $relationship, array( 'spouse', 'child' ), true ) ) {
-            return new WP_Error( 'family_relationship', 'The Family plan covers one partner and up to four children.', array( 'status' => 400 ) );
+            return new WP_Error( 'family_relationship', 'The Family add-on covers one partner and up to four children.', array( 'status' => 400 ) );
         }
         $adults = 0;
         $kids   = 0;

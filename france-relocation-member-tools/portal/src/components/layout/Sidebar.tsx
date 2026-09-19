@@ -56,7 +56,7 @@ function StageRing({ state }: { state: 'done' | 'now' | 'ahead' }) {
 const TOOLS: { id: string; label: string; icon: typeof MessageSquare; views: string[] }[] = [
   { id: 'chat', label: 'Ask about my case', icon: MessageSquare, views: ['chat', 'glossary'] },
   { id: 'documents', label: 'Documents & files', icon: FileText, views: ['documents', 'files', 'checklists'] },
-  { id: 'family', label: 'Family plans', icon: Users, views: ['family'] },
+  { id: 'family', label: 'Family', icon: Users, views: ['family'] },
   { id: 'deadlines', label: 'Deadlines', icon: Calendar, views: ['deadlines', 'timeline', 'tasks'] },
   { id: 'schengen', label: 'Schengen days', icon: Globe, views: ['schengen'] },
   { id: 'research', label: 'Explore France', icon: BookOpen, views: ['research', 'guides', 'guide'] },

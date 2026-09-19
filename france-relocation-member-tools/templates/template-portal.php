@@ -36,7 +36,7 @@ if ( $is_logged_in && ! empty( $_GET['accept_household'] ) ) {
 // API answers only members (check_member_permission), so the portal would
 // otherwise open onto a page of errors. Admins always get in.
 if ( $is_logged_in && class_exists( 'MeprUser' ) && ! current_user_can( 'manage_options' ) && ! get_option( 'framt_enable_demo_mode', false ) ) {
-    // A partner invited from the Family plan is covered by the owner's membership.
+    // A partner invited from the Family add-on is covered by the owner's membership.
     $household_owner = (int) get_user_meta( $current_user->ID, 'framt_household_owner', true );
     $mepr_user       = new MeprUser( $household_owner > 0 ? $household_owner : $current_user->ID );
     // The Family add-on is an extra on top of membership, not a membership:
