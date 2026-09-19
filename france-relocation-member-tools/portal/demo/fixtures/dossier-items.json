@@ -1,0 +1,56 @@
+[
+    {
+        "id": "passport-valid",
+        "title": "Valid passport, 6+ months beyond your stay",
+        "lead_time": 180,
+        "priority": "high"
+    },
+    {
+        "id": "passport-photos",
+        "title": "Passport photos (35x45mm)",
+        "lead_time": 14,
+        "priority": "high"
+    },
+    {
+        "id": "application-form",
+        "title": "Completed France-Visas application, printed and signed",
+        "lead_time": 7,
+        "priority": "high"
+    },
+    {
+        "id": "proof-accommodation",
+        "title": "Proof of accommodation in France",
+        "lead_time": 30,
+        "priority": "high"
+    },
+    {
+        "id": "proof-funds",
+        "title": "Proof of financial means (3 months of bank statements)",
+        "lead_time": 30,
+        "priority": "high"
+    },
+    {
+        "id": "travel-insurance",
+        "title": "Health insurance covering the full stay",
+        "lead_time": 14,
+        "priority": "high"
+    },
+    {
+        "id": "birth-certificate-apostilled",
+        "title": "Birth certificate, apostilled",
+        "lead_time": 60,
+        "priority": "high"
+    },
+    {
+        "id": "cover-letter",
+        "title": "Cover letter explaining purpose",
+        "lead_time": 7,
+        "priority": "medium"
+    },
+    {
+        "id": "declaration-no-work",
+        "title": "Signed declaration of no professional activity (attestation sur l'honneur)",
+        "lead_time": 30,
+        "priority": "high"
+    }
+]

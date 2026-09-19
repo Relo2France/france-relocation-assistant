@@ -1076,7 +1076,7 @@ class FRAMT_Task_Howto {
                 'links' => array( array( 'France-Visas', $fv ) ),
             ),
 
-            'Apply for spouse visa' => array(
+            'Your partner\'s own visa application' => array(
                 'steps' => array(
                     array( 'A separate France-Visas application', 'In {spouse}\'s name, same route and dates as yours.', $fv ),
                     array( 'Same TLScontact day', 'Consecutive slots; the fee is per applicant.', $tls ),

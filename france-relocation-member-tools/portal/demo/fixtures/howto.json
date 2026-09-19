@@ -1,0 +1,1206 @@
+{
+    "Order certified copies of your civil records": {
+        "steps": [
+            {
+                "title": "Find the office that holds each record",
+                "detail": "Birth certificates come from the vital records office of the state where you were born; marriage certificates from the state or, in some states, the county where the licence was issued. The CDC keeps the directory for every state, with addresses, fees and whether you can order online.",
+                "url": "https://www.cdc.gov/nchs/w2w/index.htm"
+            },
+            {
+                "title": "Order the long-form certified copy",
+                "detail": "Ask for the certified, long-form (sometimes \"vault\" or \"full\") copy with the raised or embossed seal, not the short abstract or a wallet card. Apostille offices refuse photocopies and notarised copies; consulates like a copy issued within the last six months.",
+                "url": ""
+            },
+            {
+                "title": "Order two of each",
+                "detail": "One goes off for the apostille and stays in the French file for years; the second is your spare. Ordering later from France is slow.",
+                "url": ""
+            },
+            {
+                "title": "Check the copy when it arrives",
+                "detail": "Names spelled exactly as in the passport, the seal present, the registrar's signature legible. A record with a discrepancy is the one that gets refused in France.",
+                "url": ""
+            }
+        ],
+        "bring": [
+            "Government ID",
+            "Payment card",
+            "Parents' names and the place and date of the event, for the order form"
+        ],
+        "time": "A few days to four weeks, depending on the state and whether you order online or by post.",
+        "cost": "Usually $10 to $35 per copy, plus a processing fee for online orders.",
+        "links": [
+            {
+                "label": "Where to write for vital records (CDC)",
+                "url": "https://www.cdc.gov/nchs/w2w/index.htm"
+            }
+        ]
+    },
+    "Get the apostilles from the state": {
+        "steps": [
+            {
+                "title": "Find the apostille office for North Carolina",
+                "detail": "Each state's Secretary of State (or equivalent) apostilles the records that state issued. The National Association of Secretaries of State keeps the directory: office, fee, mail or walk-in, current turnaround.",
+                "url": "https://www.nass.org/business-services/apostillesdocument-authentication-services"
+            },
+            {
+                "title": "Check whether a county step comes first",
+                "detail": "In a few states a record signed by a county or city registrar must be certified by the county clerk before the state will apostille it. The state's apostille page says so; the CDC directory notes it for vital records.",
+                "url": "https://www.cdc.gov/nchs/w2w/index.htm"
+            },
+            {
+                "title": "Send or bring the certified copy with the request form",
+                "detail": "The original certified copy, the state's apostille request form naming France as the destination country, the fee, and a prepaid return envelope if by mail. Never send a photocopy.",
+                "url": ""
+            },
+            {
+                "title": "Keep the apostille attached",
+                "detail": "The apostille is a stapled or glued page. Do not remove it, and do not laminate anything. Scan the whole thing front and back once it comes home; the scan is what the translator and, later, French offices work from.",
+                "url": ""
+            }
+        ],
+        "bring": [
+            "The certified copy of each record",
+            "The state's request form",
+            "Fee (card or money order)",
+            "Prepaid return envelope with tracking"
+        ],
+        "time": "One to three weeks in most states; some offer same-day counter service, others take four or more by mail.",
+        "cost": "Roughly $5 to $40 per document, set by the state.",
+        "links": [
+            {
+                "label": "Apostille offices by state (NASS)",
+                "url": "https://www.nass.org/business-services/apostillesdocument-authentication-services"
+            },
+            {
+                "label": "Where to write for vital records (CDC)",
+                "url": "https://www.cdc.gov/nchs/w2w/index.htm"
+            }
+        ]
+    },
+    "Buy health insurance for the whole first year": {
+        "steps": [
+            {
+                "title": "Know what the consulate is checking",
+                "detail": "Cover for the full visa period, at least €30,000 for medical costs, repatriation included, no exclusion for pre-existing conditions, valid in France. Ordinary travel insurance and US domestic plans are refused.",
+                "url": ""
+            },
+            {
+                "title": "Compare expatriate policies",
+                "detail": "Insurers who sell \"visa long séjour\" or \"expatriate\" policies issue an attestation written for French consulates, in French or English, with the dates and the amounts on it. That letter is the document; the policy booklet is not.",
+                "url": ""
+            },
+            {
+                "title": "Buy for the visa dates, cancellable",
+                "detail": "Cover should start on the day the visa starts. Once French health cover opens after three months of residence you can cut it back or cancel, so look for a policy that allows it.",
+                "url": ""
+            },
+            {
+                "title": "Print the attestation",
+                "detail": "One per applicant, each named. It goes in the dossier and travels with you.",
+                "url": ""
+            }
+        ],
+        "bring": [
+            "Passport details for every applicant",
+            "The visa dates"
+        ],
+        "time": "A day or two to arrange; the letter is usually immediate.",
+        "cost": "Varies with age and cover; budget from a few hundred to a few thousand dollars a year.",
+        "links": []
+    },
+    "Line up where you will live for the first months": {
+        "steps": [
+            {
+                "title": "Choose the kind of proof",
+                "detail": "A signed lease, a deed, a hotel or rental booking for the first weeks, or an attestation d'hébergement from a host in France with a copy of their ID and a recent utility bill.",
+                "url": ""
+            },
+            {
+                "title": "Check what your consulate accepts",
+                "detail": "The France-Visas wizard lists the accepted proofs for your route; most US consulates accept a booking covering the first weeks.",
+                "url": "https://france-visas.gouv.fr/"
+            },
+            {
+                "title": "Get it in writing, dated",
+                "detail": "A booking confirmation with your name, the address and the dates; a lease signed by both sides; a host letter signed and dated.",
+                "url": ""
+            }
+        ],
+        "bring": [
+            "The booking, lease or host attestation with the host's ID and utility bill"
+        ],
+        "time": "A day for a booking; weeks for a lease at a distance.",
+        "cost": "The booking itself.",
+        "links": [
+            {
+                "label": "France-Visas",
+                "url": "https://france-visas.gouv.fr/"
+            }
+        ]
+    },
+    "Get passport photos taken (35 x 45 mm)": {
+        "steps": [
+            {
+                "title": "Ask for French visa photos, not US passport photos",
+                "detail": "French specification: 35 x 45 mm, taken within six months, plain light grey or white background, neutral expression, no glasses glare. A US 2 x 2 inch photo is the wrong size and gets rejected at the counter.",
+                "url": ""
+            },
+            {
+                "title": "Get several",
+                "detail": "Two go in the dossier; keep spares for the validation and the residence card later. TLScontact centres sell them too, for a fee.",
+                "url": ""
+            }
+        ],
+        "bring": [],
+        "time": "Minutes.",
+        "cost": "A few dollars a set.",
+        "links": []
+    },
+    "Write the cover letter": {
+        "steps": [
+            {
+                "title": "Say who you are and why France",
+                "detail": "One page, dated and signed. Where you will live, for how long, how you support yourself, and what you will do with your time. For a couple, each writes their own or both sign one.",
+                "url": ""
+            },
+            {
+                "title": "Match the file",
+                "detail": "Every figure and date in the letter must agree with the documents behind it: the same address as the accommodation proof, the same income as the statements.",
+                "url": ""
+            },
+            {
+                "title": "Let the portal draft it",
+                "detail": "Documents has a draft written for your route from your profile. Check every line, print it, sign and date it.",
+                "url": ""
+            },
+            {
+                "title": "French or English",
+                "detail": "US consulates accept English. A short French version alongside is a courtesy, not a requirement.",
+                "url": ""
+            }
+        ],
+        "bring": [],
+        "time": "An evening.",
+        "cost": "Nothing.",
+        "links": []
+    },
+    "Pull three months of bank statements": {
+        "steps": [
+            {
+                "title": "Download official statements for the last three months",
+                "detail": "From each account you are relying on: checking, savings, investment. Official PDFs with the bank's name, your name and the account number, not screenshots.",
+                "url": ""
+            },
+            {
+                "title": "Add the proof of income",
+                "detail": "Pay slips or an employer letter, the Social Security award letter, pension statements, a rental income ledger: whatever shows the money keeps coming.",
+                "url": ""
+            },
+            {
+                "title": "Date it to the appointment",
+                "detail": "Statements older than three months get asked for again. Pull them in the last two weeks before the appointment and add a fresh balance printout on the day.",
+                "url": ""
+            }
+        ],
+        "bring": [
+            "Statements from every account you rely on",
+            "Proof of income"
+        ],
+        "time": "An hour, once.",
+        "cost": "Nothing; some banks charge for stamped copies.",
+        "links": []
+    },
+    "Complete the France-Visas application online": {
+        "steps": [
+            {
+                "title": "Create the account and run the wizard",
+                "detail": "On france-visas.gouv.fr, answer with your real nationality, country of residence, purpose of stay and length. The wizard tells you the visa category and produces the document list for your route.",
+                "url": "https://france-visas.gouv.fr/"
+            },
+            {
+                "title": "Fill in the long-stay form",
+                "detail": "One application per adult; children are separate applications too. Save as you go. Spelling of names and passport numbers exactly as in the passport.",
+                "url": ""
+            },
+            {
+                "title": "Print, sign, keep the receipt",
+                "detail": "The signed form and the receipt page with the France-Visas reference number are the first two things checked at the appointment.",
+                "url": ""
+            }
+        ],
+        "bring": [
+            "Passport",
+            "Details of your accommodation in France",
+            "Your route's document list"
+        ],
+        "time": "An hour per applicant.",
+        "cost": "Nothing at this stage.",
+        "links": [
+            {
+                "label": "France-Visas",
+                "url": "https://france-visas.gouv.fr/"
+            }
+        ]
+    },
+    "Book the TLScontact appointment": {
+        "steps": [
+            {
+                "title": "Create the TLScontact account",
+                "detail": "TLScontact has run French visa intake in the US since April 2025. Link your France-Visas reference to the account.",
+                "url": "https://visas-fr.tlscontact.com/"
+            },
+            {
+                "title": "Pick any of the ten centres",
+                "detail": "New York, Boston, Washington, Atlanta, Miami, Chicago, Houston, Los Angeles, San Francisco or Seattle; you are not tied to the one nearest you. Slots open a few weeks ahead and go fast from May to August.",
+                "url": ""
+            },
+            {
+                "title": "Book everyone on the same day",
+                "detail": "A couple or a family books consecutive slots so the files travel together.",
+                "url": ""
+            },
+            {
+                "title": "Pay the service fee online",
+                "detail": "About €220 per long-stay applicant, charged in dollars, non-refundable. Optional extras (priority slot, courier return) change comfort, not the decision.",
+                "url": ""
+            }
+        ],
+        "bring": [
+            "France-Visas reference number",
+            "Passport details",
+            "Payment card"
+        ],
+        "time": "Twenty minutes; the wait for a slot is what takes time.",
+        "cost": "About €220 service fee per long-stay applicant.",
+        "links": [
+            {
+                "label": "TLScontact France",
+                "url": "https://visas-fr.tlscontact.com/"
+            }
+        ]
+    },
+    "Attend the appointment: dossier, biometrics, fee": {
+        "steps": [
+            {
+                "title": "Order the file the way the list reads",
+                "detail": "Follow the France-Visas document list top to bottom: originals in one pile, one photocopy of each in another. Missing pieces mean the file goes home and you rebook.",
+                "url": ""
+            },
+            {
+                "title": "Arrive early with everyone applying",
+                "detail": "Each applicant appears in person, children included. Fingerprints and a photo are taken for everyone over twelve.",
+                "url": ""
+            },
+            {
+                "title": "Pay the visa fee",
+                "detail": "€99 for most long-stay categories, charged in dollars; the student rate is lower and spouses of French nationals pay nothing. Non-refundable whatever the decision.",
+                "url": ""
+            },
+            {
+                "title": "Hand over the passport",
+                "detail": "It leaves with the file. Ask for the receipt and the tracking reference; nothing that needs the passport can be booked until it is back.",
+                "url": ""
+            }
+        ],
+        "bring": [
+            "Passport",
+            "Signed France-Visas form and receipt",
+            "Two photos 35 x 45 mm",
+            "Every document on your list, original plus one copy",
+            "Payment card"
+        ],
+        "time": "About an hour at the centre.",
+        "cost": "€99 visa fee (reduced for students, none for spouses of French citizens).",
+        "links": [
+            {
+                "label": "TLScontact France",
+                "url": "https://visas-fr.tlscontact.com/"
+            },
+            {
+                "label": "France-Visas",
+                "url": "https://france-visas.gouv.fr/"
+            }
+        ]
+    },
+    "Collect your passport and check the visa": {
+        "steps": [
+            {
+                "title": "Track the file",
+                "detail": "The TLScontact account shows when the passport is back from the consulate. Two to six weeks is typical; longer in summer or when extra checks are made.",
+                "url": ""
+            },
+            {
+                "title": "Read the sticker before you leave",
+                "detail": "Your name spelled correctly, the dates covering your move, the number of entries, and the mention: \"VLS-TS\" means you validate online after arrival; \"carte de séjour à solliciter\" means a prefecture appointment within two months instead.",
+                "url": ""
+            },
+            {
+                "title": "Copy it",
+                "detail": "Scan the visa page and the passport photo page; the scans go into the validation and every French office afterwards.",
+                "url": ""
+            }
+        ],
+        "bring": [
+            "The appointment receipt",
+            "ID"
+        ],
+        "time": "Two to six weeks after the appointment.",
+        "cost": "Courier return if chosen.",
+        "links": [
+            {
+                "label": "TLScontact France",
+                "url": "https://visas-fr.tlscontact.com/"
+            }
+        ]
+    },
+    "Arrange shipping, or sell what stays": {
+        "steps": [
+            {
+                "title": "Decide what crosses the ocean",
+                "detail": "Container shipping is priced by volume and takes six to ten weeks door to door; air freight for a few boxes takes days and costs more per kilo. Most people ship less than they planned.",
+                "url": ""
+            },
+            {
+                "title": "Get three quotes from international movers",
+                "detail": "Ask for door-to-door including French customs clearance. An inventory in English and French, valued, is required for customs.",
+                "url": ""
+            },
+            {
+                "title": "Claim the duty-free household move",
+                "detail": "Used personal goods owned for six months or more enter France duty-free when you transfer residence, on presentation of the visa, proof of the old and new addresses and the signed inventory. The mover prepares the customs form.",
+                "url": ""
+            },
+            {
+                "title": "Sell or store the rest",
+                "detail": "What stays should be sold, given or in storage before the last month; the last month is for the file, not the garage.",
+                "url": ""
+            }
+        ],
+        "bring": [
+            "Signed, valued inventory",
+            "Visa and passport copies",
+            "Proof of the US and French addresses"
+        ],
+        "time": "Quotes in a week; shipping six to ten weeks by sea.",
+        "cost": "Thousands of dollars for a container; hundreds for boxes by air.",
+        "links": []
+    },
+    "Book flights for on or after the visa start date": {
+        "steps": [
+            {
+                "title": "Land on or after the visa start date",
+                "detail": "A day earlier and you enter as a tourist, and the 90-day validation clock is tied to the entry stamp of the correct entry.",
+                "url": ""
+            },
+            {
+                "title": "Fly direct into France if you can",
+                "detail": "A connection through another Schengen airport means the entry stamp is from that country; it is allowed, but keep the boarding passes to prove the French arrival date.",
+                "url": ""
+            },
+            {
+                "title": "Keep everything",
+                "detail": "Boarding passes and the e-ticket prove your arrival date for validation if the passport is not stamped.",
+                "url": ""
+            }
+        ],
+        "bring": [],
+        "time": "An hour.",
+        "cost": "The fares.",
+        "links": []
+    },
+    "Book temporary accommodation": {
+        "steps": [
+            {
+                "title": "Book the first four to six weeks",
+                "detail": "Long enough to find a home and receive post. A furnished rental with a proper address (not a hotel room) makes the bank and the validation easier.",
+                "url": ""
+            },
+            {
+                "title": "Get an address you can use",
+                "detail": "The validation, the bank and the SIM all want a proof of address: the rental agreement or a host's attestation plus their utility bill.",
+                "url": ""
+            }
+        ],
+        "bring": [],
+        "time": "An evening.",
+        "cost": "The rental.",
+        "links": []
+    },
+    "Tidy the US side: mail, prescriptions, bank, phone": {
+        "steps": [
+            {
+                "title": "Forward the mail",
+                "detail": "USPS forwards to a US address, not abroad; use a family member or a mail-scanning service and file the change of address online.",
+                "url": "https://www.usps.com/manage/forward.htm"
+            },
+            {
+                "title": "Fill three months of prescriptions",
+                "detail": "Carry them in original packaging with the prescription; French pharmacies need a French prescription to refill, so book a doctor early after arrival.",
+                "url": ""
+            },
+            {
+                "title": "Tell the bank and the card issuers",
+                "detail": "Travel notices, a US address on file, and online banking that works without a US phone.",
+                "url": ""
+            },
+            {
+                "title": "Keep a US number alive",
+                "detail": "Two-factor codes from US banks, Social Security and the IRS go to a US number. A cheap plan or a number-parking service keeps it.",
+                "url": ""
+            }
+        ],
+        "bring": [],
+        "time": "A day of calls.",
+        "cost": "Small monthly fees for mail and number services.",
+        "links": [
+            {
+                "label": "USPS change of address",
+                "url": "https://www.usps.com/manage/forward.htm"
+            }
+        ]
+    },
+    "Pack the originals in hand luggage": {
+        "steps": [
+            {
+                "title": "One folder, in the cabin",
+                "detail": "Passport with the visa, every apostilled original, the insurance attestation, the accommodation proof, the pet certificate, and a copy of the France-Visas file. Nothing in the hold.",
+                "url": ""
+            },
+            {
+                "title": "Scans in the cloud too",
+                "detail": "Every page scanned and reachable from your phone; French offices accept uploads and you will be asked for the same documents again and again.",
+                "url": ""
+            }
+        ],
+        "bring": [],
+        "time": "An hour.",
+        "cost": "Nothing.",
+        "links": []
+    },
+    "Get a French SIM": {
+        "steps": [
+            {
+                "title": "Buy a prepaid SIM in the first days",
+                "detail": "Any carrier shop or supermarket; passport as ID. Move to a contract once you have a French bank account and address.",
+                "url": ""
+            },
+            {
+                "title": "Use the French number everywhere",
+                "detail": "Bank, ANEF, ameli, the prefecture: every French account sends its codes to a French number.",
+                "url": ""
+            }
+        ],
+        "bring": [
+            "Passport"
+        ],
+        "time": "Half an hour.",
+        "cost": "A few euros for the SIM; €10 to €30 a month.",
+        "links": []
+    },
+    "Get sworn French translations": {
+        "steps": [
+            {
+                "title": "Know when they are needed",
+                "detail": "Not for the consulate, which took your file in English. The prefecture (renewal) and CPAM (health cover) want sworn French translations of the apostilled birth and marriage certificates.",
+                "url": ""
+            },
+            {
+                "title": "Find a traducteur assermenté",
+                "detail": "Sworn translators are registered as experts with a French cour d'appel; each court publishes its list, and many work from scans by email. Only their stamp counts.",
+                "url": ""
+            },
+            {
+                "title": "Send the full scan",
+                "detail": "The certificate and its apostille together, front and back. The translation comes back stamped and dated; keep it with the original.",
+                "url": ""
+            }
+        ],
+        "bring": [
+            "Scans of each apostilled record"
+        ],
+        "time": "A week or two per batch.",
+        "cost": "Roughly €30 to €80 per document.",
+        "links": []
+    },
+    "Validate your visa online within 90 days": {
+        "steps": [
+            {
+                "title": "Go to the ANEF portal",
+                "detail": "Choose \"I validate my VLS-TS\". Create an account with your email (activate the link within 24 hours) or sign in with FranceConnect.",
+                "url": "https://administration-etrangers-en-france.interieur.gouv.fr/"
+            },
+            {
+                "title": "Enter the visa and the arrival",
+                "detail": "Visa number, the date you entered France (the entry stamp, not the visa date) and your French address.",
+                "url": ""
+            },
+            {
+                "title": "Upload the proofs",
+                "detail": "Passport photo page, the visa sticker, and a proof of address in France (lease, rental agreement, or a host attestation with their bill).",
+                "url": ""
+            },
+            {
+                "title": "Pay the validation tax",
+                "detail": "By card on the portal, or buy the timbre fiscal at timbres.impots.gouv.fr and enter the code the same day. €300 for most categories since May 2026, €150 for students; confirm the amount shown.",
+                "url": "https://timbres.impots.gouv.fr/"
+            },
+            {
+                "title": "Save the confirmation",
+                "detail": "The email and the PDF \"confirmation de validation\" are your proof of status for the year; the bank, CPAM and the prefecture ask for it.",
+                "url": ""
+            }
+        ],
+        "bring": [
+            "Passport and visa scans",
+            "Proof of address",
+            "Payment card"
+        ],
+        "time": "Half an hour, within 90 days of entry.",
+        "cost": "€300 (standard) or €150 (student) validation tax, as of May 2026.",
+        "links": [
+            {
+                "label": "ANEF portal",
+                "url": "https://administration-etrangers-en-france.interieur.gouv.fr/"
+            },
+            {
+                "label": "Timbres fiscaux",
+                "url": "https://timbres.impots.gouv.fr/"
+            }
+        ]
+    },
+    "Open French bank account": {
+        "steps": [
+            {
+                "title": "Pick a bank that takes newcomers",
+                "detail": "Traditional banks want an appointment and a proof of address; online banks open in days with a passport and a French address. Being a US citizen adds FATCA paperwork; some banks decline Americans, so ask first.",
+                "url": ""
+            },
+            {
+                "title": "Bring the file",
+                "detail": "Passport, the visa and its validation confirmation, proof of address (lease or host attestation with bill), and often a US tax number and a proof of income.",
+                "url": ""
+            },
+            {
+                "title": "Get the RIB",
+                "detail": "The RIB (bank details slip) is what every French service asks for: rent, utilities, CPAM, the phone. The card follows by post in a week or two.",
+                "url": ""
+            },
+            {
+                "title": "Keep the US account",
+                "detail": "For Social Security, pensions, US cards and the IRS.",
+                "url": ""
+            }
+        ],
+        "bring": [
+            "Passport and visa",
+            "Validation confirmation",
+            "Proof of address",
+            "US tax number (SSN) for FATCA"
+        ],
+        "time": "Days to two weeks.",
+        "cost": "Usually a small monthly fee.",
+        "links": []
+    },
+    "Find permanent housing": {
+        "steps": [
+            {
+                "title": "Build the rental dossier",
+                "detail": "French landlords ask for a dossier: ID, the visa, proof of income (three months), a tax return or the US equivalent, and often a guarantor. Newcomers without French pay slips offer several months' rent or a guarantee service instead.",
+                "url": ""
+            },
+            {
+                "title": "Look where the listings are",
+                "detail": "Agencies, the big listing sites, and the mairie's noticeboard in smaller towns. Visits are quick; decisions are the same day in tight markets.",
+                "url": ""
+            },
+            {
+                "title": "Sign, and do the état des lieux",
+                "detail": "The lease (bail) plus the inventory of condition on entry; photograph everything. The lease becomes your proof of address for every office.",
+                "url": ""
+            }
+        ],
+        "bring": [
+            "Passport and visa",
+            "Proof of income",
+            "Bank RIB",
+            "Deposit"
+        ],
+        "time": "Weeks.",
+        "cost": "Deposit of one month (unfurnished) or two (furnished), plus agency fees.",
+        "links": []
+    },
+    "Set up utilities": {
+        "steps": [
+            {
+                "title": "Electricity and gas",
+                "detail": "Open a contract with any supplier online; you need the meter number (on the meter or the previous bill), the RIB and the move-in date.",
+                "url": ""
+            },
+            {
+                "title": "Water",
+                "detail": "Often through the commune or a regional company; the landlord or agency says which.",
+                "url": ""
+            },
+            {
+                "title": "Internet and phone",
+                "detail": "Fibre or ADSL by address; a contract needs a French RIB. Installation takes one to three weeks.",
+                "url": ""
+            },
+            {
+                "title": "Keep the first bills",
+                "detail": "Each becomes a proof of address for the next office.",
+                "url": ""
+            }
+        ],
+        "bring": [
+            "Meter numbers",
+            "RIB",
+            "Lease"
+        ],
+        "time": "A week; internet longer.",
+        "cost": "Monthly.",
+        "links": []
+    },
+    "Enroll in French language classes": {
+        "steps": [
+            {
+                "title": "Start before you need it",
+                "detail": "The mairie, the local association network and private schools all run classes; the integration contract (CIR) on family routes includes free ones.",
+                "url": ""
+            },
+            {
+                "title": "Aim for A2 then B1",
+                "detail": "A2 is referenced for some family-route steps; B1 is the citizenship benchmark. Both are ordinary evening-class goals over a year or two.",
+                "url": ""
+            }
+        ],
+        "bring": [],
+        "time": "Ongoing.",
+        "cost": "Free to a few hundred euros a term.",
+        "links": []
+    },
+    "Request your FBI background check": {
+        "steps": [
+            {
+                "title": "Pick an FBI-approved channeler",
+                "detail": "A channeler takes your fingerprints electronically and returns the Identity History Summary in days; the FBI's own postal route takes ten to fourteen weeks. The FBI publishes the approved list.",
+                "url": "https://www.fbi.gov/how-we-can-help-you/more-fbi-services-and-information/identity-history-summary-checks/list-of-fbi-approved-channelers"
+            },
+            {
+                "title": "Get fingerprinted and submit",
+                "detail": "Book with the channeler, bring government ID, and ask for the result on FBI letterhead as a PDF and on paper. Some channelers will also arrange the apostille; ask.",
+                "url": ""
+            },
+            {
+                "title": "Apostille it at the US Department of State",
+                "detail": "A federal document is apostilled by the Office of Authentications in Washington, not by your state. Mail the FBI result with form DS-4194 and the fee, or use the channeler's apostille service.",
+                "url": "https://travel.state.gov/content/travel/en/records-and-authentications/authenticate-your-document/apostille-requirements.html"
+            },
+            {
+                "title": "Watch the six-month clock",
+                "detail": "Consulates want the check issued within six months of your appointment. Count back from the appointment date and order accordingly; too early and you do it twice.",
+                "url": ""
+            }
+        ],
+        "bring": [
+            "Government photo ID",
+            "Fingerprints (taken by the channeler)",
+            "Form DS-4194 for the apostille"
+        ],
+        "time": "Days for the check through a channeler; the federal apostille adds several weeks by mail.",
+        "cost": "$18 FBI fee plus the channeler's fee, and $20 per document for the federal apostille.",
+        "links": [
+            {
+                "label": "Identity History Summary (FBI)",
+                "url": "https://www.fbi.gov/how-we-can-help-you/more-fbi-services-and-information/identity-history-summary-checks"
+            },
+            {
+                "label": "Approved channelers",
+                "url": "https://www.fbi.gov/how-we-can-help-you/more-fbi-services-and-information/identity-history-summary-checks/list-of-fbi-approved-channelers"
+            },
+            {
+                "label": "Federal apostille (US Department of State)",
+                "url": "https://travel.state.gov/content/travel/en/records-and-authentications/authenticate-your-document/apostille-requirements.html"
+            }
+        ]
+    },
+    "Prepare proof of financial resources": {
+        "steps": [
+            {
+                "title": "Know the benchmark",
+                "detail": "Consulates measure a visitor against the French net minimum wage, about €1,478 a month in 2026, per adult. Many US applicants show one and a half to two times that in monthly income, or a year's worth in savings, so nobody has to ask.",
+                "url": ""
+            },
+            {
+                "title": "Assemble the proof",
+                "detail": "Three months of statements for each account, investment balances, pension or Social Security letters, rental income, an employer letter if the income is a salary earned abroad.",
+                "url": ""
+            },
+            {
+                "title": "Write a one-page summary",
+                "detail": "A simple table: source, monthly amount, where the proof is. Officers read hundreds of files; a summary that matches the statements gets read.",
+                "url": ""
+            }
+        ],
+        "bring": [
+            "Statements",
+            "Income letters",
+            "The summary sheet"
+        ],
+        "time": "An afternoon.",
+        "cost": "Nothing.",
+        "links": []
+    },
+    "Sign declaration not to work": {
+        "steps": [
+            {
+                "title": "Write the attestation sur l'honneur",
+                "detail": "A short signed statement: \"I, [name], born [date], declare on my honour that I will not carry out any professional activity in France during my stay.\" Dated and signed by each applicant. France-Visas gives the wording for the visitor route.",
+                "url": "https://france-visas.gouv.fr/"
+            },
+            {
+                "title": "Understand what it covers",
+                "detail": "Working for a French employer or French clients is out. On remote work for a US employer, the Interior Ministry indicated in a written answer on 23 June 2026 that it may be compatible when the work has no link to the French market; consulates apply this unevenly. Read the visitor guide before you sign, and if it applies to you, say so plainly in the cover letter. The letters in Documents include a remote-work version and an employer letter.",
+                "url": ""
+            }
+        ],
+        "bring": [],
+        "time": "Ten minutes.",
+        "cost": "Nothing.",
+        "links": [
+            {
+                "label": "France-Visas",
+                "url": "https://france-visas.gouv.fr/"
+            }
+        ]
+    },
+    "Watch for the OFII convocation": {
+        "steps": [
+            {
+                "title": "Keep your address current",
+                "detail": "After validation, OFII writes by post or email to the address you validated with. Weeks to months later; moving without telling ANEF means the letter is lost.",
+                "url": ""
+            },
+            {
+                "title": "Attend the medical visit",
+                "detail": "A chest X-ray and a short screening at the OFII office of your region. Bring the passport, the validation confirmation and the vaccination record if you have one.",
+                "url": ""
+            },
+            {
+                "title": "Family routes: sign the CIR",
+                "detail": "The integration contract comes with a language assessment and civics days; attendance counts at renewal.",
+                "url": ""
+            }
+        ],
+        "bring": [
+            "Passport",
+            "Validation confirmation",
+            "The convocation letter"
+        ],
+        "time": "Half a day, when summoned.",
+        "cost": "Nothing.",
+        "links": [
+            {
+                "label": "OFII",
+                "url": "https://www.ofii.fr/"
+            }
+        ]
+    },
+    "Apply for French health cover (PUMa)": {
+        "steps": [
+            {
+                "title": "Wait three months of residence",
+                "detail": "Cover on the residence criterion opens after three months of stable, regular residence for those not working; workers are covered from the first payslip.",
+                "url": ""
+            },
+            {
+                "title": "Fill in form 736",
+                "detail": "The \"demande d'affiliation au régime général sur critère de résidence\", from ameli.fr, sent to the CPAM of your département by post or through your ameli account once you have one.",
+                "url": "https://www.ameli.fr/"
+            },
+            {
+                "title": "Attach the file",
+                "detail": "Passport and visa with the validation confirmation, proof of address, birth certificate with a sworn French translation, a RIB, and a proof of income or a statement of no income.",
+                "url": ""
+            },
+            {
+                "title": "Wait for the number",
+                "detail": "A provisional social security number first, then the permanent one; the carte Vitale is requested once the number is permanent. Keep paying and keeping receipts meanwhile.",
+                "url": ""
+            }
+        ],
+        "bring": [
+            "Form 736",
+            "Passport, visa, validation",
+            "Proof of address",
+            "Birth certificate, apostilled and translated",
+            "RIB"
+        ],
+        "time": "Weeks to months after the file is complete.",
+        "cost": "Free; a means-tested contribution may apply to high capital income.",
+        "links": [
+            {
+                "label": "ameli.fr",
+                "url": "https://www.ameli.fr/"
+            }
+        ]
+    },
+    "Start the renewal four months before the visa expires": {
+        "steps": [
+            {
+                "title": "Count four months back from the expiry date",
+                "detail": "Renewal is filed between four and two months before the VLS-TS expires, online through ANEF for most categories. Late filing after expiry costs a €180 surcharge and leaves you without status.",
+                "url": "https://administration-etrangers-en-france.interieur.gouv.fr/"
+            },
+            {
+                "title": "Rebuild the file",
+                "detail": "Passport, the current visa and validation, proof of address, proof of resources for the year, insurance or health cover, the sworn translations of your civil records, photos. The prefecture's page lists the exact set for your card.",
+                "url": ""
+            },
+            {
+                "title": "Keep the récépissé",
+                "detail": "The receipt keeps you legal while the card is made; prefecture delays are the usual bottleneck.",
+                "url": ""
+            }
+        ],
+        "bring": [
+            "Passport, visa, validation",
+            "Proof of address",
+            "Proof of resources",
+            "Translated civil records",
+            "Photos"
+        ],
+        "time": "File four months out; the card takes months.",
+        "cost": "Stamp duty on the card, set annually.",
+        "links": [
+            {
+                "label": "ANEF portal",
+                "url": "https://administration-etrangers-en-france.interieur.gouv.fr/"
+            },
+            {
+                "label": "service-public.gouv.fr",
+                "url": "https://www.service-public.gouv.fr/"
+            }
+        ]
+    },
+    "Get Carte Vitale": {
+        "steps": [
+            {
+                "title": "Wait for the permanent number",
+                "detail": "The card is requested once CPAM has issued the permanent social security number; ameli sends the request or you do it in your ameli account.",
+                "url": "https://www.ameli.fr/"
+            },
+            {
+                "title": "Send the photo and the ID",
+                "detail": "A passport-style photo and a copy of your ID, online or on the paper form.",
+                "url": ""
+            },
+            {
+                "title": "Use the attestation meanwhile",
+                "detail": "The attestation de droits from your ameli account works at the doctor and the pharmacy until the card arrives.",
+                "url": ""
+            }
+        ],
+        "bring": [
+            "Photo",
+            "ID copy"
+        ],
+        "time": "Weeks to months after the number.",
+        "cost": "Free.",
+        "links": [
+            {
+                "label": "ameli.fr",
+                "url": "https://www.ameli.fr/"
+            }
+        ]
+    },
+    "File French tax return": {
+        "steps": [
+            {
+                "title": "Know the calendar",
+                "detail": "The French return covers the calendar year and is filed the following spring (April to June). Your first one covers the year you arrived, from the arrival date.",
+                "url": ""
+            },
+            {
+                "title": "Get a tax number",
+                "detail": "A first return is filed on paper (form 2042) at your local tax office, which then issues the numéro fiscal for online filing the year after.",
+                "url": "https://www.impots.gouv.fr/"
+            },
+            {
+                "title": "Declare worldwide income and foreign accounts",
+                "detail": "US income goes on the return with the treaty credits; every foreign bank account is listed on form 3916. This is the return a cross-border professional should prepare, at least the first time.",
+                "url": ""
+            },
+            {
+                "title": "Keep filing in the US",
+                "detail": "The US return and the FBAR continue. The two returns are prepared together.",
+                "url": ""
+            }
+        ],
+        "bring": [
+            "Income statements for both countries",
+            "French bank details",
+            "The list of foreign accounts"
+        ],
+        "time": "Spring, every year.",
+        "cost": "Professional fees if you use one.",
+        "links": [
+            {
+                "label": "impots.gouv.fr",
+                "url": "https://www.impots.gouv.fr/"
+            }
+        ]
+    },
+    "Talk to a cross-border tax professional before you move": {
+        "steps": [
+            {
+                "title": "Find someone who does both countries",
+                "detail": "A US CPA or enrolled agent who prepares French returns too, or a French expert-comptable with US clients. Ask how many US-French clients they file for each year.",
+                "url": ""
+            },
+            {
+                "title": "Bring the whole picture",
+                "detail": "Every income source, every account, retirement plans, property in both countries, the move date, and the visa route. The year you become French tax resident is the year to plan.",
+                "url": ""
+            },
+            {
+                "title": "Decide the move date with them",
+                "detail": "Where in the year you arrive changes the first French return and the US foreign earned income and credit positions.",
+                "url": ""
+            }
+        ],
+        "bring": [
+            "Last two US returns",
+            "List of accounts and assets",
+            "Income sources",
+            "Planned move date"
+        ],
+        "time": "One or two meetings before the move.",
+        "cost": "Hundreds to low thousands of dollars.",
+        "links": []
+    },
+    "Ask how your US pension and retirement accounts are taxed in France": {
+        "steps": [
+            {
+                "title": "List every account and benefit",
+                "detail": "Social Security, private pensions, IRAs, 401(k)s, Roth accounts, annuities.",
+                "url": ""
+            },
+            {
+                "title": "Ask the treaty questions",
+                "detail": "Which are taxed only in the US under the treaty, which France taxes with a credit, how Roth withdrawals are treated, and what the French return needs to show so the treaty applies.",
+                "url": ""
+            },
+            {
+                "title": "Plan withdrawals around it",
+                "detail": "Timing distributions before or after the move can change the bill; decide with the professional, not after.",
+                "url": ""
+            }
+        ],
+        "bring": [
+            "Account statements",
+            "Benefit letters"
+        ],
+        "time": "One meeting.",
+        "cost": "Part of the tax consultation.",
+        "links": []
+    },
+    "Pass the French driving test before your US licence stops counting": {
+        "steps": [
+            {
+                "title": "Check the list once more",
+                "detail": "North Carolina has no reciprocal agreement as of September 2026. If that changes before your first year ends, the exchange is the easier path.",
+                "url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F1460"
+            },
+            {
+                "title": "Get an International Driving Permit before you leave",
+                "detail": "From AAA in the US; it carries the French translation of your licence for the first year, when your US licence is still valid.",
+                "url": "https://www.aaa.com/vacation/idpf.html"
+            },
+            {
+                "title": "Register: driving school or candidat libre",
+                "detail": "An auto-école handles the paperwork, lessons and exam bookings (roughly €1,200 to €3,800, at least 20 hours of lessons in most areas). Candidat libre means registering yourself on ANTS and booking exams directly, cheaper and slower.",
+                "url": "https://permisdeconduire.ants.gouv.fr/"
+            },
+            {
+                "title": "Pass the code de la route",
+                "detail": "Forty questions at an approved centre, about €30. The exam is in French; the vocabulary is limited and learnable.",
+                "url": ""
+            },
+            {
+                "title": "Pass the practical",
+                "detail": "Booked through the school or ANTS, €32 to €50 depending on the prefecture; waits for a slot run weeks to months. On passing, a provisional certificate, then the card, with a three-year probation and a lower alcohol limit.",
+                "url": ""
+            },
+            {
+                "title": "Do it inside the first year",
+                "detail": "After a year of residence an unexchanged US licence is no longer valid in France. Start in the first months.",
+                "url": ""
+            }
+        ],
+        "bring": [
+            "Passport and residence permit",
+            "Proof of address",
+            "ANTS digital photo"
+        ],
+        "time": "Months; start early in the first year.",
+        "cost": "€1,200 to €3,800 through a school; exam fees on top.",
+        "links": [
+            {
+                "label": "ANTS",
+                "url": "https://permisdeconduire.ants.gouv.fr/"
+            },
+            {
+                "label": "service-public.gouv.fr: échange de permis",
+                "url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F1460"
+            },
+            {
+                "label": "International Driving Permit (AAA)",
+                "url": "https://www.aaa.com/vacation/idpf.html"
+            }
+        ]
+    },
+    "Get marriage certificate apostilled": {
+        "steps": [
+            {
+                "title": "Order a certified copy",
+                "detail": "From the state or county where the licence was issued; the CDC directory names the office and whether it is state or county.",
+                "url": "https://www.cdc.gov/nchs/w2w/index.htm"
+            },
+            {
+                "title": "Apostille it at that state's Secretary of State",
+                "detail": "The NASS directory has the office, fee and turnaround. Send the certified copy with the request form naming France; keep the apostille attached when it returns.",
+                "url": "https://www.nass.org/business-services/apostillesdocument-authentication-services"
+            },
+            {
+                "title": "Scan it",
+                "detail": "Front and back, apostille included; the scan is what the translator and French offices use later.",
+                "url": ""
+            }
+        ],
+        "bring": [
+            "Certified copy",
+            "Request form and fee",
+            "Return envelope"
+        ],
+        "time": "Two to five weeks.",
+        "cost": "Copy plus apostille fees.",
+        "links": [
+            {
+                "label": "Where to write for vital records (CDC)",
+                "url": "https://www.cdc.gov/nchs/w2w/index.htm"
+            },
+            {
+                "label": "Apostille offices by state (NASS)",
+                "url": "https://www.nass.org/business-services/apostillesdocument-authentication-services"
+            }
+        ]
+    },
+    "Translate marriage certificate": {
+        "steps": [
+            {
+                "title": "After arrival, not for the consulate",
+                "detail": "The consulate takes the certificate in English; the prefecture and CPAM want a sworn French translation.",
+                "url": ""
+            },
+            {
+                "title": "Use a traducteur assermenté",
+                "detail": "Registered with a French cour d'appel; works from a scan of the apostilled certificate.",
+                "url": ""
+            }
+        ],
+        "bring": [
+            "Scan of the apostilled certificate"
+        ],
+        "time": "A week or two.",
+        "cost": "€30 to €80.",
+        "links": []
+    },
+    "Gather spouse documents": {
+        "steps": [
+            {
+                "title": "Build Sam's dossier in parallel",
+                "detail": "Their own passport, photos, France-Visas form, proof of accommodation, insurance attestation, financial proof (shared accounts are fine, named on both), and their own certified, apostilled birth certificate.",
+                "url": ""
+            },
+            {
+                "title": "One appointment, two files",
+                "detail": "Book consecutive TLScontact slots; each file is judged on its own.",
+                "url": ""
+            }
+        ],
+        "bring": [],
+        "time": "Runs with yours.",
+        "cost": "A second set of fees.",
+        "links": [
+            {
+                "label": "France-Visas",
+                "url": "https://france-visas.gouv.fr/"
+            }
+        ]
+    },
+    "Your partner's own visa application": {
+        "steps": [
+            {
+                "title": "A separate France-Visas application",
+                "detail": "In Sam's name, same route and dates as yours.",
+                "url": "https://france-visas.gouv.fr/"
+            },
+            {
+                "title": "Same TLScontact day",
+                "detail": "Consecutive slots; the fee is per applicant.",
+                "url": "https://visas-fr.tlscontact.com/"
+            }
+        ],
+        "bring": [
+            "Sam's complete dossier"
+        ],
+        "time": "With yours.",
+        "cost": "€99 plus the service fee.",
+        "links": [
+            {
+                "label": "France-Visas",
+                "url": "https://france-visas.gouv.fr/"
+            },
+            {
+                "label": "TLScontact France",
+                "url": "https://visas-fr.tlscontact.com/"
+            }
+        ]
+    },
+    "Register spouse for social security": {
+        "steps": [
+            {
+                "title": "Wait the same three months",
+                "detail": "Residence-based cover opens for each adult separately after three months of stable residence; there is no dependant status for a spouse.",
+                "url": ""
+            },
+            {
+                "title": "File form 736 in Sam's name",
+                "detail": "The same form as yours, sent to the same CPAM, with Sam's passport and visa, validation confirmation, proof of the shared address, their apostilled birth certificate with a sworn translation, and a RIB (a joint account is fine).",
+                "url": "https://www.ameli.fr/"
+            },
+            {
+                "title": "Two numbers, two cards",
+                "detail": "Each of you gets a social security number and, later, a carte Vitale.",
+                "url": ""
+            }
+        ],
+        "bring": [
+            "Form 736",
+            "Sam's passport, visa and validation",
+            "Proof of address",
+            "Birth certificate, apostilled and translated",
+            "RIB"
+        ],
+        "time": "After three months of residence; weeks to months to process.",
+        "cost": "Free.",
+        "links": [
+            {
+                "label": "ameli.fr",
+                "url": "https://www.ameli.fr/"
+            }
+        ]
+    }
+}

@@ -48,7 +48,7 @@ export const JOURNEY: JourneyStage[] = [
   {
     id: 'prepare', number: 2, name: 'Prepare',
     question: 'What do they need from us, and in what order?',
-    blurb: 'Documents, apostilles, translations',
+    blurb: 'Documents, certified copies, apostilles',
     dbStages: ['documents'],
     guides: [
       { slug: 'visa-application-timeline', title: 'When to Start Each Document' },

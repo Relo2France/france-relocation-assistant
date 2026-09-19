@@ -1,0 +1,731 @@
+[
+    {
+        "id": "visas",
+        "title": "Visa & Immigration",
+        "icon": "FileText",
+        "description": "Questions about French visas, residence permits, and immigration procedures",
+        "topics": [
+            {
+                "id": "vls-ts",
+                "title": "VLS-TS Long Stay Visa",
+                "keywords": [
+                    "visa",
+                    "vls",
+                    "long stay"
+                ],
+                "is_premium": false
+            },
+            {
+                "id": "ofii",
+                "title": "OFII Validation Process",
+                "keywords": [
+                    "ofii",
+                    "validate",
+                    "stamp"
+                ],
+                "is_premium": false
+            },
+            {
+                "id": "renewal",
+                "title": "Visa Renewal & Titre de Séjour",
+                "keywords": [
+                    "renew",
+                    "extend",
+                    "titre de séjour"
+                ],
+                "is_premium": false
+            },
+            {
+                "id": "visitor-visa",
+                "title": "Visitor Visa (Visiteur)",
+                "keywords": [
+                    "visitor",
+                    "visiteur",
+                    "non-working"
+                ],
+                "is_premium": false
+            },
+            {
+                "id": "student-visa",
+                "title": "Student Visa",
+                "keywords": [
+                    "student",
+                    "étudiant",
+                    "study",
+                    "university"
+                ],
+                "is_premium": false
+            },
+            {
+                "id": "talent-passport",
+                "title": "Talent Passport (Passeport Talent)",
+                "keywords": [
+                    "talent",
+                    "passeport talent",
+                    "skilled worker",
+                    "entrepreneur"
+                ],
+                "is_premium": false
+            },
+            {
+                "id": "family-visa",
+                "title": "Family Reunification Visa",
+                "keywords": [
+                    "family",
+                    "spouse",
+                    "regroupement familial",
+                    "conjoint"
+                ],
+                "is_premium": false
+            },
+            {
+                "id": "work-permit",
+                "title": "Work Permit & Employee Visa",
+                "keywords": [
+                    "work",
+                    "employee",
+                    "salarié",
+                    "autorisation de travail"
+                ],
+                "is_premium": false
+            },
+            {
+                "id": "retired-visa",
+                "title": "Retiree/Pensioner Visa",
+                "keywords": [
+                    "retired",
+                    "retraité",
+                    "pension",
+                    "retirement"
+                ],
+                "is_premium": false
+            },
+            {
+                "id": "entrepreneur-visa",
+                "title": "Entrepreneur/Business Visa",
+                "keywords": [
+                    "entrepreneur",
+                    "business",
+                    "auto-entrepreneur",
+                    "company"
+                ],
+                "is_premium": false
+            },
+            {
+                "id": "eu-family",
+                "title": "EU Family Member Card",
+                "keywords": [
+                    "eu",
+                    "european",
+                    "carte de séjour de membre de la famille"
+                ],
+                "is_premium": false
+            },
+            {
+                "id": "citizenship",
+                "title": "French Citizenship & Naturalization",
+                "keywords": [
+                    "citizenship",
+                    "naturalization",
+                    "nationalité",
+                    "français"
+                ],
+                "is_premium": true
+            },
+            {
+                "id": "prefecture",
+                "title": "Prefecture Appointments",
+                "keywords": [
+                    "prefecture",
+                    "rendez-vous",
+                    "appointment",
+                    "sous-préfecture"
+                ],
+                "is_premium": false
+            },
+            {
+                "id": "schengen",
+                "title": "Schengen Rules & 90-Day Limit",
+                "keywords": [
+                    "schengen",
+                    "90 days",
+                    "visa-free",
+                    "tourist"
+                ],
+                "is_premium": false
+            }
+        ]
+    },
+    {
+        "id": "healthcare",
+        "title": "Healthcare",
+        "icon": "Heart",
+        "description": "French healthcare system, Carte Vitale, and medical coverage",
+        "topics": [
+            {
+                "id": "carte-vitale",
+                "title": "Carte Vitale Registration",
+                "keywords": [
+                    "carte vitale",
+                    "cpam",
+                    "health card"
+                ],
+                "is_premium": false
+            },
+            {
+                "id": "mutuelle",
+                "title": "Complementary Insurance (Mutuelle)",
+                "keywords": [
+                    "mutuelle",
+                    "insurance",
+                    "top-up"
+                ],
+                "is_premium": false
+            },
+            {
+                "id": "doctors",
+                "title": "Finding Doctors & Specialists",
+                "keywords": [
+                    "doctor",
+                    "médecin",
+                    "appointment",
+                    "specialist"
+                ],
+                "is_premium": false
+            },
+            {
+                "id": "puma",
+                "title": "PUMA (Universal Health Coverage)",
+                "keywords": [
+                    "puma",
+                    "cmu",
+                    "universal",
+                    "coverage"
+                ],
+                "is_premium": false
+            },
+            {
+                "id": "pharmacy",
+                "title": "Pharmacies & Prescriptions",
+                "keywords": [
+                    "pharmacy",
+                    "pharmacie",
+                    "prescription",
+                    "medication"
+                ],
+                "is_premium": false
+            },
+            {
+                "id": "emergency",
+                "title": "Emergency Services",
+                "keywords": [
+                    "emergency",
+                    "urgences",
+                    "samu",
+                    "hospital"
+                ],
+                "is_premium": false
+            },
+            {
+                "id": "dental",
+                "title": "Dental Care",
+                "keywords": [
+                    "dental",
+                    "dentist",
+                    "dentiste",
+                    "teeth"
+                ],
+                "is_premium": false
+            },
+            {
+                "id": "mental-health",
+                "title": "Mental Health Services",
+                "keywords": [
+                    "mental health",
+                    "psychologist",
+                    "psychiatrist",
+                    "therapy"
+                ],
+                "is_premium": false
+            },
+            {
+                "id": "reimbursement",
+                "title": "Healthcare Reimbursement",
+                "keywords": [
+                    "reimbursement",
+                    "remboursement",
+                    "feuille de soins"
+                ],
+                "is_premium": false
+            }
+        ]
+    },
+    {
+        "id": "property",
+        "title": "Housing & Property",
+        "icon": "Home",
+        "description": "Renting, buying property, and understanding French housing",
+        "topics": [
+            {
+                "id": "renting",
+                "title": "Renting in France",
+                "keywords": [
+                    "rent",
+                    "apartment",
+                    "lease",
+                    "bail"
+                ],
+                "is_premium": false
+            },
+            {
+                "id": "dossier",
+                "title": "Rental Dossier Requirements",
+                "keywords": [
+                    "dossier",
+                    "documents",
+                    "guarantor",
+                    "garant"
+                ],
+                "is_premium": false
+            },
+            {
+                "id": "buying",
+                "title": "Buying Property",
+                "keywords": [
+                    "buy",
+                    "purchase",
+                    "notaire",
+                    "mortgage"
+                ],
+                "is_premium": false
+            },
+            {
+                "id": "utilities",
+                "title": "Setting Up Utilities",
+                "keywords": [
+                    "electricity",
+                    "gas",
+                    "water",
+                    "internet",
+                    "edf"
+                ],
+                "is_premium": false
+            },
+            {
+                "id": "tenant-rights",
+                "title": "Tenant Rights & Laws",
+                "keywords": [
+                    "tenant",
+                    "rights",
+                    "loi",
+                    "protection"
+                ],
+                "is_premium": false
+            },
+            {
+                "id": "furnished",
+                "title": "Furnished vs Unfurnished",
+                "keywords": [
+                    "furnished",
+                    "meublé",
+                    "unfurnished",
+                    "vide"
+                ],
+                "is_premium": false
+            },
+            {
+                "id": "deposit",
+                "title": "Security Deposit & Fees",
+                "keywords": [
+                    "deposit",
+                    "caution",
+                    "fees",
+                    "agency"
+                ],
+                "is_premium": false
+            },
+            {
+                "id": "housing-aid",
+                "title": "Housing Aid (APL/CAF)",
+                "keywords": [
+                    "apl",
+                    "caf",
+                    "aide",
+                    "housing benefit"
+                ],
+                "is_premium": false
+            }
+        ]
+    },
+    {
+        "id": "banking",
+        "title": "Banking & Finance",
+        "icon": "Building",
+        "description": "French bank accounts, money transfers, and financial matters",
+        "topics": [
+            {
+                "id": "bank-account",
+                "title": "Opening a Bank Account",
+                "keywords": [
+                    "bank",
+                    "account",
+                    "rib",
+                    "iban"
+                ],
+                "is_premium": false
+            },
+            {
+                "id": "transfers",
+                "title": "International Transfers",
+                "keywords": [
+                    "transfer",
+                    "wire",
+                    "exchange",
+                    "wise"
+                ],
+                "is_premium": false
+            },
+            {
+                "id": "credit",
+                "title": "Credit & Loans in France",
+                "keywords": [
+                    "credit",
+                    "loan",
+                    "mortgage",
+                    "prêt"
+                ],
+                "is_premium": false
+            },
+            {
+                "id": "online-banks",
+                "title": "Online & Neo Banks",
+                "keywords": [
+                    "online",
+                    "neo bank",
+                    "boursorama",
+                    "n26"
+                ],
+                "is_premium": false
+            },
+            {
+                "id": "credit-cards",
+                "title": "Credit & Debit Cards",
+                "keywords": [
+                    "credit card",
+                    "carte bancaire",
+                    "debit"
+                ],
+                "is_premium": false
+            },
+            {
+                "id": "us-accounts",
+                "title": "Keeping US Bank Accounts",
+                "keywords": [
+                    "us account",
+                    "american",
+                    "fbar",
+                    "fatca"
+                ],
+                "is_premium": false
+            },
+            {
+                "id": "currency",
+                "title": "Currency Exchange",
+                "keywords": [
+                    "currency",
+                    "exchange rate",
+                    "euros",
+                    "dollars"
+                ],
+                "is_premium": false
+            }
+        ]
+    },
+    {
+        "id": "taxes",
+        "title": "Taxes",
+        "icon": "DollarSign",
+        "description": "French taxation, US-France tax treaty, and filing requirements",
+        "topics": [
+            {
+                "id": "tax-residency",
+                "title": "Tax Residency Rules",
+                "keywords": [
+                    "residency",
+                    "fiscal",
+                    "domicile"
+                ],
+                "is_premium": false
+            },
+            {
+                "id": "tax-treaty",
+                "title": "US-France Tax Treaty",
+                "keywords": [
+                    "treaty",
+                    "double taxation",
+                    "totalization"
+                ],
+                "is_premium": false
+            },
+            {
+                "id": "filing",
+                "title": "French Tax Filing",
+                "keywords": [
+                    "file",
+                    "declaration",
+                    "impôts"
+                ],
+                "is_premium": false
+            },
+            {
+                "id": "us-filing",
+                "title": "US Tax Filing from France",
+                "keywords": [
+                    "us taxes",
+                    "irs",
+                    "fbar",
+                    "fatca"
+                ],
+                "is_premium": false
+            },
+            {
+                "id": "income-tax",
+                "title": "French Income Tax",
+                "keywords": [
+                    "income",
+                    "impôt sur le revenu",
+                    "brackets"
+                ],
+                "is_premium": false
+            },
+            {
+                "id": "social-charges",
+                "title": "Social Charges & CSG",
+                "keywords": [
+                    "social charges",
+                    "csg",
+                    "crds",
+                    "cotisations"
+                ],
+                "is_premium": false
+            },
+            {
+                "id": "property-tax",
+                "title": "Property Taxes",
+                "keywords": [
+                    "property tax",
+                    "taxe foncière",
+                    "taxe habitation"
+                ],
+                "is_premium": false
+            },
+            {
+                "id": "retirement-tax",
+                "title": "Retirement Income Taxation",
+                "keywords": [
+                    "retirement",
+                    "pension",
+                    "401k",
+                    "social security"
+                ],
+                "is_premium": true
+            }
+        ]
+    },
+    {
+        "id": "driving",
+        "title": "Driving",
+        "icon": "Car",
+        "description": "Driving licenses, car registration, and transportation",
+        "topics": [
+            {
+                "id": "license-exchange",
+                "title": "License Exchange Process",
+                "keywords": [
+                    "license",
+                    "exchange",
+                    "permis",
+                    "ants"
+                ],
+                "is_premium": false
+            },
+            {
+                "id": "car-registration",
+                "title": "Car Registration (Carte Grise)",
+                "keywords": [
+                    "registration",
+                    "carte grise",
+                    "immatriculation"
+                ],
+                "is_premium": false
+            },
+            {
+                "id": "insurance",
+                "title": "Car Insurance",
+                "keywords": [
+                    "insurance",
+                    "assurance",
+                    "vehicle"
+                ],
+                "is_premium": false
+            },
+            {
+                "id": "buying-car",
+                "title": "Buying a Car in France",
+                "keywords": [
+                    "buy car",
+                    "purchase",
+                    "used car",
+                    "new car"
+                ],
+                "is_premium": false
+            },
+            {
+                "id": "us-license",
+                "title": "Driving with US License",
+                "keywords": [
+                    "us license",
+                    "american",
+                    "international permit"
+                ],
+                "is_premium": false
+            },
+            {
+                "id": "french-license",
+                "title": "Getting a French License",
+                "keywords": [
+                    "french license",
+                    "permis de conduire",
+                    "driving test"
+                ],
+                "is_premium": false
+            },
+            {
+                "id": "control-technique",
+                "title": "Vehicle Inspection (Contrôle Technique)",
+                "keywords": [
+                    "inspection",
+                    "contrôle technique",
+                    "ct"
+                ],
+                "is_premium": false
+            },
+            {
+                "id": "import-car",
+                "title": "Importing a Vehicle",
+                "keywords": [
+                    "import",
+                    "bring car",
+                    "shipping vehicle"
+                ],
+                "is_premium": false
+            }
+        ]
+    },
+    {
+        "id": "settling",
+        "title": "Settling In",
+        "icon": "MapPin",
+        "description": "Daily life, culture, language, and practical tips for living in France",
+        "topics": [
+            {
+                "id": "language",
+                "title": "Learning French",
+                "keywords": [
+                    "french",
+                    "language",
+                    "learn",
+                    "class"
+                ],
+                "is_premium": false
+            },
+            {
+                "id": "culture",
+                "title": "French Culture & Customs",
+                "keywords": [
+                    "culture",
+                    "customs",
+                    "etiquette"
+                ],
+                "is_premium": false
+            },
+            {
+                "id": "community",
+                "title": "Expat Communities",
+                "keywords": [
+                    "expat",
+                    "community",
+                    "groups",
+                    "meetup"
+                ],
+                "is_premium": false
+            },
+            {
+                "id": "schools",
+                "title": "Schools & Education",
+                "keywords": [
+                    "school",
+                    "education",
+                    "children",
+                    "école"
+                ],
+                "is_premium": false
+            },
+            {
+                "id": "pets",
+                "title": "Moving with Pets",
+                "keywords": [
+                    "pets",
+                    "dog",
+                    "cat",
+                    "animal"
+                ],
+                "is_premium": false
+            },
+            {
+                "id": "phone",
+                "title": "Phone & Mobile Plans",
+                "keywords": [
+                    "phone",
+                    "mobile",
+                    "sim card",
+                    "forfait"
+                ],
+                "is_premium": false
+            },
+            {
+                "id": "mail",
+                "title": "Mail & Postal Services",
+                "keywords": [
+                    "mail",
+                    "post",
+                    "la poste",
+                    "package"
+                ],
+                "is_premium": false
+            },
+            {
+                "id": "shopping",
+                "title": "Shopping & Daily Life",
+                "keywords": [
+                    "shopping",
+                    "supermarket",
+                    "stores",
+                    "market"
+                ],
+                "is_premium": false
+            },
+            {
+                "id": "social-life",
+                "title": "Making Friends & Social Life",
+                "keywords": [
+                    "friends",
+                    "social",
+                    "meet people",
+                    "activities"
+                ],
+                "is_premium": false
+            }
+        ]
+    }
+]

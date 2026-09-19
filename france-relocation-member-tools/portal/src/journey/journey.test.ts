@@ -27,7 +27,7 @@ describe('where a task belongs', () => {
   });
   it('reads the template vocabulary: pre-arrival splits by what the task is', () => {
     expect(stageForTask({ stage: 'pre-arrival', due_date: null, title: 'Get documents apostilled' }, project)).toBe('prepare');
-    expect(stageForTask({ stage: 'pre-arrival', due_date: null, title: 'Apply for spouse visa' }, project)).toBe('apply');
+    expect(stageForTask({ stage: 'pre-arrival', due_date: null, title: "Your partner's own visa application" }, project)).toBe('apply');
     expect(stageForTask({ stage: 'pre-arrival', due_date: null, title: 'Get pet microchipped' }, project)).toBe('move');
     expect(stageForTask({ stage: 'pre-arrival', due_date: null, title: 'Book temporary accommodation' }, project)).toBe('move');
     expect(stageForTask({ stage: 'pre-arrival', due_date: null, title: 'Book the TLScontact appointment' }, project)).toBe('apply');

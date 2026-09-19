@@ -1,6 +1,7 @@
 import { Button, Label, PracticeNote, Requirement, Requirements, SiteNav } from '../components';
 import { PRICE } from '../content/links';
 import { portalFeatures } from '../content/portal';
+import { PortalGallery } from '../components/PortalScreens';
 
 const steps = [
   {
@@ -57,6 +58,17 @@ export function HowItWorks() {
             </div>
           ))}
         </div>
+      </section>
+
+      <section className="px-7 pb-10">
+        <h2 className="font-display font-semibold text-[1.35rem] tracking-[-0.015em] mb-1">
+          Inside the portal
+        </h2>
+        <p className="text-muted max-w-[56ch] mb-6">
+          What a member sees, screen by screen: the plan dated from your move, how to do each step,
+          the letters drafted for you, and answers about your own case.
+        </p>
+        <PortalGallery />
       </section>
 
       <section className="px-7 pb-8">

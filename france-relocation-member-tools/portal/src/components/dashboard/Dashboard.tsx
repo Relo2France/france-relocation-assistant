@@ -196,9 +196,9 @@ export default function Dashboard() {
         <div className="lg:col-span-2 flex flex-col gap-5">
           {/* Do this next */}
           <section className="card overflow-hidden" aria-labelledby="next-title">
-            <div className="flex justify-between items-baseline px-5 py-4 border-b border-rule">
-              <span id="next-title" className="font-display font-semibold text-[1.1rem]">Do this next</span>
-              <button onClick={() => openStage(nowId)} className="text-sm font-semibold text-primary-500 hover:text-primary-700">
+            <div className="flex flex-wrap justify-between items-baseline gap-x-4 gap-y-1 px-5 py-4 border-b border-rule">
+              <span id="next-title" className="font-display font-semibold text-[1.1rem] whitespace-nowrap">Do this next</span>
+              <button onClick={() => openStage(nowId)} className="text-sm font-semibold text-primary-500 hover:text-primary-700 text-left">
                 {stageTasks.length ? `All ${stageTasks.length} steps in ${now.name}${doneCount ? ` · ${doneCount} done` : ''}` : `Open ${now.name}`}
               </button>
             </div>

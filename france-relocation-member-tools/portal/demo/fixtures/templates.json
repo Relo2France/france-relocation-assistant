@@ -1,0 +1,325 @@
+{
+    "visa": [
+        {
+            "title": "Order certified copies of your civil records",
+            "description": "A fresh certified copy of your birth certificate from the state that issued it (and the marriage certificate if you are applying as a couple). Only a certified copy can be apostilled; a photocopy from the drawer cannot. Consulates like the birth certificate issued within the last six months.",
+            "stage": "prepare",
+            "priority": "high",
+            "task_type": "document",
+            "days_offset": -160
+        },
+        {
+            "title": "Get the apostilles from the state",
+            "description": "Each state record is apostilled by the Secretary of State that issued it; federal documents (the FBI check) go to the US Department of State. One to three weeks in most states, longer by mail without expedite. Do it before you leave: the apostilled birth and marriage certificates serve you for years in France, at the prefecture and at CPAM, and are far harder to get from abroad.",
+            "stage": "prepare",
+            "priority": "high",
+            "task_type": "document",
+            "days_offset": -120
+        },
+        {
+            "title": "Buy health insurance for the whole first year",
+            "description": "Private cover for the full visa period, with at least €30,000 of medical cover, repatriation, and the dates and amounts written in the policy letter. Ordinary travel insurance is refused. It carries you until French health cover opens.",
+            "stage": "prepare",
+            "priority": "high",
+            "task_type": "task",
+            "days_offset": -70
+        },
+        {
+            "title": "Line up where you will live for the first months",
+            "description": "The consulate wants proof of accommodation: a lease, a deed, a booking, or a host's attestation d'hébergement with a copy of their ID. A booking covers the first weeks for most consulates.",
+            "stage": "prepare",
+            "priority": "high",
+            "task_type": "task",
+            "days_offset": -70
+        },
+        {
+            "title": "Get passport photos taken (35 x 45 mm)",
+            "description": "Two recent photos to French specification: 35 x 45 mm, plain light background, neutral expression. A US passport photo is the wrong size.",
+            "stage": "prepare",
+            "priority": "medium",
+            "task_type": "document",
+            "days_offset": -65
+        },
+        {
+            "title": "Write the cover letter",
+            "description": "One page explaining who you are, why France, where you will live and how you will support yourself. It frames the whole file for the officer who reads it.",
+            "stage": "prepare",
+            "priority": "medium",
+            "task_type": "document",
+            "days_offset": -60
+        },
+        {
+            "title": "Pull three months of bank statements",
+            "description": "Official statements for the last three months, plus proof of income, pulled in the last weeks so the dates are recent. Older statements get asked for again at the appointment.",
+            "stage": "prepare",
+            "priority": "high",
+            "task_type": "document",
+            "days_offset": -50
+        },
+        {
+            "title": "Complete the France-Visas application online",
+            "description": "Create the account on france-visas.gouv.fr, answer the wizard with your real purpose of stay, fill in the long-stay form, then print and sign it. The receipt page with the reference number is the first thing asked for at the appointment.",
+            "stage": "apply",
+            "priority": "high",
+            "task_type": "document",
+            "days_offset": -100
+        },
+        {
+            "title": "Book the TLScontact appointment",
+            "description": "Since April 2025 TLScontact runs visa intake for the US at ten centres (New York, Boston, Washington, Atlanta, Miami, Chicago, Houston, Los Angeles, San Francisco, Seattle); you can book any of them. Slots open a few weeks ahead and go fast from May to August. The decision is made by the Consulate General in Washington.",
+            "stage": "apply",
+            "priority": "high",
+            "task_type": "appointment",
+            "days_offset": -95
+        },
+        {
+            "title": "Attend the appointment: dossier, biometrics, fee",
+            "description": "Every original with a photocopy of each, the France-Visas printout, the €99 visa fee and the TLScontact service fee (about €220 for a long stay). Fingerprints and photo are taken there. The dossier and your passport leave with them; an incomplete file is sent home to rebook.",
+            "stage": "apply",
+            "priority": "high",
+            "task_type": "appointment",
+            "days_offset": -60
+        },
+        {
+            "title": "Collect your passport and check the visa",
+            "description": "Two to six weeks after the appointment, longer in summer. Before you leave the counter, check the dates, the spelling of your name and the mention on the sticker (VLS-TS, or carte de séjour à solliciter). Nothing that needs the passport can be booked while it is away.",
+            "stage": "apply",
+            "priority": "high",
+            "task_type": "document",
+            "days_offset": -35
+        },
+        {
+            "title": "Arrange shipping, or sell what stays",
+            "description": "Movers and customs for a household, or a sale and two suitcases. The inventory list does double duty at French customs; keep it.",
+            "stage": "move",
+            "priority": "medium",
+            "task_type": "task",
+            "days_offset": -50
+        },
+        {
+            "title": "Book flights for on or after the visa start date",
+            "description": "Land on or after the date the visa starts; a day early and you enter as a tourist. Keep the boarding pass: it proves the arrival date if the passport is not stamped.",
+            "stage": "move",
+            "priority": "high",
+            "task_type": "task",
+            "days_offset": -45
+        },
+        {
+            "title": "Book temporary accommodation",
+            "description": "Where you sleep the first weeks, and the address the validation confirmation and the bank card will be posted to.",
+            "stage": "move",
+            "priority": "high",
+            "task_type": "task",
+            "days_offset": -30
+        },
+        {
+            "title": "Tidy the US side: mail, prescriptions, bank, phone",
+            "description": "Mail forwarding, three months of prescriptions, the bank told you are travelling, and a US number kept alive for the two-factor codes every US account will send.",
+            "stage": "move",
+            "priority": "medium",
+            "task_type": "task",
+            "days_offset": -14
+        },
+        {
+            "title": "Pack the originals in hand luggage",
+            "description": "The passport with the visa, every original from the dossier, and the pet certificate if there is one. Nothing that mattered at the consulate goes in the hold.",
+            "stage": "move",
+            "priority": "high",
+            "task_type": "task",
+            "days_offset": -3
+        },
+        {
+            "title": "Get a French SIM",
+            "description": "Every French account, bank included, sends its codes to a French number. Get the SIM in the first days.",
+            "stage": "arrive",
+            "priority": "medium",
+            "task_type": "task",
+            "days_offset": 3
+        },
+        {
+            "title": "Get sworn French translations",
+            "description": "Not needed for the first application: consulates in the US take English documents. The prefecture at renewal and CPAM for health cover want a traducteur assermenté (sworn translator) version of the apostilled birth and marriage certificates. Send scans; a week or two per batch.",
+            "stage": "arrive",
+            "priority": "high",
+            "task_type": "document",
+            "days_offset": 60
+        },
+        {
+            "title": "Validate your visa online within 90 days",
+            "description": "On the ANEF portal (administration-etrangers-en-france.interieur.gouv.fr): passport, visa sticker, arrival date and a French address, then the validation tax paid by card. Counted from the entry stamp, not the visa date. Miss it and the visa stops working as a residence permit. If your sticker says carte de séjour à solliciter, skip this and book the prefecture within two months instead.",
+            "stage": "arrive",
+            "priority": "high",
+            "task_type": "appointment",
+            "days_offset": 14
+        },
+        {
+            "title": "Open French bank account",
+            "description": "Rent, utilities, health cover and the phone all want a French RIB. Passport, visa, proof of address; the validation confirmation helps. Keep a US account open too.",
+            "stage": "arrive",
+            "priority": "high",
+            "task_type": "financial",
+            "days_offset": 14
+        },
+        {
+            "title": "Find permanent housing",
+            "description": "The lease or the deed. Each bill in your name afterwards becomes the proof of address the next office asks for.",
+            "stage": "arrive",
+            "priority": "high",
+            "task_type": "task",
+            "days_offset": 21
+        },
+        {
+            "title": "Set up utilities",
+            "description": "Electricity, water and internet in your name at the new address.",
+            "stage": "arrive",
+            "priority": "medium",
+            "task_type": "task",
+            "days_offset": 30
+        },
+        {
+            "title": "Enroll in French language classes",
+            "description": "Earlier is easier. Some routes come with free classes through the integration contract; the rest is up to you.",
+            "stage": "arrive",
+            "priority": "low",
+            "task_type": "task",
+            "days_offset": 30
+        },
+        {
+            "title": "Request your FBI background check",
+            "description": "The FBI Identity History Summary, apostilled by the US Department of State. Ten to fourteen weeks by mail, days through an FBI-approved channeler; use the channeler. Consulates want it issued within the last six months, so time it against your appointment.",
+            "stage": "prepare",
+            "priority": "high",
+            "task_type": "document",
+            "days_offset": -160
+        },
+        {
+            "title": "Prepare proof of financial resources",
+            "description": "Consulates benchmark a visitor against the French net minimum wage, about €1,478 a month in 2026, and many US applicants show one and a half to two times that, or a year's worth in savings, to avoid questions. Statements, investment accounts, pension or salary letters, all dated recently.",
+            "stage": "prepare",
+            "priority": "high",
+            "task_type": "document",
+            "days_offset": -80
+        },
+        {
+            "title": "Sign declaration not to work",
+            "description": "The attestation sur l'honneur: a signed statement that you will carry out no professional activity in France. Whether remote work for a US employer counts is contested; read the guide before you sign.",
+            "stage": "prepare",
+            "priority": "high",
+            "task_type": "document",
+            "days_offset": -60
+        },
+        {
+            "title": "Watch for the OFII convocation",
+            "description": "After online validation, this route is usually summoned to an OFII appointment: a medical visit, and for family routes the signing of the integration contract (CIR). The letter comes by post or email to the address you validated with, weeks to months later, so keep it current.",
+            "stage": "arrive",
+            "priority": "medium",
+            "task_type": "appointment",
+            "days_offset": 45
+        },
+        {
+            "title": "Apply for French health cover (PUMa)",
+            "description": "Residence-based cover opens once you have lived in France for three months. Apply to your local CPAM with form 736, passport and visa, proof of address, birth certificate and a French RIB; your private policy carries you until then.",
+            "stage": "settle",
+            "priority": "high",
+            "task_type": "task",
+            "days_offset": 95
+        },
+        {
+            "title": "Start the renewal four months before the visa expires",
+            "description": "The first visa runs a year. Renewal is filed online through the prefecture two to four months before it expires and comes back as a carte de séjour; prefecture appointments are the bottleneck, so start at the four-month mark.",
+            "stage": "settle",
+            "priority": "high",
+            "task_type": "appointment",
+            "days_offset": 240
+        },
+        {
+            "title": "Get Carte Vitale",
+            "description": "Follows the health registration by some weeks to months. Until it arrives keep every receipt and use the paper feuille de soins for reimbursement.",
+            "stage": "settle",
+            "priority": "medium",
+            "task_type": "document",
+            "days_offset": 150
+        },
+        {
+            "title": "File French tax return",
+            "description": "The first French return goes in the spring after the year you arrive, for that year, even when the treaty means little tax is due in France. The US return continues alongside.",
+            "stage": "settle",
+            "priority": "medium",
+            "task_type": "financial",
+            "days_offset": 180
+        }
+    ],
+    "profile": [
+        {
+            "title": "Talk to a cross-border tax professional before you move",
+            "description": "US citizens keep filing US returns after they leave, and France taxes its residents on worldwide income. The treaty decides which country taxes what, and the year you become French tax resident is the one to plan, not the one after.",
+            "stage": "pre-arrival",
+            "priority": "high",
+            "days_offset": -120,
+            "professional": "tax"
+        },
+        {
+            "title": "Ask how your US pension and retirement accounts are taxed in France",
+            "description": "Social Security, pensions, IRAs and 401(k)s are each treated differently under the US–France treaty, and withdrawals you planned around US rules may look different from France. A cross-border tax professional should go through them before you move.",
+            "stage": "pre-arrival",
+            "priority": "high",
+            "days_offset": -110,
+            "professional": "tax"
+        },
+        {
+            "title": "Pass the French driving test before your US licence stops counting",
+            "description": "North Carolina has no reciprocal agreement with France (list as of September 2026; confirm on service-public.gouv.fr, it changes). Your US licence is valid for one year from the start of residence and then it is not, so the French licence has to be earned inside that year. The process: 1. Register with a driving school (auto-école) or, to save money, as a candidat libre through ANTS; a school package runs roughly €1,200 to €3,800 and most areas expect at least 20 hours of lessons. 2. Pass the theory test, the code de la route, about €30, sat at an approved centre; apps and books exist in English but the exam is in French. 3. Book the practical exam through the school or ANTS, €32 to €50 depending on the prefecture; waits for a slot run weeks to months. 4. On passing you get a provisional certificate and then the card; new licences carry a three-year probation with a lower alcohol limit. Get an International Driving Permit from AAA before you leave for the first year, and book the school within the first months: the year goes quickly.",
+            "stage": "settle",
+            "priority": "high",
+            "days_offset": 60,
+            "task_type": "task"
+        }
+    ],
+    "spouse": [
+        {
+            "person": "partner",
+            "title": "Get marriage certificate apostilled",
+            "description": "Have your marriage certificate apostilled for French recognition.",
+            "stage": "pre-arrival",
+            "priority": "high",
+            "task_type": "document",
+            "days_offset": -90
+        },
+        {
+            "person": "partner",
+            "title": "Translate marriage certificate",
+            "description": "Not for the consulate, which takes it in English, but for the prefecture and CPAM after you arrive: a sworn French translation of the apostilled certificate.",
+            "stage": "arrive",
+            "priority": "medium",
+            "task_type": "document",
+            "days_offset": 60
+        },
+        {
+            "person": "partner",
+            "title": "Gather spouse documents",
+            "description": "Collect passport, birth certificate, and other required documents for your spouse.",
+            "stage": "pre-arrival",
+            "priority": "high",
+            "task_type": "document",
+            "days_offset": -120
+        },
+        {
+            "person": "partner",
+            "title": "Your partner's own visa application",
+            "description": "Each adult applies separately, in their own name, on the same route and dates as you (with a Talent Passport, the « famille » status). Book both TLScontact appointments on the same day.",
+            "stage": "pre-arrival",
+            "priority": "high",
+            "task_type": "task",
+            "days_offset": -60
+        },
+        {
+            "person": "partner",
+            "title": "Register spouse for social security",
+            "description": "Since PUMa there are no adult dependants: each adult affiliates in their own right. After three months of residence your spouse files their own form 736 with CPAM, with their own apostilled and translated birth certificate.",
+            "stage": "settle",
+            "priority": "medium",
+            "task_type": "task",
+            "days_offset": 95
+        }
+    ]
+}

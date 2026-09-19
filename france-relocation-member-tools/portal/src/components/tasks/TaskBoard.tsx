@@ -20,6 +20,8 @@ import {
   GripVertical,
   Plus,
 } from 'lucide-react';
+import { useDashboard } from '@/hooks/useApi';
+import { stageById, stageForTask } from '@/journey/journey';
 import type { Task, TaskStatus } from '@/types';
 
 interface TaskBoardProps {
@@ -513,8 +515,8 @@ function TaskCard({
 
             {/* Stage */}
             {task.stage && (
-              <span className="text-xs text-gray-400 capitalize">
-                {task.stage.replace('_', ' ')}
+              <span className="text-xs text-gray-400">
+                <StageName task={task} />
               </span>
             )}
           </div>
@@ -554,4 +556,12 @@ function formatShortDate(dateStr: string): string {
   if (diff <= 7) return `${diff}d`;
 
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+}
+
+/** The journey stage a step belongs to, by the name members see ("Prepare"). */
+function StageName({ task }: { task: Task }) {
+  const { data: dashboard } = useDashboard();
+  const project = dashboard?.project;
+  const stage = project ? stageById(stageForTask(task, project)) : stageById(task.stage ?? '');
+  return <>{stage?.name ?? (task.stage ?? '').replace(/[_-]/g, ' ')}</>;
 }

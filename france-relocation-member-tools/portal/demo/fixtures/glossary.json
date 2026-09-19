@@ -1,0 +1,215 @@
+[
+    {
+        "id": "visa-immigration",
+        "title": "Visa & Immigration",
+        "terms": [
+            {
+                "term": "VLS-TS",
+                "definition": "Visa de Long Séjour valant Titre de Séjour - Long-stay visa equivalent to residence permit",
+                "pronunciation": "vay-el-ess tay-ess"
+            },
+            {
+                "term": "Titre de séjour",
+                "definition": "Residence permit required for stays over 90 days",
+                "pronunciation": "tee-truh duh say-zhoor"
+            },
+            {
+                "term": "OFII",
+                "definition": "Office Français de l'Immigration et de l'Intégration - French immigration office",
+                "pronunciation": "oh-fee"
+            },
+            {
+                "term": "Préfecture",
+                "definition": "Government administrative office handling residence permits",
+                "pronunciation": "pray-fek-toor"
+            },
+            {
+                "term": "Récépissé",
+                "definition": "Temporary receipt while awaiting official documents",
+                "pronunciation": "ray-say-pee-say"
+            }
+        ]
+    },
+    {
+        "id": "administrative",
+        "title": "Administrative Terms",
+        "terms": [
+            {
+                "term": "Mairie",
+                "definition": "Town hall / Mayor's office",
+                "pronunciation": "meh-ree"
+            },
+            {
+                "term": "Carte d'identité",
+                "definition": "National identity card",
+                "pronunciation": "kart dee-don-tee-tay"
+            },
+            {
+                "term": "Justificatif de domicile",
+                "definition": "Proof of address document",
+                "pronunciation": "zhoos-tee-fee-ka-teef duh doh-mee-seel"
+            },
+            {
+                "term": "Acte de naissance",
+                "definition": "Birth certificate",
+                "pronunciation": "akt duh nay-sahns"
+            },
+            {
+                "term": "Timbre fiscal",
+                "definition": "Tax stamp required for official documents",
+                "pronunciation": "tom-bruh fees-kal"
+            }
+        ]
+    },
+    {
+        "id": "healthcare",
+        "title": "Healthcare",
+        "terms": [
+            {
+                "term": "Carte Vitale",
+                "definition": "French health insurance card",
+                "pronunciation": "kart vee-tal"
+            },
+            {
+                "term": "CPAM",
+                "definition": "Caisse Primaire d'Assurance Maladie - Primary health insurance fund",
+                "pronunciation": "say-pam"
+            },
+            {
+                "term": "Médecin traitant",
+                "definition": "Primary care doctor / GP",
+                "pronunciation": "mayd-san tray-ton"
+            },
+            {
+                "term": "Mutuelle",
+                "definition": "Complementary health insurance",
+                "pronunciation": "moo-too-el"
+            },
+            {
+                "term": "Ordonnance",
+                "definition": "Medical prescription",
+                "pronunciation": "or-doh-nahns"
+            }
+        ]
+    },
+    {
+        "id": "banking",
+        "title": "Banking & Finance",
+        "terms": [
+            {
+                "term": "RIB",
+                "definition": "Relevé d'Identité Bancaire - Bank account details document",
+                "pronunciation": "reeb"
+            },
+            {
+                "term": "IBAN",
+                "definition": "International Bank Account Number",
+                "pronunciation": "ee-bon"
+            },
+            {
+                "term": "Virement",
+                "definition": "Bank transfer",
+                "pronunciation": "veer-mon"
+            },
+            {
+                "term": "Prélèvement",
+                "definition": "Direct debit",
+                "pronunciation": "pray-lev-mon"
+            },
+            {
+                "term": "Chèque",
+                "definition": "Check / Cheque (still commonly used in France)",
+                "pronunciation": "shek"
+            }
+        ]
+    },
+    {
+        "id": "taxes",
+        "name": "Taxes",
+        "terms": [
+            {
+                "term": "Tax treaty",
+                "french": "Convention fiscale franco-américaine",
+                "definition": "The income tax convention between the United States and France. For a US citizen living in France it decides which country taxes each kind of income and how the other side gives credit, so the same income is not taxed twice. It does not stop US citizens having to file in the US every year.",
+                "pronunciation": "",
+                "ask": "Explain the US–France tax treaty as it applies to my situation: which of my income is taxed where, and what I still have to file in the US."
+            },
+            {
+                "term": "Treaty",
+                "french": "Convention fiscale",
+                "definition": "Short for the US–France income tax treaty: the agreement that decides which country taxes each kind of income for a US citizen living in France, and how double taxation is avoided.",
+                "pronunciation": "",
+                "ask": "Explain the US–France tax treaty as it applies to my situation: which of my income is taxed where, and what I still have to file in the US."
+            },
+            {
+                "term": "Totalization agreement",
+                "french": "Accord de sécurité sociale",
+                "definition": "The separate US–France agreement on Social Security contributions, so that work in one country is not charged for retirement contributions in both and periods can be combined for benefits.",
+                "pronunciation": "",
+                "ask": "How does the US–France totalization agreement affect my Social Security contributions and benefits?"
+            },
+            {
+                "term": "Tax residency",
+                "french": "Résidence fiscale",
+                "definition": "Being taxable in France on worldwide income. Under Article 4B of the French tax code you are resident if your main home, your main stay, your main professional activity or the centre of your economic interests is in France. It is not just a 183-day count.",
+                "pronunciation": "",
+                "guide": "tax-residency-rules"
+            },
+            {
+                "term": "FBAR",
+                "french": "",
+                "definition": "The US Report of Foreign Bank and Financial Accounts, filed with FinCEN when the combined value of your non-US accounts passed $10,000 at any point in the year. It is separate from your tax return and the penalties for missing it are severe.",
+                "pronunciation": "eff-bar"
+            },
+            {
+                "term": "Foyer fiscal",
+                "french": "Foyer fiscal",
+                "definition": "The tax household. France assesses income tax per household, not per person: a married or PACS couple files one return and the household's income is divided into parts before the rates apply.",
+                "pronunciation": "fwah-yay fees-kal"
+            },
+            {
+                "term": "CSG",
+                "french": "Contribution sociale généralisée",
+                "definition": "A social charge levied alongside income tax, with CRDS, on most income of French tax residents, including investment and rental income. Whether it applies to your US retirement income depends on your health-cover affiliation.",
+                "pronunciation": "say-ess-zhay"
+            },
+            {
+                "term": "IFI",
+                "french": "Impôt sur la fortune immobilière",
+                "definition": "The French real-estate wealth tax on net property assets above €1.3 million. New residents are taxed on French property only for their first five years.",
+                "pronunciation": "ee-eff-ee"
+            }
+        ]
+    },
+    {
+        "id": "housing",
+        "title": "Housing",
+        "terms": [
+            {
+                "term": "Bail",
+                "definition": "Lease agreement",
+                "pronunciation": "bye"
+            },
+            {
+                "term": "Caution",
+                "definition": "Security deposit",
+                "pronunciation": "koh-syon"
+            },
+            {
+                "term": "État des lieux",
+                "definition": "Property inventory/condition report",
+                "pronunciation": "ay-tah day lyuh"
+            },
+            {
+                "term": "Propriétaire",
+                "definition": "Landlord / Property owner",
+                "pronunciation": "proh-pree-ay-tair"
+            },
+            {
+                "term": "Charges",
+                "definition": "Additional fees (utilities, maintenance)",
+                "pronunciation": "sharzh"
+            }
+        ]
+    }
+]

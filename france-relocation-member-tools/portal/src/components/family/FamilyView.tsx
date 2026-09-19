@@ -232,7 +232,7 @@ function PersonCard({ member, tasks, household, canEdit }: { member: FamilyMembe
               <span className="font-display font-semibold text-[1.05rem] truncate">{member.name}</span>
               <span className="text-[0.8rem] text-gray-500">
                 {isPartner ? 'Partner' : 'Child'}
-                {isPartner && member.birthDate ? ` · born ${member.birthDate.slice(0, 10)}` : ''}
+                {isPartner && member.birthDate ? ` · born ${new Date(`${member.birthDate.slice(0, 10)}T00:00:00Z`).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' })}` : ''}
                 {!isPartner && member.age ? ` · age ${member.age}` : ''}
                 {' · own visa file'}
               </span>

@@ -8616,6 +8616,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
             'Register business in France',
             'Register on Campus France',
             'Check whether Campus France Études en France applies to you',
+            'Apply for spouse visa',
             'Arrange pension transfer',
             'Research S1 health form',
         );
@@ -8635,7 +8636,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
      * @return void
      */
     private function refresh_template_tasks( $user_id, $project_id ) {
-        if ( ! $user_id || ! $project_id || '1' === get_user_meta( $user_id, 'framt_task_templates_v8', true ) ) {
+        if ( ! $user_id || ! $project_id || '1' === get_user_meta( $user_id, 'framt_task_templates_v9', true ) ) {
             return;
         }
         $visa    = (string) get_user_meta( $user_id, 'fra_visa_type', true );
@@ -8693,7 +8694,7 @@ Focus on practical advice while being careful not to state incorrect facts. When
                 $task->save();
             }
         }
-        update_user_meta( $user_id, 'framt_task_templates_v8', '1' );
+        update_user_meta( $user_id, 'framt_task_templates_v9', '1' );
     }
 
     /**
@@ -8792,8 +8793,8 @@ Focus on practical advice while being careful not to state incorrect facts. When
             ),
             array(
                 'person'      => 'partner',
-                'title'       => 'Apply for spouse visa',
-                'description' => 'Submit visa application for your spouse (if required).',
+                'title'       => 'Your partner\'s own visa application',
+                'description' => 'Each adult applies separately, in their own name, on the same route and dates as you (with a Talent Passport, the « famille » status). Book both TLScontact appointments on the same day.',
                 'stage'       => 'pre-arrival',
                 'priority'    => 'high',
                 'task_type'   => 'task',

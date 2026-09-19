@@ -83,7 +83,7 @@ export default function FilterBar({
               type="text"
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
-              placeholder="Search tasks..."
+              placeholder="Search steps…"
               className="pl-9 pr-4 py-2 bg-gray-100 border-0 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 w-64"
             />
             {searchQuery && (

@@ -171,7 +171,7 @@ export const guides: GuideDoc[] = [
           'A biometric appointment at a TLScontact centre — TLScontact replaced VFS Global as the US visa application centre on {{18 April 2025}}',
         ],
         caveat:
-          'Submit no earlier than {{3 months}} and no later than {{15 days}} before travel. Certified French translations by a sworn translator ({{traducteur assermenté}}) are listed for most official documents in a long-stay file, and the prefecture and CPAM ask for them again after arrival — check your consulate’s checklist for which it wants at submission.',
+          'Submit no earlier than {{3 months}} and no later than {{15 days}} before travel. US consulates take English-language documents as they are for the first application; sworn translations ({{traducteur assermenté}}) come after arrival, for the prefecture and CPAM, and for renewals.',
       },
       {
         heading: 'Documents only some categories need',
@@ -191,17 +191,17 @@ export const guides: GuideDoc[] = [
       {
         heading: 'What it actually costs',
         paragraphs: [
-          'Two fees are fixed per applicant: the visa fee and the TLScontact service fee, which since the 2025 change of operator is the larger of the two. Everything else is priced per document: an apostille for each certificate, the FBI check, and a certified translation of each. Budget per document rather than per application, and add the optional extras only if you need them.',
+          'Two fees are fixed per applicant: the visa fee and the TLScontact service fee, which since the 2025 change of operator is the larger of the two. Everything else is priced per document: an apostille for each certificate and the FBI check, and, after arrival, a sworn translation of each certificate. Budget per document rather than per application, and add the optional extras only if you need them.',
         ],
         requirements: [
           'Visa fee: {{€99}} long-stay, {{€50}} student, {{€90}} short-stay — not refunded on a refusal',
           'TLScontact service fee: about {{€220}} (around {{$235}}) for a long-stay visa, charged in dollars, paid online and not refunded if you cancel',
-          'Apostille: roughly {{$20–40}} per document. Certified translation: roughly {{$30–100}} per page',
+          'Apostille: roughly {{$20–40}} per document. Sworn translation, after arrival: roughly {{$30–100}} per page',
           'FBI background check: {{$18}}',
           'Optional TLScontact extras — priority slots, SMS tracking, courier return — are priced by centre and do not speed up the decision',
         ],
         caveat:
-          'Before any documents, each long-stay applicant pays about {{€320}}: the €99 visa fee and the €220 TLScontact fee, so a family of four starts near {{€1,280}}. Spouses of French citizens pay no visa fee. The apostilles, the FBI check and the translations come on top, per document, and take time as well as money.',
+          'Before any documents, each long-stay applicant pays about {{€320}}: the €99 visa fee and the €220 TLScontact fee, so a family of four starts near {{€1,280}}. Spouses of French citizens pay no visa fee. The apostilles and the FBI check come on top, per document, then sworn translations after arrival; all take time as well as money.',
       },
     ],
     practice: {
@@ -263,10 +263,10 @@ export const guides: GuideDoc[] = [
       {
         heading: 'Three more documents for the file',
         paragraphs: [
-          'Beyond the passport, housing, money and insurance, the visitor file carries three documents of its own. The birth certificate is the slow one, because the apostille and the translation each take time; start it first.',
+          'Beyond the passport, housing, money and insurance, the visitor file carries three documents of its own. The birth certificate is the slow one, because the certified copy and the apostille each take time; start it first.',
         ],
         requirements: [
-          'Birth certificate with apostille and a certified French translation',
+          'Birth certificate with apostille (the translation comes after arrival, for the prefecture and CPAM)',
           'A clean criminal background check — the FBI Identity History Summary for US citizens',
           'The signed {{attestation sur l’honneur}} promising not to work in France',
         ],
@@ -797,13 +797,13 @@ export const guides: GuideDoc[] = [
       {
         heading: 'What you’ll need',
         paragraphs: [
-          'Your part of the file is the nine items below, most of which you can gather while the employer’s authorisation is pending. The apostilled background check and the diplomas, with their certified translations, are the slow ones; start them first.',
+          'Your part of the file is the nine items below, most of which you can gather while the employer’s authorisation is pending. The apostilled background check and the diplomas are the slow ones; start them first. Translations are not needed for the consulate; they come after arrival.',
         ],
         requirements: [
           'Passport valid {{6+ months}} beyond your stay',
           'Signed work contract or a detailed job offer letter',
           'The employer’s work authorisation approval from DREETS via ANEF',
-          'Proof of qualifications — diplomas with certified French translations',
+          'Proof of qualifications — diplomas, in English, apostilled where the checklist asks',
           'Proof of accommodation in France',
           'Health insurance cover',
           'Proof of financial means',
@@ -1130,13 +1130,13 @@ export const guides: GuideDoc[] = [
       {
         heading: 'Lead times that catch people out',
         paragraphs: [
-          'The consulate’s own processing time is the short part. The long part is the paperwork that has to exist before you can book: the FBI check, the certified copies, the apostilles, the translations. The seven lead times below are the ones that decide whether your timeline holds, and the first one is the one to start today.',
+          'The consulate’s own processing time is the short part. The long part is the paperwork that has to exist before you can book: the FBI check, the certified copies, the apostilles. Translations come later, for the prefecture, not the consulate. The seven lead times below are the ones that decide whether your timeline holds, and the first one is the one to start today.',
         ],
         requirements: [
           'FBI background check: {{10–14 weeks}} by mail direct from the FBI, versus roughly {{3–7 business days}} through an FBI-approved channeler — use the channeler',
           'State apostilles: {{1–2 weeks}} in most states; some offer {{24–48 hour}} expedited service, others by mail can run {{4+ weeks}}',
           'Birth and marriage certificate apostilles: {{1–3 weeks}}, with the same variability',
-          'Certified French translations ({{traducteur assermenté}}): listed for most official documents in a long-stay file, and asked for again by the prefecture and CPAM after arrival; {{1–2 weeks}} per batch',
+          'Sworn French translations ({{traducteur assermenté}}): not for the first application, which US consulates take in English, but for the prefecture and CPAM after arrival and for renewals; {{1–2 weeks}} per batch',
           'Official stamped bank statements: allow {{1–2 weeks}}',
           'Academic transcripts and diploma authentication: {{2–3 weeks}}, longer if the institution is slow',
           'Medical examinations, where your category requires one: {{1–2 weeks}} for an appointment',

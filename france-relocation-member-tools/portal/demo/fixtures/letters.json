@@ -1,0 +1,419 @@
+{
+    "visa_type": "visitor",
+    "letters": [
+        {
+            "type": "cover-letter",
+            "person": "you",
+            "title": "Cover letter",
+            "why": "One page that tells the officer who you are, why France, where you will live, how you support yourself and what you will do with your time.",
+            "optional": false,
+            "fields": [
+                "consulate",
+                "mailing_address",
+                "address_in_france",
+                "arrival_date",
+                "stay_length",
+                "income_rows",
+                "savings",
+                "plans"
+            ],
+            "guidance": [
+                "Every figure and date must agree with the documents behind it: the same address as your accommodation proof, the same income as your statements.",
+                "US consulates accept English. A short French version alongside is a courtesy, not a requirement.",
+                "One letter covers you both. Each adult still signs their own application form.",
+                "If your income is close to the benchmark, the letter is where you explain your budget and your savings.",
+                "Sign and date it by hand after printing."
+            ],
+            "item_id": "cover-letter",
+            "file": null
+        },
+        {
+            "type": "no-work-declaration",
+            "person": "you",
+            "title": "Declaration not to work",
+            "why": "The visitor route requires each adult to sign an attestation sur l'honneur that they will not work in France. French with an English translation below.",
+            "optional": false,
+            "fields": [
+                "birth_place"
+            ],
+            "guidance": [
+                "Each adult signs their own. Sign and date it by hand after printing.",
+                "Working for a French employer or French clients is not allowed on this visa."
+            ],
+            "item_id": "declaration-no-work",
+            "file": null
+        },
+        {
+            "type": "no-work-declaration",
+            "person": "partner",
+            "title": "Declaration not to work · Sam",
+            "why": "The visitor route requires each adult to sign an attestation sur l'honneur that they will not work in France. French with an English translation below.",
+            "optional": false,
+            "fields": [
+                "partner_birth_place",
+                "partner_passport"
+            ],
+            "guidance": [
+                "Each adult signs their own. Sign and date it by hand after printing.",
+                "Working for a French employer or French clients is not allowed on this visa."
+            ],
+            "item_id": "declaration-no-work",
+            "file": null
+        },
+        {
+            "type": "resources-statement",
+            "person": "you",
+            "title": "Statement of resources",
+            "why": "A one-page table of your monthly income and savings, matching the statements in your file. Officers read hundreds of files; a summary that matches gets read.",
+            "optional": false,
+            "fields": [
+                "income_rows",
+                "savings"
+            ],
+            "guidance": [
+                "Consulates benchmark resources against the French net minimum wage, €1,477.93 a month since 1 June 2026, per adult. It is a benchmark, not a fixed legal floor, and each consulate applies its own standard.",
+                "Many applicants show more than the benchmark in income, or about a year of it in savings, so nobody has to ask.",
+                "Attach three months of statements for every account listed, and the proof of each income source.",
+                "Use one exchange rate for the whole file and say which."
+            ],
+            "item_id": "proof-funds",
+            "file": null
+        },
+        {
+            "type": "host-attestation",
+            "person": "you",
+            "title": "Host's attestation d'hébergement",
+            "why": "Only if you will stay with someone at first. Your host signs that you will live with them; it stands in for a lease as your proof of accommodation.",
+            "optional": true,
+            "fields": [
+                "host_name",
+                "host_address",
+                "host_relation",
+                "host_from",
+                "host_until"
+            ],
+            "guidance": [
+                "Your host signs and dates it and attaches a copy of their ID and a recent proof of their address, such as a utility bill or the deed.",
+                "This is a letter from your host, not the mairie's attestation d'accueil, which is for short visits of under three months.",
+                "The address must match the one in your cover letter."
+            ],
+            "item_id": "proof-accommodation",
+            "file": null
+        }
+    ],
+    "fields": {
+        "consulate": {
+            "label": "The French consulate nearest you",
+            "type": "select",
+            "options": [
+                {
+                    "value": "Atlanta",
+                    "label": "Consulate General of France in Atlanta"
+                },
+                {
+                    "value": "Boston",
+                    "label": "Consulate General of France in Boston"
+                },
+                {
+                    "value": "Chicago",
+                    "label": "Consulate General of France in Chicago"
+                },
+                {
+                    "value": "Houston",
+                    "label": "Consulate General of France in Houston"
+                },
+                {
+                    "value": "Los Angeles",
+                    "label": "Consulate General of France in Los Angeles"
+                },
+                {
+                    "value": "Miami",
+                    "label": "Consulate General of France in Miami"
+                },
+                {
+                    "value": "New Orleans",
+                    "label": "Consulate General of France in New Orleans"
+                },
+                {
+                    "value": "New York",
+                    "label": "Consulate General of France in New York"
+                },
+                {
+                    "value": "San Francisco",
+                    "label": "Consulate General of France in San Francisco"
+                },
+                {
+                    "value": "Washington",
+                    "label": "Consulate General of France in Washington"
+                }
+            ],
+            "hint": "Each consulate serves a set of states. France-Visas confirms which one is yours when you start your application."
+        },
+        "mailing_address": {
+            "label": "Your current mailing address",
+            "type": "textarea",
+            "hint": "Street, city, state and ZIP, as you want it at the top of your letters."
+        },
+        "address_in_france": {
+            "label": "Where you will live in France",
+            "type": "textarea",
+            "hint": "The address on your lease, deed, booking or host attestation. It must match the accommodation proof in your file."
+        },
+        "arrival_date": {
+            "label": "Planned arrival date",
+            "type": "date",
+            "hint": "Your move date from your profile; change it here if the letter needs another."
+        },
+        "stay_length": {
+            "label": "How long you plan to stay",
+            "type": "select",
+            "options": [
+                {
+                    "value": "one year, renewable",
+                    "label": "One year, renewable"
+                },
+                {
+                    "value": "one year",
+                    "label": "One year"
+                },
+                {
+                    "value": "several years, renewing each year",
+                    "label": "Several years, renewing each year"
+                },
+                {
+                    "value": "the length of my programme",
+                    "label": "The length of my programme"
+                },
+                {
+                    "value": "the length of my contract",
+                    "label": "The length of my contract"
+                },
+                {
+                    "value": "the length of my contract or project",
+                    "label": "The length of my contract or project"
+                }
+            ],
+            "hint": "How the letter words it."
+        },
+        "birth_place": {
+            "label": "Place of birth (city, state)",
+            "type": "text",
+            "hint": "As it appears on your passport."
+        },
+        "partner_birth_place": {
+            "label": "Your partner's place of birth (city, state)",
+            "type": "text",
+            "hint": "As it appears on their passport."
+        },
+        "partner_passport": {
+            "label": "Your partner's passport number",
+            "type": "text",
+            "hint": ""
+        },
+        "income_rows": {
+            "label": "Your income",
+            "type": "income",
+            "hint": "One row for each source, in dollars or euros, a month or a year. Dollars are converted at the European Central Bank's rate."
+        },
+        "savings": {
+            "label": "Savings and investments you can draw on",
+            "type": "money",
+            "hint": "The total your statements show. Leave it at 0 if you rely on income alone."
+        },
+        "plans": {
+            "label": "What you will do with your time in France",
+            "type": "textarea",
+            "hint": "A sentence or two in your own words: language classes, family, travel, volunteering."
+        },
+        "school_name": {
+            "label": "School or university",
+            "type": "text",
+            "hint": "As written on your attestation d'inscription."
+        },
+        "programme": {
+            "label": "Programme",
+            "type": "text",
+            "hint": "For example: Master in International Relations."
+        },
+        "programme_start": {
+            "label": "Programme start date",
+            "type": "date",
+            "hint": ""
+        },
+        "programme_end": {
+            "label": "Programme end date",
+            "type": "date",
+            "hint": ""
+        },
+        "contract_start": {
+            "label": "Start date in your contract",
+            "type": "date",
+            "hint": ""
+        },
+        "talent_detail": {
+            "label": "What your category rests on",
+            "type": "textarea",
+            "hint": "The contract, the project, the hosting agreement or the investment, in a sentence or two."
+        },
+        "business_name": {
+            "label": "Business name",
+            "type": "text",
+            "hint": "A working name is fine."
+        },
+        "business_activity": {
+            "label": "What the business does",
+            "type": "textarea",
+            "hint": "One or two sentences."
+        },
+        "investment_eur": {
+            "label": "Funds you will invest, in euros",
+            "type": "number",
+            "hint": ""
+        },
+        "marriage_date": {
+            "label": "Date of marriage or PACS",
+            "type": "date",
+            "hint": ""
+        },
+        "marriage_place": {
+            "label": "Where you married or registered the PACS",
+            "type": "text",
+            "hint": ""
+        },
+        "together_since": {
+            "label": "Living together since",
+            "type": "date",
+            "hint": ""
+        },
+        "how_met": {
+            "label": "How you met and your life together",
+            "type": "textarea",
+            "hint": "Plain facts: when and where you met, where you have lived together, what you share."
+        },
+        "host_name": {
+            "label": "Your host's full name",
+            "type": "text",
+            "hint": ""
+        },
+        "host_address": {
+            "label": "Your host's address in France",
+            "type": "textarea",
+            "hint": ""
+        },
+        "host_relation": {
+            "label": "How you know your host",
+            "type": "text",
+            "hint": "For example: my sister, a friend."
+        },
+        "host_from": {
+            "label": "Staying with them from",
+            "type": "date",
+            "hint": ""
+        },
+        "host_until": {
+            "label": "Until",
+            "type": "text",
+            "hint": "A date, or \"until I find a rental\"."
+        },
+        "sponsor_name": {
+            "label": "Your sponsor's full name",
+            "type": "text",
+            "hint": "Usually a parent."
+        },
+        "sponsor_address": {
+            "label": "Your sponsor's address",
+            "type": "textarea",
+            "hint": ""
+        },
+        "sponsor_relation": {
+            "label": "How your sponsor is related to you",
+            "type": "text",
+            "hint": "Their role, in French if you can: père (father), mère (mother), tante (aunt), oncle (uncle)."
+        },
+        "sponsor_monthly_eur": {
+            "label": "Monthly amount your sponsor commits, in euros",
+            "type": "number",
+            "hint": ""
+        },
+        "employer_address": {
+            "label": "Your employer's address",
+            "type": "textarea",
+            "hint": ""
+        },
+        "employed_since": {
+            "label": "Employed there since",
+            "type": "date",
+            "hint": ""
+        },
+        "annual_salary_usd": {
+            "label": "Annual salary in US dollars",
+            "type": "number",
+            "hint": ""
+        },
+        "signer_name": {
+            "label": "Who signs for the employer",
+            "type": "text",
+            "hint": "HR or your manager."
+        },
+        "signer_title": {
+            "label": "Their job title",
+            "type": "text",
+            "hint": ""
+        }
+    },
+    "first": [
+        "consulate",
+        "mailing_address"
+    ],
+    "form": {
+        "defaults": {
+            "arrival_date": "2027-02-15",
+            "stay_length": "one year, renewable"
+        },
+        "benchmark": {
+            "monthly": 1477.93,
+            "since": "1 June 2026",
+            "label": "the French net minimum wage",
+            "adults": 2
+        },
+        "fx": {
+            "rate": 1.165,
+            "date": "2026-09-18"
+        },
+        "groups": {
+            "address_in_france": "stay",
+            "arrival_date": "stay",
+            "stay_length": "stay",
+            "income_rows": "money",
+            "savings": "money",
+            "plans": "words",
+            "how_met": "words",
+            "talent_detail": "words",
+            "business_activity": "words"
+        }
+    },
+    "answers": {
+        "address_in_france": "Furnished rental, 8 rue Exemple\n33000 Bordeaux",
+        "arrival_date": "2027-02-15",
+        "stay_length": "one year, renewable",
+        "income_rows": "[{\"source\":\"Social Security\",\"amount\":3100,\"currency\":\"USD\",\"per\":\"month\"},{\"source\":\"Pension from a former employer\",\"amount\":26400,\"currency\":\"USD\",\"per\":\"year\"}]",
+        "savings": "{\"amount\":185000,\"currency\":\"USD\"}",
+        "plans": "We plan to take French classes, walk and cycle the Gironde, volunteer with a local community garden, and have our grown children visit.",
+        "consulate": "Atlanta",
+        "mailing_address": "123 Sample Street\nAsheville, NC 28801"
+    },
+    "drafts": {
+        "cover-letter": {
+            "title": "Cover letter",
+            "text": "Jordan Ellis\n123 Sample Street\nAsheville, NC 28801\njordan@example.com\n\n12 September 2026\n\nConsulate General of France in Atlanta\nVisa Section\n\n## Re: Application for a long-stay visitor visa (VLS-TS « visiteur »), passport no. X0000000\n\nDear Sir or Madam,\n\nMy spouse, Sam Ellis, and I are applying for a long-stay visitor visa (VLS-TS « visiteur ») to live in France from 15 February 2027, for one year, renewable.\n\nWe are retired and wish to spend this part of our lives in France. We plan to take French classes, walk and cycle the Gironde, volunteer with a local community garden, and have our grown children visit.\n\nWe will live at Furnished rental, 8 rue Exemple, 33000 Bordeaux.\n\nWe support ourselves from Social Security and pension from a former employer, a total of about €4,549 a month, and hold $185,000 (about €158,798) in savings and investments. The enclosed statement of resources and bank statements show the details.\n\nNeither of us will carry out any professional activity in France during our stay, as stated in the enclosed signed declarations.\n\nWe enclose the documents listed below and remain available for any further information you may need.\n\n- Passport\n- Passport photos (35 x 45 mm)\n- France-Visas application form, signed\n- Proof of accommodation in France\n- Bank statements for the last three months\n- Health insurance certificate covering the full stay\n- Birth certificate, apostilled\n- Signed declarations not to work, one for each of us (attestations sur l'honneur)\n- Statement of resources\n\nYours faithfully,\n[signature] Jordan Ellis\n[signature] Sam Ellis",
+            "missing": [],
+            "filename": "Cover letter - Jordan Ellis.pdf"
+        },
+        "no-work-declaration": {
+            "title": "Declaration not to work",
+            "text": "# Attestation sur l'honneur\n\nJe soussigné(e), Jordan Ellis, né(e) le 12 avril 1958 à North Carolina, USA, de nationalité américaine, titulaire du passeport n° X0000000,\n\ndéclare sur l'honneur n'exercer aucune activité professionnelle en France pendant toute la durée de mon séjour sous couvert d'un visa de long séjour « visiteur ».\n\nFait à Asheville, le 12 septembre 2026.\n[signature] Signature\n\n---\n## Translation\nI, the undersigned, Jordan Ellis, born on 12 April 1958 in North Carolina, USA, a US national, holder of passport no. X0000000,\n\ndeclare on my honour that I will not carry out any professional activity in France throughout my stay on a long-stay « visiteur » visa.\n\nSigned at Asheville, on 12 September 2026.",
+            "missing": [],
+            "filename": "Declaration not to work - Jordan Ellis.pdf"
+        }
+    }
+}

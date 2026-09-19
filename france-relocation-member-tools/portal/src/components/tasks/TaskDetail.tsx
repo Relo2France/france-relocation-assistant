@@ -408,7 +408,9 @@ function HowTo({ howto }: { howto: TaskHowto }) {
         <h4 id="howto-title" className="font-display text-[1.05rem] font-semibold m-0 whitespace-nowrap">How to do this</h4>
         {(howto.time || howto.cost) ? (
           <p className="text-[0.82rem] text-gray-500 m-0 leading-snug">
-            {howto.time}{howto.time && howto.cost ? ' ' : ''}{howto.cost}
+            {howto.time ? <><span className="font-semibold text-gray-600">Time:</span> {howto.time}</> : null}
+            {howto.time && howto.cost ? ' · ' : ''}
+            {howto.cost ? <><span className="font-semibold text-gray-600">Cost:</span> {howto.cost}</> : null}
           </p>
         ) : null}
       </div>

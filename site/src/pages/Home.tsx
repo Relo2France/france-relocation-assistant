@@ -5,6 +5,7 @@ import { portalFeatures } from '../content/portal';
 import { HERO_STEPS, heroFor } from '../content/hero';
 import { daysUntil, useMember } from '../member';
 import { external } from '../content/links';
+import { PortalTour } from '../components/PortalScreens';
 
 /**
  * Two different cards for two different people.
@@ -115,6 +116,8 @@ export function Home() {
           Everything above is free to read and always will be. What members get is the
           same information turned into their own file — dated, tracked, and answerable.
         </p>
+
+        <PortalTour />
 
         <div className="grid md:grid-cols-2 gap-x-8 gap-y-0 border-t border-rule">
           {portalFeatures.map((feature) => (

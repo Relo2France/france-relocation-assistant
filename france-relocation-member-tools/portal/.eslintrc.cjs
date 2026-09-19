@@ -20,6 +20,8 @@ module.exports = {
     'plugin:jsx-a11y/recommended',
   ],
   ignorePatterns: [
+    // The marketing-screenshot demo (invented data, dev only).
+    'demo',
     'dist',
     'node_modules',
     '../assets',

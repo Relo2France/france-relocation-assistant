@@ -87,4 +87,14 @@ describe('other settled figures', () => {
     expect(HERO_STEPS[0]!.note).toMatch(/^Five main/);
     expect(text('long-stay-visa-overview')).toContain('the five below');
   });
+
+  it('keeps the owner\'s rule: no French translations for the first application', () => {
+    // Kevin (owner), 2026-09-18: translations are needed after arrival and for
+    // renewals, not for the first application at a US consulate. A KB gap is
+    // raised to confirm; until it is answered, the guides follow this rule.
+    const all = guides.map((g) => JSON.stringify(g)).join(' ');
+    expect(all).not.toMatch(/certified French translations? (?:by a sworn translator )?(?:are|is) listed/i);
+    expect(all).not.toMatch(/diplomas with certified French translations/i);
+    expect(all).toMatch(/not for the first application/i);
+  });
 });
