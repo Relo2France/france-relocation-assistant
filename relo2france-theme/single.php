@@ -11,7 +11,7 @@
 if (get_post_type() === 'memberpressproduct') {
     get_header();
     ?>
-    <div class="content-narrow">
+    <div class="content-wide">
         <?php
         while (have_posts()) :
             the_post();

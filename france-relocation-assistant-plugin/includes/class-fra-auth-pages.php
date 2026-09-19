@@ -47,7 +47,7 @@ class FRA_Auth_Pages {
             'auth_login_subtitle' => 'Your file is where you left it.',
             'auth_signup_title' => 'One payment, for the whole move',
             'auth_signup_subtitle' => 'Lifetime access to your own dated file, the documents, and the assistant.',
-            'auth_signup_price' => '$35 once, for life',
+            'auth_signup_price' => '$99 once, for life',
             'auth_signup_price_note' => 'No subscription, no renewal.',
             'auth_signup_benefits' => "Ask about your own situation\nYour dossier, tracked per person\nTasks and deadlines dated from your move\nCover letters and declarations drafted with your details\nThe full knowledge base, re-checked weekly",
             'auth_logout_title' => 'You’re signed out',
@@ -95,6 +95,11 @@ class FRA_Auth_Pages {
                 unset( $saved['auth_signup_benefits'] );
             }
         }
+        // The price follows MemberPress (see mepr_price()); a saved price line
+        // from the $35 days must not override it.
+        if ( isset( $saved['auth_signup_price'] ) && false !== strpos( (string) $saved['auth_signup_price'], '$35' ) ) {
+            unset( $saved['auth_signup_price'] );
+        }
         if ( isset( $saved['auth_thankyou_subtitle'] ) && false !== stripos( (string) $saved['auth_thankyou_subtitle'], 'Your account has been created successfully' ) ) {
             unset( $saved['auth_thankyou_subtitle'] );
         }
@@ -109,6 +114,35 @@ class FRA_Auth_Pages {
      * @param mixed $value Saved value.
      * @return string
      */
+    /**
+     * A MemberPress product's price as "$99", so the page always says what
+     * the checkout charges. Null when MemberPress or the product is missing.
+     *
+     * @param int $product_id MemberPress product ID.
+     * @return string|null
+     */
+    public static function mepr_price( $product_id ) {
+        if ( ! $product_id || ! class_exists( 'MeprProduct' ) ) {
+            return null;
+        }
+        $product = new MeprProduct( (int) $product_id );
+        if ( empty( $product->ID ) || ! isset( $product->price ) ) {
+            return null;
+        }
+        $amount = (float) $product->price;
+        return '$' . ( floor( $amount ) == $amount ? number_format( $amount, 0 ) : number_format( $amount, 2 ) );
+    }
+
+    /** The Family add-on's price from MemberPress, "$35" if it cannot be read. */
+    private function family_price() {
+        $id = (int) get_option( 'framt_family_addon_product_id', 0 );
+        if ( ! $id ) {
+            $post = get_page_by_path( 'family-add-on', OBJECT, 'memberpressproduct' );
+            $id   = $post ? (int) $post->ID : 0;
+        }
+        return self::mepr_price( $id ) ?: '$35';
+    }
+
     private static function normalise_copy( $value ) {
         $value = str_replace( array( "\r\n", "\r" ), "\n", (string) $value );
         $lines = array_map( function ( $line ) {
@@ -221,6 +255,137 @@ class FRA_Auth_Pages {
 
         .fra-auth-container-wide {
             max-width: 560px;
+        }
+
+        /* === SIGN-UP: two columns, what you buy beside the form === */
+        .fra-auth-signup {
+            max-width: 1040px;
+        }
+        .fra-auth-signup-card {
+            padding: 0;
+            overflow: hidden;
+        }
+        .fra-auth-signup-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+        }
+        @media (min-width: 880px) {
+            .fra-auth-signup-grid {
+                grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+            }
+        }
+        .fra-auth-signup-pitch {
+            background: var(--card-2, #f4f6f4);
+            border-bottom: 1px solid var(--rule, #dde3de);
+            padding: 36px 32px;
+        }
+        @media (min-width: 880px) {
+            .fra-auth-signup-pitch {
+                border-bottom: 0;
+                border-right: 1px solid var(--rule, #dde3de);
+                padding: 44px 40px;
+            }
+        }
+        .fra-auth-signup-pitch h1 {
+            font-family: var(--font-display, Fraunces, Georgia, serif);
+            font-size: clamp(1.6rem, 3vw, 2.1rem);
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            line-height: 1.12;
+            color: var(--ink, #1c2420);
+            margin: 10px 0 10px;
+            text-wrap: balance;
+        }
+        .fra-auth-signup-lead {
+            color: var(--muted, #5f6e66);
+            font-size: 1rem;
+            line-height: 1.55;
+            margin: 0 0 24px;
+            max-width: 40ch;
+        }
+        .fra-auth-signup-price {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 4px 10px;
+            padding: 18px 0;
+            border-top: 1px solid var(--rule, #dde3de);
+            border-bottom: 1px solid var(--rule, #dde3de);
+            margin-bottom: 22px;
+        }
+        .fra-auth-signup-amount {
+            font-family: var(--font-display, Fraunces, Georgia, serif);
+            font-size: 2.6rem;
+            font-weight: 600;
+            letter-spacing: -0.03em;
+            line-height: 1;
+            color: var(--ink, #1c2420);
+        }
+        .fra-auth-signup-per {
+            font-weight: 600;
+            color: var(--ink, #1c2420);
+        }
+        .fra-auth-signup-note {
+            flex-basis: 100%;
+            color: var(--muted, #5f6e66);
+            font-size: 0.85rem;
+        }
+        .fra-auth-signup-list {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 24px;
+        }
+        .fra-auth-signup-list li {
+            display: flex;
+            gap: 10px;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            padding: 5px 0;
+            color: var(--ink, #1c2420);
+        }
+        .fra-auth-signup-list li::before {
+            content: '✓';
+            color: var(--vine, #2c5346);
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+        .fra-auth-signup-assure p {
+            font-size: 0.85rem;
+            line-height: 1.5;
+            color: var(--muted, #5f6e66);
+            margin: 0 0 8px;
+        }
+        .fra-auth-signup-assure strong {
+            color: var(--ink, #1c2420);
+        }
+        .fra-auth-signup-assure a {
+            color: var(--vine, #2c5346);
+            font-weight: 600;
+        }
+        .fra-auth-signup-form {
+            padding: 36px 32px;
+        }
+        @media (min-width: 880px) {
+            .fra-auth-signup-form {
+                padding: 44px 40px;
+            }
+        }
+        .fra-auth-signup-form h2 {
+            font-family: var(--font-display, Fraunces, Georgia, serif);
+            font-size: 1.3rem;
+            font-weight: 600;
+            letter-spacing: -0.015em;
+            color: var(--ink, #1c2420);
+            margin: 0 0 18px;
+        }
+        .fra-auth-signup-signin {
+            font-size: 0.9rem;
+            color: var(--muted, #5f6e66);
+            margin: 20px 0 0;
+            text-align: center;
+        }
+        .fra-auth-signup-signin a {
+            color: var(--vine, #2c5346);
         }
 
         /* === CARD === */
@@ -914,14 +1079,21 @@ class FRA_Auth_Pages {
         $price_note = $this->get('auth_signup_price_note');
         $benefits = array_filter(array_map('trim', explode("\n", $this->get('auth_signup_benefits'))));
 
+        // What this checkout charges, straight from MemberPress.
+        $live_price = self::mepr_price((int) $atts['membership_id']);
+        if ($live_price) {
+            $price = $live_price . ' once, for life';
+        }
+
         // The Family add-on has its own checkout: describe it, not the
         // lifetime membership it sits on top of.
         $family_id = (int) get_option('framt_family_addon_product_id', 0);
         $product   = (int) $atts['membership_id'];
         if ($product > 0 && ($product === $family_id || 'family-add-on' === get_post_field('post_name', $product))) {
+            $is_family  = true;
             $title      = 'Family add-on';
             $subtitle   = 'For the people moving with you: one partner and up to four children, added to your membership.';
-            $price      = '$20';
+            $price      = $this->family_price();
             $price_note = 'once, on top of your lifetime membership. No renewal.';
             $benefits   = array(
                 'Your partner gets their own sign-in to the same household file',
@@ -933,49 +1105,65 @@ class FRA_Auth_Pages {
 
         ob_start();
         ?>
-        <div class="fra-auth-container fra-auth-container-wide">
-            <div class="fra-auth-card">
-                <div class="fra-auth-card-header">
-                    <h1><?php echo esc_html($title); ?></h1>
-                    <p><?php echo esc_html($subtitle); ?></p>
-                </div>
-                
-                <?php if (!empty($price)) : ?>
-                <div class="fra-auth-price">
-                    <span class="fra-auth-price-badge"><?php echo esc_html($price); ?></span>
-                    <?php if (!empty($price_note)) : ?>
-                        <span class="fra-auth-price-note"><?php echo esc_html($price_note); ?></span>
-                    <?php endif; ?>
-                </div>
-                <?php endif; ?>
-                
-                <?php if (!empty($benefits)) : ?>
-                <div class="fra-auth-benefits">
-                    <div class="fra-auth-benefits-title">What members get</div>
-                    <ul>
-                        <?php foreach ($benefits as $benefit) : ?>
-                            <li><?php echo esc_html($benefit); ?></li>
-                        <?php endforeach; ?>
-                    </ul>
-                </div>
-                <?php endif; ?>
-                
-                <div class="fra-auth-form-wrap">
-                    <?php 
-                    if (!empty($atts['membership_id'])) {
-                        echo shortcode_exists('mepr-membership-registration-form')
-                            ? do_shortcode('[mepr-membership-registration-form id="' . esc_attr($atts['membership_id']) . '"]')
-                            : '<p class="fra-auth-error">' . esc_html__('Sign-up is temporarily unavailable. Please try again shortly.', 'france-relocation-assistant') . '</p>';
-                    } else {
-                        echo '<p class="fra-auth-error">Add membership_id to shortcode</p>';
-                    }
-                    ?>
-                </div>
-                
-                <div class="fra-auth-security">🔒 Secure payment via Stripe</div>
-                
-                <div class="fra-auth-card-footer">
-                    <p>Already a member? <a href="<?php echo esc_url(home_url('/portal/')); ?>"><strong>Sign in</strong></a></p>
+        <?php
+        // "$99 once, for life" shows as a large "$99" and a small "once, for life".
+        $price_amount = $price;
+        $price_rest   = '';
+        if (preg_match('/^\s*(\$[\d.,]+)\s*(.*)$/u', (string) $price, $pm)) {
+            $price_amount = $pm[1];
+            $price_rest   = $pm[2];
+        }
+        $is_family = isset($is_family) ? $is_family : false;
+        ?>
+        <div class="fra-auth-container fra-auth-signup">
+            <div class="fra-auth-card fra-auth-signup-card">
+                <div class="fra-auth-signup-grid">
+                    <section class="fra-auth-signup-pitch" aria-labelledby="fra-signup-title">
+                        <div class="fra-auth-eyebrow"><?php echo $is_family ? 'Family add-on' : 'Lifetime membership'; ?></div>
+                        <h1 id="fra-signup-title"><?php echo esc_html($title); ?></h1>
+                        <p class="fra-auth-signup-lead"><?php echo esc_html($subtitle); ?></p>
+
+                        <?php if (!empty($price)) : ?>
+                        <div class="fra-auth-signup-price">
+                            <span class="fra-auth-signup-amount"><?php echo esc_html($price_amount); ?></span>
+                            <?php if ('' !== $price_rest) : ?><span class="fra-auth-signup-per"><?php echo esc_html($price_rest); ?></span><?php endif; ?>
+                            <?php if (!empty($price_note)) : ?>
+                                <span class="fra-auth-signup-note"><?php echo esc_html($price_note); ?></span>
+                            <?php endif; ?>
+                        </div>
+                        <?php endif; ?>
+
+                        <?php if (!empty($benefits)) : ?>
+                        <ul class="fra-auth-signup-list">
+                            <?php foreach ($benefits as $benefit) : ?>
+                                <li><?php echo esc_html($benefit); ?></li>
+                            <?php endforeach; ?>
+                        </ul>
+                        <?php endif; ?>
+
+                        <div class="fra-auth-signup-assure">
+                            <p><strong>30-day money-back guarantee.</strong> Email us within 30 days and you get every cent back. <a href="<?php echo esc_url(home_url('/refund-policy/')); ?>">Refund policy</a></p>
+                            <p>Secure payment by Stripe. Your card details go straight to Stripe and never touch our servers.</p>
+                        </div>
+                    </section>
+
+                    <section class="fra-auth-signup-form" aria-label="<?php echo esc_attr($is_family ? 'Add the Family plan' : 'Create your account'); ?>">
+                        <h2><?php echo $is_family ? 'Add it to your membership' : 'Create your account'; ?></h2>
+                        <div class="fra-auth-form-wrap">
+                            <?php
+                            if (!empty($atts['membership_id'])) {
+                                echo shortcode_exists('mepr-membership-registration-form')
+                                    ? do_shortcode('[mepr-membership-registration-form id="' . esc_attr($atts['membership_id']) . '"]')
+                                    : '<p class="fra-auth-error">' . esc_html__('Sign-up is temporarily unavailable. Please try again shortly.', 'france-relocation-assistant') . '</p>';
+                            } else {
+                                echo '<p class="fra-auth-error">Add membership_id to shortcode</p>';
+                            }
+                            ?>
+                        </div>
+                        <?php if (!$is_family) : ?>
+                        <p class="fra-auth-signup-signin">Already a member? <a href="<?php echo esc_url(home_url('/portal/')); ?>"><strong>Sign in</strong></a></p>
+                        <?php endif; ?>
+                    </section>
                 </div>
             </div>
         </div>
@@ -1095,7 +1283,7 @@ class FRA_Auth_Pages {
                 <div class="fra-auth-benefits">
                     <div class="fra-auth-benefits-title">Moving with family?</div>
                     <ul>
-                        <li>The Family plan gives your partner and each child (up to four) a file of their own, for $20 once</li>
+                        <li>The Family plan gives your partner and each child (up to four) a file of their own, for <?php echo esc_html( $this->family_price() ); ?> once</li>
                         <li>Your partner gets their own sign-in, so you can split the work or do it all yourself</li>
                     </ul>
                     <p style="margin:12px 0 0"><a href="<?php echo esc_url($this->family_addon_url()); ?>">Add the Family plan</a> · or later, from Family plans in the portal</p>

@@ -537,7 +537,7 @@ $inchat_auth_enabled = $customizer['inchat_auth_enabled'] ?? true;
                 $auth_login_subtitle = $customizer['auth_login_subtitle'] ?? 'Sign in to access your relocation dashboard';
                 $auth_signup_title = $customizer['auth_signup_title'] ?? 'Start Your France Journey';
                 $auth_signup_subtitle = $customizer['auth_signup_subtitle'] ?? 'Create your account and get lifetime access';
-                $auth_signup_price = $customizer['auth_signup_price'] ?? '$35 Lifetime Access';
+                $auth_signup_price = $customizer['auth_signup_price'] ?? '$99 once, for life';
                 $auth_signup_price_note = $customizer['auth_signup_price_note'] ?? 'One-time payment, forever access';
                 // Same copy as the sign-up page, with the old-copy migration applied.
                 $auth_signup_benefits = class_exists('FRA_Auth_Pages')

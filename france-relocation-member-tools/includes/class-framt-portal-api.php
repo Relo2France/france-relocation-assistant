@@ -11608,8 +11608,11 @@ SECTIONS;
         if ( '' === $url ) {
             $url = home_url( '/register/family-add-on/' );
         }
+        $price = class_exists( 'FRA_Auth_Pages' ) && method_exists( 'FRA_Auth_Pages', 'mepr_price' )
+            ? FRA_Auth_Pages::mepr_price( (int) get_option( 'framt_family_addon_product_id', 0 ) )
+            : null;
         return array(
-            'price'      => '$20',
+            'price'      => $price ?: '$35',
             'priceNote'  => 'once, alongside your membership',
             'url'        => $url,
             'limits'     => array( 'adults' => 1, 'children' => 4 ),

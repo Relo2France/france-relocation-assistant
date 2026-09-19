@@ -6,7 +6,7 @@
  * steps and the children's. The profile decides who is moving; this view
  * shows what each of them still needs and who is doing it.
  *
- * The Family add-on ($20, once) covers one partner and up to four children.
+ * The Family add-on ($35, once) covers one partner and up to four children.
  * Until it is bought the household is shown read-only from the profile.
  */
 import { useState } from 'react';

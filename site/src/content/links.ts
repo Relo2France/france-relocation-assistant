@@ -22,7 +22,7 @@ export const external = {
  * The price, in one place, because it appears on three pages and a wrong one
  * is worse than a missing one. Sourced from the live MemberPress product.
  */
-export const PRICE = '$35';
+export const PRICE = '$99';
 export const PRICE_NOTE = 'once, for life. No subscription, no renewal.';
 
 /**
@@ -41,10 +41,10 @@ export const GUARANTEE = `${REFUND_DAYS}-day money-back guarantee. Email us with
  * family features to every member. While that is true the site must not sell
  * an add-on nobody can buy: it says plainly that family is included during
  * launch. Flip this to true only once the product is live and gated, and the
- * $20 copy returns everywhere at once.
+ * priced copy returns everywhere at once.
  */
 export const FAMILY_ADDON_ON_SALE = true;
-export const FAMILY_ADDON_PRICE = '$20';
+export const FAMILY_ADDON_PRICE = '$35';
 /** No trailing full stop: it is quoted inside parentheses as well as on its own. */
 export const FAMILY_ADDON_NOTE = 'once, on top of membership, for one partner and up to four children';
 /** What the site says while the add-on is not on sale. */

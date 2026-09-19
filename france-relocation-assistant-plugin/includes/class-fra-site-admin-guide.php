@@ -61,7 +61,7 @@ class FRA_Site_Admin_Guide {
             array(
                 'id'    => 'refund',
                 'title' => 'Refund a purchase',
-                'when'  => 'A member asks for their money back. Both the $35 membership and the $20 Family add-on carry a 30-day guarantee, each counted from the day it was bought.',
+                'when'  => 'A member asks for their money back. Both the $99 membership and the $35 Family add-on carry a 30-day guarantee, each counted from the day it was bought.',
                 'steps' => array(
                     'Go to MemberPress → Transactions.',
                     'Search for the member’s email address.',

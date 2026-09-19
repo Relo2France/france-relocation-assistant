@@ -83,7 +83,7 @@ export function resolveRoute(path: string): { element: ReactElement; meta: PageM
       meta: {
         title: `Pricing — ${SITE_NAME}`,
         description:
-          'Relo2France costs $35 once, for lifetime access. The guides are free; membership adds your own dated file, documents and the assistant.',
+          'Relo2France costs $99 once, for lifetime access. The guides are free; membership adds your own dated file, documents and the assistant.',
         canonical: `${SITE}/pricing/`,
         jsonLd: {
           '@context': 'https://schema.org',
@@ -93,7 +93,7 @@ export function resolveRoute(path: string): { element: ReactElement; meta: PageM
             'Lifetime access to the Relo2France member portal: a dated relocation plan, document tools and an assistant answering against your own file.',
           offers: {
             '@type': 'Offer',
-            price: '35',
+            price: '99',
             priceCurrency: 'USD',
             url: `${SITE}/pricing/`,
             availability: 'https://schema.org/InStock',

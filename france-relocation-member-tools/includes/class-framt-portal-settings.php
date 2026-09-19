@@ -673,7 +673,7 @@ class FRAMT_Portal_Settings {
         return array(
             'chat'      => array( 'Ask about my case', 'The assistant, answering against the member\'s file and the knowledge base.' ),
             'documents' => array( 'Documents & files', 'The dossier per person, uploads, generated documents and saved reports.' ),
-            'family'    => array( 'Family plans', 'One file per person, the partner sign-in and the $20 add-on offer.' ),
+            'family'    => array( 'Family plans', 'One file per person, the partner sign-in and the $35 add-on offer.' ),
             'timeline'  => array( 'Deadlines', 'Every dated step counted back from the move.' ),
             'schengen'  => array( 'Schengen days', 'The 90/180 tracker, carrying the coming-soon note.' ),
             'research'  => array( 'Explore France', 'Regions, departments and communes, with generated location reports.' ),
@@ -803,7 +803,7 @@ class FRAMT_Portal_Settings {
 
         <div class="framt-settings-card">
             <h2>Family add-on</h2>
-            <p class="lead">The $20 one-time MemberPress product for one partner and up to four children. Once its ID is set, only members who bought it can edit family files and invite a partner; everyone else sees the offer.</p>
+            <p class="lead">The $35 one-time MemberPress product for one partner and up to four children. Once its ID is set, only members who bought it can edit family files and invite a partner; everyone else sees the offer.</p>
             <table class="form-table" style="margin-top:0;">
                 <tr>
                     <th scope="row"><label for="framt_family_addon_product_id">Product ID</label></th>

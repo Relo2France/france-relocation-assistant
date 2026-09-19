@@ -89,9 +89,9 @@ describe('the pricing page', () => {
 
   it('sends a stranger to checkout, labelled with the price', () => {
     render(<Pricing />);
-    // Every "Join — $35" on this page goes to checkout, the nav's included:
+    // Every "Join — $99" on this page goes to checkout, the nav's included:
     // a nav pill pointing back at this page did nothing when clicked.
-    const joins = screen.getAllByRole('link', { name: /join — \$35/i });
+    const joins = screen.getAllByRole('link', { name: /join — \$99/i });
     expect(joins.length).toBeGreaterThanOrEqual(3);
     expect(joins.filter((j) => j.getAttribute('href') === '/pricing/')).toHaveLength(0);
     for (const j of joins) expect(j).toHaveAttribute('href', expect.stringContaining('/register/'));
@@ -105,7 +105,7 @@ describe('the pricing page', () => {
         <Pricing />
       </MemberContext.Provider>
     );
-    expect(screen.queryByRole('link', { name: /join — \$35/i })).toBeNull();
+    expect(screen.queryByRole('link', { name: /join — \$99/i })).toBeNull();
     for (const l of screen.getAllByRole('link', { name: /open my dossier/i })) {
       expect(l).toHaveAttribute('href', expect.stringContaining('/portal/'));
     }
