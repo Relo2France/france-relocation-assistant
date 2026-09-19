@@ -110,7 +110,7 @@ export default function LocationDetectionBanner({
   // Priority 1: Timezone change detected
   if (locationState.timezoneChanged) {
     bannerIcon = Plane;
-    bannerTitle = 'Travel Detected';
+    bannerTitle = 'Travel detected';
     bannerMessage = `Your timezone changed from ${locationState.storedTimezone} to ${locationState.currentTimezone}. Are you traveling?`;
     bannerColor = 'amber';
   }
@@ -122,7 +122,7 @@ export default function LocationDetectionBanner({
     ipData.countryCode !== locationState.likelyCountry
   ) {
     bannerIcon = Globe;
-    bannerTitle = 'Location Check';
+    bannerTitle = 'Location check';
     bannerMessage = `Your IP suggests you're in ${ipData.countryName || ipData.countryCode}. Check in to confirm your location.`;
     bannerColor = 'purple';
   }
@@ -223,7 +223,7 @@ export default function LocationDetectionBanner({
                 ) : (
                   <>
                     <Navigation className="w-4 h-4" aria-hidden="true" />
-                    Check In Now
+                    Check in now
                   </>
                 )}
               </button>

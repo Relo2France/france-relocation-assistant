@@ -24,19 +24,19 @@ import FileUpload from './FileUpload';
 import LettersSection from './LettersSection';
 
 const categoryOptions: { value: FileCategory | ''; label: string }[] = [
-  { value: '', label: 'All Categories' },
-  { value: 'identity', label: 'Identity Documents' },
+  { value: '', label: 'All categories' },
+  { value: 'identity', label: 'Identity documents' },
   { value: 'financial', label: 'Financial' },
   { value: 'housing', label: 'Housing' },
   { value: 'employment', label: 'Employment' },
-  { value: 'visa', label: 'Visa & Immigration' },
+  { value: 'visa', label: 'Visa & immigration' },
   { value: 'medical', label: 'Medical' },
   { value: 'education', label: 'Education' },
   { value: 'other', label: 'Other' },
 ];
 
 const fileTypeOptions: { value: FileType | ''; label: string }[] = [
-  { value: '', label: 'All Types' },
+  { value: '', label: 'All types' },
   { value: 'document', label: 'Documents' },
   { value: 'pdf', label: 'PDFs' },
   { value: 'image', label: 'Images' },
@@ -157,7 +157,7 @@ export default function DocumentsView() {
     return (
       <div className="p-6">
         <div className="card p-8 text-center">
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">No Project Found</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">No project found</h2>
           <p className="text-gray-600">Please set up your relocation project first.</p>
         </div>
       </div>
@@ -336,7 +336,7 @@ export default function DocumentsView() {
               className="btn btn-primary w-full sm:w-auto"
             >
               <Plus className="w-4 h-4" />
-              Upload Files
+              Upload files
             </button>
           </div>
 
@@ -421,7 +421,7 @@ export default function DocumentsView() {
       <Modal
         isOpen={showUpload}
         onClose={() => setShowUpload(false)}
-        title="Upload Documents"
+        title="Upload documents"
         size="lg"
       >
         <FileUpload

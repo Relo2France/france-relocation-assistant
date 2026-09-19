@@ -43,7 +43,7 @@ export default function SettingsView() {
   }, [settingsTab, setSettingsTab]);
 
   const tabs = [
-    { id: 'portal-account' as SettingsTab, label: 'Portal Account', icon: User },
+    { id: 'portal-account' as SettingsTab, label: 'Portal account', icon: User },
     { id: 'notifications' as SettingsTab, label: 'Notifications', icon: Bell },
   ];
 
@@ -158,7 +158,7 @@ function PortalAccountSection() {
     <div className="space-y-6">
       {/* Profile Information card */}
       <div className="card p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-6">Profile Information</h2>
+        <h2 className="text-lg font-semibold text-gray-900 mb-6">Profile information</h2>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Avatar */}
@@ -170,7 +170,7 @@ function PortalAccountSection() {
             />
             <div>
               <p className="text-sm text-gray-600">
-                Profile photo is managed through your Gravatar account
+                Your photo comes from Gravatar, the free picture service linked to your email address.
               </p>
               <a
                 href="https://gravatar.com"
@@ -178,7 +178,7 @@ function PortalAccountSection() {
                 rel="noopener noreferrer"
                 className="text-sm text-primary-600 hover:text-primary-700"
               >
-                Change on Gravatar
+                Change your photo
               </a>
             </div>
           </div>
@@ -187,7 +187,7 @@ function PortalAccountSection() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label htmlFor="first_name" className="block text-sm font-medium text-gray-700 mb-1">
-                First Name
+                First name
               </label>
               <input
                 type="text"
@@ -199,7 +199,7 @@ function PortalAccountSection() {
             </div>
             <div>
               <label htmlFor="last_name" className="block text-sm font-medium text-gray-700 mb-1">
-                Last Name
+                Last name
               </label>
               <input
                 type="text"
@@ -213,7 +213,7 @@ function PortalAccountSection() {
 
           <div>
             <label htmlFor="display_name" className="block text-sm font-medium text-gray-700 mb-1">
-              Display Name
+              Display name
             </label>
             <input
               type="text"
@@ -241,7 +241,7 @@ function PortalAccountSection() {
               ) : (
                 <Save className="w-4 h-4" />
               )}
-              {updateProfile.isPending ? 'Saving...' : updateProfile.isSuccess ? 'Saved!' : 'Save Changes'}
+              {updateProfile.isPending ? 'Saving...' : updateProfile.isSuccess ? 'Saved!' : 'Save changes'}
             </button>
             {updateProfile.isError && (
               <span className="text-sm text-red-600">
@@ -254,7 +254,7 @@ function PortalAccountSection() {
 
       {/* Account info card */}
       <div className="card p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-6">Account Information</h2>
+        <h2 className="text-lg font-semibold text-gray-900 mb-6">Account information</h2>
 
         <div className="space-y-4">
           <div className="flex justify-between py-3 border-b border-gray-100">
@@ -266,13 +266,13 @@ function PortalAccountSection() {
             <span className="font-medium text-gray-900">{user?.email}</span>
           </div>
           <div className="flex justify-between py-3 border-b border-gray-100">
-            <span className="text-gray-600">Account Type</span>
+            <span className="text-gray-600">Account type</span>
             <span className="font-medium text-gray-900">
               {user?.is_admin ? 'Administrator' : 'Member'}
             </span>
           </div>
           <div className="flex justify-between py-3">
-            <span className="text-gray-600">Membership Status</span>
+            <span className="text-gray-600">Membership status</span>
             <span className={clsx(
               'px-2 py-1 rounded-full text-xs font-medium',
               user?.is_member
@@ -314,7 +314,7 @@ function PortalAccountSection() {
           <div className="flex items-start gap-3">
             <RefreshCw className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
             <div className="flex-1">
-              <h3 className="font-medium text-gray-900">Reset Visa Profile</h3>
+              <h3 className="font-medium text-gray-900">Reset visa profile</h3>
               <p className="text-sm text-gray-600 mt-1">
                 Reset all your profile data, tasks, documents, and progress. Your account will remain active, but it will be as if you&apos;re starting fresh as a new member.
               </p>
@@ -333,7 +333,7 @@ function PortalAccountSection() {
                   className="mt-4 px-4 py-2 bg-amber-600 text-white text-sm font-medium rounded-lg hover:bg-amber-700 transition-colors flex items-center gap-2"
                 >
                   <RefreshCw className="w-4 h-4" />
-                  Reset My Profile
+                  Reset my profile
                 </button>
               ) : (
                 <div className="mt-4 space-y-4">
@@ -378,7 +378,7 @@ function PortalAccountSection() {
                       ) : (
                         <>
                           <RefreshCw className="w-4 h-4" />
-                          Reset Profile
+                          Reset profile
                         </>
                       )}
                     </button>
@@ -413,7 +413,7 @@ function PortalAccountSection() {
           <div className="flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
             <div className="flex-1">
-              <h3 className="font-medium text-gray-900">Delete Account</h3>
+              <h3 className="font-medium text-gray-900">Delete account</h3>
               <p className="text-sm text-gray-600 mt-1">
                 Once you delete your account, there is no going back. All your data, documents, tasks, and profile information will be permanently removed.
               </p>
@@ -428,7 +428,7 @@ function PortalAccountSection() {
                   className="mt-4 px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
                 >
                   <Trash2 className="w-4 h-4" />
-                  Delete My Account
+                  Delete my account
                 </button>
               ) : (
                 <div className="mt-4 space-y-4">
@@ -473,7 +473,7 @@ function PortalAccountSection() {
                       ) : (
                         <>
                           <Trash2 className="w-4 h-4" />
-                          Permanently Delete Account
+                          Permanently delete account
                         </>
                       )}
                     </button>

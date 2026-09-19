@@ -84,7 +84,7 @@ export default function UKSRTStatus({ breakdown, className }: UKSRTStatusProps) 
                 {isResident ? 'UK Tax Resident' : 'Not UK Tax Resident'}
               </h3>
               <span className={clsx('px-2 py-0.5 rounded text-xs font-medium', statusColors.badge)}>
-                Tax Year {breakdown.taxYearLabel}
+                Tax year {breakdown.taxYearLabel}
               </span>
             </div>
             <p className="text-sm text-gray-600 mt-1">
@@ -104,13 +104,13 @@ export default function UKSRTStatus({ breakdown, className }: UKSRTStatusProps) 
           </div>
           <div className="bg-white/50 rounded-lg p-2">
             <div className="text-2xl font-bold text-gray-900">{breakdown.tieCount}</div>
-            <div className="text-xs text-gray-500">UK Ties</div>
+            <div className="text-xs text-gray-500">UK ties</div>
           </div>
           <div className="bg-white/50 rounded-lg p-2">
             <div className="text-2xl font-bold text-gray-900">
               {breakdown.wasResidentPrior ? 'Yes' : 'No'}
             </div>
-            <div className="text-xs text-gray-500">Prior Resident</div>
+            <div className="text-xs text-gray-500">Prior resident</div>
           </div>
         </div>
       </div>
@@ -119,7 +119,7 @@ export default function UKSRTStatus({ breakdown, className }: UKSRTStatusProps) 
       <div className="divide-y divide-current/10">
         {/* Automatic Overseas Test */}
         <TestSection
-          title="Automatic Overseas Test"
+          title="Automatic overseas test"
           subtitle="If ANY condition is met, you are automatically non-resident"
           result={breakdown.automaticOverseas}
           isExpanded={expandedSection === 'overseas'}
@@ -131,7 +131,7 @@ export default function UKSRTStatus({ breakdown, className }: UKSRTStatusProps) 
 
         {/* Automatic UK Test */}
         <TestSection
-          title="Automatic UK Test"
+          title="Automatic UK test"
           subtitle="If ANY condition is met, you are automatically UK resident"
           result={breakdown.automaticUK}
           isExpanded={expandedSection === 'uk'}
@@ -191,7 +191,7 @@ function TestSection({
               <span className="font-medium text-gray-900">{title}</span>
               {isActive && (
                 <span className="px-2 py-0.5 bg-primary-100 text-primary-700 text-xs rounded">
-                  Determining Factor
+                  Determining factor
                 </span>
               )}
             </div>
@@ -205,7 +205,7 @@ function TestSection({
               result.passed ? 'text-green-600' : 'text-gray-500'
             )}
           >
-            {result.passed ? 'Passed' : 'Not Met'}
+            {result.passed ? 'Passed' : 'Not met'}
           </span>
           {isExpanded ? (
             <ChevronUp className="w-5 h-5 text-gray-400" />
@@ -302,10 +302,10 @@ function SufficientTiesSection({
           />
           <div className="text-left">
             <div className="flex items-center gap-2">
-              <span className="font-medium text-gray-900">Sufficient Ties Test</span>
+              <span className="font-medium text-gray-900">Sufficient ties test</span>
               {isActive && (
                 <span className="px-2 py-0.5 bg-primary-100 text-primary-700 text-xs rounded">
-                  Determining Factor
+                  Determining factor
                 </span>
               )}
             </div>
@@ -400,8 +400,8 @@ function SufficientTiesSection({
                 <thead>
                   <tr className="bg-gray-100">
                     <th className="px-2 py-1 text-left"># Ties</th>
-                    <th className="px-2 py-1 text-center">Was Resident</th>
-                    <th className="px-2 py-1 text-center">Not Resident</th>
+                    <th className="px-2 py-1 text-center">Was resident</th>
+                    <th className="px-2 py-1 text-center">Not resident</th>
                   </tr>
                 </thead>
                 <tbody>

@@ -71,7 +71,7 @@
                 "savings"
             ],
             "guidance": [
-                "Consulates benchmark resources against the French net minimum wage, €1,477.93 a month since 1 June 2026, per adult. It is a benchmark, not a fixed legal floor, and each consulate applies its own standard.",
+                "Consulates benchmark resources against the French net minimum wage, €1,477.93 a month since June 1, 2026, per adult. It is a benchmark, not a fixed legal floor, and each consulate applies its own standard.",
                 "Many applicants show more than the benchmark in income, or about a year of it in savings, so nobody has to ask.",
                 "Attach three months of statements for every account listed, and the proof of each income source.",
                 "Use one exchange rate for the whole file and say which."
@@ -372,7 +372,7 @@
         },
         "benchmark": {
             "monthly": 1477.93,
-            "since": "1 June 2026",
+            "since": "June 1, 2026",
             "label": "the French net minimum wage",
             "adults": 2
         },
@@ -405,13 +405,13 @@
     "drafts": {
         "cover-letter": {
             "title": "Cover letter",
-            "text": "Jordan Ellis\n123 Sample Street\nAsheville, NC 28801\njordan@example.com\n\n12 September 2026\n\nConsulate General of France in Atlanta\nVisa Section\n\n## Re: Application for a long-stay visitor visa (VLS-TS « visiteur »), passport no. X0000000\n\nDear Sir or Madam,\n\nMy spouse, Sam Ellis, and I are applying for a long-stay visitor visa (VLS-TS « visiteur ») to live in France from 15 February 2027, for one year, renewable.\n\nWe are retired and wish to spend this part of our lives in France. We plan to take French classes, walk and cycle the Gironde, volunteer with a local community garden, and have our grown children visit.\n\nWe will live at Furnished rental, 8 rue Exemple, 33000 Bordeaux.\n\nWe support ourselves from Social Security and pension from a former employer, a total of about €4,549 a month, and hold $185,000 (about €158,798) in savings and investments. The enclosed statement of resources and bank statements show the details.\n\nNeither of us will carry out any professional activity in France during our stay, as stated in the enclosed signed declarations.\n\nWe enclose the documents listed below and remain available for any further information you may need.\n\n- Passport\n- Passport photos (35 x 45 mm)\n- France-Visas application form, signed\n- Proof of accommodation in France\n- Bank statements for the last three months\n- Health insurance certificate covering the full stay\n- Birth certificate, apostilled\n- Signed declarations not to work, one for each of us (attestations sur l'honneur)\n- Statement of resources\n\nYours faithfully,\n[signature] Jordan Ellis\n[signature] Sam Ellis",
+            "text": "Jordan Ellis\n123 Sample Street\nAsheville, NC 28801\njordan@example.com\n\nSeptember 12, 2026\n\nConsulate General of France in Atlanta\nVisa Section\n\n## Re: Application for a long-stay visitor visa (VLS-TS « visiteur »), passport no. X0000000\n\nDear Sir or Madam,\n\nMy spouse, Sam Ellis, and I are applying for a long-stay visitor visa (VLS-TS « visiteur ») to live in France from February 15, 2027, for one year, renewable.\n\nWe are retired and wish to spend this part of our lives in France. We plan to take French classes, walk and cycle the Gironde, volunteer with a local community garden, and have our grown children visit.\n\nWe will live at Furnished rental, 8 rue Exemple, 33000 Bordeaux.\n\nWe support ourselves from Social Security and pension from a former employer, a total of about €4,549 a month, and hold $185,000 (about €158,798) in savings and investments. The enclosed statement of resources and bank statements show the details.\n\nNeither of us will carry out any professional activity in France during our stay, as stated in the enclosed signed declarations.\n\nWe enclose the documents listed below and remain available for any further information you may need.\n\n- Passport\n- Passport photos (35 x 45 mm)\n- France-Visas application form, signed\n- Proof of accommodation in France\n- Bank statements for the last three months\n- Health insurance certificate covering the full stay\n- Birth certificate, apostilled\n- Signed declarations not to work, one for each of us (attestations sur l'honneur)\n- Statement of resources\n\nYours faithfully,\n[signature] Jordan Ellis\n[signature] Sam Ellis",
             "missing": [],
             "filename": "Cover letter - Jordan Ellis.pdf"
         },
         "no-work-declaration": {
             "title": "Declaration not to work",
-            "text": "# Attestation sur l'honneur\n\nJe soussigné(e), Jordan Ellis, né(e) le 12 avril 1958 à North Carolina, USA, de nationalité américaine, titulaire du passeport n° X0000000,\n\ndéclare sur l'honneur n'exercer aucune activité professionnelle en France pendant toute la durée de mon séjour sous couvert d'un visa de long séjour « visiteur ».\n\nFait à Asheville, le 12 septembre 2026.\n[signature] Signature\n\n---\n## Translation\nI, the undersigned, Jordan Ellis, born on 12 April 1958 in North Carolina, USA, a US national, holder of passport no. X0000000,\n\ndeclare on my honour that I will not carry out any professional activity in France throughout my stay on a long-stay « visiteur » visa.\n\nSigned at Asheville, on 12 September 2026.",
+            "text": "# Attestation sur l'honneur\n\nJe soussigné(e), Jordan Ellis, né(e) le 12 avril 1958 à North Carolina, USA, de nationalité américaine, titulaire du passeport n° X0000000,\n\ndéclare sur l'honneur n'exercer aucune activité professionnelle en France pendant toute la durée de mon séjour sous couvert d'un visa de long séjour « visiteur ».\n\nFait à Asheville, le 12 septembre 2026.\n[signature] Signature\n\n---\n## Translation\nI, the undersigned, Jordan Ellis, born on April 12, 1958 in North Carolina, USA, a US national, holder of passport no. X0000000,\n\ndeclare on my honour that I will not carry out any professional activity in France throughout my stay on a long-stay « visiteur » visa.\n\nSigned at Asheville, on September 12, 2026.",
             "missing": [],
             "filename": "Declaration not to work - Jordan Ellis.pdf"
         }

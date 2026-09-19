@@ -39,10 +39,10 @@ function transformApiData(apiData: ApiCategory[] | undefined): GlossaryCategory[
   try {
     return apiData.map((cat, catIndex) => ({
       id: cat.id || `category-${catIndex}`,
-      title: cat.title || 'Unknown Category',
+      title: cat.title || 'Unknown category',
       terms: (cat.terms || []).map((term, termIndex) => ({
         id: `${cat.id || 'cat'}-${termIndex}`,
-        title: term.term || 'Unknown Term',
+        title: term.term || 'Unknown term',
         french: term.term || '',
         short: term.definition || '',
         full: term.pronunciation ? `Pronunciation: ${term.pronunciation}` : undefined,
@@ -58,7 +58,7 @@ function transformApiData(apiData: ApiCategory[] | undefined): GlossaryCategory[
 const hardcodedCategories: GlossaryCategory[] = [
   {
     id: 'document-legal',
-    title: 'Document & Legal Terms',
+    title: 'Document & legal terms',
     terms: [
       {
         id: 'apostille',
@@ -70,7 +70,7 @@ const hardcodedCategories: GlossaryCategory[] = [
       },
       {
         id: 'certified-copy',
-        title: 'Certified Copy',
+        title: 'Certified copy',
         french: 'Copie certifiée conforme',
         short: 'An official copy verified by the issuing authority',
         full: 'A certified copy is an official copy of a document that has been verified as a true and accurate reproduction of the original by an authorized person or entity, such as a notary public, government official, or the issuing authority.',
@@ -78,7 +78,7 @@ const hardcodedCategories: GlossaryCategory[] = [
       },
       {
         id: 'attestation',
-        title: 'Sworn Statement',
+        title: 'Sworn statement',
         french: 'Attestation sur l\'honneur',
         short: 'A sworn statement declaring something to be true',
         full: 'A sworn statement or affidavit declaring that certain facts or statements are true to the best of your knowledge. In France, this is a legally binding document where you attest to the veracity of information under penalty of perjury. Commonly required for administrative procedures.',
@@ -86,7 +86,7 @@ const hardcodedCategories: GlossaryCategory[] = [
       },
       {
         id: 'compromis',
-        title: 'Preliminary Sales Agreement',
+        title: 'Preliminary sales agreement',
         french: 'Compromis de vente',
         short: 'Preliminary sales agreement for property purchase',
         full: 'The preliminary contract for buying property in France, signed by both buyer and seller. This legally binding agreement sets out the terms of the sale and is typically signed several weeks before the final deed of sale (acte de vente). You have a 10-day cooling-off period after signing.',
@@ -94,7 +94,7 @@ const hardcodedCategories: GlossaryCategory[] = [
       },
       {
         id: 'acte-vente',
-        title: 'Final Deed of Sale',
+        title: 'Final deed of sale',
         french: 'Acte de vente',
         short: 'Final deed of sale transferring property ownership',
         full: 'The final deed of sale for property purchase in France, signed before a notary (notaire). This document officially transfers ownership from seller to buyer and must be registered with the land registry.',
@@ -102,7 +102,7 @@ const hardcodedCategories: GlossaryCategory[] = [
       },
       {
         id: 'procuration',
-        title: 'Power of Attorney',
+        title: 'Power of attorney',
         french: 'Procuration',
         short: 'Power of attorney authorizing someone to act on your behalf',
         full: 'A legal document granting someone the authority to act on your behalf in specific matters. In France, procurations are commonly used for property purchases, bank transactions, or administrative procedures when you cannot be physically present.',
@@ -118,7 +118,7 @@ const hardcodedCategories: GlossaryCategory[] = [
       },
       {
         id: 'livret-famille',
-        title: 'Family Record Book',
+        title: 'Family record book',
         french: 'Livret de famille',
         short: 'Official booklet recording family civil status events',
         full: 'An official document issued at marriage or birth of a first child, recording all civil status events for a family (marriages, births, deaths, divorces). This booklet is frequently required for administrative procedures in France and serves as proof of family relationships.',
@@ -126,7 +126,7 @@ const hardcodedCategories: GlossaryCategory[] = [
       },
       {
         id: 'extrait-acte-naissance',
-        title: 'Birth Certificate Extract',
+        title: 'Birth certificate extract',
         french: 'Extrait d\'acte de naissance',
         short: 'Official extract of birth certificate',
         full: 'An official extract from the civil registry containing birth information. France distinguishes between "copie intégrale" (full copy) and "extrait" (extract with or without filiation). Many administrative procedures require a recent extract (less than 3-6 months old).',
@@ -134,7 +134,7 @@ const hardcodedCategories: GlossaryCategory[] = [
       },
       {
         id: 'casier-judiciaire',
-        title: 'Criminal Record',
+        title: 'Criminal record',
         french: 'Casier judiciaire',
         short: 'Official criminal record certificate',
         full: 'An official document showing criminal convictions. Bulletin n°3 (the most common) shows only serious convictions and can be requested by the individual. Often required for employment, visa applications, or adopting. US equivalent would be an FBI background check.',
@@ -142,7 +142,7 @@ const hardcodedCategories: GlossaryCategory[] = [
       },
       {
         id: 'traducteur-assermente',
-        title: 'Sworn Translator',
+        title: 'Sworn translator',
         french: 'Traducteur assermenté',
         short: 'Court-certified translator for official documents',
         full: 'A translator officially recognized by French courts to provide certified translations of legal documents. Only translations by sworn translators are accepted for official procedures like visa applications, court cases, and administrative filings.',
@@ -152,7 +152,7 @@ const hardcodedCategories: GlossaryCategory[] = [
   },
   {
     id: 'visa-residency',
-    title: 'Visa & Residency Terms',
+    title: 'Visa & residency terms',
     terms: [
       {
         id: 'vls-ts',
@@ -164,7 +164,7 @@ const hardcodedCategories: GlossaryCategory[] = [
       },
       {
         id: 'titre-sejour',
-        title: 'Residence Permit',
+        title: 'Residence permit',
         french: 'Titre de séjour',
         short: 'Residence permit card allowing you to live in France',
         full: 'A residence permit card issued by the Prefecture that allows you to legally reside in France for a specified period. After your first year with a VLS-TS, you\'ll need to apply for a titre de séjour renewal at your local prefecture.',
@@ -172,7 +172,7 @@ const hardcodedCategories: GlossaryCategory[] = [
       },
       {
         id: 'ofii',
-        title: 'Immigration Office',
+        title: 'Immigration office',
         french: 'Office Français de l\'Immigration et de l\'Intégration (OFII)',
         short: 'French Immigration and Integration Office',
         full: 'The French Office for Immigration and Integration. OFII is responsible for validating long-stay visas, organizing mandatory integration programs, and managing certain aspects of legal immigration to France. You must complete OFII validation within 3 months of arrival.',
@@ -196,7 +196,7 @@ const hardcodedCategories: GlossaryCategory[] = [
       },
       {
         id: 'carte-resident',
-        title: 'Resident Card',
+        title: 'Resident card',
         french: 'Carte de résident',
         short: '10-year residence permit',
         full: 'A 10-year renewable residence permit granting extensive rights in France, including unlimited work authorization. Available after 5 years of legal residence (3 years in some cases) or through family ties to French citizens. Provides more stability than annual permits.',
@@ -204,7 +204,7 @@ const hardcodedCategories: GlossaryCategory[] = [
       },
       {
         id: 'regroupement-familial',
-        title: 'Family Reunification',
+        title: 'Family reunification',
         french: 'Regroupement familial',
         short: 'Process to bring family members to France',
         full: 'The legal procedure allowing a foreign resident in France to bring their spouse and minor children to join them. Requires stable income, adequate housing, and at least 18 months of legal residence. Different from accompanying family on initial visa.',
@@ -220,7 +220,7 @@ const hardcodedCategories: GlossaryCategory[] = [
       },
       {
         id: 'autorisation-travail',
-        title: 'Work Authorization',
+        title: 'Work authorization',
         french: 'Autorisation de travail',
         short: 'Permission to work legally in France',
         full: 'Official authorization to work in France. Some residence permits include automatic work authorization, while others require a separate application. Employers must verify work authorization before hiring. Working without authorization is illegal for both employee and employer.',
@@ -228,7 +228,7 @@ const hardcodedCategories: GlossaryCategory[] = [
       },
       {
         id: 'cir',
-        title: 'Republican Integration Contract',
+        title: 'Republican integration contract',
         french: 'Contrat d\'Intégration Républicaine (CIR)',
         short: 'Mandatory integration program for new residents',
         full: 'A mandatory integration program for most long-term visa holders. Includes civic training about French values, language assessment, and French classes if needed. Completion is required for residence permit renewal and eventual naturalization.',
@@ -238,11 +238,11 @@ const hardcodedCategories: GlossaryCategory[] = [
   },
   {
     id: 'healthcare',
-    title: 'Healthcare Terms',
+    title: 'Healthcare terms',
     terms: [
       {
         id: 'puma',
-        title: 'Universal Health Coverage',
+        title: 'Universal health coverage',
         french: 'Protection Universelle Maladie (PUMA)',
         short: 'Universal health coverage system',
         full: 'Protection Universelle Maladie (Universal Health Protection) is France\'s universal healthcare coverage system. If you live in France in a stable and regular manner (at least 3 months per year), you are entitled to healthcare coverage under PUMA, managed by the national health insurance (Assurance Maladie).',
@@ -250,7 +250,7 @@ const hardcodedCategories: GlossaryCategory[] = [
       },
       {
         id: 'carte-vitale',
-        title: 'Health Insurance Card',
+        title: 'Health insurance card',
         french: 'Carte Vitale',
         short: 'French health insurance card',
         full: 'The green electronic health insurance card containing your personal information and social security number. It allows healthcare providers to directly bill your treatments to the national health insurance system. You receive this card after registering with CPAM.',
@@ -258,7 +258,7 @@ const hardcodedCategories: GlossaryCategory[] = [
       },
       {
         id: 'mutuelle',
-        title: 'Supplementary Insurance',
+        title: 'Supplementary insurance',
         french: 'Mutuelle / Complémentaire santé',
         short: 'Supplementary private health insurance',
         full: 'Complementary private health insurance that covers expenses not fully reimbursed by the national health insurance system (typically 70% of costs). A mutuelle typically covers the remaining 30% (called the "ticket modérateur") plus additional services like dental, optical, and alternative medicine.',
@@ -266,7 +266,7 @@ const hardcodedCategories: GlossaryCategory[] = [
       },
       {
         id: 'cpam',
-        title: 'Health Insurance Office',
+        title: 'Health insurance office',
         french: 'Caisse Primaire d\'Assurance Maladie (CPAM)',
         short: 'Local health insurance office',
         full: 'The local branch of the French national health insurance system. CPAM handles registration, reimbursements, and issues the Carte Vitale. Each department has its own CPAM office where you must register after obtaining your residence permit.',
@@ -274,7 +274,7 @@ const hardcodedCategories: GlossaryCategory[] = [
       },
       {
         id: 'medecin-traitant',
-        title: 'Primary Care Doctor',
+        title: 'Primary care doctor',
         french: 'Médecin traitant',
         short: 'Designated primary care physician',
         full: 'Your designated primary care doctor who coordinates your healthcare. You must declare a médecin traitant to receive full reimbursement rates. Seeing specialists without a referral from your médecin traitant results in lower reimbursement (except for certain specialists like gynecologists and ophthalmologists).',
@@ -282,7 +282,7 @@ const hardcodedCategories: GlossaryCategory[] = [
       },
       {
         id: 'numero-secu',
-        title: 'Social Security Number',
+        title: 'Social security number',
         french: 'Numéro de sécurité sociale',
         short: 'French social security identification number',
         full: 'A 15-digit number assigned to everyone registered with French social security. Unlike US SSN, it encodes gender, birth year/month, department, and commune of birth. Required for healthcare, employment, taxes, and most administrative procedures.',
@@ -314,7 +314,7 @@ const hardcodedCategories: GlossaryCategory[] = [
       },
       {
         id: 'arret-maladie',
-        title: 'Sick Leave Certificate',
+        title: 'Sick leave certificate',
         french: 'Arrêt maladie / Arrêt de travail',
         short: 'Official sick leave document from a doctor',
         full: 'An official document from a doctor certifying you are unable to work due to illness. Must be sent to your employer within 48 hours. Social security pays daily allowances (indemnités journalières) after a 3-day waiting period, often supplemented by employer.',
@@ -324,11 +324,11 @@ const hardcodedCategories: GlossaryCategory[] = [
   },
   {
     id: 'banking',
-    title: 'Banking & Financial Terms',
+    title: 'Banking & financial terms',
     terms: [
       {
         id: 'rib',
-        title: 'Bank Account Details',
+        title: 'Bank account details',
         french: 'Relevé d\'Identité Bancaire (RIB)',
         short: 'Document with your bank account information',
         full: 'A document containing your bank account details including IBAN and BIC/SWIFT codes. Essential for setting up direct debits, receiving salary, and any bank transfers. You can download it from online banking or get it from your bank branch.',
@@ -336,7 +336,7 @@ const hardcodedCategories: GlossaryCategory[] = [
       },
       {
         id: 'prelevement',
-        title: 'Direct Debit',
+        title: 'Direct debit',
         french: 'Prélèvement automatique',
         short: 'Automatic payment from your bank account',
         full: 'Automatic recurring payments debited directly from your bank account. Common for utilities, rent, insurance, and subscriptions. You authorize by providing your RIB and signing a SEPA mandate. You can contest unauthorized debits within 13 months.',
@@ -344,7 +344,7 @@ const hardcodedCategories: GlossaryCategory[] = [
       },
       {
         id: 'virement',
-        title: 'Bank Transfer',
+        title: 'Bank transfer',
         french: 'Virement bancaire',
         short: 'Transfer money between bank accounts',
         full: 'Transferring money from one bank account to another. SEPA transfers within Europe are typically free and take 1 business day. You need the recipient\'s IBAN to initiate a transfer. Can be one-time or set up as recurring (virement permanent).',
@@ -352,7 +352,7 @@ const hardcodedCategories: GlossaryCategory[] = [
       },
       {
         id: 'carte-bancaire',
-        title: 'Debit Card',
+        title: 'Debit card',
         french: 'Carte bancaire (CB)',
         short: 'French bank debit card',
         full: 'French bank cards function as debit cards with immediate or deferred debit. "Débit immédiat" debits immediately; "débit différé" accumulates purchases and debits monthly. Cards use chip-and-PIN exclusively. Contactless payment is standard for amounts under €50.',
@@ -384,7 +384,7 @@ const hardcodedCategories: GlossaryCategory[] = [
       },
       {
         id: 'avis-imposition',
-        title: 'Tax Notice',
+        title: 'Tax notice',
         french: 'Avis d\'imposition',
         short: 'Official document showing your tax status',
         full: 'An official document from the tax authority showing your declared income and tax calculated or paid. This crucial document is required for many administrative procedures: renting an apartment, applying for social benefits, obtaining a residence permit, and more.',
@@ -392,7 +392,7 @@ const hardcodedCategories: GlossaryCategory[] = [
       },
       {
         id: 'caf',
-        title: 'Family Allowance Office',
+        title: 'Family allowance office',
         french: 'Caisse d\'Allocations Familiales (CAF)',
         short: 'Agency managing family and housing benefits',
         full: 'Government agency managing various social benefits including housing assistance (APL/ALS), family allowances, childcare subsidies, and income support (RSA). Legal residents can apply for housing benefits which can significantly reduce rent costs.',
@@ -400,7 +400,7 @@ const hardcodedCategories: GlossaryCategory[] = [
       },
       {
         id: 'apl',
-        title: 'Housing Assistance',
+        title: 'Housing assistance',
         french: 'Aide Personnalisée au Logement (APL)',
         short: 'Government housing benefit',
         full: 'A housing subsidy paid to eligible residents to help cover rent costs. Amount depends on income, rent, location, and family situation. Paid directly to landlord or tenant monthly. Apply through CAF after signing your lease.',
@@ -410,11 +410,11 @@ const hardcodedCategories: GlossaryCategory[] = [
   },
   {
     id: 'housing',
-    title: 'Housing & Accommodation Terms',
+    title: 'Housing & accommodation terms',
     terms: [
       {
         id: 'bail',
-        title: 'Lease Agreement',
+        title: 'Lease agreement',
         french: 'Bail / Contrat de location',
         short: 'Rental contract between landlord and tenant',
         full: 'The rental agreement between landlord (bailleur) and tenant (locataire). Standard unfurnished leases are 3 years minimum; furnished leases are 1 year (9 months for students). The lease defines rent, charges, deposit, and conditions. Strong tenant protections exist in French law.',
@@ -422,7 +422,7 @@ const hardcodedCategories: GlossaryCategory[] = [
       },
       {
         id: 'depot-garantie',
-        title: 'Security Deposit',
+        title: 'Security deposit',
         french: 'Dépôt de garantie',
         short: 'Refundable deposit paid when signing lease',
         full: 'A refundable deposit paid when signing a lease, limited by law to 1 month rent (unfurnished) or 2 months (furnished). Must be returned within 1-2 months after leaving, minus any justified deductions for damages or unpaid rent.',
@@ -430,7 +430,7 @@ const hardcodedCategories: GlossaryCategory[] = [
       },
       {
         id: 'charges',
-        title: 'Service Charges',
+        title: 'Service charges',
         french: 'Charges locatives',
         short: 'Additional costs on top of base rent',
         full: 'Monthly costs in addition to base rent, covering shared building expenses like heating, water, elevator maintenance, cleaning, and trash collection. Can be "provisions" (estimated monthly, adjusted annually) or "forfait" (fixed amount). Listed separately from rent.',
@@ -438,7 +438,7 @@ const hardcodedCategories: GlossaryCategory[] = [
       },
       {
         id: 'etat-lieux',
-        title: 'Property Inspection Report',
+        title: 'Property inspection report',
         french: 'État des lieux',
         short: 'Detailed inspection at move-in and move-out',
         full: 'A detailed written report documenting the condition of a rental property at move-in and move-out. Both landlord and tenant sign it. Differences between entry and exit reports determine deposit deductions. Always be thorough and note any existing damage.',
@@ -454,7 +454,7 @@ const hardcodedCategories: GlossaryCategory[] = [
       },
       {
         id: 'dossier-location',
-        title: 'Rental Application File',
+        title: 'Rental application file',
         french: 'Dossier de location',
         short: 'Documents required to rent an apartment',
         full: 'The complete set of documents required when applying for a rental: ID, proof of income (3 pay slips, tax notice, employment contract), proof of address, and guarantor documents. French landlords are legally limited in what they can request.',
@@ -462,7 +462,7 @@ const hardcodedCategories: GlossaryCategory[] = [
       },
       {
         id: 'preavis',
-        title: 'Notice Period',
+        title: 'Notice period',
         french: 'Préavis',
         short: 'Required notice before leaving a rental',
         full: 'The advance notice required before terminating a lease. For tenants: 3 months (unfurnished) or 1 month (furnished, or unfurnished in "zone tendue" tight housing markets). Landlords have 6 months notice and can only terminate for specific legal reasons.',
@@ -478,7 +478,7 @@ const hardcodedCategories: GlossaryCategory[] = [
       },
       {
         id: 'syndic',
-        title: 'Building Management Company',
+        title: 'Building management company',
         french: 'Syndic de copropriété',
         short: 'Professional company managing a building',
         full: 'A professional or volunteer entity managing a copropriété building: collecting charges, organizing maintenance, holding annual meetings, and enforcing building rules. The syndic is elected by co-owners and their fees are part of the charges.',
@@ -486,7 +486,7 @@ const hardcodedCategories: GlossaryCategory[] = [
       },
       {
         id: 'taxe-habitation',
-        title: 'Housing Tax',
+        title: 'Housing tax',
         french: 'Taxe d\'habitation',
         short: 'Annual tax on primary residence occupants',
         full: 'An annual local tax paid by whoever occupies a residence on January 1st. Being phased out for primary residences but still applies to second homes. Separate from taxe foncière (property tax paid by owners). Amount varies by commune.',
@@ -496,11 +496,11 @@ const hardcodedCategories: GlossaryCategory[] = [
   },
   {
     id: 'daily-life',
-    title: 'Daily Life & Services',
+    title: 'Daily life & services',
     terms: [
       {
         id: 'mairie',
-        title: 'Town Hall',
+        title: 'Town hall',
         french: 'Mairie / Hôtel de ville',
         short: 'Local government office for civil and administrative matters',
         full: 'The local town hall handles birth/death/marriage certificates, voter registration, school enrollment, various permits, and local services. Many documents like certified copies and attestations must be obtained from your local mairie.',
@@ -508,7 +508,7 @@ const hardcodedCategories: GlossaryCategory[] = [
       },
       {
         id: 'carte-identite',
-        title: 'National ID Card',
+        title: 'National ID card',
         french: 'Carte nationale d\'identité',
         short: 'Official French identity document',
         full: 'The official French national ID card, available only to French citizens. Valid for 15 years. Unlike the US, France has a national ID separate from driver\'s licenses. For non-citizens, your residence permit serves as your ID in France.',
@@ -516,7 +516,7 @@ const hardcodedCategories: GlossaryCategory[] = [
       },
       {
         id: 'justificatif-domicile',
-        title: 'Proof of Address',
+        title: 'Proof of address',
         french: 'Justificatif de domicile',
         short: 'Document proving where you live',
         full: 'A recent document (less than 3-6 months old) proving your address. Accepted documents include utility bills (electricity, gas, internet), rent receipts, tax notices, or home insurance certificates. Required for nearly every administrative procedure.',
@@ -532,7 +532,7 @@ const hardcodedCategories: GlossaryCategory[] = [
       },
       {
         id: 'carte-grise',
-        title: 'Vehicle Registration',
+        title: 'Vehicle registration',
         french: 'Carte grise / Certificat d\'immatriculation',
         short: 'Vehicle registration document',
         full: 'The official vehicle registration certificate required to drive in France. Must be obtained within 1 month of purchasing a vehicle or moving to France with a foreign vehicle. Applied for online through ANTS. Includes technical inspection (contrôle technique) requirements.',
@@ -540,7 +540,7 @@ const hardcodedCategories: GlossaryCategory[] = [
       },
       {
         id: 'la-poste',
-        title: 'Post Office',
+        title: 'Post office',
         french: 'La Poste',
         short: 'French postal service',
         full: 'The French postal service handles mail, packages, and basic banking services (Banque Postale). Post offices offer services like registered mail (recommandé), which is required for many official communications. Yellow mailboxes are for regular mail.',
@@ -548,7 +548,7 @@ const hardcodedCategories: GlossaryCategory[] = [
       },
       {
         id: 'recommande',
-        title: 'Registered Mail',
+        title: 'Registered mail',
         french: 'Lettre recommandée avec accusé de réception',
         short: 'Tracked mail with delivery confirmation',
         full: 'A tracked letter with proof of delivery, required for important legal communications like lease termination, employer resignation, or formal complaints. The "accusé de réception" (delivery receipt) provides legal proof the recipient received the letter.',
@@ -556,7 +556,7 @@ const hardcodedCategories: GlossaryCategory[] = [
       },
       {
         id: 'ants',
-        title: 'Online Government Services',
+        title: 'Online government services',
         french: 'Agence Nationale des Titres Sécurisés (ANTS)',
         short: 'Website for official documents',
         full: 'The official government website (ants.gouv.fr) for applying for driver\'s licenses, vehicle registration, and passports/ID cards (for French citizens). Most procedures are now done online through ANTS rather than at prefecture counters.',
@@ -564,7 +564,7 @@ const hardcodedCategories: GlossaryCategory[] = [
       },
       {
         id: 'france-connect',
-        title: 'Digital Identity Login',
+        title: 'Digital identity login',
         french: 'FranceConnect',
         short: 'Unified login for government websites',
         full: 'A single sign-on system allowing access to many French government websites using one set of credentials (from your tax account, health insurance, or postal ID). Simplifies access to online administrative services.',
@@ -572,7 +572,7 @@ const hardcodedCategories: GlossaryCategory[] = [
       },
       {
         id: 'ameli',
-        title: 'Health Insurance Website',
+        title: 'Health insurance website',
         french: 'Ameli',
         short: 'Online portal for health insurance',
         full: 'The online portal (ameli.fr) for the French health insurance system. Create an account to track reimbursements, download your attestation de droits (proof of coverage), update your information, and declare your médecin traitant.',

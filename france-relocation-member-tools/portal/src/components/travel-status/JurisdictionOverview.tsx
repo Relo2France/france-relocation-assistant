@@ -47,10 +47,10 @@ interface JurisdictionOverviewProps {
 
 // Category display configuration
 const categoryConfig: Record<JurisdictionCategory, { label: string; icon: typeof Globe; color: string }> = {
-  visa: { label: 'Visa Rules', icon: Globe, color: 'blue' },
-  tax: { label: 'Tax Residency', icon: Receipt, color: 'purple' },
+  visa: { label: 'Visa rules', icon: Globe, color: 'blue' },
+  tax: { label: 'Tax residency', icon: Receipt, color: 'purple' },
   immigration: { label: 'Immigration', icon: Map, color: 'green' },
-  custom: { label: 'Custom Rules', icon: Settings, color: 'gray' },
+  custom: { label: 'Custom rules', icon: Settings, color: 'gray' },
 };
 
 export default function JurisdictionOverview({ className }: JurisdictionOverviewProps) {
@@ -145,7 +145,7 @@ export default function JurisdictionOverview({ className }: JurisdictionOverview
             <Globe className="w-5 h-5 text-primary-600" aria-hidden="true" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">Jurisdiction Tracking</h3>
+            <h3 className="text-lg font-semibold text-gray-900">Jurisdiction tracking</h3>
             <p className="text-sm text-gray-500">
               Track visa rules and tax residency across multiple countries
             </p>
@@ -157,7 +157,7 @@ export default function JurisdictionOverview({ className }: JurisdictionOverview
           className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition-colors"
         >
           <Plus className="w-4 h-4" aria-hidden="true" />
-          Add Jurisdiction
+          Add jurisdiction
         </button>
       </div>
 
@@ -239,7 +239,7 @@ export default function JurisdictionOverview({ className }: JurisdictionOverview
       ) : (
         <div className="card p-8 text-center">
           <Globe className="w-12 h-12 text-gray-300 mx-auto mb-3" aria-hidden="true" />
-          <h4 className="text-lg font-medium text-gray-900 mb-2">No Jurisdictions Tracked</h4>
+          <h4 className="text-lg font-medium text-gray-900 mb-2">No jurisdictions tracked</h4>
           <p className="text-gray-500 mb-4">
             Add jurisdictions to track your visa rules and tax residency compliance across multiple countries.
           </p>
@@ -249,7 +249,7 @@ export default function JurisdictionOverview({ className }: JurisdictionOverview
             className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition-colors"
           >
             <Plus className="w-4 h-4" aria-hidden="true" />
-            Add Your First Jurisdiction
+            Add your first jurisdiction
           </button>
         </div>
       )}
@@ -259,7 +259,7 @@ export default function JurisdictionOverview({ className }: JurisdictionOverview
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[85vh] overflow-hidden">
             <div className="flex items-center justify-between p-4 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">Add Jurisdiction</h3>
+              <h3 className="text-lg font-semibold text-gray-900">Add jurisdiction</h3>
               <button
                 type="button"
                 onClick={() => setShowAddModal(false)}
@@ -311,7 +311,7 @@ export default function JurisdictionOverview({ className }: JurisdictionOverview
                         : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                     )}
                   >
-                    {type === 'all' ? 'All Types' : type === 'zone' ? 'Zones' : type === 'country' ? 'Countries' : 'States'}
+                    {type === 'all' ? 'All types' : type === 'zone' ? 'Zones' : type === 'country' ? 'Countries' : 'States'}
                   </button>
                 ))}
               </div>
@@ -438,8 +438,8 @@ function JurisdictionCard({
   const getCountingLabel = () => {
     switch (summary?.countingMethod || jurisdiction.countingMethod) {
       case 'rolling': return 'Rolling Window';
-      case 'calendar_year': return 'Calendar Year';
-      case 'fiscal_year': return 'Fiscal Year';
+      case 'calendar_year': return 'Calendar year';
+      case 'fiscal_year': return 'Fiscal year';
       case 'multi_year': return 'Multi-Year';
       case 'weighted_multi_year': return 'Weighted Multi-Year';
       case 'uk_srt': return 'UK Statutory Residence Test';
@@ -648,7 +648,7 @@ function JurisdictionCard({
                   <UKSRTStatus breakdown={summary.ukSrtBreakdown} />
                   <details className="text-sm">
                     <summary className="cursor-pointer text-gray-600 hover:text-gray-800 font-medium">
-                      Edit UK Ties
+                      Edit UK ties
                     </summary>
                     <div className="mt-3 pt-3 border-t border-gray-200">
                       <UKTiesQuestionnaire

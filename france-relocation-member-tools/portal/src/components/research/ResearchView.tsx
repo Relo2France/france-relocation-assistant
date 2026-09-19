@@ -258,7 +258,7 @@ function CommuneView({
           className="btn btn-primary"
         >
           <FileText className="w-4 h-4" />
-          Generate Report
+          Generate report
         </button>
       </div>
 
@@ -286,7 +286,7 @@ function CommuneView({
       </div>
 
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <h3 className="font-medium text-blue-900 mb-2">Generate a Detailed Report</h3>
+        <h3 className="font-medium text-blue-900 mb-2">Generate a detailed report</h3>
         <p className="text-blue-700 text-sm mb-4">
           Get a comprehensive AI-researched guide about {commune.name}, including local history,
           cost of living, healthcare facilities, schools, transportation, and practical

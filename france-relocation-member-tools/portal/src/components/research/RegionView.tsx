@@ -94,7 +94,7 @@ export default function RegionView({
           className="btn btn-primary flex items-center gap-2"
         >
           <FileText className="w-4 h-4" />
-          Generate Report
+          Generate report
         </button>
       </div>
 
@@ -148,7 +148,7 @@ export default function RegionView({
       {/* Departments Section */}
       <div>
         <h3 className="text-lg font-semibold text-gray-900 mb-4">
-          {hasRegionMap(region.code) ? 'All Departments' : `Departments in ${region.name}`}
+          {hasRegionMap(region.code) ? 'All departments' : `Departments in ${region.name}`}
         </h3>
 
         {loading ? (
@@ -198,7 +198,7 @@ export default function RegionView({
       {/* Info Box */}
       <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-4">
         <h4 className="font-medium text-blue-900 mb-2">
-          About Region Reports
+          About region reports
         </h4>
         <p className="text-blue-700 text-sm">
           Generate a comprehensive AI-researched report about {region.name} including

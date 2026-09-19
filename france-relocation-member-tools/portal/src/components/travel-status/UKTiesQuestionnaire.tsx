@@ -39,7 +39,7 @@ const TIE_DEFINITIONS: TieDefinition[] = [
   // Connection Ties (5 types)
   {
     id: 'family_tie',
-    label: 'Family Tie',
+    label: 'Family tie',
     description: 'You have a spouse/civil partner or minor child who is UK resident.',
     Icon: Users,
     detailsField: 'family_tie_details',
@@ -48,7 +48,7 @@ const TIE_DEFINITIONS: TieDefinition[] = [
   },
   {
     id: 'accommodation_tie',
-    label: 'Accommodation Tie',
+    label: 'Accommodation tie',
     description:
       'You have a place to live in the UK available for a continuous period of 91+ days, and you stay there for at least one night during the tax year.',
     Icon: Home,
@@ -58,7 +58,7 @@ const TIE_DEFINITIONS: TieDefinition[] = [
   },
   {
     id: 'work_tie',
-    label: 'Work Tie',
+    label: 'Work tie',
     description:
       'You do substantive work in the UK for 40+ days during the tax year (3+ hours/day).',
     Icon: Briefcase,
@@ -76,7 +76,7 @@ const TIE_DEFINITIONS: TieDefinition[] = [
   },
   {
     id: 'country_tie',
-    label: 'Country Tie',
+    label: 'Country tie',
     description:
       'The country in which you were present at midnight for the greatest number of days in the tax year is the UK. (Only applies to "arrivers")',
     Icon: Globe,
@@ -85,7 +85,7 @@ const TIE_DEFINITIONS: TieDefinition[] = [
   // Automatic Test Conditions
   {
     id: 'only_home_in_uk',
-    label: 'Only Home in UK',
+    label: 'Only home in UK',
     description:
       'You have a home in the UK and have no home overseas, or have a home overseas but you are present there for fewer than 30 days in the tax year.',
     Icon: Building,
@@ -101,7 +101,7 @@ const TIE_DEFINITIONS: TieDefinition[] = [
   },
   {
     id: 'leaving_uk_permanently',
-    label: 'Leaving UK Permanently',
+    label: 'Leaving UK permanently',
     description:
       'You ceased to have a home in the UK during the tax year and subsequently had no UK home.',
     Icon: Plane,
@@ -202,7 +202,7 @@ export default function UKTiesQuestionnaire({
       {/* Tax Year Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">UK Connection Ties</h3>
+          <h3 className="text-lg font-semibold text-gray-900">UK connection ties</h3>
           <p className="text-sm text-gray-500">
             Tax Year: {taxYear}/{(taxYear + 1).toString().slice(2)} (April 6 {taxYear} - April 5{' '}
             {taxYear + 1})
@@ -284,7 +284,7 @@ export default function UKTiesQuestionnaire({
         >
           <div className="flex items-center gap-3">
             <Building className="w-5 h-5 text-gray-600" aria-hidden="true" />
-            <span className="font-medium text-gray-900">Automatic Test Conditions</span>
+            <span className="font-medium text-gray-900">Automatic test conditions</span>
           </div>
           {expandedSection === 'automatic' ? (
             <ChevronUp className="w-5 h-5 text-gray-400" />
@@ -323,7 +323,7 @@ export default function UKTiesQuestionnaire({
           htmlFor="uk-ties-notes"
           className="block text-sm font-medium text-gray-700 mb-1"
         >
-          Additional Notes
+          Additional notes
         </label>
         <textarea
           id="uk-ties-notes"

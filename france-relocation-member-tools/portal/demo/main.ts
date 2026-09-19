@@ -5,7 +5,7 @@
 import { API_BASE, installDemoApi } from './api';
 
 // 1. The clock. The plan is dated relative to "today"; pin today to
-//    19 September 2026 so every regeneration shows the same stage and dates.
+//    September 19, 2026 so every regeneration shows the same stage and dates.
 //    Time still moves forward from there, so timers and animations work.
 const DEMO_NOW = Date.parse('2026-09-19T14:00:00Z');
 const RealDate = Date;
@@ -47,7 +47,7 @@ const menu = [
   ['schengen', 'Schengen days', 'Globe'],
   ['files', 'Files', 'FolderOpen'],
   ['profile', 'Profile', 'User'],
-  ['family', 'Family plans', 'Users'],
+  ['family', 'Family', 'Users'],
   ['membership', 'Membership', 'CreditCard'],
   ['settings', 'Settings', 'Settings'],
   ['help', 'Help', 'HelpCircle'],

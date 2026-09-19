@@ -48,11 +48,11 @@ const fileTypeColors: Record<FileType, string> = {
 };
 
 const categoryOptions: { value: FileCategory; label: string }[] = [
-  { value: 'identity', label: 'Identity Documents' },
+  { value: 'identity', label: 'Identity documents' },
   { value: 'financial', label: 'Financial' },
   { value: 'housing', label: 'Housing' },
   { value: 'employment', label: 'Employment' },
-  { value: 'visa', label: 'Visa & Immigration' },
+  { value: 'visa', label: 'Visa & immigration' },
   { value: 'medical', label: 'Medical' },
   { value: 'education', label: 'Education' },
   { value: 'other', label: 'Other' },
@@ -156,7 +156,7 @@ export default function FilePreview({ file: openedFile, isOpen, onClose, project
                   className="btn btn-primary"
                 >
                   <Download className="w-4 h-4" />
-                  Download to View
+                  Download to view
                 </button>
               </div>
             )}
@@ -330,7 +330,7 @@ export default function FilePreview({ file: openedFile, isOpen, onClose, project
                 className="w-full btn btn-secondary text-red-600 hover:bg-red-50 hover:border-red-200"
               >
                 <Trash2 className="w-4 h-4" />
-                Delete File
+                Delete file
               </button>
             </div>
           </div>
@@ -341,7 +341,7 @@ export default function FilePreview({ file: openedFile, isOpen, onClose, project
       <Modal
         isOpen={showDeleteConfirm}
         onClose={() => setShowDeleteConfirm(false)}
-        title="Delete File"
+        title="Delete file"
         size="sm"
         footer={
           <>

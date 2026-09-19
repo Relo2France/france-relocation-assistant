@@ -74,13 +74,13 @@ interface ProfileSection {
 }
 
 const sections: ProfileSection[] = [
-  { id: 'personal', label: 'Personal Information', icon: User, component: PersonalSection },
+  { id: 'personal', label: 'Personal information', icon: User, component: PersonalSection },
   { id: 'applicant', label: 'Applicant & Family', icon: Users, component: ApplicantSection },
-  { id: 'visa', label: 'Visa & Employment', icon: Briefcase, component: VisaSection },
-  { id: 'location', label: 'Location Information', icon: MapPin, component: LocationSection },
-  { id: 'timeline', label: 'Timeline & Plans', icon: Calendar, component: TimelineSection },
-  { id: 'financial', label: 'Financial & Language', icon: DollarSign, component: FinancialSection },
-  { id: 'documents', label: 'Document Status', icon: FileText, component: DocumentsSection },
+  { id: 'visa', label: 'Visa & employment', icon: Briefcase, component: VisaSection },
+  { id: 'location', label: 'Location information', icon: MapPin, component: LocationSection },
+  { id: 'timeline', label: 'Timeline & plans', icon: Calendar, component: TimelineSection },
+  { id: 'financial', label: 'Financial & language', icon: DollarSign, component: FinancialSection },
+  { id: 'documents', label: 'Document status', icon: FileText, component: DocumentsSection },
 ];
 
 export default function ProfileView() {
@@ -166,7 +166,7 @@ function ProfileCompletionCard({ completion, missing, onGoTo }: { completion: nu
   return (
     <div className="card p-6 mb-6">
       <div className="flex items-center justify-between mb-2">
-        <h2 className="text-lg font-semibold text-gray-900">Profile Completion</h2>
+        <h2 className="text-lg font-semibold text-gray-900">Profile completion</h2>
         <span className="text-2xl font-bold text-primary-600" aria-label={`${completion}% complete`}>
           {completion}%
         </span>

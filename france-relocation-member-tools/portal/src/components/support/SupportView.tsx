@@ -199,7 +199,7 @@ function EmptyState({ onCompose }: { onCompose: () => void }) {
         className="btn btn-primary inline-flex items-center gap-2"
       >
         <Plus className="w-4 h-4" />
-        Send Your First Message
+        Send your first message
       </button>
     </div>
   );
@@ -242,7 +242,7 @@ function ComposeTicket({
           <ArrowLeft className="w-4 h-4" />
           Back to Support
         </button>
-        <h1 className="text-2xl font-bold text-gray-900">New Support Message</h1>
+        <h1 className="text-2xl font-bold text-gray-900">New support message</h1>
         <p className="text-gray-600 mt-1">
           Describe your question or issue and we&apos;ll respond as soon as possible
         </p>
@@ -309,7 +309,7 @@ function ComposeTicket({
               ) : (
                 <>
                   <Send className="w-4 h-4" />
-                  Send Message
+                  Send message
                 </>
               )}
             </button>
@@ -461,7 +461,7 @@ function TicketDetail({
                 ) : (
                   <>
                     <Send className="w-4 h-4" />
-                    Send Reply
+                    Send reply
                   </>
                 )}
               </button>

@@ -106,7 +106,7 @@ export default function ChecklistsView() {
     return (
       <div className="p-6">
         <div className="card p-8 text-center">
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">No Project Found</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">No project found</h2>
           <p className="text-gray-600">Please set up your relocation project first.</p>
         </div>
       </div>
@@ -129,7 +129,7 @@ export default function ChecklistsView() {
                 <ListChecks className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">Overall Progress</h2>
+                <h2 className="text-lg font-semibold text-gray-900">Overall progress</h2>
                 <p className="text-sm text-gray-600">
                   {completedItems} of {totalItems} items complete
                 </p>
@@ -207,8 +207,8 @@ export default function ChecklistsView() {
                 aria-label="Sort items"
                 className="select text-sm py-1.5"
               >
-                <option value="default">Default Order</option>
-                <option value="lead_time">Lead Time</option>
+                <option value="default">Default order</option>
+                <option value="lead_time">Lead time</option>
                 <option value="status">Status</option>
               </select>
 

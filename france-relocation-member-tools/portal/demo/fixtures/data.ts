@@ -2,7 +2,7 @@
  * The demo household: invented, obviously fictional, for screenshots only.
  *
  * Jordan and Sam Ellis, retired, from Asheville, North Carolina, moving to
- * Bordeaux on the long-stay visitor visa on 15 February 2027. Every name,
+ * Bordeaux on the long-stay visitor visa on February 15, 2027. Every name,
  * email, date of birth, passport number and address here is made up
  * (example.com addresses, passport X0000000, "Sample Street").
  *
@@ -278,7 +278,7 @@ export function dashboard(): DashboardData {
       percentage: Math.round((done / list.length) * 100),
     },
     profile_visa_type: 'visitor',
-    profile_visa_label: 'Visitor Visa (VLS-TS Visiteur)',
+    profile_visa_label: 'Visitor visa',
     welcome_banner: null,
     household: HOUSEHOLD,
     professionals: [
@@ -512,7 +512,7 @@ export function chatHistory() {
         content: [
           '## What the consulate measures you against',
           '',
-          'The visitor route has no fixed legal minimum. Consulates benchmark each adult against the French **net minimum wage (SMIC)**, **€1,477.93 a month since 1 June 2026**. For the two of you that is about **€2,956 a month**, or roughly a year of it in savings.',
+          'The visitor route has no fixed legal minimum. Consulates benchmark each adult against the French **net minimum wage (SMIC)**, **€1,477.93 a month since June 1, 2026**. For the two of you that is about **€2,956 a month**, or roughly a year of it in savings.',
           '',
           'On your file you show about **€4,549 a month** from Social Security and a pension, plus savings. That clears the benchmark comfortably, so the job is to make the paper say so clearly.',
           '',
@@ -548,7 +548,7 @@ const WELCOME: SupportTicket = {
   has_unread_user: false,
   reply_count: 0,
   from_site: true,
-  initial_message: 'Your plan is dated from 15 February 2027. Start with Prepare: the apostilles take the longest.',
+  initial_message: 'Your plan is dated from February 15, 2027. Start with Prepare: the apostilles take the longest.',
   created_at: mysql(61, '09:00:00'),
   updated_at: mysql(61, '09:00:00'),
   closed_at: null,
@@ -559,7 +559,7 @@ const WELCOME: SupportTicket = {
 const RULE_CHANGE: SupportTicket = {
   id: 302,
   user_id: 1,
-  subject: 'Visitor route: the SMIC benchmark rose on 1 June 2026',
+  subject: 'Visitor route: the SMIC benchmark rose on June 1, 2026',
   status: 'open',
   priority: 'normal',
   has_unread_user: true,
@@ -588,8 +588,8 @@ export function supportTicket(id: number) {
         user_id: 0,
         content:
           ticket.id === WELCOME.id
-            ? 'Welcome, Jordan and Sam. Your plan is dated from your move on 15 February 2027, and each step carries its own date counted back from it.\n\nStart with **Prepare**: the North Carolina apostilles take the longest. Ask about your case any time from the rail.'
-            : 'The French net minimum wage rose to **€1,477.93 a month** on 1 June 2026. Consulates use it as the benchmark for visitor applicants, per adult.\n\nYour statement of resources and cover letter already use the new figure.',
+            ? 'Welcome, Jordan and Sam. Your plan is dated from your move on February 15, 2027, and each step carries its own date counted back from it.\n\nStart with **Prepare**: the North Carolina apostilles take the longest. Ask about your case any time from the rail.'
+            : 'The French net minimum wage rose to **€1,477.93 a month** on June 1, 2026. Consulates use it as the benchmark for visitor applicants, per adult.\n\nYour statement of resources and cover letter already use the new figure.',
         is_admin: true,
         author_name: 'Relo2France',
         created_at: ticket.created_at,

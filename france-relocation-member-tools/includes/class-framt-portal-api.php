@@ -1626,15 +1626,15 @@ class FRAMT_Portal_API {
         // Get user's visa type from their profile
         $profile_visa_type = get_user_meta( $user_id, 'fra_visa_type', true );
         $visa_type_labels  = array(
-            'undecided'       => 'Undecided / Need help choosing',
-            'visitor'         => 'Visitor Visa (VLS-TS Visiteur)',
+            'undecided'       => 'Undecided',
+            'visitor'         => 'Visitor visa',
             'talent_passport' => 'Talent Passport',
-            'employee'        => 'Employee Visa',
-            'entrepreneur'    => 'Entrepreneur Visa',
-            'student'         => 'Student Visa',
-            'family'          => 'Family Reunification',
-            'spouse_french'   => 'Spouse of French National',
-            'retiree'         => 'Visitor Visa, retiring',
+            'employee'        => 'Employee visa',
+            'entrepreneur'    => 'Entrepreneur visa',
+            'student'         => 'Student visa',
+            'family'          => 'Family reunification',
+            'spouse_french'   => 'Spouse of French citizen',
+            'retiree'         => 'Visitor visa, retiring',
             'other'           => 'Another long-stay route',
         );
 
@@ -6071,6 +6071,7 @@ USE these official sources to provide accurate, current information. Cite URLs w
 - Use bullet points for lists
 - Include relevant official website URLs
 - Keep paragraphs short and scannable
+- Write dates American style with the month named (June 1, 2026), never 1 June 2026 or 6/1/2026
 - End with a \"**Next Steps**\" section with 1-3 actionable items
 
 {$full_context}
@@ -6108,7 +6109,7 @@ Now answer the following question:";
             ? ' Include practical, real-world tips based on the knowledge base content and common experiences.'
             : '';
 
-        $system_prompt = "You are a helpful assistant for AMERICANS relocating to France. This platform specifically serves US citizens applying for French visas from the United States.
+        $system_prompt = "You are a helpful assistant for AMERICANS relocating to France. This platform specifically serves US citizens applying for French visas from the United States. Write dates American style with the month named (June 1, 2026).
 
 **VERIFICATION REQUIREMENTS (CRITICAL):**
 1. ONLY state facts that appear in the VERIFIED KNOWLEDGE BASE below
@@ -6182,7 +6183,7 @@ Now answer the following question using ONLY the information above:";
             $user_context_text = "\n\nMEMBER'S CURRENT STATUS:\n" . $user_context['summary'] . "\n";
         }
 
-        $system_prompt = "You are a helpful assistant for AMERICANS relocating to France. This platform specifically serves US citizens. Continue the following conversation naturally, answering the user's follow-up question based on the previous context.{$practice_instruction}
+        $system_prompt = "You are a helpful assistant for AMERICANS relocating to France. This platform specifically serves US citizens. Continue the following conversation naturally, answering the user's follow-up question based on the previous context. Write dates American style with the month named (June 1, 2026).{$practice_instruction}
 
 **VERIFICATION RULES (CRITICAL):**
 - Do NOT make up specific facts about regulations, fees, timelines, or requirements
@@ -6536,24 +6537,24 @@ Now respond to this follow-up:";
         $categories = array(
             array(
                 'id'          => 'visas',
-                'title'       => 'Visa & Immigration',
+                'title'       => 'Visa & immigration',
                 'icon'        => 'FileText',
                 'description' => 'Questions about French visas, residence permits, and immigration procedures',
                 'topics'      => array(
-                    array( 'id' => 'vls-ts', 'title' => 'VLS-TS Long Stay Visa', 'keywords' => array( 'visa', 'vls', 'long stay' ), 'is_premium' => false ),
-                    array( 'id' => 'ofii', 'title' => 'OFII Validation Process', 'keywords' => array( 'ofii', 'validate', 'stamp' ), 'is_premium' => false ),
-                    array( 'id' => 'renewal', 'title' => 'Visa Renewal & Titre de Séjour', 'keywords' => array( 'renew', 'extend', 'titre de séjour' ), 'is_premium' => false ),
-                    array( 'id' => 'visitor-visa', 'title' => 'Visitor Visa (Visiteur)', 'keywords' => array( 'visitor', 'visiteur', 'non-working' ), 'is_premium' => false ),
-                    array( 'id' => 'student-visa', 'title' => 'Student Visa', 'keywords' => array( 'student', 'étudiant', 'study', 'university' ), 'is_premium' => false ),
+                    array( 'id' => 'vls-ts', 'title' => 'The long-stay visa (VLS-TS)', 'keywords' => array( 'visa', 'vls', 'long stay' ), 'is_premium' => false ),
+                    array( 'id' => 'ofii', 'title' => 'Validating your visa (OFII)', 'keywords' => array( 'ofii', 'validate', 'stamp' ), 'is_premium' => false ),
+                    array( 'id' => 'renewal', 'title' => 'Visa renewal & titre de séjour', 'keywords' => array( 'renew', 'extend', 'titre de séjour' ), 'is_premium' => false ),
+                    array( 'id' => 'visitor-visa', 'title' => 'Visitor visa (visiteur)', 'keywords' => array( 'visitor', 'visiteur', 'non-working' ), 'is_premium' => false ),
+                    array( 'id' => 'student-visa', 'title' => 'Student visa', 'keywords' => array( 'student', 'étudiant', 'study', 'university' ), 'is_premium' => false ),
                     array( 'id' => 'talent-passport', 'title' => 'Talent Passport (Passeport Talent)', 'keywords' => array( 'talent', 'passeport talent', 'skilled worker', 'entrepreneur' ), 'is_premium' => false ),
-                    array( 'id' => 'family-visa', 'title' => 'Family Reunification Visa', 'keywords' => array( 'family', 'spouse', 'regroupement familial', 'conjoint' ), 'is_premium' => false ),
-                    array( 'id' => 'work-permit', 'title' => 'Work Permit & Employee Visa', 'keywords' => array( 'work', 'employee', 'salarié', 'autorisation de travail' ), 'is_premium' => false ),
-                    array( 'id' => 'retired-visa', 'title' => 'Retiree/Pensioner Visa', 'keywords' => array( 'retired', 'retraité', 'pension', 'retirement' ), 'is_premium' => false ),
-                    array( 'id' => 'entrepreneur-visa', 'title' => 'Entrepreneur/Business Visa', 'keywords' => array( 'entrepreneur', 'business', 'auto-entrepreneur', 'company' ), 'is_premium' => false ),
-                    array( 'id' => 'eu-family', 'title' => 'EU Family Member Card', 'keywords' => array( 'eu', 'european', 'carte de séjour de membre de la famille' ), 'is_premium' => false ),
-                    array( 'id' => 'citizenship', 'title' => 'French Citizenship & Naturalization', 'keywords' => array( 'citizenship', 'naturalization', 'nationalité', 'français' ), 'is_premium' => true ),
-                    array( 'id' => 'prefecture', 'title' => 'Prefecture Appointments', 'keywords' => array( 'prefecture', 'rendez-vous', 'appointment', 'sous-préfecture' ), 'is_premium' => false ),
-                    array( 'id' => 'schengen', 'title' => 'Schengen Rules & 90-Day Limit', 'keywords' => array( 'schengen', '90 days', 'visa-free', 'tourist' ), 'is_premium' => false ),
+                    array( 'id' => 'family-visa', 'title' => 'Family reunification visa', 'keywords' => array( 'family', 'spouse', 'regroupement familial', 'conjoint' ), 'is_premium' => false ),
+                    array( 'id' => 'work-permit', 'title' => 'Work permit & employee visa', 'keywords' => array( 'work', 'employee', 'salarié', 'autorisation de travail' ), 'is_premium' => false ),
+                    array( 'id' => 'retired-visa', 'title' => 'Retiring to France (visitor visa)', 'keywords' => array( 'retired', 'retraité', 'pension', 'retirement' ), 'is_premium' => false ),
+                    array( 'id' => 'entrepreneur-visa', 'title' => 'Entrepreneur/business visa', 'keywords' => array( 'entrepreneur', 'business', 'auto-entrepreneur', 'company' ), 'is_premium' => false ),
+                    array( 'id' => 'eu-family', 'title' => 'EU family member card', 'keywords' => array( 'eu', 'european', 'carte de séjour de membre de la famille' ), 'is_premium' => false ),
+                    array( 'id' => 'citizenship', 'title' => 'French citizenship & naturalization', 'keywords' => array( 'citizenship', 'naturalization', 'nationalité', 'français' ), 'is_premium' => true ),
+                    array( 'id' => 'prefecture', 'title' => 'Prefecture appointments', 'keywords' => array( 'prefecture', 'rendez-vous', 'appointment', 'sous-préfecture' ), 'is_premium' => false ),
+                    array( 'id' => 'schengen', 'title' => 'Schengen rules & the 90-day limit', 'keywords' => array( 'schengen', '90 days', 'visa-free', 'tourist' ), 'is_premium' => false ),
                 ),
             ),
             array(
@@ -6562,46 +6563,46 @@ Now respond to this follow-up:";
                 'icon'        => 'Heart',
                 'description' => 'French healthcare system, Carte Vitale, and medical coverage',
                 'topics'      => array(
-                    array( 'id' => 'carte-vitale', 'title' => 'Carte Vitale Registration', 'keywords' => array( 'carte vitale', 'cpam', 'health card' ), 'is_premium' => false ),
-                    array( 'id' => 'mutuelle', 'title' => 'Complementary Insurance (Mutuelle)', 'keywords' => array( 'mutuelle', 'insurance', 'top-up' ), 'is_premium' => false ),
-                    array( 'id' => 'doctors', 'title' => 'Finding Doctors & Specialists', 'keywords' => array( 'doctor', 'médecin', 'appointment', 'specialist' ), 'is_premium' => false ),
-                    array( 'id' => 'puma', 'title' => 'PUMA (Universal Health Coverage)', 'keywords' => array( 'puma', 'cmu', 'universal', 'coverage' ), 'is_premium' => false ),
-                    array( 'id' => 'pharmacy', 'title' => 'Pharmacies & Prescriptions', 'keywords' => array( 'pharmacy', 'pharmacie', 'prescription', 'medication' ), 'is_premium' => false ),
-                    array( 'id' => 'emergency', 'title' => 'Emergency Services', 'keywords' => array( 'emergency', 'urgences', 'samu', 'hospital' ), 'is_premium' => false ),
-                    array( 'id' => 'dental', 'title' => 'Dental Care', 'keywords' => array( 'dental', 'dentist', 'dentiste', 'teeth' ), 'is_premium' => false ),
-                    array( 'id' => 'mental-health', 'title' => 'Mental Health Services', 'keywords' => array( 'mental health', 'psychologist', 'psychiatrist', 'therapy' ), 'is_premium' => false ),
-                    array( 'id' => 'reimbursement', 'title' => 'Healthcare Reimbursement', 'keywords' => array( 'reimbursement', 'remboursement', 'feuille de soins' ), 'is_premium' => false ),
+                    array( 'id' => 'carte-vitale', 'title' => 'Carte Vitale registration', 'keywords' => array( 'carte vitale', 'cpam', 'health card' ), 'is_premium' => false ),
+                    array( 'id' => 'mutuelle', 'title' => 'Complementary insurance (mutuelle)', 'keywords' => array( 'mutuelle', 'insurance', 'top-up' ), 'is_premium' => false ),
+                    array( 'id' => 'doctors', 'title' => 'Finding doctors & specialists', 'keywords' => array( 'doctor', 'médecin', 'appointment', 'specialist' ), 'is_premium' => false ),
+                    array( 'id' => 'puma', 'title' => 'PUMA (universal health coverage)', 'keywords' => array( 'puma', 'cmu', 'universal', 'coverage' ), 'is_premium' => false ),
+                    array( 'id' => 'pharmacy', 'title' => 'Pharmacies & prescriptions', 'keywords' => array( 'pharmacy', 'pharmacie', 'prescription', 'medication' ), 'is_premium' => false ),
+                    array( 'id' => 'emergency', 'title' => 'Emergency services', 'keywords' => array( 'emergency', 'urgences', 'samu', 'hospital' ), 'is_premium' => false ),
+                    array( 'id' => 'dental', 'title' => 'Dental care', 'keywords' => array( 'dental', 'dentist', 'dentiste', 'teeth' ), 'is_premium' => false ),
+                    array( 'id' => 'mental-health', 'title' => 'Mental health services', 'keywords' => array( 'mental health', 'psychologist', 'psychiatrist', 'therapy' ), 'is_premium' => false ),
+                    array( 'id' => 'reimbursement', 'title' => 'Healthcare reimbursement', 'keywords' => array( 'reimbursement', 'remboursement', 'feuille de soins' ), 'is_premium' => false ),
                 ),
             ),
             array(
                 'id'          => 'property',
-                'title'       => 'Housing & Property',
+                'title'       => 'Housing & property',
                 'icon'        => 'Home',
                 'description' => 'Renting, buying property, and understanding French housing',
                 'topics'      => array(
                     array( 'id' => 'renting', 'title' => 'Renting in France', 'keywords' => array( 'rent', 'apartment', 'lease', 'bail' ), 'is_premium' => false ),
-                    array( 'id' => 'dossier', 'title' => 'Rental Dossier Requirements', 'keywords' => array( 'dossier', 'documents', 'guarantor', 'garant' ), 'is_premium' => false ),
-                    array( 'id' => 'buying', 'title' => 'Buying Property', 'keywords' => array( 'buy', 'purchase', 'notaire', 'mortgage' ), 'is_premium' => false ),
-                    array( 'id' => 'utilities', 'title' => 'Setting Up Utilities', 'keywords' => array( 'electricity', 'gas', 'water', 'internet', 'edf' ), 'is_premium' => false ),
-                    array( 'id' => 'tenant-rights', 'title' => 'Tenant Rights & Laws', 'keywords' => array( 'tenant', 'rights', 'loi', 'protection' ), 'is_premium' => false ),
-                    array( 'id' => 'furnished', 'title' => 'Furnished vs Unfurnished', 'keywords' => array( 'furnished', 'meublé', 'unfurnished', 'vide' ), 'is_premium' => false ),
-                    array( 'id' => 'deposit', 'title' => 'Security Deposit & Fees', 'keywords' => array( 'deposit', 'caution', 'fees', 'agency' ), 'is_premium' => false ),
-                    array( 'id' => 'housing-aid', 'title' => 'Housing Aid (APL/CAF)', 'keywords' => array( 'apl', 'caf', 'aide', 'housing benefit' ), 'is_premium' => false ),
+                    array( 'id' => 'dossier', 'title' => 'Rental dossier requirements', 'keywords' => array( 'dossier', 'documents', 'guarantor', 'garant' ), 'is_premium' => false ),
+                    array( 'id' => 'buying', 'title' => 'Buying property', 'keywords' => array( 'buy', 'purchase', 'notaire', 'mortgage' ), 'is_premium' => false ),
+                    array( 'id' => 'utilities', 'title' => 'Setting up utilities', 'keywords' => array( 'electricity', 'gas', 'water', 'internet', 'edf' ), 'is_premium' => false ),
+                    array( 'id' => 'tenant-rights', 'title' => 'Tenant rights & laws', 'keywords' => array( 'tenant', 'rights', 'loi', 'protection' ), 'is_premium' => false ),
+                    array( 'id' => 'furnished', 'title' => 'Furnished vs unfurnished', 'keywords' => array( 'furnished', 'meublé', 'unfurnished', 'vide' ), 'is_premium' => false ),
+                    array( 'id' => 'deposit', 'title' => 'Security deposit & fees', 'keywords' => array( 'deposit', 'caution', 'fees', 'agency' ), 'is_premium' => false ),
+                    array( 'id' => 'housing-aid', 'title' => 'Housing aid (APL/CAF)', 'keywords' => array( 'apl', 'caf', 'aide', 'housing benefit' ), 'is_premium' => false ),
                 ),
             ),
             array(
                 'id'          => 'banking',
-                'title'       => 'Banking & Finance',
+                'title'       => 'Banking & finance',
                 'icon'        => 'Building',
                 'description' => 'French bank accounts, money transfers, and financial matters',
                 'topics'      => array(
-                    array( 'id' => 'bank-account', 'title' => 'Opening a Bank Account', 'keywords' => array( 'bank', 'account', 'rib', 'iban' ), 'is_premium' => false ),
-                    array( 'id' => 'transfers', 'title' => 'International Transfers', 'keywords' => array( 'transfer', 'wire', 'exchange', 'wise' ), 'is_premium' => false ),
-                    array( 'id' => 'credit', 'title' => 'Credit & Loans in France', 'keywords' => array( 'credit', 'loan', 'mortgage', 'prêt' ), 'is_premium' => false ),
-                    array( 'id' => 'online-banks', 'title' => 'Online & Neo Banks', 'keywords' => array( 'online', 'neo bank', 'boursorama', 'n26' ), 'is_premium' => false ),
-                    array( 'id' => 'credit-cards', 'title' => 'Credit & Debit Cards', 'keywords' => array( 'credit card', 'carte bancaire', 'debit' ), 'is_premium' => false ),
-                    array( 'id' => 'us-accounts', 'title' => 'Keeping US Bank Accounts', 'keywords' => array( 'us account', 'american', 'fbar', 'fatca' ), 'is_premium' => false ),
-                    array( 'id' => 'currency', 'title' => 'Currency Exchange', 'keywords' => array( 'currency', 'exchange rate', 'euros', 'dollars' ), 'is_premium' => false ),
+                    array( 'id' => 'bank-account', 'title' => 'Opening a bank account', 'keywords' => array( 'bank', 'account', 'rib', 'iban' ), 'is_premium' => false ),
+                    array( 'id' => 'transfers', 'title' => 'International transfers', 'keywords' => array( 'transfer', 'wire', 'exchange', 'wise' ), 'is_premium' => false ),
+                    array( 'id' => 'credit', 'title' => 'Credit & loans in France', 'keywords' => array( 'credit', 'loan', 'mortgage', 'prêt' ), 'is_premium' => false ),
+                    array( 'id' => 'online-banks', 'title' => 'Online & neo banks', 'keywords' => array( 'online', 'neo bank', 'boursorama', 'n26' ), 'is_premium' => false ),
+                    array( 'id' => 'credit-cards', 'title' => 'Credit & debit cards', 'keywords' => array( 'credit card', 'carte bancaire', 'debit' ), 'is_premium' => false ),
+                    array( 'id' => 'us-accounts', 'title' => 'Keeping US bank accounts', 'keywords' => array( 'us account', 'american', 'fbar', 'fatca' ), 'is_premium' => false ),
+                    array( 'id' => 'currency', 'title' => 'Currency exchange', 'keywords' => array( 'currency', 'exchange rate', 'euros', 'dollars' ), 'is_premium' => false ),
                 ),
             ),
             array(
@@ -6610,14 +6611,14 @@ Now respond to this follow-up:";
                 'icon'        => 'DollarSign',
                 'description' => 'French taxation, US-France tax treaty, and filing requirements',
                 'topics'      => array(
-                    array( 'id' => 'tax-residency', 'title' => 'Tax Residency Rules', 'keywords' => array( 'residency', 'fiscal', 'domicile' ), 'is_premium' => false ),
-                    array( 'id' => 'tax-treaty', 'title' => 'US-France Tax Treaty', 'keywords' => array( 'treaty', 'double taxation', 'totalization' ), 'is_premium' => false ),
-                    array( 'id' => 'filing', 'title' => 'French Tax Filing', 'keywords' => array( 'file', 'declaration', 'impôts' ), 'is_premium' => false ),
-                    array( 'id' => 'us-filing', 'title' => 'US Tax Filing from France', 'keywords' => array( 'us taxes', 'irs', 'fbar', 'fatca' ), 'is_premium' => false ),
-                    array( 'id' => 'income-tax', 'title' => 'French Income Tax', 'keywords' => array( 'income', 'impôt sur le revenu', 'brackets' ), 'is_premium' => false ),
-                    array( 'id' => 'social-charges', 'title' => 'Social Charges & CSG', 'keywords' => array( 'social charges', 'csg', 'crds', 'cotisations' ), 'is_premium' => false ),
-                    array( 'id' => 'property-tax', 'title' => 'Property Taxes', 'keywords' => array( 'property tax', 'taxe foncière', 'taxe habitation' ), 'is_premium' => false ),
-                    array( 'id' => 'retirement-tax', 'title' => 'Retirement Income Taxation', 'keywords' => array( 'retirement', 'pension', '401k', 'social security' ), 'is_premium' => true ),
+                    array( 'id' => 'tax-residency', 'title' => 'Tax residency rules', 'keywords' => array( 'residency', 'fiscal', 'domicile' ), 'is_premium' => false ),
+                    array( 'id' => 'tax-treaty', 'title' => 'US-France tax treaty', 'keywords' => array( 'treaty', 'double taxation', 'totalization' ), 'is_premium' => false ),
+                    array( 'id' => 'filing', 'title' => 'French tax filing', 'keywords' => array( 'file', 'declaration', 'impôts' ), 'is_premium' => false ),
+                    array( 'id' => 'us-filing', 'title' => 'US tax filing from France', 'keywords' => array( 'us taxes', 'irs', 'fbar', 'fatca' ), 'is_premium' => false ),
+                    array( 'id' => 'income-tax', 'title' => 'French income tax', 'keywords' => array( 'income', 'impôt sur le revenu', 'brackets' ), 'is_premium' => false ),
+                    array( 'id' => 'social-charges', 'title' => 'Social charges & CSG', 'keywords' => array( 'social charges', 'csg', 'crds', 'cotisations' ), 'is_premium' => false ),
+                    array( 'id' => 'property-tax', 'title' => 'Property taxes', 'keywords' => array( 'property tax', 'taxe foncière', 'taxe habitation' ), 'is_premium' => false ),
+                    array( 'id' => 'retirement-tax', 'title' => 'Retirement income taxation', 'keywords' => array( 'retirement', 'pension', '401k', 'social security' ), 'is_premium' => true ),
                 ),
             ),
             array(
@@ -6626,31 +6627,31 @@ Now respond to this follow-up:";
                 'icon'        => 'Car',
                 'description' => 'Driving licenses, car registration, and transportation',
                 'topics'      => array(
-                    array( 'id' => 'license-exchange', 'title' => 'License Exchange Process', 'keywords' => array( 'license', 'exchange', 'permis', 'ants' ), 'is_premium' => false ),
-                    array( 'id' => 'car-registration', 'title' => 'Car Registration (Carte Grise)', 'keywords' => array( 'registration', 'carte grise', 'immatriculation' ), 'is_premium' => false ),
-                    array( 'id' => 'insurance', 'title' => 'Car Insurance', 'keywords' => array( 'insurance', 'assurance', 'vehicle' ), 'is_premium' => false ),
-                    array( 'id' => 'buying-car', 'title' => 'Buying a Car in France', 'keywords' => array( 'buy car', 'purchase', 'used car', 'new car' ), 'is_premium' => false ),
-                    array( 'id' => 'us-license', 'title' => 'Driving with US License', 'keywords' => array( 'us license', 'american', 'international permit' ), 'is_premium' => false ),
-                    array( 'id' => 'french-license', 'title' => 'Getting a French License', 'keywords' => array( 'french license', 'permis de conduire', 'driving test' ), 'is_premium' => false ),
-                    array( 'id' => 'control-technique', 'title' => 'Vehicle Inspection (Contrôle Technique)', 'keywords' => array( 'inspection', 'contrôle technique', 'ct' ), 'is_premium' => false ),
-                    array( 'id' => 'import-car', 'title' => 'Importing a Vehicle', 'keywords' => array( 'import', 'bring car', 'shipping vehicle' ), 'is_premium' => false ),
+                    array( 'id' => 'license-exchange', 'title' => 'License exchange process', 'keywords' => array( 'license', 'exchange', 'permis', 'ants' ), 'is_premium' => false ),
+                    array( 'id' => 'car-registration', 'title' => 'Car registration (carte grise)', 'keywords' => array( 'registration', 'carte grise', 'immatriculation' ), 'is_premium' => false ),
+                    array( 'id' => 'insurance', 'title' => 'Car insurance', 'keywords' => array( 'insurance', 'assurance', 'vehicle' ), 'is_premium' => false ),
+                    array( 'id' => 'buying-car', 'title' => 'Buying a car in France', 'keywords' => array( 'buy car', 'purchase', 'used car', 'new car' ), 'is_premium' => false ),
+                    array( 'id' => 'us-license', 'title' => 'Driving with US license', 'keywords' => array( 'us license', 'american', 'international permit' ), 'is_premium' => false ),
+                    array( 'id' => 'french-license', 'title' => 'Getting a French license', 'keywords' => array( 'french license', 'permis de conduire', 'driving test' ), 'is_premium' => false ),
+                    array( 'id' => 'control-technique', 'title' => 'Vehicle inspection (contrôle technique)', 'keywords' => array( 'inspection', 'contrôle technique', 'ct' ), 'is_premium' => false ),
+                    array( 'id' => 'import-car', 'title' => 'Importing a vehicle', 'keywords' => array( 'import', 'bring car', 'shipping vehicle' ), 'is_premium' => false ),
                 ),
             ),
             array(
                 'id'          => 'settling',
-                'title'       => 'Settling In',
+                'title'       => 'Settling in',
                 'icon'        => 'MapPin',
                 'description' => 'Daily life, culture, language, and practical tips for living in France',
                 'topics'      => array(
                     array( 'id' => 'language', 'title' => 'Learning French', 'keywords' => array( 'french', 'language', 'learn', 'class' ), 'is_premium' => false ),
-                    array( 'id' => 'culture', 'title' => 'French Culture & Customs', 'keywords' => array( 'culture', 'customs', 'etiquette' ), 'is_premium' => false ),
-                    array( 'id' => 'community', 'title' => 'Expat Communities', 'keywords' => array( 'expat', 'community', 'groups', 'meetup' ), 'is_premium' => false ),
-                    array( 'id' => 'schools', 'title' => 'Schools & Education', 'keywords' => array( 'school', 'education', 'children', 'école' ), 'is_premium' => false ),
-                    array( 'id' => 'pets', 'title' => 'Moving with Pets', 'keywords' => array( 'pets', 'dog', 'cat', 'animal' ), 'is_premium' => false ),
-                    array( 'id' => 'phone', 'title' => 'Phone & Mobile Plans', 'keywords' => array( 'phone', 'mobile', 'sim card', 'forfait' ), 'is_premium' => false ),
-                    array( 'id' => 'mail', 'title' => 'Mail & Postal Services', 'keywords' => array( 'mail', 'post', 'la poste', 'package' ), 'is_premium' => false ),
-                    array( 'id' => 'shopping', 'title' => 'Shopping & Daily Life', 'keywords' => array( 'shopping', 'supermarket', 'stores', 'market' ), 'is_premium' => false ),
-                    array( 'id' => 'social-life', 'title' => 'Making Friends & Social Life', 'keywords' => array( 'friends', 'social', 'meet people', 'activities' ), 'is_premium' => false ),
+                    array( 'id' => 'culture', 'title' => 'French culture & customs', 'keywords' => array( 'culture', 'customs', 'etiquette' ), 'is_premium' => false ),
+                    array( 'id' => 'community', 'title' => 'Expat communities', 'keywords' => array( 'expat', 'community', 'groups', 'meetup' ), 'is_premium' => false ),
+                    array( 'id' => 'schools', 'title' => 'Schools & education', 'keywords' => array( 'school', 'education', 'children', 'école' ), 'is_premium' => false ),
+                    array( 'id' => 'pets', 'title' => 'Moving with pets', 'keywords' => array( 'pets', 'dog', 'cat', 'animal' ), 'is_premium' => false ),
+                    array( 'id' => 'phone', 'title' => 'Phone & mobile plans', 'keywords' => array( 'phone', 'mobile', 'sim card', 'forfait' ), 'is_premium' => false ),
+                    array( 'id' => 'mail', 'title' => 'Mail & postal services', 'keywords' => array( 'mail', 'post', 'la poste', 'package' ), 'is_premium' => false ),
+                    array( 'id' => 'shopping', 'title' => 'Shopping & daily life', 'keywords' => array( 'shopping', 'supermarket', 'stores', 'market' ), 'is_premium' => false ),
+                    array( 'id' => 'social-life', 'title' => 'Making friends & social life', 'keywords' => array( 'friends', 'social', 'meet people', 'activities' ), 'is_premium' => false ),
                 ),
             ),
         );
@@ -6746,7 +6747,7 @@ Now respond to this follow-up:";
             ? ' Include practical, real-world tips from people who have gone through the process - not just official requirements.'
             : '';
 
-        $system_prompt = "You are a helpful assistant specializing in helping people relocate to France.{$category_context}{$practice_instruction}
+        $system_prompt = "You are a helpful assistant specializing in helping people relocate to France. Write dates American style with the month named (June 1, 2026).{$category_context}{$practice_instruction}
 
 IMPORTANT ACCURACY RULES:
 1. For specific facts about regulations, fees, eligible states/countries, or official requirements - be conservative. If you're not certain, say \"I recommend checking the official source\" rather than stating potentially outdated information.

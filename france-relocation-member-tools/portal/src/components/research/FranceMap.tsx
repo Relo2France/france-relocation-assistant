@@ -246,7 +246,7 @@ function FranceMap({ onRegionSelect, onGenerateReport }: FranceMapProps) {
           className="btn btn-outline flex items-center gap-2"
         >
           <FileText className="w-4 h-4" />
-          Generate France Overview Report
+          Generate France overview report
         </button>
       </div>
     </div>

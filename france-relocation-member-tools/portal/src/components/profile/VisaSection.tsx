@@ -68,7 +68,7 @@ export default function VisaSection({ profile }: VisaSectionProps) {
     <form onSubmit={handleSubmit} className="space-y-6 pt-6">
       <div>
         <label htmlFor="visa_type" className="block text-sm font-medium text-gray-700 mb-1">
-          Visa Type <span className="text-red-500" aria-label="required">*</span>
+          Visa type <span className="text-red-500" aria-label="required">*</span>
         </label>
         <select
           id="visa_type"
@@ -132,7 +132,7 @@ export default function VisaSection({ profile }: VisaSectionProps) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <label htmlFor="employment_status" className="block text-sm font-medium text-gray-700 mb-1">
-            Current Employment Status
+            Current employment status
           </label>
           <select
             id="employment_status"
@@ -151,7 +151,7 @@ export default function VisaSection({ profile }: VisaSectionProps) {
 
         <div>
           <label htmlFor="work_in_france" className="block text-sm font-medium text-gray-700 mb-1">
-            Work Plans in France
+            Work plans in France
           </label>
           <select
             id="work_in_france"
@@ -187,7 +187,7 @@ export default function VisaSection({ profile }: VisaSectionProps) {
 
         <div>
           <label htmlFor="job_title" className="block text-sm font-medium text-gray-700 mb-1">
-            Job Title
+            Job title
           </label>
           <input
             type="text"
@@ -204,7 +204,7 @@ export default function VisaSection({ profile }: VisaSectionProps) {
       {isEmployed && (
         <div>
           <label htmlFor="employer_name" className="block text-sm font-medium text-gray-700 mb-1">
-            Current Employer
+            Current employer
           </label>
           <input
             type="text"

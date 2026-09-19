@@ -157,7 +157,7 @@ function MemberForm({ member, onSave, onCancel, isLoading }: MemberFormProps) {
 
         <div>
           <label htmlFor="member-dob" className="block text-sm font-medium text-gray-700 mb-1">
-            Date of Birth
+            Date of birth
           </label>
           <input
             id="member-dob"
@@ -186,7 +186,7 @@ function MemberForm({ member, onSave, onCancel, isLoading }: MemberFormProps) {
 
         <div>
           <label htmlFor="member-passport" className="block text-sm font-medium text-gray-700 mb-1">
-            Passport Country
+            Passport country
           </label>
           <input
             id="member-passport"
@@ -426,7 +426,7 @@ export default function FamilyManager({ className }: FamilyManagerProps) {
               <Users className="w-5 h-5 text-primary-600" aria-hidden="true" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">Family Members</h3>
+              <h3 className="text-lg font-semibold text-gray-900">Family members</h3>
               <p className="text-sm text-gray-500">
                 Track Schengen days separately for each family member
               </p>
@@ -446,7 +446,7 @@ export default function FamilyManager({ className }: FamilyManagerProps) {
                 className="btn btn-primary"
               >
                 <Plus className="w-4 h-4" aria-hidden="true" />
-                Add Member
+                Add member
               </button>
             )}
           </div>
@@ -483,7 +483,7 @@ export default function FamilyManager({ className }: FamilyManagerProps) {
       {/* Add Member Form */}
       {isAddingMember && (
         <div className="card p-6">
-          <h4 className="font-medium text-gray-900 mb-4">Add Family Member</h4>
+          <h4 className="font-medium text-gray-900 mb-4">Add Family member</h4>
           <MemberForm
             onSave={handleCreate}
             onCancel={() => setIsAddingMember(false)}
@@ -495,7 +495,7 @@ export default function FamilyManager({ className }: FamilyManagerProps) {
       {/* Edit Member Form */}
       {editingMember && (
         <div className="card p-6">
-          <h4 className="font-medium text-gray-900 mb-4">Edit Family Member</h4>
+          <h4 className="font-medium text-gray-900 mb-4">Edit Family member</h4>
           <MemberForm
             member={editingMember}
             onSave={handleUpdate}
@@ -532,7 +532,7 @@ export default function FamilyManager({ className }: FamilyManagerProps) {
               className="btn btn-primary"
             >
               <Plus className="w-4 h-4" aria-hidden="true" />
-              Add First Member
+              Add first member
             </button>
           </div>
         )

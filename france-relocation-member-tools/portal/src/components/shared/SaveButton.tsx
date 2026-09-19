@@ -22,7 +22,7 @@ export default function SaveButton({
   isSuccess,
   isError,
   errorMessage = 'Failed to save. Please try again.',
-  label = 'Save Changes',
+  label = 'Save changes',
   pendingLabel = 'Saving...',
   successLabel = 'Saved!',
 }: SaveButtonProps) {

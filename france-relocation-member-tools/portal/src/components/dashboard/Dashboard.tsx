@@ -53,7 +53,7 @@ export default function Dashboard() {
       <div className="p-6">
         <div className="card p-8 text-center">
           <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">Error Loading Dashboard</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">Error loading dashboard</h2>
           <p className="text-gray-600">{(error as Error).message}</p>
         </div>
       </div>
@@ -168,7 +168,8 @@ export default function Dashboard() {
       {/* The road: the map, first */}
       <div className="flex flex-col gap-3 px-6 md:px-8 pt-4">
         <span className="eyebrow">The road to France</span>
-        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-2.5">
+        {/* One swipeable row on a phone, so the next step is not pushed off the screen. */}
+        <div className="flex overflow-x-auto snap-x snap-mandatory scroll-px-6 -mx-6 px-6 pb-1 md:mx-0 md:px-0 md:pb-0 md:overflow-visible md:grid md:grid-cols-3 xl:grid-cols-6 gap-2.5">
           {JOURNEY.map((stage, i) => {
             const state = i < nowIndex ? 'done' : i === nowIndex ? 'now' : 'ahead';
             const p = progressFor(stage, all, project);
@@ -177,7 +178,7 @@ export default function Dashboard() {
                 key={stage.id}
                 onClick={() => openStage(stage.id)}
                 className={clsx(
-                  'flex flex-col items-start gap-1.5 p-3.5 rounded-lg text-left transition-colors',
+                  'flex flex-col items-start gap-1.5 p-3.5 rounded-lg text-left transition-colors min-w-[9.5rem] flex-shrink-0 snap-start md:min-w-0',
                   state === 'done' && 'bg-primary-100 border border-primary-100',
                   state === 'now' && 'bg-card border-2 border-primary-500',
                   state === 'ahead' && 'bg-card border border-rule hover:bg-card-2'
@@ -185,10 +186,10 @@ export default function Dashboard() {
                 aria-current={state === 'now' ? 'step' : undefined}
               >
                 <span className={clsx('font-mono text-[0.68rem]', state === 'ahead' ? 'text-gray-500' : 'text-primary-500')}>
-                  {state === 'done' ? 'DONE' : state === 'now' ? `NOW${p.total ? ` · ${p.completed}/${p.total}` : ''}` : stageWhen(stage.id, project) || 'AHEAD'}
+                  {state === 'done' ? 'DONE' : state === 'now' ? `NOW${p.total ? ` · ${p.completed} OF ${p.total} DONE` : ''}` : stageWhen(stage.id, project) || 'AHEAD'}
                 </span>
                 <span className="font-semibold text-[0.9rem]">{stage.name}</span>
-                <span className="text-[0.78rem] text-gray-500 leading-tight">{stage.blurb}</span>
+                <span className="hidden md:block text-[0.78rem] text-gray-500 leading-tight">{stage.blurb}</span>
               </button>
             );
           })}

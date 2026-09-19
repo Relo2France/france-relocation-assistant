@@ -148,8 +148,8 @@ export default function TaskForm({
               onChange={(e) => setStatus(e.target.value as TaskStatus)}
               className="select"
             >
-              <option value="todo">To Do</option>
-              <option value="in_progress">In Progress</option>
+              <option value="todo">To do</option>
+              <option value="in_progress">In progress</option>
               <option value="waiting">Waiting</option>
               <option value="done">Done</option>
             </select>
@@ -196,7 +196,7 @@ export default function TaskForm({
           {/* Due Date */}
           <div>
             <label htmlFor="dueDate" className="block text-sm font-medium text-gray-700 mb-1">
-              Due Date
+              Due date
             </label>
             <input
               id="dueDate"
@@ -211,7 +211,7 @@ export default function TaskForm({
         {/* Task Type */}
         <div role="radiogroup" aria-labelledby="task-type-label">
           <span id="task-type-label" className="block text-sm font-medium text-gray-700 mb-2">
-            Task Type
+            Task type
           </span>
           <div className="flex gap-4">
             <label className="flex items-center gap-2 cursor-pointer">
@@ -223,7 +223,7 @@ export default function TaskForm({
                 onChange={(e) => setTaskType(e.target.value as 'client' | 'team')}
                 className="w-4 h-4 text-primary-600"
               />
-              <span className="text-sm text-gray-700">Client Task</span>
+              <span className="text-sm text-gray-700">Client task</span>
               <span className="text-xs text-gray-500">(visible to you)</span>
             </label>
             <label className="flex items-center gap-2 cursor-pointer">
@@ -235,7 +235,7 @@ export default function TaskForm({
                 onChange={(e) => setTaskType(e.target.value as 'client' | 'team')}
                 className="w-4 h-4 text-primary-600"
               />
-              <span className="text-sm text-gray-700">Team Task</span>
+              <span className="text-sm text-gray-700">Team task</span>
               <span className="text-xs text-gray-500">(for support team)</span>
             </label>
           </div>

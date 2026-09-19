@@ -99,7 +99,7 @@ export default function ApplicantSection({ profile }: ApplicantSectionProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
               <label htmlFor="spouse_legal_first_name" className="block text-sm font-medium text-gray-700 mb-1">
-                Spouse Legal First Name
+                Spouse legal first name
               </label>
               <input
                 type="text"
@@ -113,7 +113,7 @@ export default function ApplicantSection({ profile }: ApplicantSectionProps) {
             </div>
             <div>
               <label htmlFor="spouse_legal_last_name" className="block text-sm font-medium text-gray-700 mb-1">
-                Spouse Legal Last Name
+                Spouse legal last name
               </label>
               <input
                 type="text"
@@ -130,7 +130,7 @@ export default function ApplicantSection({ profile }: ApplicantSectionProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
               <label htmlFor="spouse_date_of_birth" className="block text-sm font-medium text-gray-700 mb-1">
-                Spouse Date of Birth
+                Spouse date of birth
               </label>
               <input
                 type="date"
@@ -143,7 +143,7 @@ export default function ApplicantSection({ profile }: ApplicantSectionProps) {
             </div>
             <div>
               <label htmlFor="spouse_name" className="block text-sm font-medium text-gray-700 mb-1">
-                Spouse Preferred Name
+                Spouse preferred name
               </label>
               <input
                 type="text"
@@ -160,7 +160,7 @@ export default function ApplicantSection({ profile }: ApplicantSectionProps) {
 
           <div>
             <label htmlFor="spouse_work_status" className="block text-sm font-medium text-gray-700 mb-1">
-              Spouse Work Status
+              Spouse work status
             </label>
             <select
               id="spouse_work_status"
@@ -182,12 +182,12 @@ export default function ApplicantSection({ profile }: ApplicantSectionProps) {
       {/* Children fields */}
       {hasChildren && (
         <fieldset className="space-y-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-          <legend className="font-medium text-gray-900 px-2">Children Information</legend>
+          <legend className="font-medium text-gray-900 px-2">Children information</legend>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
               <label htmlFor="num_children" className="block text-sm font-medium text-gray-700 mb-1">
-                Number of Children
+                Number of children
               </label>
               <input
                 type="number"
@@ -202,7 +202,7 @@ export default function ApplicantSection({ profile }: ApplicantSectionProps) {
             </div>
             <div>
               <label htmlFor="children_ages" className="block text-sm font-medium text-gray-700 mb-1">
-                Children Ages
+                Children ages
               </label>
               <input
                 type="text"
@@ -246,7 +246,7 @@ export default function ApplicantSection({ profile }: ApplicantSectionProps) {
         {hasPets && (
           <div>
             <label htmlFor="pet_details" className="block text-sm font-medium text-gray-700 mb-1">
-              Pet Details
+              Pet details
             </label>
             <textarea
               id="pet_details"

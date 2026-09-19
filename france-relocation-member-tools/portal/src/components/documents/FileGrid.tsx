@@ -349,7 +349,7 @@ function FileRowList({ file, onClick, onDownload, onDelete, onVerify }: FileItem
             <button
               onClick={onVerify}
               className="p-1.5 text-gray-400 hover:text-primary-600 rounded-lg hover:bg-primary-50"
-              title="Verify Document"
+              title="Verify document"
             >
               <Shield className="w-4 h-4" />
             </button>

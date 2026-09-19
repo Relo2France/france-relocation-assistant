@@ -152,7 +152,7 @@ function TaskGroup({
               className="btn btn-ghost btn-sm"
             >
               <Plus className="w-4 h-4" />
-              Add Task
+              Add task
             </button>
           )}
         </div>
@@ -314,8 +314,8 @@ function groupTasks(tasks: Task[], groupBy: 'stage' | 'status', resolveStage?: (
 function formatGroupTitle(key: string, groupBy: 'stage' | 'status'): string {
   if (groupBy === 'status') {
     const labels: Record<string, string> = {
-      todo: 'To Do',
-      in_progress: 'In Progress',
+      todo: 'To do',
+      in_progress: 'In progress',
       waiting: 'Waiting',
       done: 'Done',
     };

@@ -74,7 +74,7 @@ export default function ReportExport({ disabled }: ReportExportProps) {
         ) : (
           <>
             <FileText className="w-4 h-4" aria-hidden="true" />
-            Export Report
+            Export report
           </>
         )}
       </button>
@@ -83,7 +83,7 @@ export default function ReportExport({ disabled }: ReportExportProps) {
       <Modal
         isOpen={showPreview}
         onClose={handleClose}
-        title="Schengen Report Preview"
+        title="Schengen report preview"
         size="xl"
       >
         <div className="space-y-4">
@@ -92,7 +92,7 @@ export default function ReportExport({ disabled }: ReportExportProps) {
             <div className="grid grid-cols-4 gap-4 p-4 bg-gray-50 rounded-lg">
               <div className="text-center">
                 <p className="text-2xl font-bold text-gray-900">{reportData.summary.daysUsed}</p>
-                <p className="text-xs text-gray-500">Days Used</p>
+                <p className="text-xs text-gray-500">Days used</p>
               </div>
               <div className="text-center">
                 <p className="text-2xl font-bold text-gray-900">{reportData.summary.daysRemaining}</p>
@@ -115,7 +115,7 @@ export default function ReportExport({ disabled }: ReportExportProps) {
               <iframe
                 ref={iframeRef}
                 srcDoc={reportData.html}
-                title="Report Preview"
+                title="Report preview"
                 className="w-full h-full"
                 sandbox="allow-same-origin"
               />

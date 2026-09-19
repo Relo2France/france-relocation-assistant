@@ -28,14 +28,14 @@ const statusConfig = {
     color: 'text-gray-400',
     bgColor: 'bg-gray-50',
     borderColor: 'border-gray-200',
-    label: 'Not Started',
+    label: 'Not started',
   },
   in_progress: {
     icon: Circle,
     color: 'text-yellow-500',
     bgColor: 'bg-yellow-50',
     borderColor: 'border-yellow-200',
-    label: 'In Progress',
+    label: 'In progress',
   },
   complete: {
     icon: CheckCircle2,
@@ -152,8 +152,8 @@ export default function ChecklistItem({
                   isUpdating && 'opacity-50 cursor-not-allowed'
                 )}
               >
-                <option value="pending">Not Started</option>
-                <option value="in_progress">In Progress</option>
+                <option value="pending">Not started</option>
+                <option value="in_progress">In progress</option>
                 <option value="complete">Complete</option>
               </select>
 

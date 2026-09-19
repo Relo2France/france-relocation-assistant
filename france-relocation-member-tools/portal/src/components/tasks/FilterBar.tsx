@@ -115,7 +115,7 @@ export default function FilterBar({
           aria-label="Filter by stage"
           className="select w-auto text-sm py-1.5"
         >
-          <option value="">All Stages</option>
+          <option value="">All stages</option>
           {stages.map((stage) => (
             <option key={stage.slug} value={stage.slug}>
               {stage.title}
@@ -130,9 +130,9 @@ export default function FilterBar({
           aria-label="Filter by status"
           className="select w-auto text-sm py-1.5"
         >
-          <option value="">All Statuses</option>
-          <option value="todo">To Do</option>
-          <option value="in_progress">In Progress</option>
+          <option value="">All statuses</option>
+          <option value="todo">To do</option>
+          <option value="in_progress">In progress</option>
           <option value="waiting">Waiting</option>
           <option value="done">Done</option>
         </select>
@@ -144,7 +144,7 @@ export default function FilterBar({
           aria-label="Filter by type"
           className="select w-auto text-sm py-1.5"
         >
-          <option value="">All Types</option>
+          <option value="">All types</option>
           <option value="client">Client</option>
           <option value="team">Team</option>
         </select>

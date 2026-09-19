@@ -43,7 +43,7 @@ interface Column {
 const columns: Column[] = [
   {
     id: 'todo',
-    title: 'To Do',
+    title: 'To do',
     icon: Circle,
     color: 'text-gray-500',
     bgColor: 'bg-gray-50',
@@ -51,7 +51,7 @@ const columns: Column[] = [
   },
   {
     id: 'in_progress',
-    title: 'In Progress',
+    title: 'In progress',
     icon: Clock,
     color: 'text-blue-500',
     bgColor: 'bg-blue-50',

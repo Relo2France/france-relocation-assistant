@@ -145,7 +145,7 @@ export default function MultiFactorIndicators({
     <>
       <StatusIcon className="w-5 h-5 flex-shrink-0" aria-hidden="true" />
       <div className="flex-1 text-left">
-        <h4 className="font-medium">Residency Factors</h4>
+        <h4 className="font-medium">Residency factors</h4>
         <p className="text-sm opacity-75">
           {factorLogic === 'any'
             ? 'Any factor may trigger tax residency'

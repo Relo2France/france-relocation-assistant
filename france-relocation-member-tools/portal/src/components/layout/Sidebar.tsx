@@ -142,14 +142,14 @@ export default function Sidebar() {
         </div>
 
         {/* The journey */}
-        <div className="mt-4 px-2">
+        <div className="mt-3 px-2">
           {!collapsed && (
-            <div className="flex items-baseline justify-between px-2 mb-2">
+            <div className="flex items-baseline justify-between px-2 mb-1.5">
               <span className="eyebrow text-sidebar-text/60">Your move</span>
               {project ? <span className="font-mono text-[0.72rem] text-sidebar-text/70">{timeToGo(project)}</span> : null}
             </div>
           )}
-          <ul className="space-y-1">
+          <ul className="space-y-0.5">
             {JOURNEY.map((stage, i) => {
               const state: 'done' | 'now' | 'ahead' = i < nowIndex ? 'done' : i === nowIndex ? 'now' : 'ahead';
               const isActive = activeView === 'stage' && activeStage === stage.id;
@@ -165,18 +165,19 @@ export default function Sidebar() {
                   <button
                     onClick={() => openStage(stage)}
                     className={clsx(
-                      'w-full flex items-center gap-3 rounded-lg px-2 py-2 text-left transition-colors',
+                      'w-full flex items-center gap-3 rounded-lg px-2 py-1.5 text-left transition-colors',
                       isActive ? 'bg-sidebar-active text-sidebar-textActive' : state === 'now' ? 'bg-white/[0.05] text-sidebar-textActive hover:bg-sidebar-hover' : 'text-sidebar-text hover:bg-sidebar-hover hover:text-sidebar-textActive',
                       collapsed && 'justify-center px-2'
                     )}
-                    title={collapsed ? `${stage.number} · ${stage.name}` : undefined}
+                    title={collapsed ? `${stage.number} · ${stage.name}` : sub}
                     aria-current={state === 'now' ? 'step' : undefined}
                   >
                     <StageRing state={state} />
                     {!collapsed && (
                       <span className="flex flex-col min-w-0">
                         <span className="text-[0.9rem] font-semibold leading-tight truncate">{stage.number} · {stage.name}</span>
-                        <span className="text-[0.76rem] opacity-70 leading-tight truncate">{sub}</span>
+                        {/* Progress under the current stage only, so the rail fits a laptop screen. */}
+                        {state === 'now' || isActive ? <span className="text-[0.76rem] opacity-70 leading-tight truncate">{sub}</span> : null}
                       </span>
                     )}
                   </button>
@@ -187,8 +188,8 @@ export default function Sidebar() {
         </div>
 
         {/* Tools */}
-        <div className="mt-5 px-2 pt-4 border-t border-white/10">
-          {!collapsed && <span className="eyebrow block px-2 mb-2 text-sidebar-text/60">Tools</span>}
+        <div className="mt-3 px-2 pt-3 border-t border-white/10">
+          {!collapsed && <span className="eyebrow block px-2 mb-1.5 text-sidebar-text/60">Tools</span>}
           <ul className="space-y-0.5">
             {TOOLS.filter((t) => t.id === 'deadlines' ? isMenuItemVisible('timeline') || isMenuItemVisible('tasks') : isMenuItemVisible(t.id)).map((tool) => {
               const Icon = tool.icon;
@@ -196,7 +197,7 @@ export default function Sidebar() {
                 <li key={tool.id}>
                   <button
                     onClick={() => setActiveView(tool.id)}
-                    className={clsx('nav-item w-full py-2', isTool(tool.views) && 'nav-item-active', collapsed && 'justify-center px-2')}
+                    className={clsx('nav-item w-full py-1.5', isTool(tool.views) && 'nav-item-active', collapsed && 'justify-center px-2')}
                     title={collapsed ? tool.label : undefined}
                   >
                     <Icon className="w-[18px] h-[18px] flex-shrink-0" aria-hidden="true" />
@@ -214,8 +215,10 @@ export default function Sidebar() {
           </ul>
         </div>
 
-        {/* Account */}
-        <div className="mt-4 px-2 pt-4 border-t border-white/10">
+      </nav>
+
+      {/* Account: pinned below the scrolling part, so it is always in view. */}
+      <div className="flex-shrink-0 px-2 py-2 border-t border-white/10">
           <ul className="space-y-0.5">
             {ACCOUNT.filter((a) => a.id === 'profile' || a.id === 'support' || isMenuItemVisible(a.id)).map((item) => {
               const Icon = item.icon;
@@ -224,7 +227,7 @@ export default function Sidebar() {
                 <li key={item.id}>
                   <button
                     onClick={() => setActiveView(item.id)}
-                    className={clsx('nav-item w-full py-1.5', active && 'nav-item-active', collapsed && 'justify-center px-2')}
+                    className={clsx('nav-item w-full py-1', active && 'nav-item-active', collapsed && 'justify-center px-2')}
                     title={collapsed ? item.label : undefined}
                   >
                     <Icon className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
@@ -236,7 +239,7 @@ export default function Sidebar() {
             <li>
               <a
                 href={signOutUrl()}
-                className={clsx('nav-item w-full py-1.5', collapsed && 'justify-center px-2')}
+                className={clsx('nav-item w-full py-1', collapsed && 'justify-center px-2')}
                 title={collapsed ? 'Sign out' : undefined}
                 aria-label={collapsed ? 'Sign out' : undefined}
               >
@@ -245,8 +248,7 @@ export default function Sidebar() {
               </a>
             </li>
           </ul>
-        </div>
-      </nav>
+      </div>
 
       {household && household.role === 'partner' && !collapsed ? (
 

@@ -63,14 +63,14 @@ export const US_STATES = [
 // Visa type options with descriptions
 export const VISA_TYPES = [
   { value: 'undecided', label: 'Undecided', description: 'Still exploring visa options' },
-  { value: 'visitor', label: 'Visitor Visa', description: 'Long stay without working (VLS-TS visiteur)' },
+  { value: 'visitor', label: 'Visitor visa', description: 'Long stay without working (VLS-TS visiteur)' },
   { value: 'talent_passport', label: 'Talent Passport', description: 'For highly skilled professionals' },
-  { value: 'employee', label: 'Employee Visa', description: 'Working for a French company' },
-  { value: 'entrepreneur', label: 'Entrepreneur Visa', description: 'Starting a business in France' },
-  { value: 'student', label: 'Student Visa', description: 'Studying at a French institution' },
-  { value: 'family', label: 'Family Reunification', description: 'Joining family members in France' },
-  { value: 'spouse_french', label: 'Spouse of French Citizen', description: 'Married to a French national' },
-  { value: 'retiree', label: 'Visitor Visa, retiring', description: 'France has no separate retiree visa: retirees use the visitor visa' },
+  { value: 'employee', label: 'Employee visa', description: 'Working for a French company' },
+  { value: 'entrepreneur', label: 'Entrepreneur visa', description: 'Starting a business in France' },
+  { value: 'student', label: 'Student visa', description: 'Studying at a French institution' },
+  { value: 'family', label: 'Family reunification', description: 'Joining family members in France' },
+  { value: 'spouse_french', label: 'Spouse of French citizen', description: 'Married to a French national' },
+  { value: 'retiree', label: 'Visitor visa, retiring', description: 'France has no separate retiree visa: retirees use the visitor visa' },
   { value: 'other', label: 'Another long-stay route', description: 'Intern, temporary worker, ICT, au pair or another category' },
 ] as const;
 
@@ -106,9 +106,9 @@ export const FINANCIAL_RANGES = [
 // Work status options
 export const WORK_STATUS_OPTIONS = [
   { value: 'employed', label: 'Employed' },
-  { value: 'self_employed', label: 'Self-Employed' },
+  { value: 'self_employed', label: 'Self-employed' },
   { value: 'retired', label: 'Retired' },
-  { value: 'not_working', label: 'Not Working' },
+  { value: 'not_working', label: 'Not working' },
 ] as const;
 
 // Applicant type options

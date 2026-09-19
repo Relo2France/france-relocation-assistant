@@ -326,7 +326,7 @@ class FRA_API_Proxy {
             $is_member = $membership->user_has_access();
         }
 
-        $base_prompt = "You are an expert assistant helping Americans relocate to France on the Relo2France website. You combine official information with practical, real-world insights.
+        $base_prompt = "You are an expert assistant helping Americans relocate to France on the Relo2France website. Write dates American style with the month named (June 1, 2026). You combine official information with practical, real-world insights.
 
 **Your response structure for France relocation questions:**
 1. **Official Info First**: State what the law/rules say with current numbers, fees, and requirements

@@ -102,7 +102,7 @@ export default function CSVImportExport({ className }: CSVImportExportProps) {
           <div>
             <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
               <Download className="w-5 h-5 text-primary-600" aria-hidden="true" />
-              Export Trips
+              Export trips
             </h3>
             <p className="text-sm text-gray-500 mt-1">
               Download all your trips as a CSV file for backup or editing.
@@ -128,7 +128,7 @@ export default function CSVImportExport({ className }: CSVImportExportProps) {
       <div className="card p-6">
         <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-4">
           <Upload className="w-5 h-5 text-primary-600" aria-hidden="true" />
-          Import Trips
+          Import trips
         </h3>
 
         {/* Import Result */}
@@ -180,7 +180,7 @@ export default function CSVImportExport({ className }: CSVImportExportProps) {
                 className="p-6 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary-400 hover:bg-primary-50 transition-colors text-center"
               >
                 <FileSpreadsheet className="w-8 h-8 text-gray-400 mx-auto mb-2" aria-hidden="true" />
-                <p className="font-medium text-gray-700">Upload CSV File</p>
+                <p className="font-medium text-gray-700">Upload CSV file</p>
                 <p className="text-sm text-gray-500">Drag & drop or click to browse</p>
               </button>
               <button
@@ -189,7 +189,7 @@ export default function CSVImportExport({ className }: CSVImportExportProps) {
                 className="p-6 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary-400 hover:bg-primary-50 transition-colors text-center"
               >
                 <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" aria-hidden="true" />
-                <p className="font-medium text-gray-700">Paste CSV Data</p>
+                <p className="font-medium text-gray-700">Paste CSV data</p>
                 <p className="text-sm text-gray-500">Copy & paste your CSV content</p>
               </button>
             </div>
@@ -208,7 +208,7 @@ export default function CSVImportExport({ className }: CSVImportExportProps) {
           <div className="space-y-4">
             <div>
               <label htmlFor="csv-input" className="block text-sm font-medium text-gray-700 mb-2">
-                CSV Data
+                CSV data
               </label>
               <textarea
                 id="csv-input"

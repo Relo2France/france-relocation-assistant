@@ -29,8 +29,8 @@ interface TaskDetailProps {
 }
 
 const statusOptions: { value: TaskStatus; label: string; icon: typeof Circle; color: string }[] = [
-  { value: 'todo', label: 'To Do', icon: Circle, color: 'text-gray-500' },
-  { value: 'in_progress', label: 'In Progress', icon: Clock, color: 'text-blue-500' },
+  { value: 'todo', label: 'To do', icon: Circle, color: 'text-gray-500' },
+  { value: 'in_progress', label: 'In progress', icon: Clock, color: 'text-blue-500' },
   { value: 'waiting', label: 'Waiting', icon: Clock, color: 'text-yellow-500' },
   { value: 'done', label: 'Done', icon: CheckCircle, color: 'text-green-500' },
 ];
@@ -258,7 +258,7 @@ export default function TaskDetail({ task, isOpen, onClose }: TaskDetailProps) {
         </PropertyRow>
 
         {/* Due date */}
-        <PropertyRow icon={Calendar} label="Due Date">
+        <PropertyRow icon={Calendar} label="Due date">
           <input
             type="date"
             value={task.due_date || ''}
@@ -317,7 +317,7 @@ export default function TaskDetail({ task, isOpen, onClose }: TaskDetailProps) {
           <FileText className="w-5 h-5 text-gray-400" aria-hidden="true" />
           <div>
             <p className="text-sm font-medium text-gray-900">Documents</p>
-            <p className="text-xs text-gray-500">Files for this step live in Documents</p>
+            <p className="text-xs text-gray-500">Files for this step live in documents</p>
           </div>
         </button>
       </div>

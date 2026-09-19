@@ -385,7 +385,7 @@ function ChatSidebar({
             )}
           >
             <MessageSquare className="w-5 h-5 flex-shrink-0" />
-            <span>All Topics</span>
+            <span>All topics</span>
           </button>
 
           {isLoading ? (
@@ -426,8 +426,8 @@ function ChatSidebar({
             <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
               <Lightbulb className="w-4 h-4 text-yellow-500" />
               {selectedCategory
-                ? `${categories.find((c) => c.id === selectedCategory)?.title || 'Category'} Topics`
-                : 'Popular Topics'}
+                ? `${categories.find((c) => c.id === selectedCategory)?.title || 'Category'} topics`
+                : 'Popular topics'}
             </h3>
             <div className="space-y-1">
               {popularTopics.map((topic, index) => (
@@ -802,7 +802,7 @@ function ChatInput({
               type="checkbox"
               checked={includePractice}
               onChange={onTogglePractice}
-              className="w-4 h-4 text-primary-600 rounded border-gray-300 focus:ring-primary-500"
+              className="w-4 h-4 rounded border-gray-300 accent-primary-600 focus:ring-primary-500"
             />
             <span>Include real-world insights</span>
           </label>
@@ -859,7 +859,8 @@ function ChatInput({
         </div>
 
         {/* Hint */}
-        <p className="text-xs text-gray-500 mt-2">
+        {/* Keyboard hint: only where there is a keyboard. */}
+        <p className="hidden md:block text-xs text-gray-500 mt-2">
           Press <kbd className="px-1.5 py-0.5 bg-gray-100 border border-gray-300 rounded text-xs">Enter</kbd> to send,{' '}
           <kbd className="px-1.5 py-0.5 bg-gray-100 border border-gray-300 rounded text-xs">Shift+Enter</kbd> for new line
         </p>

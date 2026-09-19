@@ -30,8 +30,8 @@ const TIMELINE_OPTIONS = [
 
 const MOVE_DATE_CERTAINTY_OPTIONS = [
   { value: 'fixed', label: 'Fixed - I have tickets/lease starting this date' },
-  { value: 'anticipated', label: 'Anticipated - Planning for this date but may adjust' },
-  { value: 'flexible', label: 'Flexible - No firm date yet' },
+  { value: 'anticipated', label: 'Anticipated - planning for this date but may adjust' },
+  { value: 'flexible', label: 'Flexible - no firm date yet' },
 ];
 
 const HOUSING_PLAN_OPTIONS = [
@@ -73,7 +73,7 @@ export default function TimelineSection({ profile }: TimelineSectionProps) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <label htmlFor="timeline" className="block text-sm font-medium text-gray-700 mb-1">
-            Move Timeline
+            Move timeline
           </label>
           <select
             id="timeline"
@@ -95,7 +95,7 @@ export default function TimelineSection({ profile }: TimelineSectionProps) {
 
         <div>
           <label htmlFor="target_move_date" className="block text-sm font-medium text-gray-700 mb-1">
-            Target Move Date
+            Target move date
           </label>
           <input
             type="date"
@@ -133,7 +133,7 @@ export default function TimelineSection({ profile }: TimelineSectionProps) {
 
         <div>
           <label htmlFor="housing_plan" className="block text-sm font-medium text-gray-700 mb-1">
-            Housing Plans
+            Housing plans
           </label>
           <select
             id="housing_plan"

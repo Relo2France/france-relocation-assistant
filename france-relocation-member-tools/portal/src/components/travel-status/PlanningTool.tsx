@@ -49,7 +49,7 @@ export default function PlanningTool() {
           <Calculator className="w-5 h-5 text-primary-600" aria-hidden="true" />
         </div>
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">Trip Planning Tool</h3>
+          <h3 className="text-lg font-semibold text-gray-900">Trip planning tool</h3>
           <p className="text-sm text-gray-500">
             Check if a planned trip would violate the 90/180 rule
           </p>
@@ -60,7 +60,7 @@ export default function PlanningTool() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label htmlFor="planning-start-date" className="block text-sm font-medium text-gray-700 mb-1">
-            Start Date
+            Start date
           </label>
           <div className="relative">
             <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" aria-hidden="true" />
@@ -75,7 +75,7 @@ export default function PlanningTool() {
         </div>
         <div>
           <label htmlFor="planning-end-date" className="block text-sm font-medium text-gray-700 mb-1">
-            End Date
+            End date
           </label>
           <div className="relative">
             <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" aria-hidden="true" />
@@ -111,7 +111,7 @@ export default function PlanningTool() {
           ) : (
             <>
               <Calculator className="w-4 h-4" aria-hidden="true" />
-              Check Trip
+              Check trip
             </>
           )}
         </button>
@@ -166,13 +166,13 @@ export default function PlanningTool() {
               {/* Stats grid */}
               <div className="grid grid-cols-2 gap-4 mt-4">
                 <div className="bg-white/60 rounded-lg p-3">
-                  <p className="text-xs text-gray-500">Trip Length</p>
+                  <p className="text-xs text-gray-500">Trip length</p>
                   <p className="text-lg font-semibold text-gray-900">
                     {result.proposedLength} day{result.proposedLength !== 1 ? 's' : ''}
                   </p>
                 </div>
                 <div className="bg-white/60 rounded-lg p-3">
-                  <p className="text-xs text-gray-500">Max Days Used</p>
+                  <p className="text-xs text-gray-500">Max days used</p>
                   <p className="text-lg font-semibold text-gray-900">{result.maxDaysUsed}</p>
                 </div>
               </div>

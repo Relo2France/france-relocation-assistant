@@ -190,7 +190,7 @@ export default function DepartmentView({
           className="btn btn-primary flex items-center gap-2"
         >
           <FileText className="w-4 h-4" />
-          Generate Report
+          Generate report
         </button>
       </div>
 
@@ -243,7 +243,7 @@ export default function DepartmentView({
       {/* Major Cities Quick Access */}
       {department.major_cities.length > 0 && (
         <div className="mb-6">
-          <h3 className="text-sm font-medium text-gray-700 mb-2">Major Cities</h3>
+          <h3 className="text-sm font-medium text-gray-700 mb-2">Major cities</h3>
           <div className="flex flex-wrap gap-2">
             {department.major_cities.map((city) => {
               const commune = communes.find(
@@ -357,7 +357,7 @@ export default function DepartmentView({
       {/* Info Box */}
       <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-4">
         <h4 className="font-medium text-blue-900 mb-2">
-          About Department Reports
+          About department reports
         </h4>
         <p className="text-blue-700 text-sm">
           Generate a detailed AI-researched report about {department.name} including

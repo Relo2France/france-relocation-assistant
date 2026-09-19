@@ -268,7 +268,7 @@ export default function CalendarSync({ compact = false }: CalendarSyncProps) {
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <Calendar className="w-5 h-5 text-primary-600" aria-hidden="true" />
-            <h3 className="font-medium text-gray-900">Calendar Sync</h3>
+            <h3 className="font-medium text-gray-900">Calendar sync</h3>
           </div>
           {hasPendingEvents && (
             <span className="px-2 py-1 bg-primary-100 text-primary-700 text-xs font-medium rounded-full">
@@ -330,7 +330,7 @@ export default function CalendarSync({ compact = false }: CalendarSyncProps) {
       {/* Connected Calendars Section */}
       <div className="card">
         <div className="card-header">
-          <h3 className="text-lg font-semibold text-gray-900">Connected Calendars</h3>
+          <h3 className="text-lg font-semibold text-gray-900">Connected calendars</h3>
         </div>
         <div className="p-6">
           {hasConnections ? (
@@ -358,7 +358,7 @@ export default function CalendarSync({ compact = false }: CalendarSyncProps) {
 
           {/* Provider Connection Buttons */}
           <div className="mt-6 pt-6 border-t border-gray-200">
-            <h4 className="text-sm font-medium text-gray-700 mb-3">Add Calendar</h4>
+            <h4 className="text-sm font-medium text-gray-700 mb-3">Add calendar</h4>
             <div className="flex flex-wrap gap-3">
               {providers.map(provider => {
                 const isConnected = connections.some(c => c.provider === provider.id);
@@ -396,7 +396,7 @@ export default function CalendarSync({ compact = false }: CalendarSyncProps) {
 
           {/* iCal Upload */}
           <div className="mt-6 pt-6 border-t border-gray-200">
-            <h4 className="text-sm font-medium text-gray-700 mb-3">Import iCal File</h4>
+            <h4 className="text-sm font-medium text-gray-700 mb-3">Import iCal file</h4>
             <div className="flex items-center gap-4">
               <input
                 ref={fileInputRef}
@@ -435,7 +435,7 @@ export default function CalendarSync({ compact = false }: CalendarSyncProps) {
         <div className="card">
           <div className="card-header flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">Detected Travel Events</h3>
+              <h3 className="text-lg font-semibold text-gray-900">Detected travel events</h3>
               <p className="text-sm text-gray-500 mt-1">
                 Review and import these events as Schengen trips
               </p>

@@ -214,19 +214,19 @@ export default function AnalyticsDashboard() {
       {/* Summary Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard
-          title="Total Trips"
+          title="Total trips"
           value={summary.totalTrips}
           subtitle={`${summary.uniqueCountries} countries visited`}
           icon={<Calendar className="w-5 h-5" />}
         />
         <StatCard
-          title="Total Days"
+          title="Total days"
           value={summary.totalDays}
           subtitle={`Avg ${summary.avgTripLength} days/trip`}
           icon={<Clock className="w-5 h-5" />}
         />
         <StatCard
-          title="Longest Trip"
+          title="Longest trip"
           value={`${summary.longestTrip} days`}
           subtitle={summary.shortestTrip > 0 ? `Shortest: ${summary.shortestTrip} days` : undefined}
           icon={<TrendingUp className="w-5 h-5" />}
@@ -243,7 +243,7 @@ export default function AnalyticsDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Monthly Trends */}
         <ChartCard
-          title="Monthly Travel Trends"
+          title="Monthly travel trends"
           subtitle="Days spent in Schengen area per month"
         >
           <div className="h-64">
@@ -283,7 +283,7 @@ export default function AnalyticsDashboard() {
 
         {/* Country Breakdown */}
         <ChartCard
-          title="Country Breakdown"
+          title="Country breakdown"
           subtitle="Days spent per country"
         >
           <div className="h-64">
@@ -387,7 +387,7 @@ export default function AnalyticsDashboard() {
                   <Line
                     type="monotone"
                     dataKey="daysUsed"
-                    name="Days Used"
+                    name="Days used"
                     stroke={COLORS.primary}
                     strokeWidth={2}
                     dot={false}
@@ -413,7 +413,7 @@ export default function AnalyticsDashboard() {
 
         {/* Yearly Totals */}
         {yearlyTotals.length > 0 && (
-          <ChartCard title="Yearly Summary" subtitle="Trips and days per year">
+          <ChartCard title="Yearly summary" subtitle="Trips and days per year">
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={yearlyTotals}>
@@ -451,7 +451,7 @@ export default function AnalyticsDashboard() {
       {/* Charts Row 3 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Trip Duration Distribution */}
-        <ChartCard title="Trip Duration Distribution" subtitle="How long are your trips?">
+        <ChartCard title="Trip duration distribution" subtitle="How long are your trips?">
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={tripDurations} layout="vertical">
@@ -473,7 +473,7 @@ export default function AnalyticsDashboard() {
         </ChartCard>
 
         {/* Category Breakdown */}
-        <ChartCard title="Travel Purpose" subtitle="Personal vs Business travel">
+        <ChartCard title="Travel purpose" subtitle="Personal vs business travel">
           <div className="h-64 flex items-center justify-center">
             {categoryBreakdown.length > 0 ? (
               <div className="flex gap-8">
@@ -506,7 +506,7 @@ export default function AnalyticsDashboard() {
 
       {/* Top Countries Table */}
       {countryBreakdown.length > 0 && (
-        <ChartCard title="Top Countries" subtitle="Countries you've visited most">
+        <ChartCard title="Top countries" subtitle="Countries you've visited most">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>

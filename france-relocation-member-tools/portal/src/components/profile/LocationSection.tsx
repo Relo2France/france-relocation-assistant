@@ -59,12 +59,12 @@ export default function LocationSection({ profile }: LocationSectionProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-8 pt-6">
       <fieldset className="space-y-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-        <legend className="font-medium text-gray-900 px-2">Current Location</legend>
+        <legend className="font-medium text-gray-900 px-2">Current location</legend>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div>
             <label htmlFor="current_country" className="block text-sm font-medium text-gray-700 mb-1">
-              Current Country
+              Current country
             </label>
             <input
               type="text"
@@ -80,7 +80,7 @@ export default function LocationSection({ profile }: LocationSectionProps) {
 
           <div>
             <label htmlFor="current_state" className="block text-sm font-medium text-gray-700 mb-1">
-              Current State
+              Current state
             </label>
             <select
               id="current_state"
@@ -100,7 +100,7 @@ export default function LocationSection({ profile }: LocationSectionProps) {
 
           <div>
             <label htmlFor="current_city" className="block text-sm font-medium text-gray-700 mb-1">
-              Current City
+              Current city
             </label>
             <input
               type="text"
@@ -161,7 +161,7 @@ export default function LocationSection({ profile }: LocationSectionProps) {
       </fieldset>
 
       <fieldset className="space-y-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-        <legend className="font-medium text-gray-900 px-2">Birth & Marriage Information</legend>
+        <legend className="font-medium text-gray-900 px-2">Birth & marriage information</legend>
         <p className="text-sm text-gray-600 -mt-2">Required for apostille processing</p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -235,7 +235,7 @@ export default function LocationSection({ profile }: LocationSectionProps) {
 
           <div>
             <label htmlFor="marriage_country" className="block text-sm font-medium text-gray-700 mb-1">
-              Marriage Country
+              Marriage country
             </label>
             <input
               type="text"
@@ -253,7 +253,7 @@ export default function LocationSection({ profile }: LocationSectionProps) {
       <div className="space-y-4">
         <div>
           <label htmlFor="target_location" className="block text-sm font-medium text-gray-700 mb-1">
-            Target Location in France
+            Target location in France
           </label>
           <input
             type="text"

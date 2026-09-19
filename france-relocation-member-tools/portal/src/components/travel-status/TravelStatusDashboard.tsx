@@ -206,7 +206,7 @@ export default function TravelStatusDashboard() {
             )}
           >
             <Plus className="w-5 h-5" aria-hidden="true" />
-            Add Trip
+            Add trip
           </button>
         </div>
       </div>
@@ -269,7 +269,7 @@ export default function TravelStatusDashboard() {
                 <Clock className="w-5 h-5 text-gray-600" aria-hidden="true" />
               </div>
               <div>
-                <p className="text-sm text-gray-500">Days Remaining</p>
+                <p className="text-sm text-gray-500">Days remaining</p>
                 <p className="text-2xl font-bold text-gray-900">{summary.daysRemaining}</p>
               </div>
             </div>
@@ -301,7 +301,7 @@ export default function TravelStatusDashboard() {
                   <Calendar className="w-5 h-5 text-blue-600" aria-hidden="true" />
                 </div>
                 <div>
-                  <p className="text-sm text-blue-700 font-medium">Next Day Expires</p>
+                  <p className="text-sm text-blue-700 font-medium">Next day expires</p>
                   <p className="text-lg font-bold text-blue-900">
                     {formatDate(summary.nextExpiration)}
                   </p>
@@ -407,7 +407,7 @@ export default function TravelStatusDashboard() {
           >
             <span className="flex items-center gap-2">
               <Calendar className="w-4 h-4" aria-hidden="true" />
-              Trip List
+              Trip list
             </span>
           </button>
           {FULL_TRACKER && (
@@ -471,7 +471,7 @@ export default function TravelStatusDashboard() {
           >
             <span className="flex items-center gap-2">
               <CalendarDays className="w-4 h-4" aria-hidden="true" />
-              Calendar View
+              Calendar view
               {!isPremium && <Lock className="w-3 h-3 text-gray-400" aria-hidden="true" />}
             </span>
           </button>
@@ -487,7 +487,7 @@ export default function TravelStatusDashboard() {
             >
               <span className="flex items-center gap-2">
                 <CalendarPlus className="w-4 h-4" aria-hidden="true" />
-                Calendar Sync
+                Calendar sync
               </span>
             </button>
           )}
@@ -502,7 +502,7 @@ export default function TravelStatusDashboard() {
           >
             <span className="flex items-center gap-2">
               <Calculator className="w-4 h-4" aria-hidden="true" />
-              Planning Tool
+              Planning tool
               {!isPremium && <Lock className="w-3 h-3 text-gray-400" aria-hidden="true" />}
             </span>
           </button>
@@ -543,7 +543,7 @@ export default function TravelStatusDashboard() {
       {activeTab === 'trips' && (
         <div className="card">
           <div className="card-header flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">Your Trips</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Your trips</h2>
             <span className="text-sm text-gray-500">{trips.length} trip{trips.length !== 1 ? 's' : ''}</span>
           </div>
           <TripList
@@ -562,7 +562,7 @@ export default function TravelStatusDashboard() {
           </ErrorBoundary>
         ) : (
           <PremiumFeaturePrompt
-            feature="Family Tracking"
+            feature="Family tracking"
             description="Track Schengen days for each family member separately. Monitor individual compliance and assign travelers to trips."
             upgradeUrl={featureStatus?.upgradeUrl}
           />
@@ -576,7 +576,7 @@ export default function TravelStatusDashboard() {
           </ErrorBoundary>
         ) : (
           <PremiumFeaturePrompt
-            feature="Analytics Dashboard"
+            feature="Analytics dashboard"
             description="View detailed travel statistics, patterns by country, and historical compliance data to understand your travel habits."
             upgradeUrl={featureStatus?.upgradeUrl}
           />
@@ -598,7 +598,7 @@ export default function TravelStatusDashboard() {
           />
         ) : (
           <PremiumFeaturePrompt
-            feature="Calendar View"
+            feature="Calendar view"
             description="Visualize your trips on an interactive calendar to better understand your travel patterns and plan future trips."
             upgradeUrl={featureStatus?.upgradeUrl}
           />
@@ -624,7 +624,7 @@ export default function TravelStatusDashboard() {
           </div>
         ) : (
           <PremiumFeaturePrompt
-            feature="Planning Tool"
+            feature="Planning tool"
             description="Use the 'What If' calculator to check if a planned trip would violate the 90/180 rule before you book."
             upgradeUrl={featureStatus?.upgradeUrl}
           />
@@ -643,7 +643,7 @@ export default function TravelStatusDashboard() {
               <Settings className="w-5 h-5 text-primary-600" aria-hidden="true" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">Tracker Settings</h3>
+              <h3 className="text-lg font-semibold text-gray-900">Tracker settings</h3>
               <p className="text-sm text-gray-500">
                 Configure alerts and notification preferences
               </p>
@@ -658,7 +658,7 @@ export default function TravelStatusDashboard() {
                   <Bell className="w-5 h-5 text-blue-600" aria-hidden="true" />
                 </div>
                 <div>
-                  <h4 className="font-medium text-gray-900">Email Alerts</h4>
+                  <h4 className="font-medium text-gray-900">Email alerts</h4>
                   <p className="text-sm text-gray-500">
                     Receive email notifications when approaching your 90-day limit
                   </p>
@@ -728,7 +728,7 @@ export default function TravelStatusDashboard() {
                   ) : (
                     <>
                       <Send className="w-4 h-4" aria-hidden="true" />
-                      Send Test Alert
+                      Send test alert
                     </>
                   )}
                 </button>
@@ -757,15 +757,15 @@ export default function TravelStatusDashboard() {
 
           {/* Threshold Settings (display only) */}
           <div className="border-t border-gray-200 pt-6">
-            <h4 className="font-medium text-gray-900 mb-4">Warning Thresholds</h4>
+            <h4 className="font-medium text-gray-900 mb-4">Warning thresholds</h4>
             <div className="grid grid-cols-2 gap-4">
               <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <p className="text-sm font-medium text-yellow-800">Warning Level</p>
+                <p className="text-sm font-medium text-yellow-800">Warning level</p>
                 <p className="text-lg font-bold text-yellow-900">{settings.yellowThreshold} days</p>
                 <p className="text-xs text-yellow-700 mt-1">Status turns yellow</p>
               </div>
               <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
-                <p className="text-sm font-medium text-orange-800">Danger Level</p>
+                <p className="text-sm font-medium text-orange-800">Danger level</p>
                 <p className="text-lg font-bold text-orange-900">{settings.redThreshold} days</p>
                 <p className="text-xs text-orange-700 mt-1">Status turns red</p>
               </div>
@@ -786,7 +786,7 @@ export default function TravelStatusDashboard() {
       <Modal
         isOpen={showTripForm}
         onClose={handleCloseForm}
-        title="Add Trip"
+        title="Add trip"
         size="md"
       >
         <TripForm
@@ -800,7 +800,7 @@ export default function TravelStatusDashboard() {
       <Modal
         isOpen={!!editingTrip}
         onClose={handleCloseForm}
-        title="Edit Trip"
+        title="Edit trip"
         size="md"
       >
         {editingTrip && (

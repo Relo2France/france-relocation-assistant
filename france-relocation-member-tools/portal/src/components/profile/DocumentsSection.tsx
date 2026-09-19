@@ -75,7 +75,7 @@ export default function DocumentsSection({ profile }: DocumentsSectionProps) {
         <div className="flex gap-2">
           <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" aria-hidden="true" />
           <div className="text-sm text-blue-800">
-            <p className="font-medium">About Apostilles</p>
+            <p className="font-medium">About apostilles</p>
             <p className="mt-1">
               Most US documents need an apostille (authentication stamp) for use in France.
               The process varies by state and document type. Check our guides for state-specific instructions.
@@ -85,7 +85,7 @@ export default function DocumentsSection({ profile }: DocumentsSectionProps) {
       </div>
 
       <fieldset className="space-y-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-        <legend className="font-medium text-gray-900 px-2">Birth Certificate</legend>
+        <legend className="font-medium text-gray-900 px-2">Birth certificate</legend>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
@@ -138,7 +138,7 @@ export default function DocumentsSection({ profile }: DocumentsSectionProps) {
 
       {hasSpouse && (
         <fieldset className="space-y-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-          <legend className="font-medium text-gray-900 px-2">Marriage Certificate</legend>
+          <legend className="font-medium text-gray-900 px-2">Marriage certificate</legend>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>

@@ -92,7 +92,7 @@ export default function LocationTracker({ compact = false }: LocationTrackerProp
               />
             </div>
             <div>
-              <p className="font-medium text-gray-900 text-sm">Location Check-in</p>
+              <p className="font-medium text-gray-900 text-sm">Location check-in</p>
               {isCheckedInToday && lastLocation ? (
                 <p className="text-xs text-green-600">
                   Checked in: {lastLocation.countryName ?? 'Unknown'}
@@ -129,7 +129,7 @@ export default function LocationTracker({ compact = false }: LocationTrackerProp
             ) : (
               <>
                 <Navigation className="w-4 h-4" aria-hidden="true" />
-                Check In
+                Check in
               </>
             )}
           </button>
@@ -160,7 +160,7 @@ export default function LocationTracker({ compact = false }: LocationTrackerProp
               />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">Location Check-in</h3>
+              <h3 className="text-lg font-semibold text-gray-900">Location check-in</h3>
               <p className="text-sm text-gray-500">
                 Record your current location for Schengen tracking
               </p>
@@ -276,7 +276,7 @@ export default function LocationTracker({ compact = false }: LocationTrackerProp
           ) : (
             <>
               <Navigation className="w-5 h-5" aria-hidden="true" />
-              {isCheckedInToday ? 'Update Location' : 'Check In Now'}
+              {isCheckedInToday ? 'Update location' : 'Check in now'}
             </>
           )}
         </button>
@@ -312,7 +312,7 @@ export default function LocationTracker({ compact = false }: LocationTrackerProp
       <Modal
         isOpen={showHistory}
         onClose={() => setShowHistory(false)}
-        title="Location History"
+        title="Location history"
         size="lg"
       >
         <LocationHistoryView onClearRequest={() => setShowClearConfirm(true)} />
@@ -322,7 +322,7 @@ export default function LocationTracker({ compact = false }: LocationTrackerProp
       <Modal
         isOpen={showClearConfirm}
         onClose={() => setShowClearConfirm(false)}
-        title="Clear Location History"
+        title="Clear location history"
         size="sm"
       >
         <ClearHistoryConfirm
@@ -385,7 +385,7 @@ function LocationHistoryView({ onClearRequest }: { onClearRequest: () => void })
               className="inline-flex items-center gap-1 px-2 py-1 text-sm text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition-colors"
             >
               <Trash2 className="w-4 h-4" aria-hidden="true" />
-              Clear All
+              Clear all
             </button>
           )}
         </div>
@@ -529,7 +529,7 @@ function ClearHistoryConfirm({
           ) : (
             <>
               <Trash2 className="w-4 h-4" aria-hidden="true" />
-              Clear All History
+              Clear all history
             </>
           )}
         </button>

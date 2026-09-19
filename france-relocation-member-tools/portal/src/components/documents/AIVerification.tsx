@@ -27,17 +27,17 @@ interface AIVerificationProps {
 const verificationTypes: { value: VerificationType; label: string; description: string }[] = [
   {
     value: 'health-insurance',
-    label: 'Health Insurance',
+    label: 'Health insurance',
     description: 'Verify coverage meets French visa requirements',
   },
   {
     value: 'financial',
-    label: 'Financial Documents',
+    label: 'Financial documents',
     description: 'Verify bank statements and proof of funds (Coming Soon)',
   },
   {
     value: 'accommodation',
-    label: 'Accommodation Proof',
+    label: 'Accommodation proof',
     description: 'Verify housing documents (Coming Soon)',
   },
 ];
@@ -64,7 +64,7 @@ const statusConfig: Record<VerificationStatus, {
     color: 'text-yellow-600',
     bgColor: 'bg-yellow-50 border-yellow-200',
     icon: ShieldAlert,
-    label: 'Needs Review',
+    label: 'Needs review',
   },
   error: {
     color: 'text-gray-600',
@@ -138,7 +138,7 @@ export default function AIVerification({
       {/* Verification Type Selector */}
       <div role="group" aria-labelledby="verification-type-label">
         <span id="verification-type-label" className="block text-sm font-medium text-gray-700 mb-2">
-          Verification Type
+          Verification type
         </span>
         <div className="grid grid-cols-1 gap-3">
           {verificationTypes.map((type) => (
@@ -181,7 +181,7 @@ export default function AIVerification({
       {!selectedFile && (
         <div>
           <label htmlFor="verification-file-input" className="block text-sm font-medium text-gray-700 mb-2">
-            Upload Document
+            Upload document
           </label>
           <div
             onDragEnter={handleDrag}
@@ -257,7 +257,7 @@ export default function AIVerification({
           ) : (
             <>
               <Shield className="w-4 h-4" />
-              Verify Document
+              Verify document
             </>
           )}
         </button>
@@ -309,19 +309,19 @@ export default function AIVerification({
                   <div className="space-y-3 pl-6 border-l-2 border-gray-200">
                     {verificationResult.details.coverage_type && (
                       <DetailItem
-                        label="Coverage Type"
+                        label="Coverage type"
                         value={verificationResult.details.coverage_type}
                       />
                     )}
                     {verificationResult.details.coverage_territory && (
                       <DetailItem
-                        label="Coverage Territory"
+                        label="Coverage territory"
                         value={verificationResult.details.coverage_territory}
                       />
                     )}
                     {verificationResult.details.coverage_duration && (
                       <DetailItem
-                        label="Coverage Duration"
+                        label="Coverage duration"
                         value={verificationResult.details.coverage_duration}
                       />
                     )}
@@ -333,13 +333,13 @@ export default function AIVerification({
                     )}
                     {verificationResult.details.start_date && (
                       <DetailItem
-                        label="Start Date"
+                        label="Start date"
                         value={verificationResult.details.start_date}
                       />
                     )}
                     {verificationResult.details.end_date && (
                       <DetailItem
-                        label="End Date"
+                        label="End date"
                         value={verificationResult.details.end_date}
                       />
                     )}
@@ -354,7 +354,7 @@ export default function AIVerification({
                 <div className="flex items-start gap-2">
                   <AlertCircle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
                   <div className="flex-1">
-                    <h4 className="text-sm font-medium text-red-900 mb-2">Issues Found</h4>
+                    <h4 className="text-sm font-medium text-red-900 mb-2">Issues found</h4>
                     <ul className="text-sm text-red-700 space-y-1">
                       {verificationResult.details.issues.map((issue, index) => (
                         <li key={index} className="flex items-start gap-1">
@@ -395,7 +395,7 @@ export default function AIVerification({
               onClick={handleReset}
               className="btn btn-secondary flex-1"
             >
-              Verify Another Document
+              Verify another document
             </button>
             {onClose && (
               <button
@@ -416,7 +416,7 @@ export default function AIVerification({
           className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-gray-900 mb-3"
         >
           <Clock className="w-4 h-4" />
-          Verification History
+          Verification history
           {showHistory ? (
             <ChevronUp className="w-4 h-4" />
           ) : (
@@ -499,7 +499,7 @@ export function AIVerificationModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="AI Document Verification"
+      title="AI document verification"
       size="lg"
     >
       <AIVerification

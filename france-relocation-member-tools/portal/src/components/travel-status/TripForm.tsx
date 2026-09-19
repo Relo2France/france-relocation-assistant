@@ -203,7 +203,7 @@ export default function TripForm({
             className="block text-sm font-medium text-gray-700 mb-1"
           >
             <Calendar className="w-4 h-4 inline mr-1" aria-hidden="true" />
-            Start Date
+            Start date
           </label>
           <input
             type="date"
@@ -220,7 +220,7 @@ export default function TripForm({
             className="block text-sm font-medium text-gray-700 mb-1"
           >
             <Calendar className="w-4 h-4 inline mr-1" aria-hidden="true" />
-            End Date
+            End date
           </label>
           <input
             type="date"
@@ -348,7 +348,7 @@ export default function TripForm({
           type="submit"
           className="flex-1 px-4 py-2 text-white bg-primary-600 hover:bg-primary-700 rounded-lg font-medium transition-colors"
         >
-          {isEditing ? 'Save Changes' : 'Add Trip'}
+          {isEditing ? 'Save changes' : 'Add trip'}
         </button>
       </div>
     </form>

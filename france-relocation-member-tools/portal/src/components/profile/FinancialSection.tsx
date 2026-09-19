@@ -68,7 +68,7 @@ export default function FinancialSection({ profile }: FinancialSectionProps) {
         <div className="flex gap-2">
           <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" aria-hidden="true" />
           <div className="text-sm text-blue-800">
-            <p className="font-medium">Financial Information</p>
+            <p className="font-medium">Financial information</p>
             <p className="mt-1">
               This helps us provide accurate guidance on visa requirements and financial proof needed.
               Your information is confidential.
@@ -78,11 +78,11 @@ export default function FinancialSection({ profile }: FinancialSectionProps) {
       </div>
 
       <fieldset className="space-y-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-        <legend className="font-medium text-gray-900 px-2">Financial Resources</legend>
+        <legend className="font-medium text-gray-900 px-2">Financial resources</legend>
 
         <div>
           <label htmlFor="financial_resources" className="block text-sm font-medium text-gray-700 mb-1">
-            Available Financial Resources
+            Available financial resources
           </label>
           <select
             id="financial_resources"
@@ -105,7 +105,7 @@ export default function FinancialSection({ profile }: FinancialSectionProps) {
 
         <div>
           <label htmlFor="income_sources" className="block text-sm font-medium text-gray-700 mb-1">
-            Income Sources
+            Income sources
           </label>
           <textarea
             id="income_sources"
@@ -150,7 +150,7 @@ export default function FinancialSection({ profile }: FinancialSectionProps) {
 
         <div>
           <label htmlFor="french_proficiency" className="block text-sm font-medium text-gray-700 mb-1">
-            French Language Proficiency
+            French language proficiency
           </label>
           <select
             id="french_proficiency"

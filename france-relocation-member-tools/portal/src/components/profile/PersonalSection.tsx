@@ -73,7 +73,7 @@ export default function PersonalSection({ profile }: PersonalSectionProps) {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
         <div>
           <label htmlFor="legal_first_name" className={labelClass}>
-            First Name <span className="text-red-500">*</span>
+            First name <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
@@ -89,7 +89,7 @@ export default function PersonalSection({ profile }: PersonalSectionProps) {
 
         <div>
           <label htmlFor="legal_last_name" className={labelClass}>
-            Last Name <span className="text-red-500">*</span>
+            Last name <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
@@ -105,7 +105,7 @@ export default function PersonalSection({ profile }: PersonalSectionProps) {
 
         <div>
           <label htmlFor="legal_middle_name" className={labelClass}>
-            Middle Name
+            Middle name
           </label>
           <input
             type="text"
@@ -120,7 +120,7 @@ export default function PersonalSection({ profile }: PersonalSectionProps) {
 
         <div>
           <label htmlFor="date_of_birth" className={labelClass}>
-            Date of Birth <span className="text-red-500">*</span>
+            Date of birth <span className="text-red-500">*</span>
           </label>
           <input
             type="date"
@@ -152,7 +152,7 @@ export default function PersonalSection({ profile }: PersonalSectionProps) {
 
         <div>
           <label htmlFor="passport_number" className={labelClass}>
-            Passport Number
+            Passport number
           </label>
           <input
             type="text"
@@ -167,7 +167,7 @@ export default function PersonalSection({ profile }: PersonalSectionProps) {
 
         <div>
           <label htmlFor="passport_expiry" className={labelClass}>
-            Passport Expiry
+            Passport expiry
           </label>
           <input
             type="date"

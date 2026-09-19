@@ -255,7 +255,7 @@ class FRAMT_Task_Howto {
             'Sign declaration not to work' => array(
                 'steps' => array(
                     array( 'Write the attestation sur l\'honneur', 'A short signed statement: "I, [name], born [date], declare on my honour that I will not carry out any professional activity in France during my stay." Dated and signed by each applicant. France-Visas gives the wording for the visitor route.', $fv ),
-                    array( 'Understand what it covers', 'Working for a French employer or French clients is out. On remote work for a US employer, the Interior Ministry indicated in a written answer on 23 June 2026 that it may be compatible when the work has no link to the French market; consulates apply this unevenly. Read the visitor guide before you sign, and if it applies to you, say so plainly in the cover letter. The letters in Documents include a remote-work version and an employer letter.' ),
+                    array( 'Understand what it covers', 'Working for a French employer or French clients is out. On remote work for a US employer, the Interior Ministry indicated in a written answer on June 23, 2026 that it may be compatible when the work has no link to the French market; consulates apply this unevenly. Read the visitor guide before you sign, and if it applies to you, say so plainly in the cover letter. The letters in Documents include a remote-work version and an employer letter.' ),
                 ),
                 'bring' => array(),
                 'time'  => 'Ten minutes.',
@@ -956,7 +956,7 @@ class FRAMT_Task_Howto {
             // ---------------- Route sub-cases ----------------
             'Assemble the qualified-employee proof: contract at the reference salary and your degree' => array(
                 'steps' => array(
-                    array( 'Confirm the reference salary in force', 'Set by ministerial order (€39,582 gross a year from 31 August 2025); the figure that counts is the one in force when the contract is signed.', 'https://www.service-public.gouv.fr/' ),
+                    array( 'Confirm the reference salary in force', 'Set by ministerial order (€39,582 gross a year from August 31, 2025); the figure that counts is the one in force when the contract is signed.', 'https://www.service-public.gouv.fr/' ),
                     array( 'Get the contract and the employer documents', 'A contract of three months or more at or above the reference salary, and the employer\'s Kbis extract.' ),
                     array( 'Prove the qualification', 'A master\'s degree or equivalent, or the professional experience the category accepts instead; in English is fine for the consulate.' ),
                 ),

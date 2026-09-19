@@ -61,7 +61,7 @@ export default function TravelStatusOnboarding({
   const steps: OnboardingStep[] = [
     {
       icon: <Globe className="w-10 h-10 text-primary-600" aria-hidden="true" />,
-      title: 'Welcome to Schengen Tracker',
+      title: 'Welcome to Schengen tracker',
       description: 'Understand and comply with the 90/180 day rule',
       details: (
         <div className="space-y-6">
@@ -74,11 +74,11 @@ export default function TravelStatusOnboarding({
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="p-4 bg-gray-50 rounded-xl text-center">
-              <p className="font-semibold text-gray-900 mb-1">Entry & Exit</p>
+              <p className="font-semibold text-gray-900 mb-1">Entry & exit</p>
               <p className="text-sm text-gray-600">Both days count as full days</p>
             </div>
             <div className="p-4 bg-gray-50 rounded-xl text-center">
-              <p className="font-semibold text-gray-900 mb-1">Rolling Window</p>
+              <p className="font-semibold text-gray-900 mb-1">Rolling window</p>
               <p className="text-sm text-gray-600">Days expire after 180 days</p>
             </div>
           </div>
@@ -90,7 +90,7 @@ export default function TravelStatusOnboarding({
     },
     {
       icon: <Plane className="w-10 h-10 text-primary-600" aria-hidden="true" />,
-      title: 'Track Your Trips',
+      title: 'Track your trips',
       description: 'Add your past and future Schengen travel',
       details: (
         <div className="space-y-5">
@@ -131,7 +131,7 @@ export default function TravelStatusOnboarding({
     },
     {
       icon: <MapPin className="w-10 h-10 text-primary-600" aria-hidden="true" />,
-      title: 'Smart Location Check-in',
+      title: 'Smart location check-in',
       description: 'Quick daily check-ins keep your tracker current',
       details: (
         <div className="space-y-5">
@@ -143,7 +143,7 @@ export default function TravelStatusOnboarding({
               <div className="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center">
                 <Check className="w-5 h-5 text-white" aria-hidden="true" />
               </div>
-              <h4 className="font-semibold text-green-900 text-base">Automatic Trip Creation</h4>
+              <h4 className="font-semibold text-green-900 text-base">Automatic trip creation</h4>
             </div>
             <p className="text-green-800 leading-relaxed">
               When you check in from a Schengen country, we automatically create or extend
@@ -152,11 +152,11 @@ export default function TravelStatusOnboarding({
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="p-4 bg-gray-50 rounded-xl text-center">
-              <p className="font-semibold text-gray-900 mb-1">Browser Location</p>
+              <p className="font-semibold text-gray-900 mb-1">Browser location</p>
               <p className="text-sm text-gray-600">One-click check-in with GPS</p>
             </div>
             <div className="p-4 bg-gray-50 rounded-xl text-center">
-              <p className="font-semibold text-gray-900 mb-1">Smart Detection</p>
+              <p className="font-semibold text-gray-900 mb-1">Smart detection</p>
               <p className="text-sm text-gray-600">Prompts when timezone changes</p>
             </div>
           </div>
@@ -165,7 +165,7 @@ export default function TravelStatusOnboarding({
     },
     {
       icon: <Calculator className="w-10 h-10 text-primary-600" aria-hidden="true" />,
-      title: 'Plan Future Travel',
+      title: 'Plan future travel',
       description: 'Use the "What If" calculator before you book',
       details: (
         <div className="space-y-5">
@@ -205,7 +205,7 @@ export default function TravelStatusOnboarding({
     },
     {
       icon: <Bell className="w-10 h-10 text-primary-600" aria-hidden="true" />,
-      title: 'Stay Informed with Alerts',
+      title: 'Stay informed with alerts',
       description: 'Get notified before you approach the limit',
       details: (
         <div className="space-y-5">
@@ -339,7 +339,7 @@ export default function TravelStatusOnboarding({
             >
               {isLastStep ? (
                 <>
-                  Get Started
+                  Get started
                   <Check className="w-4 h-4" aria-hidden="true" />
                 </>
               ) : (

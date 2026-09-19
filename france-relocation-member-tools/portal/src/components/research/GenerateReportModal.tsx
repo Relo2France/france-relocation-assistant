@@ -254,7 +254,7 @@ export default function GenerateReportModal({
                 className="btn btn-primary w-full"
               >
                 <FileText className="w-4 h-4" />
-                Generate Report
+                Generate report
               </button>
             </div>
           )}
@@ -293,7 +293,7 @@ export default function GenerateReportModal({
                   <CheckCircle className="w-8 h-8 text-green-600" />
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  Report Ready
+                  Report ready
                 </h3>
 
                 {isCached && !isPlaceholder && (
@@ -343,7 +343,7 @@ export default function GenerateReportModal({
                   className="btn btn-primary w-full"
                 >
                   <FileText className="w-4 h-4" />
-                  View Report
+                  View report
                 </button>
 
                 <button
@@ -351,7 +351,7 @@ export default function GenerateReportModal({
                   className="btn btn-outline w-full"
                 >
                   <Save className="w-4 h-4" />
-                  Save to My Documents
+                  Save to Documents
                 </button>
 
                 {(isCached || isPlaceholder) && (
@@ -408,7 +408,7 @@ export default function GenerateReportModal({
                   className="btn btn-primary w-full"
                 >
                   <FileText className="w-4 h-4" />
-                  View Report
+                  View report
                 </button>
                 <button onClick={onClose} className="btn btn-outline w-full">
                   Close
@@ -424,7 +424,7 @@ export default function GenerateReportModal({
                 <AlertCircle className="w-8 h-8 text-red-600" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                Generation Failed
+                Generation failed
               </h3>
               <p className="text-gray-600 mb-2">{error}</p>
               <p className="text-sm text-gray-500 mb-6">
@@ -436,7 +436,7 @@ export default function GenerateReportModal({
                   onClick={() => handleGenerate(false)}
                   className="btn btn-primary w-full"
                 >
-                  Try Again
+                  Try again
                 </button>
                 <button onClick={onClose} className="btn btn-outline w-full">
                   Cancel

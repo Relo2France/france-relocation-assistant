@@ -79,7 +79,7 @@ export default function TaskChecklist({ taskId, editable = true }: TaskChecklist
       {/* Header */}
       <div className="flex items-center justify-between">
         <h4 className="text-sm font-medium text-gray-700">
-          Task Checklist
+          Task checklist
           {totalCount > 0 && (
             <span className="ml-2 text-xs text-gray-500">
               ({completedCount}/{totalCount})
